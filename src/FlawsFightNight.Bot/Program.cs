@@ -44,6 +44,11 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton(_client);
                     services.AddSingleton<CommandService>();
                     services.AddSingleton<InteractionService>();
+
+                    // Managers
+                    services.AddSingleton<ConfigManager>();
+                    services.AddSingleton<DataManager>();
+
                 })
                 .Build();
 
