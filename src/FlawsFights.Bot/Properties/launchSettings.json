@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "FlawsFights.Bot": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

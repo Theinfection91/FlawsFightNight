@@ -1,0 +1,6 @@
+services:
+  flawsfights.bot:
+    image: ${DOCKER_REGISTRY-}flawsfightsbot
+    build:
+      context: .
+      dockerfile: src/FlawsFights.Bot/Dockerfile
