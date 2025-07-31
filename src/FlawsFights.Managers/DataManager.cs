@@ -1,4 +1,5 @@
 ﻿using FlawsFights.Data.DataModels;
+using FlawsFights.Data.Handlers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,8 @@ namespace FlawsFights.Managers
 
         // Discord Credential File
         public DiscordCredentialFile DiscordCredentialFile { get; private set; }
-        private readonly 
+        private readonly DiscordCredentialHandler _discordCredentialHandler;
+
         #endregion
     }
 }
