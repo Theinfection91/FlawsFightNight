@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFights.Managers
+namespace FlawsFightNight.Managers
 {
     public class ConfigManager
     {

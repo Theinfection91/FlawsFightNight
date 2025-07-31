@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFights.Data.DataModels
+namespace FlawsFightNight.Data.DataModels
 {
     public class DiscordCredentialFile
     {

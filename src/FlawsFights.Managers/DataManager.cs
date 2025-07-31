@@ -1,12 +1,12 @@
-﻿using FlawsFights.Data.DataModels;
-using FlawsFights.Data.Handlers;
+﻿using FlawsFightNight.Data.DataModels;
+using FlawsFightNight.Data.Handlers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFights.Managers
+namespace FlawsFightNight.Managers
 {
     public class DataManager
     {

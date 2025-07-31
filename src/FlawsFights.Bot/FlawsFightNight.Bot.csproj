@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FlawsFights.Managers\FlawsFights.Managers.csproj" />
+    <ProjectReference Include="..\FlawsFights.Managers\FlawsFightNight.Managers.csproj" />
   </ItemGroup>
 
 </Project>

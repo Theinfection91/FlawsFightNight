@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFights.Data.Handlers
+namespace FlawsFightNight.Data.Handlers
 {
     public abstract class BaseDataHandler<T> where T : new()
     {

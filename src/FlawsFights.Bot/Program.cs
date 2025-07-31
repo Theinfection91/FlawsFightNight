@@ -2,12 +2,12 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
-using FlawsFights.Managers;
+using FlawsFightNight.Managers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
 
-namespace FlawsFights.Bot
+namespace FlawsFightNight.Bot
 {
     public class Program
     {
