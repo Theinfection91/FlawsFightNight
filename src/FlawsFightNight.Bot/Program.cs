@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using FlawsFightNight.Data.Handlers;
 using FlawsFightNight.Managers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -49,6 +50,9 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<ConfigManager>();
                     services.AddSingleton<DataManager>();
 
+                    // Data Handlers
+                    services.AddSingleton<DiscordCredentialHandler>();
+
                 })
                 .Build();
 
@@ -90,7 +94,7 @@ namespace FlawsFightNight.Bot
             };
 
             // TODO Login and start the bot
-            //await _client.LoginAsync(TokenType.Bot, _configManager.GetDiscordToken());
+            await _client.LoginAsync(TokenType.Bot, "_configManager.GetDiscordToken()");
             await _client.StartAsync();
 
             // Wait for Ready event

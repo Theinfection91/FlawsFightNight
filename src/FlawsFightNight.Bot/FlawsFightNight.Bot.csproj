@@ -17,6 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\FlawsFightNight.CommandsLogic\FlawsFightNight.CommandsLogic.csproj" />
+    <ProjectReference Include="..\FlawsFightNight.Core\FlawsFightNight.Core.csproj" />
+    <ProjectReference Include="..\FlawsFightNight.Data\FlawsFightNight.Data.csproj" />
     <ProjectReference Include="..\FlawsFightNight.Managers\FlawsFightNight.Managers.csproj" />
   </ItemGroup>
 
