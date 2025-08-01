@@ -60,7 +60,7 @@ namespace FlawsFightNight.Bot
             _configManager = _services.GetRequiredService<ConfigManager>();
 
             // Check discord token
-            //_configManager.SetDiscordTokenProcess();
+            _configManager.SetDiscordTokenProcess();
 
             await RunBotAsync();
         }
@@ -93,8 +93,8 @@ namespace FlawsFightNight.Bot
                 return Task.CompletedTask;
             };
 
-            // TODO Login and start the bot
-            await _client.LoginAsync(TokenType.Bot, "_configManager.GetDiscordToken()");
+            // Login and start the bot
+            await _client.LoginAsync(TokenType.Bot, _configManager.GetDiscordToken());
             await _client.StartAsync();
 
             // Wait for Ready event
@@ -119,11 +119,11 @@ namespace FlawsFightNight.Bot
             await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
             // TODO Check guild ID
-            //_configManager.SetGuildIdProcess();
+            _configManager.SetGuildIdProcess();
 
             // TODO Register commands to guild
-            //await _interactionService.RegisterCommandsToGuildAsync(_configManager.GetGuildId());
-            //Console.WriteLine($"{DateTime.Now} - Commands registered to guild {_configManager.GetGuildId()}");
+            await _interactionService.RegisterCommandsToGuildAsync(_configManager.GetGuildId());
+            Console.WriteLine($"{DateTime.Now} - Commands registered to guild {_configManager.GetGuildId()}");
         }
 
         private async Task HandleInteractionAsync(SocketInteraction interaction)
@@ -137,16 +137,16 @@ namespace FlawsFightNight.Bot
             if (socketMessage is not SocketUserMessage message || message.Author.IsBot) return;
 
             int argPos = 0;
-            //// TODO Get Command Prefix
-            //if (message.HasStringPrefix(_configManager.GetCommandPrefix(), ref argPos) ||
-            //    message.HasMentionPrefix(_client.CurrentUser, ref argPos))
-            //{
-            //    var context = new SocketCommandContext(_client, message);
-            //    var result = await _commands.ExecuteAsync(context, argPos, _services);
+            // TODO Get Command Prefix
+            if (message.HasStringPrefix(_configManager.GetCommandPrefix(), ref argPos) ||
+                message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            {
+                var context = new SocketCommandContext(_client, message);
+                var result = await _commands.ExecuteAsync(context, argPos, _services);
 
-            //    if (!result.IsSuccess)
-            //        Console.WriteLine($"{DateTime.Now} - Command Error: {result.ErrorReason}");
-            //}
+                if (!result.IsSuccess)
+                    Console.WriteLine($"{DateTime.Now} - Command Error: {result.ErrorReason}");
+            }
         }
 
         private Task Log(LogMessage log)
