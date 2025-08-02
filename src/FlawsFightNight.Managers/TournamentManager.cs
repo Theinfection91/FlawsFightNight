@@ -17,12 +17,12 @@ namespace FlawsFightNight.Managers
 
         public void LoadTournamentsDatabase()
         {
-            //_dataManager.LoadTouramentsDatabase();
+            _dataManager.LoadTournamentsDatabase();
         }
 
         public void SaveTournamentsDatabase()
         {
-            //_dataManager.SaveTournamentsDatabase(_dataManager.TournamentsDatabase); 
+            _dataManager.SaveTournamentsDatabase(); 
         }
 
         public void SaveAndReloadTournamentsDatabase()
@@ -53,6 +53,22 @@ namespace FlawsFightNight.Managers
             }
         }
 
+        public bool CanAcceptNewTeams(Tournament tournament)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.Ladder:
+                    return true; // Ladder tournaments can always accept new teams
+                case TournamentType.RoundRobin:
+                    return !tournament.IsRunning; // Round Robin tournaments cannot accept new teams once they start
+                case TournamentType.SingleElimination:
+                case TournamentType.DoubleElimination:
+                    return !tournament.IsRunning; // SE/DE tournaments cannot accept new teams once they start
+                default:
+                    return false; // Unknown tournament type
+            }
+        }
+
         public bool IsTournamentIdInDatabase(string tournamentId)
         {
             foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
@@ -63,6 +79,12 @@ namespace FlawsFightNight.Managers
                 }
             }
             return false;
+        }
+
+        public Tournament? GetTournamentById(string tournamentId)
+        {
+            return _dataManager.TournamentsDatabaseFile.Tournaments
+                .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
         }
 
         public string? GenerateTournamentId()
@@ -84,6 +106,15 @@ namespace FlawsFightNight.Managers
                 }
             }
             return null;
+        }
+
+        public void AddTeamToTournament(Team team, string tournamentId)
+        {
+            Tournament? tournament = GetTournamentById(tournamentId);
+            if (tournament != null)
+            {
+                tournament.Teams.Add(team);
+            }
         }
     }
 }

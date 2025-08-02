@@ -27,7 +27,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return "Invalid tournament type specified.";
             }
             _tournamentManager.AddTournament(tournament);
-            return $"A {tournament.TeamSize}v{tournament.TeamSize} {tournament.Type} Tournament named '{tournament.Name}' was created.";
+            return $"A {tournament.TeamSize}v{tournament.TeamSize} {tournament.Type} Tournament named '{tournament.Name}' was created with Tournament ID#: {tournament.Id} - Remember this ID number as this is it's reference in commands for now.";
         }
     }
 }

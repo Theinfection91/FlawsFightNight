@@ -14,6 +14,7 @@ namespace FlawsFightNight.Core.Models
         public string? Description { get; set; }
         public TournamentType Type { get; set; }
         public int TeamSize { get; set; }
+        public string TeamSizeFormat => $"{TeamSize}v{TeamSize}";
         public List<Team> Teams { get; set; } = [];
         public MatchHistoryList MatchHistory { get; set; } = new();
         public bool IsRunning { get; set; } = false;

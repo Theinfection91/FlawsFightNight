@@ -10,25 +10,25 @@ namespace FlawsFightNight.Core.Models
     {
         // Basic Info
         public string Name { get; set; }
+        public string TournamentId { get; set; }
         public int Size { get; set; }
-        public string TournamentName { get; set; }
-        public string TournamentTeamSize { get; set; }
+        public string TeamSizeFormat { get; set; }
         public int Rank { get; set; }
-        public int Wins { get; set; }
-        public int Losses { get; set; }
+        public int Wins { get; set; } = 0;
+        public int Losses { get; set; } = 0;
         public List<Member> Members { get; set; }
 
         // Streaks
-        public int WinStreak { get; set; }
-        public int LoseStreak { get; set; }
+        public int WinStreak { get; set; } = 0;
+        public int LoseStreak { get; set; } = 0;
 
         // Tournament Specific Fields
         #region Ladder
-        public bool IsChallengeable { get; set; }
+        public bool IsChallengeable { get; set; } = true;
         #endregion
 
         #region Round Robin
-        public int TotalScore { get; set; }
+        public int TotalScore { get; set; } = 0;
         #endregion
     }
 }

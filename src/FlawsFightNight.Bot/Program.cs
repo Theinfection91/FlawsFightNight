@@ -61,6 +61,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<ConfigManager>();
                     services.AddSingleton<DataManager>();
                     services.AddSingleton<MatchManager>();
+                    services.AddSingleton<MemberManager>();
                     services.AddSingleton<TeamManager>();
                     services.AddSingleton<TournamentManager>();
 

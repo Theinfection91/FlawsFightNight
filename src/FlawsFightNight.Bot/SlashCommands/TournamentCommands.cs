@@ -1,4 +1,5 @@
-﻿using Discord.Interactions;
+﻿using Discord;
+using Discord.Interactions;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Core.Enums;
 using System;
@@ -20,6 +21,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("create", "Create a new tournament")]
+        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
         public async Task CreateTournamentAsync(
             [Summary("name", "The name of the tournament")] string name,
             [Summary("type", "The type of the tournament")] TournamentType tournamentType,
