@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Data.Handlers;
 using FlawsFightNight.Managers;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,9 +47,18 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<CommandService>();
                     services.AddSingleton<InteractionService>();
 
+                    /////////////////////////////////
+                    //    ==-Command Logic-==     //
+                    ///////////////////////////////
+
+                    services.AddSingleton<CreateTournamentLogic>();
+
+                    //
+
                     // Managers
                     services.AddSingleton<ConfigManager>();
                     services.AddSingleton<DataManager>();
+                    services.AddSingleton<TournamentManager>();
 
                     // Data Handlers
                     services.AddSingleton<DiscordCredentialHandler>();

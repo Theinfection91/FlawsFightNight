@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Discord.Interactions;
+using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Managers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,9 +11,16 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class CreateTournamentLogic : Logic
     {
-        public CreateTournamentLogic() : base("Create Tournament")
+        private TournamentManager _tournamentManager;
+
+        public CreateTournamentLogic(TournamentManager tournamentManager) : base("Create Tournament")
         {
-            
+            _tournamentManager = tournamentManager;
+        }
+
+        public string CreateTournamentProcess(SocketInteractionContext context, string name, TournamentType tournamentType, string? description = null)
+        {
+            return "Hello";
         }
     }
 }

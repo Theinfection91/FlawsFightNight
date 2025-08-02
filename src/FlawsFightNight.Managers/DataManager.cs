@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Data.DataModels;
+﻿using FlawsFightNight.Core.Models;
+using FlawsFightNight.Data.DataModels;
 using FlawsFightNight.Data.Handlers;
 using System;
 using System.Collections.Generic;
@@ -65,6 +66,17 @@ namespace FlawsFightNight.Managers
         {
             _tournamentsDatabaseHandler.Save(TournamentsDatabaseFile);
             LoadTournamentsDatabase();
+        }
+
+        public void AddTournament(Tournament tournament)
+        {
+            TournamentsDatabaseFile.Tournaments.Add(tournament);
+            SaveAndReloadTournamentsDatabase();
+        }
+
+        public void RemoveTournament()
+        {
+            // TODO: Implement removal logic
         }
         #endregion
     }
