@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Models;
+﻿using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace FlawsFightNight.Managers
     {
         public TournamentManager(DataManager dataManager) : base("TournamentManager", dataManager)
         {
-            
+
         }
 
         public void LoadTournamentsDatabase()
@@ -33,6 +34,21 @@ namespace FlawsFightNight.Managers
         public void AddTournament(Tournament tournament)
         {
             _dataManager.AddTournament(tournament);
+        }
+
+        public Tournament CreateSpecificTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
+        {
+            switch (tournamentType)
+            {
+                case TournamentType.RoundRobin:
+                    return new RoundRobinTournament(name, description)
+                    {
+                        TeamSize = teamSize,
+                        Description = description
+                    };
+                default:
+                    return null;
+            }
         }
     }
 }

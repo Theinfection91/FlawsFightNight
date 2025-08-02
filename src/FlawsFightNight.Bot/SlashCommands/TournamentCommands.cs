@@ -23,11 +23,12 @@ namespace FlawsFightNight.Bot.SlashCommands
         public async Task CreateTournamentAsync(
             [Summary("name", "The name of the tournament")] string name,
             [Summary("type", "The type of the tournament")] TournamentType tournamentType,
+            [Summary("team_size", "The size of each team in the tournament")] int teamSize,
             [Summary("description", "A description of the tournament (optional)")] string? description = null)
         {
             try
             {
-                var result = _createTournamentLogic.CreateTournamentProcess(Context, name, tournamentType, description);
+                var result = _createTournamentLogic.CreateTournamentProcess(Context, name, tournamentType, teamSize, description);
                 await RespondAsync(result);
             }
             catch (Exception ex)

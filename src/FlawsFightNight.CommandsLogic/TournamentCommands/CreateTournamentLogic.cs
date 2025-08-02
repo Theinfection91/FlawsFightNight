@@ -1,5 +1,6 @@
 ﻿using Discord.Interactions;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -18,9 +19,15 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _tournamentManager = tournamentManager;
         }
 
-        public string CreateTournamentProcess(SocketInteractionContext context, string name, TournamentType tournamentType, string? description = null)
+        public string CreateTournamentProcess(SocketInteractionContext context, string name, TournamentType tournamentType, int teamSize, string? description = null)
         {
-            return "Hello";
+            Tournament tournament = _tournamentManager.CreateSpecificTournament(name, tournamentType, teamSize, description);
+            if (tournament == null)
+            {
+                return "Invalid tournament type specified.";
+            }
+            _tournamentManager.AddTournament(tournament);
+            return $"A {tournament.TeamSize}v{tournament.TeamSize} {tournament.Type} Tournament named '{tournament.Name}' was created.";
         }
     }
 }
