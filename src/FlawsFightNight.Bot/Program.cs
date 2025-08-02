@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Data.Handlers;
 using FlawsFightNight.Managers;
@@ -52,6 +53,7 @@ namespace FlawsFightNight.Bot
                     ///////////////////////////////
 
                     services.AddSingleton<CreateTournamentLogic>();
+                    services.AddSingleton<RegisterTeamLogic>();
 
                     ////////////////////////////////
 
@@ -59,6 +61,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<ConfigManager>();
                     services.AddSingleton<DataManager>();
                     services.AddSingleton<MatchManager>();
+                    services.AddSingleton<TeamManager>();
                     services.AddSingleton<TournamentManager>();
 
                     // Data Handlers

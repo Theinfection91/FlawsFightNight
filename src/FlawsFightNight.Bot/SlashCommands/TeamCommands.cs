@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.CommandsLogic.TeamCommands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,11 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("team", "Commands related to teams like creating, removal, etc.")]
     public class TeamCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        public TeamCommands() { }
+        private RegisterTeamLogic _registerTeamLogic;
+        public TeamCommands(RegisterTeamLogic registerTeamLogic)
+        {
+            _registerTeamLogic = registerTeamLogic;
+        }
 
         [SlashCommand("register", "Register a new team for a chosen Tournament")]
         [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
@@ -41,9 +46,32 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
-                // Logic to register the team goes here
-                // For now, we will just respond with a success message
-                await RespondAsync($"Team '{name}' has been registered for tournament ID {tournamentId}.");
+                // Initialize the list of members
+                var members = new List<IUser>() { member1 };
+
+                // Add members to the list if they are not null
+                if (member2 != null) members.Add(member2);
+                if (member3 != null) members.Add(member3);
+                if (member4 != null) members.Add(member4);
+                if (member5 != null) members.Add(member5);
+                if (member6 != null) members.Add(member6);
+                if (member7 != null) members.Add(member7);
+                if (member8 != null) members.Add(member8);
+                if (member9 != null) members.Add(member9);
+                if (member10 != null) members.Add(member10);
+                if (member11 != null) members.Add(member11);
+                if (member12 != null) members.Add(member12);
+                if (member13 != null) members.Add(member13);
+                if (member14 != null) members.Add(member14);
+                if (member15 != null) members.Add(member15);
+                if (member16 != null) members.Add(member16);
+                if (member17 != null) members.Add(member17);
+                if (member18 != null) members.Add(member18);
+                if (member19 != null) members.Add(member19);
+                if (member20 != null) members.Add(member20);
+
+                var result = _registerTeamLogic.RegisterTeamProcess(Context, name, tournamentId, members);
+                await RespondAsync(result);
             }
             catch (Exception ex)
             {

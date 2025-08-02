@@ -12,8 +12,4 @@
     <ProjectReference Include="..\FlawsFightNight.Managers\FlawsFightNight.Managers.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="TeamCommands\" />
-  </ItemGroup>
-
 </Project>
