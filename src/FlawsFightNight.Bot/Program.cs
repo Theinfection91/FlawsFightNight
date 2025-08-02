@@ -52,7 +52,7 @@ namespace FlawsFightNight.Bot
 
                     // Data Handlers
                     services.AddSingleton<DiscordCredentialHandler>();
-
+                    services.AddSingleton<TournamentsDatabaseHandler>();
                 })
                 .Build();
 

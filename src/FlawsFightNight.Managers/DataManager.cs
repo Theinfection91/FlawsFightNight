@@ -17,11 +17,18 @@ namespace FlawsFightNight.Managers
         public DiscordCredentialFile DiscordCredentialFile { get; private set; }
         private readonly DiscordCredentialHandler _discordCredentialHandler;
 
+        // Tournaments Database Handler
+        public TournamentsDatabaseFile TournamentsDatabaseFile { get; private set; }
+        private readonly TournamentsDatabaseHandler _tournamentsDatabaseHandler;
+
         // Constructor is given each handler type for each specific JSON file
-        public DataManager(DiscordCredentialHandler discordCredentialHandler)
+        public DataManager(DiscordCredentialHandler discordCredentialHandler, TournamentsDatabaseHandler tournamentsDatabaseHandler)
         {
             _discordCredentialHandler = discordCredentialHandler;
             LoadDiscordCredentialFile();
+
+            _tournamentsDatabaseHandler = tournamentsDatabaseHandler;
+            LoadTournamentsDatabase();
         }
         #endregion
 
@@ -40,6 +47,24 @@ namespace FlawsFightNight.Managers
         {
             _discordCredentialHandler.Save(DiscordCredentialFile);
             LoadDiscordCredentialFile();
+        }
+        #endregion
+
+        #region Tournaments Data
+        public void LoadTournamentsDatabase()
+        {
+            TournamentsDatabaseFile = _tournamentsDatabaseHandler.Load();
+        }
+
+        public void SaveTournamentsDatabase()
+        {
+            _tournamentsDatabaseHandler.Save(TournamentsDatabaseFile);
+        }
+
+        public void SaveAndReloadTournamentsDatabase()
+        {
+            _tournamentsDatabaseHandler.Save(TournamentsDatabaseFile);
+            LoadTournamentsDatabase();
         }
         #endregion
     }

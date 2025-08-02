@@ -13,7 +13,6 @@ namespace FlawsFightNight.Data.Handlers
 
         protected BaseDataHandler(string fileName, string folderName)
         {
-            Console.WriteLine($"Initializing BaseDataHandler with file: {fileName} in folder: {folderName}");
             _filePath = SetFilePath(fileName, folderName);
             InitializeFile();
         }
