@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models
 {
-    public class MatchHistoryList
+    public class MatchSchedule
     {
-        public List<PostMatch> PostMatches { get; set; } = [];
+        public Dictionary<int, Match> MatchesToPlay { get; set; } = [];
 
-        public MatchHistoryList() { }
+        public MatchSchedule() { }
     }
 }

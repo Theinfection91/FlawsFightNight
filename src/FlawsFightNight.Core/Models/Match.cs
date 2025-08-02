@@ -9,18 +9,11 @@ namespace FlawsFightNight.Core.Models
     public class Match
     {
         // Basic Info
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public Team TeamA { get; set; }
-        public Team TeamB { get; set; }
+        public Team? TeamA { get; set; }
+        public Team? TeamB { get; set; }
         public bool IsCompleted { get; set; } = false;
+        public bool IsByeMatch { get; set; } = false; // Indicates if this match is a bye match
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
-        public DateTime CompletedOn { get; set; }
-
-        // Post-match details
-        public Team? Winner { get; set; }
-        public int WinnerScore { get; set; }
-        public Team? Loser { get; set; }
-        public int LoserScore { get; set; }
 
         public Match(Team teamA, Team teamB)
         {
@@ -29,7 +22,7 @@ namespace FlawsFightNight.Core.Models
         }
         public override string ToString()
         {
-            return $"{TeamA.Name} vs {TeamB.Name}";
+            return $"{TeamA.Name ?? "Bye"} vs {TeamB.Name ?? "Bye"}";
         }
     }
 }

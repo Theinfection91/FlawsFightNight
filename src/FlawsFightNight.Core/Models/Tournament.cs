@@ -9,7 +9,7 @@ namespace FlawsFightNight.Core.Models
 {
     public class Tournament
     {
-        // Basic Info Shared by all Tournament Types
+        // Basic Info Shared by most Tournament Types
         public string Id { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
@@ -18,8 +18,9 @@ namespace FlawsFightNight.Core.Models
         public string TeamSizeFormat => $"{TeamSize}v{TeamSize}";
         public List<Team> Teams { get; set; } = [];
         public bool IsTeamsLocked { get; set; } = false;
-        public bool CanTeamsBeUnlocked { get; set; } = true;
+        public bool CanTeamsBeUnlocked { get; set; } = false;
         public bool CanTeamsBeLocked { get; set; } = false;
+        public MatchSchedule MatchSchedule { get; set; } = new();
         public MatchHistoryList MatchHistory { get; set; } = new();
         public bool IsRunning { get; set; } = false;
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
@@ -28,6 +29,7 @@ namespace FlawsFightNight.Core.Models
 
         // Round Robin Specific Fields
         public int CurrentRound { get; set; } = 0;
+        public int? MaxRounds { get; set; } = null;
         public bool IsRoundComplete { get; set; } = false;
 
 

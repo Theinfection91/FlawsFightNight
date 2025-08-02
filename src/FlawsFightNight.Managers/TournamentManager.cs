@@ -100,6 +100,9 @@ namespace FlawsFightNight.Managers
         {
             tournament.IsTeamsLocked = true;
             tournament.CanTeamsBeLocked = false;
+
+            // Allow teams to be unlocked after locking, until tournament starts
+            tournament.CanTeamsBeUnlocked = true;
         }
 
         public bool IsTournamentIdInDatabase(string tournamentId)

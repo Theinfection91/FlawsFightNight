@@ -13,7 +13,7 @@ namespace FlawsFightNight.Core.Models
         public string TournamentId { get; set; }
         public int Size { get; set; }
         public string TeamSizeFormat { get; set; }
-        public int Rank { get; set; }
+        public int? Rank { get; set; }
         public int Wins { get; set; } = 0;
         public int Losses { get; set; } = 0;
         public List<Member> Members { get; set; }
@@ -29,6 +29,9 @@ namespace FlawsFightNight.Core.Models
 
         #region Round Robin
         public int TotalScore { get; set; } = 0;
+        public bool IsByeMatchTeam { get; set; } = false;
         #endregion
+
+        public Team() { }
     }
 }

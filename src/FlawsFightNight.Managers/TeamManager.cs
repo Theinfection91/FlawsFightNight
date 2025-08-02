@@ -27,7 +27,7 @@ namespace FlawsFightNight.Managers
 
         public Team CreateTeam(string teamName, string tournamentId, int teamSize, string tournamentSizeFormat, List<Member> members, int rank)
         {
-            return new Team
+            return new Team()
             {
                 Name = teamName,
                 TournamentId = tournamentId,

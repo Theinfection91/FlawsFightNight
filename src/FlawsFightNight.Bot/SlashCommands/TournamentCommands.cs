@@ -15,11 +15,13 @@ namespace FlawsFightNight.Bot.SlashCommands
     {
         private CreateTournamentLogic _createTournamentLogic;
         private LockTeamsLogic _lockTeamsLogic;
+        private StartTournamentLogic _startTournamentLogic;
 
-        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockTeamsLogic lockTeamsLogic)
+        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockTeamsLogic lockTeamsLogic, StartTournamentLogic startTournamentLogic)
         {
             _createTournamentLogic = createTournamentLogic;
             _lockTeamsLogic = lockTeamsLogic;
+            _startTournamentLogic = startTournamentLogic;
         }
 
         [SlashCommand("create", "Create a new tournament")]
@@ -50,6 +52,23 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _lockTeamsLogic.LockTeamsProcess(Context, tournamentId);
+                await RespondAsync(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("start", "Start a tournament")]
+        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        public async Task StartTournamentAsync(
+            [Summary("tournament_id", "The ID of the tournament to start")] string tournamentId)
+        {
+            try
+            {
+                var result = _startTournamentLogic.StartTournamentProcess(tournamentId);
                 await RespondAsync(result);
             }
             catch (Exception ex)
