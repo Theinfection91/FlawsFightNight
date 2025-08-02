@@ -13,6 +13,8 @@ namespace FlawsFightNight.Core.Models
         public Team TeamA { get; set; }
         public Team TeamB { get; set; }
         public bool IsCompleted { get; set; } = false;
+        public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
+        public DateTime CompletedOn { get; set; }
 
         // Post-match details
         public Team? Winner { get; set; }

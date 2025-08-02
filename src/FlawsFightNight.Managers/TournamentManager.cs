@@ -38,17 +38,52 @@ namespace FlawsFightNight.Managers
 
         public Tournament CreateSpecificTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
         {
+            string? id = GenerateTournamentId();
             switch (tournamentType)
             {
                 case TournamentType.RoundRobin:
                     return new RoundRobinTournament(name, description)
                     {
+                        Id = id,
                         TeamSize = teamSize,
                         Description = description
                     };
                 default:
                     return null;
             }
+        }
+
+        public bool IsTournamentIdInDatabase(string tournamentId)
+        {
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                if (tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public string? GenerateTournamentId()
+        {
+            bool isUnique = false;
+            string uniqueId;
+
+            while (!isUnique)
+            {
+                Random random = new();
+                int randomInt = random.Next(100, 1000);
+                uniqueId = $"T{randomInt}";
+
+                // Check if the generated ID is unique
+                if (!IsTournamentIdInDatabase(uniqueId))
+                {
+                    isUnique = true;
+                    return uniqueId;
+                }
+            }
+            return null;
         }
     }
 }

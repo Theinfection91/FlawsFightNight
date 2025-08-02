@@ -9,6 +9,9 @@ namespace FlawsFightNight.Core.Models
 {
     public class RoundRobinTournament : Tournament
     {
+        public int CurrentRound { get; set; } = 0;
+        public bool IsRoundComplete { get; set; } = false;
+        public bool IsReadyForNextRound { get; set; } = false;
         public RoundRobinTournament(string name, string? description = null) 
             : base(name, description)
         {

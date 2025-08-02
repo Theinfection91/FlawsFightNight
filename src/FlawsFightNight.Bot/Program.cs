@@ -53,11 +53,12 @@ namespace FlawsFightNight.Bot
 
                     services.AddSingleton<CreateTournamentLogic>();
 
-                    //
+                    ////////////////////////////////
 
                     // Managers
                     services.AddSingleton<ConfigManager>();
                     services.AddSingleton<DataManager>();
+                    services.AddSingleton<MatchManager>();
                     services.AddSingleton<TournamentManager>();
 
                     // Data Handlers
@@ -128,10 +129,10 @@ namespace FlawsFightNight.Bot
             // Register SlashCommand modules
             await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
-            // TODO Check guild ID
+            // Check guild ID
             _configManager.SetGuildIdProcess();
 
-            // TODO Register commands to guild
+            // Register commands to guild
             await _interactionService.RegisterCommandsToGuildAsync(_configManager.GetGuildId());
             Console.WriteLine($"{DateTime.Now} - Commands registered to guild {_configManager.GetGuildId()}");
         }
@@ -147,7 +148,7 @@ namespace FlawsFightNight.Bot
             if (socketMessage is not SocketUserMessage message || message.Author.IsBot) return;
 
             int argPos = 0;
-            // TODO Get Command Prefix
+            // Get Command Prefix
             if (message.HasStringPrefix(_configManager.GetCommandPrefix(), ref argPos) ||
                 message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {

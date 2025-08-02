@@ -9,13 +9,13 @@ namespace FlawsFightNight.Core.Models
 {
     public abstract class Tournament
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Id { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
         public TournamentType Type { get; set; }
         public int TeamSize { get; set; }
         public List<Team> Teams { get; set; } = [];
-        public int CurrentRound { get; set; } = 0;
+        public MatchHistoryList MatchHistory { get; set; } = new();
         public bool IsRunning { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
