@@ -21,7 +21,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         public string CreateTournamentProcess(SocketInteractionContext context, string name, TournamentType tournamentType, int teamSize, string? description = null)
         {
-            Tournament tournament = _tournamentManager.CreateSpecificTournament(name, tournamentType, teamSize, description);
+            Tournament tournament = _tournamentManager.CreateTournament(name, tournamentType, teamSize, description);
             if (tournament == null)
             {
                 return "Invalid tournament type specified.";

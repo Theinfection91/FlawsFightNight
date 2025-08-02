@@ -7,8 +7,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models
 {
-    public abstract class Tournament
+    public class Tournament
     {
+        // Basic Info Shared by all Tournament Types
         public string Id { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
@@ -16,11 +17,19 @@ namespace FlawsFightNight.Core.Models
         public int TeamSize { get; set; }
         public string TeamSizeFormat => $"{TeamSize}v{TeamSize}";
         public List<Team> Teams { get; set; } = [];
+        public bool IsTeamsLocked { get; set; } = false;
         public MatchHistoryList MatchHistory { get; set; } = new();
         public bool IsRunning { get; set; } = false;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 
-        protected Tournament(string name, string? description = null)
+        // Ladder Specific Fields
+
+        // Round Robin Specific Fields
+        public int CurrentRound { get; set; } = 0;
+        public bool IsRoundComplete { get; set; } = false;
+
+
+        public Tournament(string name, string? description = null)
         {
             Name = name;
             Description = description;

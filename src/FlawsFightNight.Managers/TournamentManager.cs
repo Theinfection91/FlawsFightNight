@@ -36,21 +36,15 @@ namespace FlawsFightNight.Managers
             _dataManager.AddTournament(tournament);
         }
 
-        public Tournament CreateSpecificTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
+        public Tournament CreateTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
         {
             string? id = GenerateTournamentId();
-            switch (tournamentType)
+            return new Tournament(name, description)
             {
-                case TournamentType.RoundRobin:
-                    return new RoundRobinTournament(name, description)
-                    {
-                        Id = id,
-                        TeamSize = teamSize,
-                        Description = description
-                    };
-                default:
-                    return null;
-            }
+                Id = id,
+                Type = tournamentType,
+                TeamSize = teamSize
+            };
         }
 
         public bool CanAcceptNewTeams(Tournament tournament)
