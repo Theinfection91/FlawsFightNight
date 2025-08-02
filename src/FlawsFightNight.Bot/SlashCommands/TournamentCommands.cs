@@ -14,10 +14,12 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class TournamentCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private CreateTournamentLogic _createTournamentLogic;
+        private LockTeamsLogic _lockTeamsLogic;
 
-        public TournamentCommands(CreateTournamentLogic createTournamentLogic)
+        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockTeamsLogic lockTeamsLogic)
         {
             _createTournamentLogic = createTournamentLogic;
+            _lockTeamsLogic = lockTeamsLogic;
         }
 
         [SlashCommand("create", "Create a new tournament")]
@@ -31,6 +33,23 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _createTournamentLogic.CreateTournamentProcess(Context, name, tournamentType, teamSize, description);
+                await RespondAsync(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("lock-teams", "Lock teams in a tournament")]
+        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        public async Task LockTeamsAsync(
+            [Summary("tournament_id", "The ID of the tournament to lock teams in")] string tournamentId)
+        {
+            try
+            {
+                var result = _lockTeamsLogic.LockTeamsProcess(Context, tournamentId);
                 await RespondAsync(result);
             }
             catch (Exception ex)

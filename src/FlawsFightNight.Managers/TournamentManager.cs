@@ -22,7 +22,7 @@ namespace FlawsFightNight.Managers
 
         public void SaveTournamentsDatabase()
         {
-            _dataManager.SaveTournamentsDatabase(); 
+            _dataManager.SaveTournamentsDatabase();
         }
 
         public void SaveAndReloadTournamentsDatabase()
@@ -54,13 +54,52 @@ namespace FlawsFightNight.Managers
                 case TournamentType.Ladder:
                     return true; // Ladder tournaments can always accept new teams
                 case TournamentType.RoundRobin:
-                    return !tournament.IsRunning; // Round Robin tournaments cannot accept new teams once they start
+                    return tournament.IsTeamsLocked;
                 case TournamentType.SingleElimination:
                 case TournamentType.DoubleElimination:
                     return !tournament.IsRunning; // SE/DE tournaments cannot accept new teams once they start
                 default:
                     return false; // Unknown tournament type
             }
+        }
+
+        public bool CanTeamsBeLockedResolver(Tournament tournament)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.Ladder:
+                    return false; // Ladder tournaments do not lock teams
+
+                case TournamentType.RoundRobin:
+                    return CanRoundRobinTeamsBeLocked(tournament);
+
+                case TournamentType.SingleElimination:
+                case TournamentType.DoubleElimination:
+                    return !tournament.IsRunning && tournament.CanTeamsBeLocked; // SE/DE can lock teams if not running
+
+                default:
+                    return false; // Unknown tournament type
+            }
+        }
+
+        public bool CanRoundRobinTeamsBeLocked(Tournament tournament)
+        {
+            if (tournament.IsRunning) return false; // Cannot lock teams if tournament is running
+
+            if (tournament.Teams.Count < 3) return false; // Need at least 3 teams to lock teams in Round Robin
+
+            return true;
+        }
+
+        public void SetCanTeamsBeLocked(Tournament tournament, bool canTeamsBeLocked)
+        {
+            tournament.CanTeamsBeLocked = canTeamsBeLocked;
+        }
+
+        public void LockTeamsInTournament(Tournament tournament)
+        {
+            tournament.IsTeamsLocked = true;
+            tournament.CanTeamsBeLocked = false;
         }
 
         public bool IsTournamentIdInDatabase(string tournamentId)
