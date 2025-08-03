@@ -9,20 +9,20 @@ namespace FlawsFightNight.Core.Models
     public class Match
     {
         // Basic Info
-        public Team? TeamA { get; set; }
-        public Team? TeamB { get; set; }
+        public string TeamA { get; set; }
+        public string TeamB { get; set; }
         public bool IsCompleted { get; set; } = false;
         public bool IsByeMatch { get; set; } = false; // Indicates if this match is a bye match
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 
-        public Match(Team teamA, Team teamB)
+        public Match(string teamA, string teamB)
         {
             TeamA = teamA;
             TeamB = teamB;
         }
         public override string ToString()
         {
-            return $"{TeamA.Name ?? "Bye"} vs {TeamB.Name ?? "Bye"}";
+            return $"{TeamA ?? "Bye"} vs {TeamB ?? "Bye"}";
         }
     }
 }
