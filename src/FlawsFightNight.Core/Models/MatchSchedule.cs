@@ -8,7 +8,7 @@ namespace FlawsFightNight.Core.Models
 {
     public class MatchSchedule
     {
-        public Dictionary<int, Match> MatchesToPlay { get; set; } = [];
+        public Dictionary<int, List<Match>> MatchesToPlayByRound { get; set; } = [];
 
         public MatchSchedule() { }
     }
