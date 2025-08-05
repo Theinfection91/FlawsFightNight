@@ -38,6 +38,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
             // Start the tournament
             _matchManager.BuildMatchScheduleResolver(tournament);
+            tournament.CurrentRound = 1;
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();

@@ -12,7 +12,7 @@ namespace FlawsFightNight.Core.Models
         public string TeamA { get; set; }
         public string TeamB { get; set; }
         public bool IsCompleted { get; set; } = false;
-        public bool IsByeMatch { get; set; } = false; // Indicates if this match is a bye match
+        public bool IsByeMatch { get; set; } = false;
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 
         public Match(string teamA, string teamB)

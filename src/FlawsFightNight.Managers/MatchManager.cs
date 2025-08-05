@@ -51,7 +51,7 @@ namespace FlawsFightNight.Managers
 
         public void BuildRoundRobinMatchSchedule(Tournament tournament)
         {
-            const int maxRetries = 10; // just in case to avoid infinite loops
+            const int maxRetries = 10;
             int attempt = 0;
 
             while (attempt < maxRetries)
@@ -70,7 +70,7 @@ namespace FlawsFightNight.Managers
 
                 int numRounds = teams.Count - 1;
                 int half = teams.Count / 2;
-                var rotating = new List<string>(teams); // first element fixed
+                var rotating = new List<string>(teams); // First element fixed
 
                 for (int round = 1; round <= numRounds; round++)
                 {
@@ -96,9 +96,9 @@ namespace FlawsFightNight.Managers
                         pairings.Add(match);
                     }
 
-                    tournament.MatchSchedule.MatchesToPlayByRound[round] = pairings;
+                    tournament.MatchLog.MatchesToPlayByRound[round] = pairings;
 
-                    // rotate keeping first fixed
+                    // Rotate keeping first fixed
                     var last = rotating[^1];
                     rotating.RemoveAt(rotating.Count - 1);
                     rotating.Insert(1, last);
@@ -107,6 +107,7 @@ namespace FlawsFightNight.Managers
                 if (ValidateRoundRobin(tournament))
                 {
                     // Valid schedule, done
+                    tournament.TotalRounds = tournament.MatchLog.MatchesToPlayByRound.Count;
                     break;
                 }
                 else
@@ -144,7 +145,7 @@ namespace FlawsFightNight.Managers
             var conflicts = new List<string>();
 
             // Iterate through each round in the match schedule
-            foreach (var kv in tournament.MatchSchedule.MatchesToPlayByRound.OrderBy(k => k.Key))
+            foreach (var kv in tournament.MatchLog.MatchesToPlayByRound.OrderBy(k => k.Key))
             {
                 // Track teams seen in this round to detect conflicts
                 var seenThisRound = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -206,7 +207,40 @@ namespace FlawsFightNight.Managers
         public void ClearMatchSchedule(Tournament tournament)
         {
             // Clear the match schedule for the tournament
-            tournament.MatchSchedule.MatchesToPlayByRound.Clear();
+            tournament.MatchLog.MatchesToPlayByRound.Clear();
+        }
+
+        public PostMatch CreateNewPostMatch(string winningTeamName, int winnerScore, string losingTeamName, int loserScore, DateTime originalCreationDateTime, bool wasByeMatch = false)
+        {
+            return new PostMatch(winningTeamName, winnerScore, losingTeamName, loserScore, originalCreationDateTime, wasByeMatch);
+        }
+
+        public void ConvertMatchToPostMatch(Tournament tournament, int roundNumber, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, bool wasByeMatch = false)
+        {
+            if (!tournament.MatchLog.MatchesToPlayByRound.ContainsKey(roundNumber))
+            {
+                Console.WriteLine($"Round {roundNumber} does not exist in the match schedule.");
+                return;
+            }
+            var matchesInRound = tournament.MatchLog.MatchesToPlayByRound[roundNumber];
+            if (!matchesInRound.Contains(match))
+            {
+                Console.WriteLine("The specified match does not exist in the given round.");
+                return;
+            }
+
+            // Create PostMatch
+            PostMatch postMatch = CreateNewPostMatch(winningTeamName, winnerScore, losingTeamName, loserScore, match.CreatedOn, wasByeMatch);
+
+            // Add to PostMatchesByRound
+            if (!tournament.MatchLog.PostMatchesByRound.ContainsKey(roundNumber))
+                tournament.MatchLog.PostMatchesByRound[roundNumber] = new List<PostMatch>();
+            tournament.MatchLog.PostMatchesByRound[roundNumber].Add(postMatch);
+
+            // Remove from MatchesToPlayByRound
+            matchesInRound.Remove(match);
+            if (matchesInRound.Count == 0)
+                tournament.MatchLog.MatchesToPlayByRound.Remove(roundNumber);
         }
     }
 }

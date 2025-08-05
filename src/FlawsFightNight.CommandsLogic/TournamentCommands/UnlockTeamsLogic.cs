@@ -11,7 +11,6 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
         public UnlockTeamsLogic() : base("Unlock Teams")
         {
 
-        }
-        
+        }       
     }
 }
