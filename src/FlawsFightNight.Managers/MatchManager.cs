@@ -8,10 +8,11 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Managers
 {
-    public class MatchManager
+    public class MatchManager : BaseDataDriven
     {
         class UnorderedPairComparer : IEqualityComparer<(string A, string B)>
         {
+            // Super advanced, I got help with this one.
             public bool Equals((string A, string B) x, (string A, string B) y) =>
                 (string.Equals(x.A, y.A, StringComparison.OrdinalIgnoreCase) && string.Equals(x.B, y.B, StringComparison.OrdinalIgnoreCase)) ||
                 (string.Equals(x.A, y.B, StringComparison.OrdinalIgnoreCase) && string.Equals(x.B, y.A, StringComparison.OrdinalIgnoreCase));
@@ -26,9 +27,91 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public MatchManager()
+        public MatchManager(DataManager dataManager) : base("MatchManager", dataManager)
         {
 
+        }
+
+        /// <summary>
+        /// Checks if any match has been made for the specified team across all tournaments.
+        /// </summary>
+        /// <param name="teamName">The name of the team to check for.</param>
+        /// <returns>True if a match exists for the team; otherwise, false.</returns>
+        public bool IsMatchMadeForTeam(string teamName)
+        {
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (var tournament in tournaments)
+            {
+                if (tournament.MatchLog.MatchesToPlayByRound.Any(round => round.Value.Any(match => match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase) || match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if any match has been made for the specified team within a given tournament.
+        /// </summary>
+        /// <param name="tournament">The tournament to check in.</param>
+        /// <param name="teamName">The name of the team to check for.</param>
+        /// <returns>True if a match exists for the team in the tournament; otherwise, false.</returns>
+        public bool IsMatchMadeForTeam(Tournament tournament, string teamName)
+        {
+            if (tournament.MatchLog.MatchesToPlayByRound.Any(round => round.Value.Any(match => match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase) || match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public Match GetMatchByTeamName(string teamName)
+        {
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (var tournament in tournaments)
+            {
+                foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
+                {
+                    foreach (var match in round)
+                    {
+                        if ((match.TeamA != null && match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
+                            (match.TeamB != null && match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            return match;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        public Match GetMatchByTeamName(Tournament tournament, string teamName)
+        {
+            foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
+            {
+                foreach (var match in round)
+                {
+                    if ((match.TeamA != null && match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
+                        (match.TeamB != null && match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return match;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public string GetLosingTeamName(Match match, string winningTeamName)
+        {
+            if (match.TeamA != null && match.TeamA.Equals(winningTeamName, StringComparison.OrdinalIgnoreCase))
+            {
+                return match.TeamB;
+            }
+            else if (match.TeamB != null && match.TeamB.Equals(winningTeamName, StringComparison.OrdinalIgnoreCase))
+            {
+                return match.TeamA;
+            }
+            return null; // No losing team found
         }
 
         public void BuildMatchScheduleResolver(Tournament tournament)
@@ -90,6 +173,7 @@ namespace FlawsFightNight.Managers
                             b == byePlaceholder ? null : b)
                         {
                             IsByeMatch = isByeMatch,
+                            RoundNumber = round,
                             CreatedOn = DateTime.UtcNow
                         };
 
@@ -215,14 +299,14 @@ namespace FlawsFightNight.Managers
             return new PostMatch(winningTeamName, winnerScore, losingTeamName, loserScore, originalCreationDateTime, wasByeMatch);
         }
 
-        public void ConvertMatchToPostMatch(Tournament tournament, int roundNumber, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, bool wasByeMatch = false)
+        public void ConvertMatchToPostMatch(Tournament tournament, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, bool wasByeMatch = false)
         {
-            if (!tournament.MatchLog.MatchesToPlayByRound.ContainsKey(roundNumber))
+            if (!tournament.MatchLog.MatchesToPlayByRound.ContainsKey(match.RoundNumber))
             {
-                Console.WriteLine($"Round {roundNumber} does not exist in the match schedule.");
+                Console.WriteLine($"Round {match.RoundNumber} does not exist in the match schedule.");
                 return;
             }
-            var matchesInRound = tournament.MatchLog.MatchesToPlayByRound[roundNumber];
+            var matchesInRound = tournament.MatchLog.MatchesToPlayByRound[match.RoundNumber];
             if (!matchesInRound.Contains(match))
             {
                 Console.WriteLine("The specified match does not exist in the given round.");
@@ -233,14 +317,22 @@ namespace FlawsFightNight.Managers
             PostMatch postMatch = CreateNewPostMatch(winningTeamName, winnerScore, losingTeamName, loserScore, match.CreatedOn, wasByeMatch);
 
             // Add to PostMatchesByRound
-            if (!tournament.MatchLog.PostMatchesByRound.ContainsKey(roundNumber))
-                tournament.MatchLog.PostMatchesByRound[roundNumber] = new List<PostMatch>();
-            tournament.MatchLog.PostMatchesByRound[roundNumber].Add(postMatch);
+            if (!tournament.MatchLog.PostMatchesByRound.ContainsKey(match.RoundNumber))
+                tournament.MatchLog.PostMatchesByRound[match.RoundNumber] = new List<PostMatch>();
+            tournament.MatchLog.PostMatchesByRound[match.RoundNumber].Add(postMatch);
 
             // Remove from MatchesToPlayByRound
             matchesInRound.Remove(match);
+            
+            // If no matches left in the round or a bye match is left, remove the round entry
             if (matchesInRound.Count == 0)
-                tournament.MatchLog.MatchesToPlayByRound.Remove(roundNumber);
+            {
+                tournament.MatchLog.MatchesToPlayByRound.Remove(match.RoundNumber);
+                
+                // If this was the last round, set IsRoundComplete to true
+                tournament.IsRoundComplete = true;
+                Console.WriteLine($"All matches for round {match.RoundNumber} have been completed.");
+            }
         }
     }
 }

@@ -7,22 +7,49 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Managers
 {
-    public class TeamManager
+    public class TeamManager : BaseDataDriven
     {
-        public TeamManager() { }
-
-        public bool IsTeamNameUnique(string teamName, List<Team> teams)
+        public TeamManager(DataManager dataManager) : base("TeamManager", dataManager)
         {
-            if (teams.Count == 0) return true; // If no teams exist, the name is unique
 
-            else if (teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
+        }
+
+        public bool IsTeamNameUnique(string teamName)
+        {
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (Tournament tournament in tournaments)
             {
-                return false; // Team name already exists
+                if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return false; // Team name already exists in the tournament
+                }
             }
-            else
+            return true; // Team name is unique across all tournaments
+        }
+
+        public bool IsDiscordIdOnTeam(Team team, ulong discordId)
+        {
+            return team.Members.Any(m => m.DiscordId == discordId);
+        }
+
+        public Team GetTeamByName(string teamName)
+        {
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (Tournament tournament in tournaments)
             {
-                return true; // Team name is unique
+                Team? team = tournament.Teams.FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
+                if (team != null)
+                {
+                    return team; // Return the first matching team found
+                }
             }
+            return null; // No team found with the given name
+        }
+
+        public Team? GetTeamByName(Tournament tournament, string teamName)
+        {
+            return tournament.Teams
+                .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
         }
 
         public Team CreateTeam(string teamName, string tournamentId, int teamSize, string tournamentSizeFormat, List<Member> members, int rank)

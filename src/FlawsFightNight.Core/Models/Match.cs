@@ -13,6 +13,7 @@ namespace FlawsFightNight.Core.Models
         public string TeamB { get; set; }
         public bool IsCompleted { get; set; } = false;
         public bool IsByeMatch { get; set; } = false;
+        public int RoundNumber { get; set; }
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 
         public Match(string teamA, string teamB)

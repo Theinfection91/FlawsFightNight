@@ -39,7 +39,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             }
 
             // Check if the team name is unique within the tournament
-            if (!_teamManager.IsTeamNameUnique(teamName, tournament.Teams))
+            if (!_teamManager.IsTeamNameUnique(teamName))
             {
                 return $"The team name '{teamName}' is already taken in the tournament '{tournament.Name}'. Please choose a different name.";
             }

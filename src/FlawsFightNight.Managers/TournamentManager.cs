@@ -123,6 +123,18 @@ namespace FlawsFightNight.Managers
                 .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
         }
 
+        public Tournament GetTournamentFromTeamName(string teamName)
+        {
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return tournament;
+                }
+            }
+            return null;
+        }
+
         public string? GenerateTournamentId()
         {
             bool isUnique = false;
