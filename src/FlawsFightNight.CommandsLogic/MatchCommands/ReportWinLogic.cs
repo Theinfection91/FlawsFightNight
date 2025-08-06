@@ -25,7 +25,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
         public string ReportWinProcess(SocketInteractionContext context, string winningTeamName, int winningTeamScore, int losingTeamScore)
         {
             // Check if team exists across all tournaments
-            if (!_teamManager.IsTeamNameUnique(winningTeamName))
+            if (!_teamManager.DoesTeamExist(winningTeamName))
             {
                 return $"The team '{winningTeamName}' does not exist or is not registered in any tournament.";
             }
@@ -62,18 +62,14 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                     break;
                 case TournamentType.RoundRobin:
                     // Handle Round Robin specific logic
-                    HandleRoundRobinWin(tournament, match, winningTeam, losingTeam, winningTeamScore, losingTeamScore);
-                    break;
+                    return HandleRoundRobinWin(tournament, match, winningTeam, losingTeam, winningTeamScore, losingTeamScore);
                 case TournamentType.SingleElimination:
                 case TournamentType.DoubleElimination:
                     // Handle Single/Double Elimination specific logic
 
                     break;
-                default:
-                    return "Tournament type not supported for win reporting.";
             }
-
-            return "TODO";
+            return "Win reported successfully.";
         }
 
         private string HandleRoundRobinWin(Tournament tournament, Match match, Team winningTeam, Team losingTeam, int winningTeamScore, int losingTeamScore)
@@ -81,9 +77,9 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // TODO Handle Round Robin Win Logic
             _matchManager.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
 
+            _tournamentManager.SaveAndReloadTournamentsDatabase();
+
             return $"Round Robin win reported for {winningTeam.Name} with score {winningTeamScore} against {losingTeam.Name} with score {losingTeamScore}.";
         }
-
-        // Probably gonna need a resolver since there are different types of tournaments and different ways to handle what happens when a team wins. In Ladder, teams move up and down. In Round Robin, teams just lock their scores til the round is done. In SE/DE, teams are eliminated or advance to the next round.
     }
 }

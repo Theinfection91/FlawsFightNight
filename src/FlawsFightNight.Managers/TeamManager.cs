@@ -13,7 +13,7 @@ namespace FlawsFightNight.Managers
         {
 
         }
-
+        
         public bool IsTeamNameUnique(string teamName)
         {
             List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
@@ -25,6 +25,19 @@ namespace FlawsFightNight.Managers
                 }
             }
             return true; // Team name is unique across all tournaments
+        }
+
+        public bool DoesTeamExist(string teamName)
+        {
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (Tournament tournament in tournaments)
+            {
+                if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public bool IsDiscordIdOnTeam(Team team, ulong discordId)

@@ -58,12 +58,64 @@ namespace FlawsFightNight.Managers
         /// <returns>True if a match exists for the team in the tournament; otherwise, false.</returns>
         public bool IsMatchMadeForTeam(Tournament tournament, string teamName)
         {
-            if (tournament.MatchLog.MatchesToPlayByRound.Any(round => round.Value.Any(match => match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase) || match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))))
+            if (tournament == null)
             {
-                return true;
+                Console.WriteLine("Tournament is null.");
+                return false;
             }
+
+            if (tournament.MatchLog == null)
+            {
+                Console.WriteLine("MatchLog is null.");
+                return false;
+            }
+
+            if (tournament.MatchLog.MatchesToPlayByRound == null)
+            {
+                Console.WriteLine("MatchesToPlayByRound is null.");
+                return false;
+            }
+
+            foreach (var round in tournament.MatchLog.MatchesToPlayByRound)
+            {
+                Console.WriteLine($"Checking round: {round.Key}");
+
+                if (round.Value == null)
+                {
+                    Console.WriteLine("Round.Value is null.");
+                    continue;
+                }
+
+                foreach (var match in round.Value)
+                {
+                    if (match == null)
+                    {
+                        Console.WriteLine("Match is null.");
+                        continue;
+                    }
+
+                    Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+
+                    if (!string.IsNullOrEmpty(match.TeamA) &&
+                        match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Console.WriteLine($"Match found for team '{teamName}' as TeamA.");
+                        return true;
+                    }
+
+                    if (!string.IsNullOrEmpty(match.TeamB) &&
+                        match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Console.WriteLine($"Match found for team '{teamName}' as TeamB.");
+                        return true;
+                    }
+                }
+            }
+
+            Console.WriteLine($"No match found for team '{teamName}'.");
             return false;
         }
+
 
         public Match GetMatchByTeamName(string teamName)
         {
@@ -323,15 +375,20 @@ namespace FlawsFightNight.Managers
 
             // Remove from MatchesToPlayByRound
             matchesInRound.Remove(match);
-            
+
             // If no matches left in the round or a bye match is left, remove the round entry
             if (matchesInRound.Count == 0)
             {
                 tournament.MatchLog.MatchesToPlayByRound.Remove(match.RoundNumber);
-                
-                // If this was the last round, set IsRoundComplete to true
-                tournament.IsRoundComplete = true;
-                Console.WriteLine($"All matches for round {match.RoundNumber} have been completed.");
+
+                switch (tournament.Type)
+                {
+                    case TournamentType.RoundRobin:
+                        // If this was the last round, set IsRoundComplete to true
+                        tournament.IsRoundComplete = true;
+                        Console.WriteLine($"All matches for round {match.RoundNumber} have been completed. Admins now need to double check scores and then lock in the round before advancing.");
+                        break;
+                }
             }
         }
     }
