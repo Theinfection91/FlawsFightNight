@@ -14,13 +14,17 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class TournamentCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private CreateTournamentLogic _createTournamentLogic;
+        private LockInRoundLogic _lockInRoundLogic;
         private LockTeamsLogic _lockTeamsLogic;
+        private NextRoundLogic _nextRoundLogic;
         private StartTournamentLogic _startTournamentLogic;
 
-        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockTeamsLogic lockTeamsLogic, StartTournamentLogic startTournamentLogic)
+        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, StartTournamentLogic startTournamentLogic)
         {
             _createTournamentLogic = createTournamentLogic;
+            _lockInRoundLogic = lockInRoundLogic;
             _lockTeamsLogic = lockTeamsLogic;
+            _nextRoundLogic = nextRoundLogic;
             _startTournamentLogic = startTournamentLogic;
         }
 
@@ -69,6 +73,40 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _startTournamentLogic.StartTournamentProcess(tournamentId);
+                await RespondAsync(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("lock-in-round", "Lock in round results after all matches for round have been played")]
+        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        public async Task LockInRoundAsync(
+            [Summary("tournament_id", "The ID of the tournament to round lock")] string tournamentId)
+        {
+            try
+            {
+                var result = _lockInRoundLogic.LockInRoundProcess(tournamentId);
+                await RespondAsync(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("next-round", "Advance to the next round of certain tournaments if conditions are met.")]
+        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        public async Task NextRoundAsync(
+            [Summary("tournament_id", "The ID of the tournament to advance the round")] string tournamentId)
+        {
+            try
+            {
+                var result = _nextRoundLogic.NextRoundProcess(tournamentId);
                 await RespondAsync(result);
             }
             catch (Exception ex)

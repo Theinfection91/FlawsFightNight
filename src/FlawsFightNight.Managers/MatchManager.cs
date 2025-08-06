@@ -32,30 +32,6 @@ namespace FlawsFightNight.Managers
 
         }
 
-        /// <summary>
-        /// Checks if any match has been made for the specified team across all tournaments.
-        /// </summary>
-        /// <param name="teamName">The name of the team to check for.</param>
-        /// <returns>True if a match exists for the team; otherwise, false.</returns>
-        public bool IsMatchMadeForTeam(string teamName)
-        {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (var tournament in tournaments)
-            {
-                if (tournament.MatchLog.MatchesToPlayByRound.Any(round => round.Value.Any(match => match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase) || match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Checks if any match has been made for the specified team within a given tournament.
-        /// </summary>
-        /// <param name="tournament">The tournament to check in.</param>
-        /// <param name="teamName">The name of the team to check for.</param>
-        /// <returns>True if a match exists for the team in the tournament; otherwise, false.</returns>
         public bool IsMatchMadeForTeam(Tournament tournament, string teamName)
         {
             if (tournament == null)
@@ -76,43 +52,47 @@ namespace FlawsFightNight.Managers
                 return false;
             }
 
-            foreach (var round in tournament.MatchLog.MatchesToPlayByRound)
-            {
-                Console.WriteLine($"Checking round: {round.Key}");
+            int currentRound = tournament.CurrentRound;
+            Console.WriteLine($"Checking only current round: {currentRound}");
 
-                if (round.Value == null)
+            if (!tournament.MatchLog.MatchesToPlayByRound.TryGetValue(currentRound, out var matches))
+            {
+                Console.WriteLine($"No entry for round {currentRound} in MatchesToPlayByRound.");
+                return false;
+            }
+
+            if (matches == null)
+            {
+                Console.WriteLine($"Match list for round {currentRound} is null.");
+                return false;
+            }
+
+            foreach (var match in matches)
+            {
+                if (match == null)
                 {
-                    Console.WriteLine("Round.Value is null.");
+                    Console.WriteLine("Encountered null match in list, skipping.");
                     continue;
                 }
 
-                foreach (var match in round.Value)
+                Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+
+                if (!string.IsNullOrEmpty(match.TeamA) &&
+                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (match == null)
-                    {
-                        Console.WriteLine("Match is null.");
-                        continue;
-                    }
+                    Console.WriteLine($"Match found for team '{teamName}' as TeamA in round {currentRound}.");
+                    return true;
+                }
 
-                    Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
-
-                    if (!string.IsNullOrEmpty(match.TeamA) &&
-                        match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        Console.WriteLine($"Match found for team '{teamName}' as TeamA.");
-                        return true;
-                    }
-
-                    if (!string.IsNullOrEmpty(match.TeamB) &&
-                        match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        Console.WriteLine($"Match found for team '{teamName}' as TeamB.");
-                        return true;
-                    }
+                if (!string.IsNullOrEmpty(match.TeamB) &&
+                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"Match found for team '{teamName}' as TeamB in round {currentRound}.");
+                    return true;
                 }
             }
 
-            Console.WriteLine($"No match found for team '{teamName}'.");
+            Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
             return false;
         }
 
@@ -139,19 +119,48 @@ namespace FlawsFightNight.Managers
 
         public Match GetMatchByTeamName(Tournament tournament, string teamName)
         {
-            foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
+            int currentRound = tournament.CurrentRound;
+            Console.WriteLine($"Looking in round: {currentRound}");
+
+            if (!tournament.MatchLog.MatchesToPlayByRound.TryGetValue(currentRound, out var matches))
             {
-                foreach (var match in round)
+                Console.WriteLine($"No entry for round {currentRound} in MatchesToPlayByRound.");
+                return null;
+            }
+
+            if (matches == null)
+            {
+                Console.WriteLine($"Match list for round {currentRound} is null.");
+                return null;
+            }
+
+            foreach (var match in matches)
+            {
+                if (match == null)
                 {
-                    if ((match.TeamA != null && match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
-                        (match.TeamB != null && match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        return match;
-                    }
+                    Console.WriteLine("Encountered null match in list, skipping.");
+                    continue;
+                }
+
+                Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+
+                if (!string.IsNullOrEmpty(match.TeamA) &&
+                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+
+                if (!string.IsNullOrEmpty(match.TeamB) &&
+                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
                 }
             }
+
+            Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
             return null;
         }
+
 
         public string GetLosingTeamName(Match match, string winningTeamName)
         {
