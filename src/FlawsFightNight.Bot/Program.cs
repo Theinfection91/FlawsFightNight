@@ -95,7 +95,7 @@ namespace FlawsFightNight.Bot
             _client.Log += log =>
             {
                 // Log if Discord requests a reconnect
-                if (log.Exception is Discord.WebSocket.GatewayReconnectException)
+                if (log.Exception is GatewayReconnectException)
                 {
                     Console.WriteLine($"{DateTime.Now} - Gateway requested a reconnect.");
                 }

@@ -105,6 +105,33 @@ namespace FlawsFightNight.Managers
             tournament.CanTeamsBeUnlocked = true;
         }
 
+        public void NextRoundResolver(Tournament tournament)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.Ladder:
+                    // Ladder tournaments do not have rounds
+                    break;
+                case TournamentType.RoundRobin:
+                    AdvanceRoundRobinToNextRound(tournament);
+                    break;
+                case TournamentType.SingleElimination:
+                case TournamentType.DoubleElimination:
+                    // SE/DE round advancement logic would go here
+                    break;
+                default:
+                    // Unknown tournament type
+                    break;
+            }
+        }
+
+        private void AdvanceRoundRobinToNextRound(Tournament tournament)
+        {
+            tournament.CurrentRound++;
+            tournament.IsRoundComplete = false;
+            tournament.CanAdvanceToNextRound = false;
+        }
+
         public bool IsTournamentIdInDatabase(string tournamentId)
         {
             foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
