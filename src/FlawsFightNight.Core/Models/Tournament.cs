@@ -20,17 +20,19 @@ namespace FlawsFightNight.Core.Models
         public bool IsTeamsLocked { get; set; } = false;
         public bool CanTeamsBeUnlocked { get; set; } = false;
         public bool CanTeamsBeLocked { get; set; } = false;
-        public MatchLog MatchLog { get; set; } = new();
+        
         public bool IsRunning { get; set; } = false;
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 
-        // Ladder Specific Fields
-
-        // Round Robin Specific Fields
+        // Rounds and Ending Tournament Fields
         public int CurrentRound { get; set; } = 0;
         public int? TotalRounds { get; set; } = null;
         public bool IsRoundComplete { get; set; } = false;
         public bool CanAdvanceToNextRound { get; set; } = false;
+        public bool CanEndTournament => CurrentRound >= TotalRounds && IsRoundComplete && CanAdvanceToNextRound;
+
+        // Match Log to track all matches in the tournament, current and past
+        public MatchLog MatchLog { get; set; } = new();
 
 
         public Tournament(string name, string? description = null)

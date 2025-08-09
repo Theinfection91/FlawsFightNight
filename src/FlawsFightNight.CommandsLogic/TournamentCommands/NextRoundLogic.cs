@@ -37,6 +37,11 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return $"The round for tournament '{tournament.Name}' is not locked in.";
             }
 
+            if (tournament.CanEndTournament)
+            {
+                return $"The tournament '{tournament.Name}' is ready to end so you cannot go to the next round. Please use the appropriate command to end it.";
+            }
+
             // Advance to the next round
             _tournamentManager.NextRoundResolver(tournament);
             _tournamentManager.SaveAndReloadTournamentsDatabase();

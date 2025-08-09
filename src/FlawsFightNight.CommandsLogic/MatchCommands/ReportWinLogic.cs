@@ -76,10 +76,22 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 
         private string HandleRoundRobinWin(Tournament tournament, Match match, Team winningTeam, Team losingTeam, int winningTeamScore, int losingTeamScore)
         {
-            // TODO Handle Round Robin Win Logic
-            _matchManager.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
+            if (!match.IsByeMatch)
+            {
+                // TODO Handle Round Robin Win Logic
+                _matchManager.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
+            }
+            else
+            {
+                _matchManager.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, 0, "BYE", 0, match.IsByeMatch);
+            }
 
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            if (match.IsByeMatch)
+            {
+                return $"{winningTeam.Name} has had their Bye week post match recorded for data purposes. This is required to lock the rounds with when a tournament has an odd number of teams.";
+            }
 
             return $"Round Robin win reported for {winningTeam.Name} with score {winningTeamScore} against {losingTeam.Name} with score {losingTeamScore}.";
         }

@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Enums;
+﻿using Discord;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -130,6 +131,29 @@ namespace FlawsFightNight.Managers
             tournament.CurrentRound++;
             tournament.IsRoundComplete = false;
             tournament.CanAdvanceToNextRound = false;
+        }
+
+        private void EndRoundRobinTournament(Tournament tournament)
+        {
+            // Logic to handle the end of a round robin tournament
+            tournament.IsRunning = false;
+        }
+
+        public bool IsTournamentReadyToEnd(Tournament tournament)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.Ladder:
+                    return false; // Ladder tournaments do not end based on rounds
+                case TournamentType.RoundRobin:
+                    return tournament.IsRunning && tournament.CanEndTournament;
+                case TournamentType.SingleElimination:
+                case TournamentType.DoubleElimination:
+                    // SE/DE end logic would go here
+                    return false;
+                default:
+                    return false; // Unknown tournament type
+            }
         }
 
         public bool IsTournamentIdInDatabase(string tournamentId)
