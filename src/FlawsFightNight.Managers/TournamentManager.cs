@@ -106,6 +106,15 @@ namespace FlawsFightNight.Managers
             tournament.CanTeamsBeUnlocked = true;
         }
 
+        public void UnlockTeamsInTournament(Tournament tournament)
+        {
+            tournament.IsTeamsLocked = false;
+            tournament.CanTeamsBeUnlocked = false;
+
+            // Allow teams to be locked again
+            tournament.CanTeamsBeLocked = true;
+        }
+
         public void NextRoundResolver(Tournament tournament)
         {
             switch (tournament.Type)
@@ -130,7 +139,7 @@ namespace FlawsFightNight.Managers
         {
             tournament.CurrentRound++;
             tournament.IsRoundComplete = false;
-            tournament.CanAdvanceToNextRound = false;
+            tournament.IsRoundLockedIn = false;
         }
 
         private void EndRoundRobinTournament(Tournament tournament)

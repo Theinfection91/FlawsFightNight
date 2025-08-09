@@ -12,10 +12,8 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
     public class LockTeamsLogic : Logic
     {
         private TournamentManager _tournamentManager;
-        private TeamManager _teamManager;
-        public LockTeamsLogic(TeamManager teamManager, TournamentManager tournamentManager) : base("Lock Teams")
+        public LockTeamsLogic(TournamentManager tournamentManager) : base("Lock Teams")
         {
-            _teamManager = teamManager;
             _tournamentManager = tournamentManager;
         }
 

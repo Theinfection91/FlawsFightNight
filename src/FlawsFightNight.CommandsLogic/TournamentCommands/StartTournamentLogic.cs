@@ -40,6 +40,8 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _matchManager.BuildMatchScheduleResolver(tournament);
             tournament.CurrentRound = 1;
             tournament.IsRunning = true;
+            tournament.CanTeamsBeLocked = false;
+            tournament.CanTeamsBeUnlocked = false;
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();

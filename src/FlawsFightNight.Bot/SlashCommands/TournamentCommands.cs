@@ -18,14 +18,18 @@ namespace FlawsFightNight.Bot.SlashCommands
         private LockTeamsLogic _lockTeamsLogic;
         private NextRoundLogic _nextRoundLogic;
         private StartTournamentLogic _startTournamentLogic;
+        private UnlockRoundLogic _unlockRoundLogic;
+        private UnlockTeamsLogic _unlockTeamsLogic;
 
-        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, StartTournamentLogic startTournamentLogic)
+        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, StartTournamentLogic startTournamentLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
         {
             _createTournamentLogic = createTournamentLogic;
             _lockInRoundLogic = lockInRoundLogic;
             _lockTeamsLogic = lockTeamsLogic;
             _nextRoundLogic = nextRoundLogic;
             _startTournamentLogic = startTournamentLogic;
+            _unlockRoundLogic = unlockRoundLogic;
+            _unlockTeamsLogic = unlockTeamsLogic;
         }
 
         [SlashCommand("create", "Create a new tournament")]
@@ -65,6 +69,23 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
         }
 
+        [SlashCommand("unlock-teams", "Unlock teams in a tournament")]
+        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        public async Task UnlockTeamsAsync(
+            [Summary("tournament_id", "The ID of the tournament to unlock teams in")] string tournamentId)
+        {
+            try
+            {
+                var result = _unlockTeamsLogic.UnlockTeamsProcess(tournamentId);
+                await RespondAsync(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
         [SlashCommand("start", "Start a tournament")]
         [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
         public async Task StartTournamentAsync(
@@ -90,6 +111,23 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _lockInRoundLogic.LockInRoundProcess(tournamentId);
+                await RespondAsync(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("unlock-round", "Unlock the current round to make changes if needed")]
+        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        public async Task UnlockRoundAsync(
+            [Summary("tournament_id", "The ID of the tournament to unlock the round")] string tournamentId)
+        {
+            try
+            {
+                var result = _unlockRoundLogic.UnlockRoundProcess(tournamentId);
                 await RespondAsync(result);
             }
             catch (Exception ex)

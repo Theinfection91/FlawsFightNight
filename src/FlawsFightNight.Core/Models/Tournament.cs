@@ -28,8 +28,8 @@ namespace FlawsFightNight.Core.Models
         public int CurrentRound { get; set; } = 0;
         public int? TotalRounds { get; set; } = null;
         public bool IsRoundComplete { get; set; } = false;
-        public bool CanAdvanceToNextRound { get; set; } = false;
-        public bool CanEndTournament => CurrentRound >= TotalRounds && IsRoundComplete && CanAdvanceToNextRound;
+        public bool IsRoundLockedIn { get; set; } = false;
+        public bool CanEndTournament => CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
 
         // Match Log to track all matches in the tournament, current and past
         public MatchLog MatchLog { get; set; } = new();

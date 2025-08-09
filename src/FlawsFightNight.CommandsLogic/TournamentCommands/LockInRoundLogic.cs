@@ -37,13 +37,14 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // Check if the round is already locked in
-            if (tournament.CanAdvanceToNextRound)
+            if (tournament.IsRoundLockedIn)
             {
                 return $"The round for tournament '{tournament.Name}' is already locked in.";
             }
 
             // Lock in the round
-            tournament.CanAdvanceToNextRound = true;
+            tournament.IsRoundLockedIn = true;
+            // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
             return $"The round for tournament '{tournament.Name}' has been successfully locked in. Teams can now advance to the next round using /tournament next-round.";
         }

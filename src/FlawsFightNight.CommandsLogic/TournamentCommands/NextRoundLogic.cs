@@ -32,7 +32,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // Check if the round is already locked in
-            if (!tournament.CanAdvanceToNextRound)
+            if (!tournament.IsRoundLockedIn)
             {
                 return $"The round for tournament '{tournament.Name}' is not locked in.";
             }
