@@ -400,5 +400,20 @@ namespace FlawsFightNight.Managers
                 }
             }
         }
+
+        public bool HasByeMatchRemaining(Tournament tournament)
+        {
+            foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
+            {
+                foreach (var match in round)
+                {
+                    if (match.IsByeMatch)
+                    {
+                        return true; // Found a bye match
+                    }
+                }
+            }
+            return false; // No bye matches found
+        }
     }
 }

@@ -24,6 +24,11 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 
         public string ReportWinProcess(SocketInteractionContext context, string winningTeamName, int winningTeamScore, int losingTeamScore)
         {
+            if (losingTeamScore > winningTeamScore)
+            {
+                return "The losing team score cannot be greater than the winning team score.";
+            }
+
             // Check if team exists across all tournaments
             if (!_teamManager.DoesTeamExist(winningTeamName))
             {
@@ -90,7 +95,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 
             if (match.IsByeMatch)
             {
-                return $"{winningTeam.Name} has had their Bye week post match recorded for data purposes. This is required to lock the rounds with when a tournament has an odd number of teams.";
+                return $"{winningTeam.Name} has had their Bye week match recorded for data purposes. This is required to lock the rounds with when a tournament has an odd number of teams.";
             }
 
             return $"Round Robin win reported for {winningTeam.Name} with score {winningTeamScore} against {losingTeam.Name} with score {losingTeamScore}.";

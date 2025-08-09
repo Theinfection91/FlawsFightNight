@@ -10,9 +10,11 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class LockInRoundLogic : Logic
     {
+        private MatchManager _matchManager;
         private TournamentManager _tournamentManager;
-        public LockInRoundLogic(TournamentManager tournamentManager) : base("Lock In Round")
+        public LockInRoundLogic(MatchManager matchManager, TournamentManager tournamentManager) : base("Lock In Round")
         {
+            _matchManager = matchManager;
             _tournamentManager = tournamentManager;
         }
         public string LockInRoundProcess(string tournamentId)
@@ -27,6 +29,10 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Check if the round is complete
             if (!tournament.IsRoundComplete)
             {
+                if (_matchManager.HasByeMatchRemaining(tournament))
+                {
+                    return $"The round for tournament '{tournament.Name}' is not complete due to a bye match remaining. Please ensure all matches are reported before locking in the round.";
+                }
                 return $"The round for tournament '{tournament.Name}' is not complete. Please ensure all matches are reported before locking in the round.";
             }
 
