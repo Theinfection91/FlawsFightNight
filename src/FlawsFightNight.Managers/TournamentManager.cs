@@ -37,6 +37,19 @@ namespace FlawsFightNight.Managers
             _dataManager.AddTournament(tournament);
         }
 
+        public bool IsTournamentNameUnique(string tournamentName)
+        {
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (Tournament tournament in tournaments)
+            {
+                if (tournament.Name.Equals(tournamentName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+            return true; // Team name is unique across all tournaments
+        }
+
         public Tournament CreateTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
         {
             string? id = GenerateTournamentId();

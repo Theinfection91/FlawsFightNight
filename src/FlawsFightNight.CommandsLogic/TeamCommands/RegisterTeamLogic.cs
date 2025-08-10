@@ -56,7 +56,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             List<Member> convertedMembersList = _memberManager.ConvertMembersListToObjects(members);
 
             // Create Team object
-            Team newTeam = _teamManager.CreateTeam(teamName, tournament.Id, tournament.TeamSize, tournament.TeamSizeFormat, convertedMembersList, tournament.Teams.Count + 1);
+            Team newTeam = _teamManager.CreateTeam(teamName, convertedMembersList, tournament.Teams.Count + 1);
 
             // Add the new team to the tournament
             _tournamentManager.AddTeamToTournament(newTeam, tournament.Id);

@@ -10,9 +10,6 @@ namespace FlawsFightNight.Core.Models
     {
         // Basic Info
         public string Name { get; set; }
-        public string TournamentId { get; set; }
-        public int Size { get; set; }
-        public string TeamSizeFormat { get; set; }
         public int? Rank { get; set; }
         public int Wins { get; set; } = 0;
         public int Losses { get; set; } = 0;

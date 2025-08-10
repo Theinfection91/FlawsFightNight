@@ -65,14 +65,11 @@ namespace FlawsFightNight.Managers
                 .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
         }
 
-        public Team CreateTeam(string teamName, string tournamentId, int teamSize, string tournamentSizeFormat, List<Member> members, int rank)
+        public Team CreateTeam(string teamName, List<Member> members, int rank)
         {
             return new Team()
             {
                 Name = teamName,
-                TournamentId = tournamentId,
-                Size = teamSize,
-                TeamSizeFormat = tournamentSizeFormat,
                 Members = members,
                 Rank = rank
             };

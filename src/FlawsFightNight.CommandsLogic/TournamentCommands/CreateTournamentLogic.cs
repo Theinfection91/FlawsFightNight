@@ -21,6 +21,12 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         public string CreateTournamentProcess(SocketInteractionContext context, string name, TournamentType tournamentType, int teamSize, string? description = null)
         {
+            // Check if tournament name is unique
+            if (!_tournamentManager.IsTournamentNameUnique(name))
+            {
+                return $"A tournament with the name '{name}' already exists. Please choose a different name.";
+            }
+
             Tournament tournament = _tournamentManager.CreateTournament(name, tournamentType, teamSize, description);
             if (tournament == null)
             {
