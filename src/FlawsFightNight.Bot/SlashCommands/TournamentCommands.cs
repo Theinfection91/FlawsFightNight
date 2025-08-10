@@ -14,6 +14,7 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class TournamentCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private CreateTournamentLogic _createTournamentLogic;
+        private EndTournamentLogic _endTournamentLogic;
         private LockInRoundLogic _lockInRoundLogic;
         private LockTeamsLogic _lockTeamsLogic;
         private NextRoundLogic _nextRoundLogic;
@@ -21,9 +22,10 @@ namespace FlawsFightNight.Bot.SlashCommands
         private UnlockRoundLogic _unlockRoundLogic;
         private UnlockTeamsLogic _unlockTeamsLogic;
 
-        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, StartTournamentLogic startTournamentLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
+        public TournamentCommands(CreateTournamentLogic createTournamentLogic, EndTournamentLogic endTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, StartTournamentLogic startTournamentLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
         {
             _createTournamentLogic = createTournamentLogic;
+            _endTournamentLogic = endTournamentLogic;
             _lockInRoundLogic = lockInRoundLogic;
             _lockTeamsLogic = lockTeamsLogic;
             _nextRoundLogic = nextRoundLogic;
@@ -94,6 +96,23 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _startTournamentLogic.StartTournamentProcess(tournamentId);
+                await RespondAsync(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("end", "End a tournament")]
+        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        public async Task EndTournamentAsync(
+            [Summary("tournament_id", "The ID of the tournament to end")] string tournamentId)
+        {
+            try
+            {
+                var result = _endTournamentLogic.EndTournamentProcess(tournamentId);
                 await RespondAsync(result);
             }
             catch (Exception ex)

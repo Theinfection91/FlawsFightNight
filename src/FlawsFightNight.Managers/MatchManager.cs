@@ -415,5 +415,131 @@ namespace FlawsFightNight.Managers
             }
             return false; // No bye matches found
         }
+
+        public bool IsTieBreakerNeeded(MatchLog matchLog)
+        {
+            var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            // Count wins for each team
+            foreach (var round in matchLog.PostMatchesByRound.Values)
+            {
+                foreach (var postMatch in round)
+                {
+                    if (!postMatch.WasByeMatch)
+                    {
+                        if (!teamWins.ContainsKey(postMatch.Winner))
+                            teamWins[postMatch.Winner] = 0;
+                        teamWins[postMatch.Winner]++;
+                    }
+                }
+            }
+            // Check for ties
+            var winCounts = teamWins.Values.GroupBy(w => w).ToList();
+            foreach (var group in winCounts)
+            {
+                if (group.Count() > 1 && group.Key > 0) // More than one team with the same non-zero win count
+                {
+                    return true; // Tie-breaker needed
+                }
+            }
+            return false; // No tie-breaker needed
+        }
+
+        public int GetNumberOfTeamsTied(MatchLog matchLog)
+        {
+            var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            // Count wins for each team
+            foreach (var round in matchLog.PostMatchesByRound.Values)
+            {
+                foreach (var postMatch in round)
+                {
+                    if (!postMatch.WasByeMatch)
+                    {
+                        if (!teamWins.ContainsKey(postMatch.Winner))
+                            teamWins[postMatch.Winner] = 0;
+                        teamWins[postMatch.Winner]++;
+                    }
+                }
+            }
+            // Check for ties
+            var winCounts = teamWins.Values.GroupBy(w => w).ToList();
+            int tiedTeams = 0;
+            foreach (var group in winCounts)
+            {
+                if (group.Count() > 1 && group.Key > 0) // More than one team with the same non-zero win count
+                {
+                    tiedTeams += group.Count();
+                }
+            }
+            return tiedTeams; // Return number of teams involved in ties
+        }
+
+        public List<string> GetTiedTeams(MatchLog matchLog)
+        {
+            var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            // Count wins for each team
+            foreach (var round in matchLog.PostMatchesByRound.Values)
+            {
+                foreach (var postMatch in round)
+                {
+                    if (!postMatch.WasByeMatch)
+                    {
+                        if (!teamWins.ContainsKey(postMatch.Winner))
+                            teamWins[postMatch.Winner] = 0;
+                        teamWins[postMatch.Winner]++;
+                    }
+                }
+            }
+            // Check for ties
+            var winCounts = teamWins.Values.GroupBy(w => w).ToList();
+            List<string> tiedTeams = new List<string>();
+            foreach (var group in winCounts)
+            {
+                if (group.Count() > 1 && group.Key > 0) // More than one team with the same non-zero win count
+                {
+                    tiedTeams.AddRange(teamWins.Where(kvp => kvp.Value == group.Key).Select(kvp => kvp.Key));
+                }
+            }
+            return tiedTeams; // Return list of teams involved in ties
+        }
+
+        public string ResolveTieBreaker(List<string> tiedTeams, MatchLog log)
+        {
+            // Step 1: Head-to-head wins
+            var wins = tiedTeams.ToDictionary(t => t, t => 0);
+
+            var headToHead = log.PostMatchesByRound
+                .SelectMany(kvp => kvp.Value)
+                .Where(pm =>
+                    !pm.WasByeMatch &&
+                    tiedTeams.Contains(pm.Winner) &&
+                    tiedTeams.Contains(pm.Loser))
+                .ToList();
+
+            foreach (var pm in headToHead)
+                wins[pm.Winner]++;
+
+            int maxWins = wins.Values.Max();
+            var leaders = wins.Where(w => w.Value == maxWins).Select(w => w.Key).ToList();
+            if (leaders.Count == 1) return leaders.First();
+
+            // Step 2: Point differential among tied teams
+            var pointDiff = leaders.ToDictionary(t => t, t => 0);
+            foreach (var pm in headToHead)
+            {
+                if (leaders.Contains(pm.Winner))
+                    pointDiff[pm.Winner] += pm.WinnerScore - pm.LoserScore;
+
+                if (leaders.Contains(pm.Loser))
+                    pointDiff[pm.Loser] += pm.LoserScore - pm.WinnerScore;
+            }
+
+            int maxDiff = pointDiff.Values.Max();
+            var leadersByDiff = pointDiff.Where(p => p.Value == maxDiff).Select(p => p.Key).ToList();
+            if (leadersByDiff.Count == 1) return leadersByDiff.First();
+
+            // Step 3: Still tied — fallback (random or other rule)
+            return leadersByDiff.OrderBy(_ => Guid.NewGuid()).First();
+        }
+
     }
 }
