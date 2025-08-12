@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Managers;
+﻿using Discord;
+using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,32 +10,34 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class StartTournamentLogic : Logic
     {
+        private EmbedManager _embedManager;
         private MatchManager _matchManager;
         private TournamentManager _tournamentManager;
 
-        public StartTournamentLogic(MatchManager matchManager, TournamentManager tournamentManager) : base("Start Tournament")
+        public StartTournamentLogic(EmbedManager embedManager, MatchManager matchManager, TournamentManager tournamentManager) : base("Start Tournament")
         {
+            _embedManager = embedManager;
             _matchManager = matchManager;
             _tournamentManager = tournamentManager;
         }
 
-        public string StartTournamentProcess(string tournamentId)
+        public Embed StartTournamentProcess(string tournamentId)
         {
             // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
             {
-                return $"No tournament found with ID: {tournamentId}. Please check the ID and try again.";
+                return _embedManager.TournamentNotFound(tournamentId);
             }
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
             // Check if the tournament is already running
             if (tournament.IsRunning)
             {
-                return $"The tournament '{tournament.Name}' is already running.";
+                //return $"The tournament '{tournament.Name}' is already running.";
             }
             // Check if teams are locked
             if (!tournament.IsTeamsLocked)
             {
-                return $"The teams in the tournament '{tournament.Name}' are not locked. Please lock the teams before starting the tournament.";
+                //return $"The teams in the tournament '{tournament.Name}' are not locked. Please lock the teams before starting the tournament.";
             }
             // Start the tournament
             _matchManager.BuildMatchScheduleResolver(tournament);
@@ -45,7 +48,8 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
-            return $"The tournament '{tournament.Name}' has been successfully started.";
+            //return $"The tournament '{tournament.Name}' has been successfully started.";
+            return _embedManager.StartTournamentSuccessResolver(tournament);
         }
     }
 }

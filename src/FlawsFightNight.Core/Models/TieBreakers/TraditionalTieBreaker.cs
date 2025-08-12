@@ -41,7 +41,7 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 return leaders.First();
             }
 
-            // Step 2: Point differential among tied teams
+            // Step 2: Point differential among tied teams matches
             var pointDiff = leaders.ToDictionary(t => t, t => 0);
             foreach (var pm in headToHead)
             {

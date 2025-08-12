@@ -1,4 +1,6 @@
 ﻿using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
+using FlawsFightNight.Core.Models.TieBreakers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +16,8 @@ namespace FlawsFightNight.Core.Models
         public string Name { get; set; }
         public string? Description { get; set; }
         public TournamentType Type { get; set; }
+        // TODO Testing tie breaker rules, will be replaced with a more dynamic system later
+        public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
         public int TeamSize { get; set; }
         public string TeamSizeFormat => $"{TeamSize}v{TeamSize}";
         public List<Team> Teams { get; set; } = [];

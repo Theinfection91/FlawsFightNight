@@ -96,7 +96,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _startTournamentLogic.StartTournamentProcess(tournamentId);
-                await RespondAsync(result);
+                await RespondAsync(embed: result);
             }
             catch (Exception ex)
             {

@@ -45,7 +45,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 Console.WriteLine($"A tiebreaker is needed for the tournament '{tournament.Name}'.");
                 Console.WriteLine($"Number of teams tied: {_matchManager.GetNumberOfTeamsTied(tournament.MatchLog)}");
                 Console.WriteLine($"Teams tied: {string.Join(", ", _matchManager.GetTiedTeams(tournament.MatchLog))}");
-                Console.WriteLine($"True winner: {_matchManager.ResolveTieBreaker(_matchManager.GetTiedTeams(tournament.MatchLog), tournament.MatchLog)}");
+                Console.WriteLine($"*True winner: {tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog), tournament.MatchLog)}");
             }
 
 
