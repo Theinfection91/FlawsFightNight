@@ -133,6 +133,32 @@ namespace FlawsFightNight.Managers
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
+
+        public Embed LockTeamsSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🔒 Teams Locked")
+                .WithDescription($"The teams in the {tournament.TeamSizeFormat} tournament **{tournament.Name}** have been successfully locked.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Teams", string.Join(", ", tournament.Teams.Select(m => m.Name)))
+                .WithColor(Color.Green)
+                .WithFooter("Teams are now locked for the tournament.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed UnlockTeamsSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🔓 Teams Unlocked")
+                .WithDescription($"The teams in the {tournament.TeamSizeFormat} tournament **{tournament.Name}** have been successfully unlocked.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Teams", string.Join(", ", tournament.Teams.Select(m => m.Name)))
+                .WithColor(Color.Green)
+                .WithFooter("Teams are now unlocked for the tournament.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
         #endregion
     }
 }

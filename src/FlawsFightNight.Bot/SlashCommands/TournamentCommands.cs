@@ -62,7 +62,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _lockTeamsLogic.LockTeamsProcess(Context, tournamentId);
-                await RespondAsync(result);
+                await RespondAsync(embed: result);
             }
             catch (Exception ex)
             {
@@ -79,7 +79,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _unlockTeamsLogic.UnlockTeamsProcess(tournamentId);
-                await RespondAsync(result);
+                await RespondAsync(embed: result);
             }
             catch (Exception ex)
             {
