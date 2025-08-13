@@ -24,17 +24,55 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed ErrorEmbed(string message = "An unexpected error occurred.")
+        public Embed ErrorEmbed(string commandName, string message = "An unexpected error occurred.")
         {
             var embed = new EmbedBuilder()
-                .WithTitle("❌ Error")
+                .WithTitle($"⚠️ {commandName} Error")
                 .WithDescription(message)
-                .WithColor(Color.DarkRed)
-                .WithFooter("Please try again or contact support.")
+                .WithColor(Color.Red)
+                .WithFooter("Please try again after correcting.")
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
 
+        #region Team Embeds
+        public Embed TeamNotFound(string teamName)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("⚠️ Team Not Found")
+                .WithDescription($"No team found with the name: **{teamName}**")
+                .WithColor(Color.Red)
+                .WithFooter("Team name verification failed.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed TeamAlreadyExists(string teamName)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("⚠️ Team Already Exists")
+                .WithDescription($"A team with the name **{teamName}** already exists in this tournament.")
+                .WithColor(Color.Red)
+                .WithFooter("Please choose a different team name.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed TeamRegistrationSuccess(Team team, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🎉 Team Registered Successfully")
+                .WithDescription($"The team **{team.Name}** has been successfully registered in the tournament **{tournament.Name}**!")
+                .AddField("Members", string.Join(", ", team.Members.Select(m => m.DisplayName)))
+                .WithColor(Color.Green)
+                .WithFooter("Good luck to your team!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        #endregion
+
+        #region Tournament Embeds
         public Embed TournamentNotFound(string tournamentId)
         {
             var embed = new EmbedBuilder()
@@ -42,6 +80,30 @@ namespace FlawsFightNight.Managers
                 .WithDescription($"No tournament found with ID: **{tournamentId}**")
                 .WithColor(Color.Red)
                 .WithFooter("Tournament name verification failed.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed CreateTournamentSuccessResolver(Tournament tournament)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.RoundRobin:
+                    return RoundRobinCreateTournamentSuccess(tournament);
+                default:
+                    return ToDoEmbed();
+            }
+        }
+
+        public Embed RoundRobinCreateTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🎉 Round Robin Tournament Created")
+                .WithDescription($"A Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember this Tournament ID for future commands. Make sure you have selected your preferred tie breaker rules before starting a round robin tournament. Default rules are 'Traditional'. Refer to documentation for more information.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .WithColor(Color.Green)
+                .WithFooter("Let's get some teams registered to this tournament now.")
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
@@ -71,5 +133,6 @@ namespace FlawsFightNight.Managers
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
+        #endregion
     }
 }

@@ -1,4 +1,5 @@
-﻿using Discord.Interactions;
+﻿using Discord;
+using Discord.Interactions;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
@@ -12,28 +13,30 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class CreateTournamentLogic : Logic
     {
+        private EmbedManager _embedManager;
         private TournamentManager _tournamentManager;
 
-        public CreateTournamentLogic(TournamentManager tournamentManager) : base("Create Tournament")
+        public CreateTournamentLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Create Tournament")
         {
+            _embedManager = embedManager;
             _tournamentManager = tournamentManager;
         }
 
-        public string CreateTournamentProcess(SocketInteractionContext context, string name, TournamentType tournamentType, int teamSize, string? description = null)
+        public Embed CreateTournamentProcess(SocketInteractionContext context, string name, TournamentType tournamentType, int teamSize, string? description = null)
         {
             // Check if tournament name is unique
             if (!_tournamentManager.IsTournamentNameUnique(name))
             {
-                return $"A tournament with the name '{name}' already exists. Please choose a different name.";
+                return _embedManager.ErrorEmbed(Name, $"A tournament with the name '{name}' already exists. Please choose a different name.");
             }
 
             Tournament tournament = _tournamentManager.CreateTournament(name, tournamentType, teamSize, description);
             if (tournament == null)
             {
-                return "Invalid tournament type specified.";
+                return _embedManager.ErrorEmbed("Null", "Invalid tournament type specified.");
             }
             _tournamentManager.AddTournament(tournament);
-            return $"A {tournament.TeamSize}v{tournament.TeamSize} {tournament.Type} Tournament named '{tournament.Name}' was created with Tournament ID#: {tournament.Id} - Remember this ID number as this is it's reference in commands for now.";
+            return _embedManager.CreateTournamentSuccessResolver(tournament);
         }
     }
 }

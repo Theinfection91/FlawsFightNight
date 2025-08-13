@@ -45,7 +45,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _createTournamentLogic.CreateTournamentProcess(Context, name, tournamentType, teamSize, description);
-                await RespondAsync(result);
+                await RespondAsync(embed: result);
             }
             catch (Exception ex)
             {

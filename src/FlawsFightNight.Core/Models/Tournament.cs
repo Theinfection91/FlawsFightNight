@@ -44,5 +44,13 @@ namespace FlawsFightNight.Core.Models
             Name = name;
             Description = description;
         }
+
+        public void InitiateStartTournament()
+        {
+            CurrentRound = 1;
+            IsRunning = true;
+            CanTeamsBeLocked = false;
+            CanTeamsBeUnlocked = false;
+        }
     }
 }

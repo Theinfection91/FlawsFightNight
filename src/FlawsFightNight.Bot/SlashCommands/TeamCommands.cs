@@ -71,7 +71,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 if (member20 != null) members.Add(member20);
 
                 var result = _registerTeamLogic.RegisterTeamProcess(Context, name, tournamentId, members);
-                await RespondAsync(result);
+                await RespondAsync(embed: result);
             }
             catch (Exception ex)
             {

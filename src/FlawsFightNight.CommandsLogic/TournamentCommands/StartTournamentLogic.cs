@@ -32,23 +32,21 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Check if the tournament is already running
             if (tournament.IsRunning)
             {
-                //return $"The tournament '{tournament.Name}' is already running.";
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is already running.");
             }
             // Check if teams are locked
             if (!tournament.IsTeamsLocked)
             {
-                //return $"The teams in the tournament '{tournament.Name}' are not locked. Please lock the teams before starting the tournament.";
+                return _embedManager.ErrorEmbed(Name, $"The teams in the tournament '{tournament.Name}' are not locked. Please lock the teams before starting the tournament.");
             }
             // Start the tournament
             _matchManager.BuildMatchScheduleResolver(tournament);
-            tournament.CurrentRound = 1;
-            tournament.IsRunning = true;
-            tournament.CanTeamsBeLocked = false;
-            tournament.CanTeamsBeUnlocked = false;
+            tournament.InitiateStartTournament();
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
-            //return $"The tournament '{tournament.Name}' has been successfully started.";
+            
+            // Return Embed with tournament information
             return _embedManager.StartTournamentSuccessResolver(tournament);
         }
     }
