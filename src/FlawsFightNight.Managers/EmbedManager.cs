@@ -64,28 +64,6 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Team Embeds
-        public Embed TeamNotFound(string teamName)
-        {
-            var embed = new EmbedBuilder()
-                .WithTitle("⚠️ Team Not Found")
-                .WithDescription($"No team found with the name: **{teamName}**")
-                .WithColor(Color.Red)
-                .WithFooter("Team name verification failed.")
-                .WithTimestamp(DateTimeOffset.Now);
-            return embed.Build();
-        }
-
-        public Embed TeamAlreadyExists(string teamName)
-        {
-            var embed = new EmbedBuilder()
-                .WithTitle("⚠️ Team Already Exists")
-                .WithDescription($"A team with the name **{teamName}** already exists in this tournament.")
-                .WithColor(Color.Red)
-                .WithFooter("Please choose a different team name.")
-                .WithTimestamp(DateTimeOffset.Now);
-            return embed.Build();
-        }
-
         public Embed TeamRegistrationSuccess(Team team, Tournament tournament)
         {
             var embed = new EmbedBuilder()
@@ -102,17 +80,6 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Tournament Embeds
-        public Embed TournamentNotFound(string tournamentId)
-        {
-            var embed = new EmbedBuilder()
-                .WithTitle("⚠️ Tournament Not Found")
-                .WithDescription($"No tournament found with ID: **{tournamentId}**")
-                .WithColor(Color.Red)
-                .WithFooter("Tournament name verification failed.")
-                .WithTimestamp(DateTimeOffset.Now);
-            return embed.Build();
-        }
-
         public Embed CreateTournamentSuccessResolver(Tournament tournament)
         {
             switch (tournament.Type)
@@ -137,7 +104,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed StartTournamentSuccessResolver (Tournament tournament)
+        public Embed StartTournamentSuccessResolver(Tournament tournament)
         {
             switch (tournament.Type)
             {
