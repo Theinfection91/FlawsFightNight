@@ -1,4 +1,5 @@
-﻿using Discord.Interactions;
+﻿using Discord;
+using Discord.Interactions;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Managers;
@@ -12,38 +13,40 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 {
     public class ReportWinLogic : Logic
     {
+        private EmbedManager _embedManager;
         private MatchManager _matchManager;
         private TeamManager _teamManager;
         private TournamentManager _tournamentManager;
-        public ReportWinLogic(MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Report Win")
-        { 
+        public ReportWinLogic(EmbedManager embedManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Report Win")
+        {
+            _embedManager = embedManager;
             _matchManager = matchManager;
             _teamManager = teamManager;
             _tournamentManager = tournamentManager;
         }
 
-        public string ReportWinProcess(SocketInteractionContext context, string winningTeamName, int winningTeamScore, int losingTeamScore)
+        public Embed ReportWinProcess(SocketInteractionContext context, string winningTeamName, int winningTeamScore, int losingTeamScore)
         {
             if (losingTeamScore > winningTeamScore)
             {
-                return "The losing team score cannot be greater than the winning team score.";
+                return _embedManager.ErrorEmbed(Name, "The losing team score cannot be greater than the winning team score.");
             }
 
             // Check if team exists across all tournaments
             if (!_teamManager.DoesTeamExist(winningTeamName))
             {
-                return $"The team '{winningTeamName}' does not exist or is not registered in any tournament.";
+                return _embedManager.ErrorEmbed(Name, $"The team '{winningTeamName}' does not exist or is not registered in any tournament.");
             }
 
             // Grab the tournament associated with the match
             Tournament tournament = _tournamentManager.GetTournamentFromTeamName(winningTeamName);
 
-            if (tournament.IsRoundComplete) return "The tournament is showing the round has been marked as complete.";
+            if (tournament.IsRoundComplete) return _embedManager.ErrorEmbed(Name, "The tournament is showing the round has been marked as complete.");
 
             // Check if the team has a match scheduled
             if (!_matchManager.IsMatchMadeForTeam(tournament, winningTeamName))
             {
-                return $"The team '{winningTeamName}' does not have a match scheduled.";
+                return _embedManager.ErrorEmbed(Name, $"The team '{winningTeamName}' does not have a match scheduled.");
             }
 
             // Grab the match associated with report
@@ -58,7 +61,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Check if invoker is on winning team
             if (!_teamManager.IsDiscordIdOnTeam(winningTeam, context.User.Id))
             {
-                return $"You are not a member of the team '{winningTeamName}' and cannot report a win for them.";
+                return _embedManager.ErrorEmbed(Name, $"You are not a member of the team '{winningTeamName}' and cannot report a win for them.");
             }
 
             switch (tournament.Type)
@@ -76,10 +79,10 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 
                     break;
             }
-            return "Win reported successfully.";
+            return _embedManager.ErrorEmbed(Name, "Should not have reached this message.");
         }
 
-        private string HandleRoundRobinWin(Tournament tournament, Match match, Team winningTeam, Team losingTeam, int winningTeamScore, int losingTeamScore)
+        private Embed HandleRoundRobinWin(Tournament tournament, Match match, Team winningTeam, Team losingTeam, int winningTeamScore, int losingTeamScore)
         {
             if (!match.IsByeMatch)
             {
@@ -95,10 +98,10 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 
             if (match.IsByeMatch)
             {
-                return $"{winningTeam.Name} has had their Bye week match recorded for data purposes. This is required to lock the rounds with when a tournament has an odd number of teams.";
+                return _embedManager.ReportByeMatch(tournament, match);
             }
 
-            return $"Round Robin win reported for {winningTeam.Name} with score {winningTeamScore} against {losingTeam.Name} with score {losingTeamScore}.";
+            return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Managers;
+﻿using Discord;
+using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,20 +10,22 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class EndTournamentLogic : Logic
     {
+        private EmbedManager _embedManager;
         private MatchManager _matchManager;
         private TournamentManager _tournamentManager;
-        public EndTournamentLogic(MatchManager matchManager, TournamentManager tournamentManager) : base("End Tournament")
+        public EndTournamentLogic(EmbedManager embedManager, MatchManager matchManager, TournamentManager tournamentManager) : base("End Tournament")
         {
+            _embedManager = embedManager;
             _matchManager = matchManager;
             _tournamentManager = tournamentManager;
         }
 
-        public string EndTournamentProcess(string tournamentId)
+        public Embed EndTournamentProcess(string tournamentId)
         {
             // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
             {
-                return $"No tournament found with ID: {tournamentId}. Please check the ID and try again.";
+                return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
 
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
@@ -30,13 +33,13 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Check if tournament is already running
             if (!tournament.IsRunning)
             {
-                return $"The tournament '{tournament.Name}' is not currently running. Rounds cannot be unlocked while the tournament is inactive.";
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Rounds cannot be unlocked while the tournament is inactive.");
             }
 
             // Check if the tournament can be ended
             if (!tournament.CanEndTournament)
             {
-                return $"The tournament '{tournament.Name}' cannot be ended at this time. Ensure that all rounds are complete and locked in.";
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be ended at this time. Ensure that all rounds are complete and locked in.");
             }
 
             // TODO Tiebreaker Logic
@@ -48,12 +51,13 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 Console.WriteLine($"*True winner: {tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog), tournament.MatchLog)}");
             }
 
-
+            // TODO Will change this to a more robust solution later
+            string winner = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog), tournament.MatchLog);
 
             // Save the updated tournament state
             _tournamentManager.SaveAndReloadTournamentsDatabase();
 
-            return "TODO";
+            return _embedManager.EndTournamentSuccessResolver(tournament, winner);
         }
     }
 }

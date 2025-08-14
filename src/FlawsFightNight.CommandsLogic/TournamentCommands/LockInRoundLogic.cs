@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Models;
+﻿using Discord;
+using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -10,19 +11,21 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class LockInRoundLogic : Logic
     {
+        private EmbedManager _embedManager;
         private MatchManager _matchManager;
         private TournamentManager _tournamentManager;
-        public LockInRoundLogic(MatchManager matchManager, TournamentManager tournamentManager) : base("Lock In Round")
+        public LockInRoundLogic(EmbedManager embedManager, MatchManager matchManager, TournamentManager tournamentManager) : base("Lock In Round")
         {
+            _embedManager = embedManager;
             _matchManager = matchManager;
             _tournamentManager = tournamentManager;
         }
-        public string LockInRoundProcess(string tournamentId)
+        public Embed LockInRoundProcess(string tournamentId)
         {
             // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
             {
-                return $"No tournament found with ID: {tournamentId}. Please check the ID and try again.";
+                return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
             Tournament? tournament = _tournamentManager.GetTournamentById(tournamentId);
 
@@ -31,22 +34,22 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 if (_matchManager.HasByeMatchRemaining(tournament))
                 {
-                    return $"The round for tournament '{tournament.Name}' is not complete due to a bye match remaining. Please ensure all matches are reported before locking in the round.";
+                    return _embedManager.ErrorEmbed(Name, $"The round for tournament '{tournament.Name}' is not complete due to a bye match remaining. Please ensure all matches are reported before locking in the round.");
                 }
-                return $"The round for tournament '{tournament.Name}' is not complete. Please ensure all matches are reported before locking in the round.";
+                return _embedManager.ErrorEmbed(Name, $"The round for tournament '{tournament.Name}' is not complete. Please ensure all matches are reported before locking in the round.");
             }
 
             // Check if the round is already locked in
             if (tournament.IsRoundLockedIn)
             {
-                return $"The round for tournament '{tournament.Name}' is already locked in.";
+                return _embedManager.ErrorEmbed(Name, $"The round for tournament '{tournament.Name}' is already locked in.");
             }
 
             // Lock in the round
             tournament.IsRoundLockedIn = true;
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
-            return $"The round for tournament '{tournament.Name}' has been successfully locked in. Teams can now advance to the next round using /tournament next-round.";
+            return _embedManager.LockInRoundSuccess(tournament);
         }
     }
 }

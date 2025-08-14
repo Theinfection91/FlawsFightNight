@@ -28,7 +28,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _reportWinLogic.ReportWinProcess(Context, winningTeamName, winningTeamScore, losingTeamScore);
-                await RespondAsync(result);
+                await RespondAsync(embed: result);
             }
             catch (Exception ex)
             {

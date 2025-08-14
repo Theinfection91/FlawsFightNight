@@ -113,7 +113,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _endTournamentLogic.EndTournamentProcess(tournamentId);
-                await RespondAsync(result);
+                await RespondAsync(embed: result);
             }
             catch (Exception ex)
             {
@@ -130,7 +130,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _lockInRoundLogic.LockInRoundProcess(tournamentId);
-                await RespondAsync(result);
+                await RespondAsync(embed: result);
             }
             catch (Exception ex)
             {
@@ -147,7 +147,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _unlockRoundLogic.UnlockRoundProcess(tournamentId);
-                await RespondAsync(result);
+                await RespondAsync(embed: result);
             }
             catch (Exception ex)
             {
@@ -164,7 +164,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _nextRoundLogic.NextRoundProcess(tournamentId);
-                await RespondAsync(result);
+                await RespondAsync(embed: result);
             }
             catch (Exception ex)
             {
