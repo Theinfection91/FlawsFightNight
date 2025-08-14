@@ -45,7 +45,7 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Green)
                 .WithFooter("Bye match completion reported successfully.")
                 .WithTimestamp(DateTimeOffset.Now);
-            return embed.Build();
+            return embed.Build(); 
         }
 
         public Embed ReportWinSuccess(Tournament tournament, Match match, Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore)
