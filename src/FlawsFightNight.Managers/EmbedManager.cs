@@ -95,7 +95,7 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🎉 Round Robin Tournament Created")
-                .WithDescription($"A Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember this Tournament ID for future commands. Make sure you have selected your preferred tie breaker rules before starting a round robin tournament. Default rules are 'Traditional'. Refer to documentation for more information.")
+                .WithDescription($"A Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember the following Tournament ID for future commands.\n\nDefault tie breaker rules are 'Traditional' and the default duration is set to 'Double Round Robin'. To change either of these settings, use /tournament setup anytime before starting the tournament.")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Match Format", tournament.TeamSizeFormat)
                 .WithColor(Color.Green)

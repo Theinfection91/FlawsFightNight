@@ -184,7 +184,7 @@ namespace FlawsFightNight.Managers
                     break;
 
                 case TournamentType.RoundRobin:
-                    BuildRoundRobinMatchSchedule(tournament);
+                    BuildRoundRobinMatchSchedule(tournament, tournament.IsDoubleRoundRobin);
                     break;
 
                 default:
@@ -193,7 +193,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public void BuildRoundRobinMatchSchedule(Tournament tournament)
+        public void BuildRoundRobinMatchSchedule(Tournament tournament, bool isDoubleRoundRobin = true)
         {
             const int maxRetries = 10;
             int attempt = 0;
@@ -214,19 +214,17 @@ namespace FlawsFightNight.Managers
 
                 int numRounds = teams.Count - 1;
                 int half = teams.Count / 2;
-                var rotating = new List<string>(teams); // First element fixed
+                var rotating = new List<string>(teams); // first element fixed
 
+                // SINGLE round robin
                 for (int round = 1; round <= numRounds; round++)
                 {
                     var pairings = new List<Match>();
-
                     for (int i = 0; i < half; i++)
                     {
                         string a = rotating[i];
                         string b = rotating[teams.Count - 1 - i];
-
-                        if (a == byePlaceholder && b == byePlaceholder)
-                            continue;
+                        if (a == byePlaceholder && b == byePlaceholder) continue;
 
                         bool isByeMatch = hasBye && (a == byePlaceholder || b == byePlaceholder);
                         var match = new Match(
@@ -237,21 +235,37 @@ namespace FlawsFightNight.Managers
                             RoundNumber = round,
                             CreatedOn = DateTime.UtcNow
                         };
-
                         pairings.Add(match);
                     }
-
                     tournament.MatchLog.MatchesToPlayByRound[round] = pairings;
 
-                    // Rotate keeping first fixed
+                    // rotate teams, first element fixed
                     var last = rotating[^1];
                     rotating.RemoveAt(rotating.Count - 1);
                     rotating.Insert(1, last);
                 }
 
-                if (ValidateRoundRobin(tournament))
+                // DOUBLE round robin — just repeat matches with swapped home/away if needed
+                if (isDoubleRoundRobin)
                 {
-                    // Valid schedule, done
+                    int currentMaxRound = tournament.MatchLog.MatchesToPlayByRound.Count;
+                    for (int round = 1; round <= currentMaxRound; round++)
+                    {
+                        var original = tournament.MatchLog.MatchesToPlayByRound[round];
+                        var reversed = original.Select(m => new Match(
+                            m.TeamB, m.TeamA)
+                        {
+                            IsByeMatch = m.IsByeMatch,
+                            RoundNumber = round + currentMaxRound,
+                            CreatedOn = DateTime.UtcNow
+                        }).ToList();
+
+                        tournament.MatchLog.MatchesToPlayByRound[round + currentMaxRound] = reversed;
+                    }
+                }
+
+                if (ValidateRoundRobin(tournament, isDoubleRoundRobin))
+                {
                     tournament.TotalRounds = tournament.MatchLog.MatchesToPlayByRound.Count;
                     break;
                 }
@@ -262,20 +276,11 @@ namespace FlawsFightNight.Managers
             }
 
             if (attempt == maxRetries)
-            {
                 Console.WriteLine("Failed to build a valid round-robin schedule after max retries.");
-            }
         }
 
-        /// <summary>
-        /// Validates the round robin match schedule for the given tournament.
-        /// Checks for missing, duplicate, or unexpected match pairs and per-round conflicts.
-        /// </summary>
-        /// <param name="tournament">The tournament whose schedule to validate.</param>
-        /// <returns>True if the schedule is valid; otherwise, false.</returns>
-        private bool ValidateRoundRobin(Tournament tournament)
+        private bool ValidateRoundRobin(Tournament tournament, bool isDoubleRoundRobin)
         {
-            // Get distinct team names (case-insensitive)
             var teams = tournament.Teams.Select(t => t.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
             // Build the set of all expected unique team pairings
@@ -284,70 +289,56 @@ namespace FlawsFightNight.Managers
                 for (int j = i + 1; j < teams.Count; j++)
                     expected.Add((teams[i], teams[j]));
 
-            // Track actual pairings, duplicates, and per-round conflicts
             var actual = new HashSet<(string, string)>(new UnorderedPairComparer());
-            var duplicates = new List<(string, string)>();
             var conflicts = new List<string>();
 
-            // Iterate through each round in the match schedule
             foreach (var kv in tournament.MatchLog.MatchesToPlayByRound.OrderBy(k => k.Key))
             {
-                // Track teams seen in this round to detect conflicts
                 var seenThisRound = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var match in kv.Value)
                 {
-                    // Skip bye matches
-                    if (match.IsByeMatch)
-                        continue;
+                    if (match.IsByeMatch) continue;
 
-                    // Check if TeamA appears more than once in this round
-                    if (match.TeamA != null)
-                    {
-                        if (!seenThisRound.Add(match.TeamA))
-                            conflicts.Add($"Round {kv.Key}: {match.TeamA} appears twice.");
-                    }
-                    // Check if TeamB appears more than once in this round
-                    if (match.TeamB != null)
-                    {
-                        if (!seenThisRound.Add(match.TeamB))
-                            conflicts.Add($"Round {kv.Key}: {match.TeamB} appears twice.");
-                    }
+                    if (match.TeamA != null && !seenThisRound.Add(match.TeamA))
+                        conflicts.Add($"Round {kv.Key}: {match.TeamA} appears twice.");
+                    if (match.TeamB != null && !seenThisRound.Add(match.TeamB))
+                        conflicts.Add($"Round {kv.Key}: {match.TeamB} appears twice.");
 
-                    // Add the pairing to actual set, track duplicates
                     if (match.TeamA != null && match.TeamB != null)
-                    {
-                        var pair = (match.TeamA, match.TeamB);
-                        if (!actual.Add(pair))
-                            duplicates.Add(pair);
-                    }
+                        actual.Add((match.TeamA, match.TeamB));
                 }
             }
 
-            // Find missing, unexpected, and duplicate pairs
+            // For double round robin, allow each pair to appear twice
+            var pairCounts = new Dictionary<(string, string), int>(new UnorderedPairComparer());
+            foreach (var pair in actual)
+            {
+                if (!pairCounts.ContainsKey(pair)) pairCounts[pair] = 0;
+                pairCounts[pair]++;
+            }
+
+            var duplicates = new List<(string, string)>();
+            foreach (var kvp in pairCounts)
+            {
+                int allowed = isDoubleRoundRobin ? 2 : 1;
+                if (kvp.Value > allowed)
+                    duplicates.Add(kvp.Key);
+            }
+
             var missing = expected.Except(actual, new UnorderedPairComparer()).ToList();
             var unexpected = actual.Except(expected, new UnorderedPairComparer()).ToList();
 
-            // If no issues, schedule is valid
             if (!missing.Any() && !duplicates.Any() && !unexpected.Any() && !conflicts.Any())
-            {
-                Console.WriteLine($"{DateTime.UtcNow} - (MatchManager): Round Robin Match Schedule Build Validation was a success.");
-                return true;
-            }
+                return true; // No issues, silent success
 
-            // Output validation issues
-            Console.WriteLine("Validation issues found:");
-            if (missing.Any())
-                Console.WriteLine("Missing pairs: " + string.Join(", ", missing.Select(p => $"{p.Item1}-{p.Item2}")));
-            if (duplicates.Any())
-                Console.WriteLine("Duplicate pairs: " + string.Join(", ", duplicates.Select(p => $"{p.Item1}-{p.Item2}")));
-            if (unexpected.Any())
-                Console.WriteLine("Unexpected pairs: " + string.Join(", ", unexpected.Select(p => $"{p.Item1}-{p.Item2}")));
-            if (conflicts.Any())
-                Console.WriteLine("Per-round conflicts: " + string.Join("; ", conflicts));
+            // Only print actual errors
+            if (missing.Any()) Console.WriteLine("Missing pairs: " + string.Join(", ", missing.Select(p => $"{p.Item1}-{p.Item2}")));
+            if (duplicates.Any()) Console.WriteLine("Duplicate pairs: " + string.Join(", ", duplicates.Select(p => $"{p.Item1}-{p.Item2}")));
+            if (unexpected.Any()) Console.WriteLine("Unexpected pairs: " + string.Join(", ", unexpected.Select(p => $"{p.Item1}-{p.Item2}")));
+            if (conflicts.Any()) Console.WriteLine("Per-round conflicts: " + string.Join("; ", conflicts));
 
             return false;
         }
-
 
         public void ClearMatchSchedule(Tournament tournament)
         {
