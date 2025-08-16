@@ -47,17 +47,22 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 Console.WriteLine($"A tiebreaker is needed for the tournament '{tournament.Name}'.");
                 Console.WriteLine($"Number of teams tied: {_matchManager.GetNumberOfTeamsTied(tournament.MatchLog)}");
-                Console.WriteLine($"Teams tied: {string.Join(", ", _matchManager.GetTiedTeams(tournament.MatchLog))}");
-                Console.WriteLine($"*True winner: {tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog), tournament.MatchLog)}");
+                Console.WriteLine($"Teams tied: {string.Join(", ", _matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin))}");
+                Console.WriteLine($"*True winner: {tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog)}");
+
+                string winner = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog);
+                return _embedManager.EndTournamentSuccessResolver(tournament, winner);
             }
+            else
+            {
+                // TODO Will change this to a more robust solution later
+                string winner = _matchManager.GetMostWinsWinner(tournament.MatchLog);
 
-            // TODO Will change this to a more robust solution later
-            string winner = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog), tournament.MatchLog);
+                // Save the updated tournament state
+                _tournamentManager.SaveAndReloadTournamentsDatabase();
 
-            // Save the updated tournament state
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-            return _embedManager.EndTournamentSuccessResolver(tournament, winner);
+                return _embedManager.EndTournamentSuccessResolver(tournament, winner);
+            }   
         }
     }
 }

@@ -11,7 +11,6 @@ namespace FlawsFightNight.Core.Models
         // Basic Info
         public string TeamA { get; set; }
         public string TeamB { get; set; }
-        public bool IsCompleted { get; set; } = false;
         public bool IsByeMatch { get; set; } = false;
         public int RoundNumber { get; set; }
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
@@ -20,10 +19,6 @@ namespace FlawsFightNight.Core.Models
         {
             TeamA = teamA;
             TeamB = teamB;
-        }
-        public override string ToString()
-        {
-            return $"{TeamA ?? "Bye"} vs {TeamB ?? "Bye"}";
         }
     }
 }
