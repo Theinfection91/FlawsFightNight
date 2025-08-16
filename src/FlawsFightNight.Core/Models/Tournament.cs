@@ -42,7 +42,6 @@ namespace FlawsFightNight.Core.Models
         // Match Log to track all matches in the tournament, current and past
         public MatchLog MatchLog { get; set; } = new();
 
-
         public Tournament(string name, string? description = null)
         {
             Name = name;

@@ -104,6 +104,31 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
+        public Embed SetupTournamentResolver(Tournament tournament)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.RoundRobin:
+                    return RoundRobinSetupTournamentSuccess(tournament);
+                default:
+                    return ErrorEmbed("Unsupported tournament type.");
+            }
+        }
+
+        private Embed RoundRobinSetupTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("⚙️ Tournament Setup Success")
+                .WithDescription($"The Round Robin tournament **{tournament.Name}** has been successfully updated.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Tie Breaker Rules", tournament.TieBreakerRule.Name)
+                .AddField("Round Robin Type", tournament.IsDoubleRoundRobin ? RoundRobinType.Double : RoundRobinType.Single)
+                .WithColor(Color.Green)
+                .WithFooter("You can change the settings again anytime before starting.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
         public Embed StartTournamentSuccessResolver(Tournament tournament)
         {
             switch (tournament.Type)
