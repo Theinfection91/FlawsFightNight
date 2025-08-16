@@ -498,39 +498,56 @@ namespace FlawsFightNight.Managers
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
+            Console.WriteLine("=== Debug: Starting Tied Teams Check ===");
+
             // Count wins
-            foreach (var round in matchLog.PostMatchesByRound.Values)
+            foreach (var roundKvp in matchLog.PostMatchesByRound)
             {
-                foreach (var postMatch in round)
+                Console.WriteLine($"Checking Round {roundKvp.Key} with {roundKvp.Value.Count} matches");
+                foreach (var postMatch in roundKvp.Value)
                 {
                     if (!postMatch.WasByeMatch)
                     {
-                        if (!teamWins.ContainsKey(postMatch.Winner))
-                            teamWins[postMatch.Winner] = 0;
-                        teamWins[postMatch.Winner]++;
+                        string winnerKey = postMatch.Winner;
+
+                        if (!teamWins.ContainsKey(winnerKey))
+                        {
+                            teamWins[winnerKey] = 0;
+                            Console.WriteLine($"  -> New entry created for {winnerKey}");
+                        }
+
+                        teamWins[winnerKey]++;
+                        Console.WriteLine($"  Winner found: {winnerKey} -> Total wins now: {teamWins[winnerKey]}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("  Skipping bye match");
                     }
                 }
             }
 
             if (teamWins.Count == 0)
+            {
+                Console.WriteLine("No wins recorded. Returning empty list.");
                 return new List<string>();
+            }
 
-            // Figure out scaling factor based on single/double RR
-            int factor = isDoubleRoundRobin ? 2 : 1;
-            int expectedMaxWins = (teamWins.Count - 1) * factor;
-
-            // Check ties
+            // Check ties: any win count that occurs for 2 or more teams
             var winGroups = teamWins.Values.GroupBy(w => w).ToList();
             List<string> tiedTeams = new List<string>();
 
             foreach (var group in winGroups)
             {
-                if (group.Count() > 1 && group.Key > 0 && group.Key <= expectedMaxWins)
+                Console.WriteLine($"Checking win count {group.Key} -> {group.Count()} teams");
+                if (group.Count() > 1 && group.Key > 0) // Only check for multiple teams with same wins
                 {
-                    tiedTeams.AddRange(teamWins.Where(kvp => kvp.Value == group.Key).Select(kvp => kvp.Key));
+                    var groupTeams = teamWins.Where(kvp => kvp.Value == group.Key).Select(kvp => kvp.Key).ToList();
+                    tiedTeams.AddRange(groupTeams);
+                    Console.WriteLine($"  Tie detected for teams: {string.Join(", ", groupTeams)}");
                 }
             }
 
+            Console.WriteLine($"=== Debug: Tied Teams Result ===\n{string.Join(", ", tiedTeams)}");
             return tiedTeams;
         }
 
