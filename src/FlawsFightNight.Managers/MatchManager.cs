@@ -216,7 +216,7 @@ namespace FlawsFightNight.Managers
                 int half = teams.Count / 2;
                 var rotating = new List<string>(teams); // first element fixed
 
-                // SINGLE round robin
+                // Single Round Robin Logic
                 for (int round = 1; round <= numRounds; round++)
                 {
                     var pairings = new List<Match>();
@@ -245,7 +245,7 @@ namespace FlawsFightNight.Managers
                     rotating.Insert(1, last);
                 }
 
-                // DOUBLE round robin — just repeat matches with swapped home/away if needed
+                // Double Round Robin Logic
                 if (isDoubleRoundRobin)
                 {
                     int currentMaxRound = tournament.MatchLog.MatchesToPlayByRound.Count;
@@ -274,7 +274,6 @@ namespace FlawsFightNight.Managers
                     Console.WriteLine($"Validation failed on attempt {attempt}, retrying build...");
                 }
             }
-
             if (attempt == maxRetries)
                 Console.WriteLine("Failed to build a valid round-robin schedule after max retries.");
         }
@@ -410,30 +409,61 @@ namespace FlawsFightNight.Managers
         public bool IsTieBreakerNeeded(MatchLog matchLog)
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            // Count wins for each team
-            foreach (var round in matchLog.PostMatchesByRound.Values)
+
+            Console.WriteLine("=== Debug: Starting Tie-Breaker Check ===");
+
+            // Count wins for each team (single or double)
+            foreach (var round in matchLog.PostMatchesByRound)
             {
-                foreach (var postMatch in round)
+                Console.WriteLine($"Checking Round {round.Key} with {round.Value.Count} matches");
+
+                foreach (var postMatch in round.Value)
                 {
                     if (!postMatch.WasByeMatch)
                     {
-                        if (!teamWins.ContainsKey(postMatch.Winner))
-                            teamWins[postMatch.Winner] = 0;
-                        teamWins[postMatch.Winner]++;
+                        // Treat Winner as string directly
+                        string winnerKey = postMatch.Winner ?? "UNKNOWN";
+
+                        Console.WriteLine($"  Winner found: {winnerKey}");
+
+                        if (!teamWins.ContainsKey(winnerKey))
+                        {
+                            teamWins[winnerKey] = 0;
+                            Console.WriteLine($"  -> New entry created for {winnerKey}");
+                        }
+
+                        teamWins[winnerKey]++;
+                        Console.WriteLine($"  -> {winnerKey} now has {teamWins[winnerKey]} wins");
+                    }
+                    else
+                    {
+                        Console.WriteLine("  Skipping bye match");
                     }
                 }
             }
+
+            Console.WriteLine("=== Debug: Final Team Wins ===");
+            foreach (var kvp in teamWins)
+            {
+                Console.WriteLine($"Team {kvp.Key} : {kvp.Value} wins");
+            }
+
             // Check for ties
             var winCounts = teamWins.Values.GroupBy(w => w).ToList();
             foreach (var group in winCounts)
             {
-                if (group.Count() > 1 && group.Key > 0) // More than one team with the same non-zero win count
+                Console.WriteLine($"Checking win count {group.Key} -> {group.Count()} teams");
+                if (group.Count() > 1 && group.Key > 0) // Multiple teams with same non-zero wins
                 {
-                    return true; // Tie-breaker needed
+                    Console.WriteLine("Tie detected! Tie-breaker needed.");
+                    return true;
                 }
             }
-            return false; // No tie-breaker needed
+
+            Console.WriteLine("No ties detected. No tie-breaker needed.");
+            return false;
         }
+
 
         public int GetNumberOfTeamsTied(MatchLog matchLog)
         {
@@ -464,10 +494,11 @@ namespace FlawsFightNight.Managers
             return tiedTeams; // Return number of teams involved in ties
         }
 
-        public List<string> GetTiedTeams(MatchLog matchLog)
+        public List<string> GetTiedTeams(MatchLog matchLog, bool isDoubleRoundRobin)
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            // Count wins for each team
+
+            // Count wins
             foreach (var round in matchLog.PostMatchesByRound.Values)
             {
                 foreach (var postMatch in round)
@@ -480,18 +511,29 @@ namespace FlawsFightNight.Managers
                     }
                 }
             }
-            // Check for ties
-            var winCounts = teamWins.Values.GroupBy(w => w).ToList();
+
+            if (teamWins.Count == 0)
+                return new List<string>();
+
+            // Figure out scaling factor based on single/double RR
+            int factor = isDoubleRoundRobin ? 2 : 1;
+            int expectedMaxWins = (teamWins.Count - 1) * factor;
+
+            // Check ties
+            var winGroups = teamWins.Values.GroupBy(w => w).ToList();
             List<string> tiedTeams = new List<string>();
-            foreach (var group in winCounts)
+
+            foreach (var group in winGroups)
             {
-                if (group.Count() > 1 && group.Key > 0) // More than one team with the same non-zero win count
+                if (group.Count() > 1 && group.Key > 0 && group.Key <= expectedMaxWins)
                 {
                     tiedTeams.AddRange(teamWins.Where(kvp => kvp.Value == group.Key).Select(kvp => kvp.Key));
                 }
             }
-            return tiedTeams; // Return list of teams involved in ties
+
+            return tiedTeams;
         }
+
 
         public string ResolveTieBreaker(List<string> tiedTeams, MatchLog log)
         {
@@ -620,5 +662,26 @@ namespace FlawsFightNight.Managers
             return chosen;
         }
 
+        public string GetMostWinsWinner(MatchLog matchLog)
+        {
+            var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            // Count wins for each team
+            foreach (var round in matchLog.PostMatchesByRound.Values)
+            {
+                foreach (var postMatch in round)
+                {
+                    if (!postMatch.WasByeMatch)
+                    {
+                        if (!teamWins.ContainsKey(postMatch.Winner))
+                            teamWins[postMatch.Winner] = 0;
+                        teamWins[postMatch.Winner]++;
+                    }
+                }
+            }
+            // Find the team with the most wins
+            if (teamWins.Count == 0)
+                return null;
+            return teamWins.Aggregate((l, r) => l.Value > r.Value ? l : r).Key;
+        }
     }
 }
