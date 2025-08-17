@@ -38,7 +38,6 @@ namespace FlawsFightNight.Core.Models
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
         public bool IsDoubleRoundRobin { get; set; } = true;
 
-
         // Match Log to track all matches in the tournament, current and past
         public MatchLog MatchLog { get; set; } = new();
 
