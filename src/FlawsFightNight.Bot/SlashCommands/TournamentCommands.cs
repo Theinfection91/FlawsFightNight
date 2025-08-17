@@ -18,17 +18,19 @@ namespace FlawsFightNight.Bot.SlashCommands
         private LockInRoundLogic _lockInRoundLogic;
         private LockTeamsLogic _lockTeamsLogic;
         private NextRoundLogic _nextRoundLogic;
+        private SetupTournamentLogic _setupTournamentLogic;
         private StartTournamentLogic _startTournamentLogic;
         private UnlockRoundLogic _unlockRoundLogic;
         private UnlockTeamsLogic _unlockTeamsLogic;
 
-        public TournamentCommands(CreateTournamentLogic createTournamentLogic, EndTournamentLogic endTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, StartTournamentLogic startTournamentLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
+        public TournamentCommands(CreateTournamentLogic createTournamentLogic, EndTournamentLogic endTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupTournamentLogic setupTournamentLogic, StartTournamentLogic startTournamentLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
         {
             _createTournamentLogic = createTournamentLogic;
             _endTournamentLogic = endTournamentLogic;
             _lockInRoundLogic = lockInRoundLogic;
             _lockTeamsLogic = lockTeamsLogic;
             _nextRoundLogic = nextRoundLogic;
+            _setupTournamentLogic = setupTournamentLogic;
             _startTournamentLogic = startTournamentLogic;
             _unlockRoundLogic = unlockRoundLogic;
             _unlockTeamsLogic = unlockTeamsLogic;
@@ -96,6 +98,25 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _startTournamentLogic.StartTournamentProcess(tournamentId);
+                await RespondAsync(embed: result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("setup", "Setup a tournaments rules and habits before starting it.")]
+        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        public async Task SetupTournamentAsync(
+            [Summary("tournament_id", "The ID of the tournament to setup")] string tournamentId,
+            [Summary("tie_breaker_ruleset", "The ruleset to use for tie breakers")] TieBreakerType tieBreakerType,
+            [Summary("is_double_round_robin", "Whether the tournament is a double round robin (only for Round Robin type)")] RoundRobinType roundRobinType)
+        {
+            try
+            {
+                var result = _setupTournamentLogic.SetupTournamentProcess(tournamentId, tieBreakerType, roundRobinType);
                 await RespondAsync(embed: result);
             }
             catch (Exception ex)

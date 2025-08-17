@@ -184,7 +184,7 @@ namespace FlawsFightNight.Managers
                     break;
 
                 case TournamentType.RoundRobin:
-                    BuildRoundRobinMatchSchedule(tournament);
+                    BuildRoundRobinMatchSchedule(tournament, tournament.IsDoubleRoundRobin);
                     break;
 
                 default:
@@ -193,7 +193,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public void BuildRoundRobinMatchSchedule(Tournament tournament)
+        public void BuildRoundRobinMatchSchedule(Tournament tournament, bool isDoubleRoundRobin = true)
         {
             const int maxRetries = 10;
             int attempt = 0;
@@ -214,19 +214,17 @@ namespace FlawsFightNight.Managers
 
                 int numRounds = teams.Count - 1;
                 int half = teams.Count / 2;
-                var rotating = new List<string>(teams); // First element fixed
+                var rotating = new List<string>(teams); // first element fixed
 
+                // Single Round Robin Logic
                 for (int round = 1; round <= numRounds; round++)
                 {
                     var pairings = new List<Match>();
-
                     for (int i = 0; i < half; i++)
                     {
                         string a = rotating[i];
                         string b = rotating[teams.Count - 1 - i];
-
-                        if (a == byePlaceholder && b == byePlaceholder)
-                            continue;
+                        if (a == byePlaceholder && b == byePlaceholder) continue;
 
                         bool isByeMatch = hasBye && (a == byePlaceholder || b == byePlaceholder);
                         var match = new Match(
@@ -237,21 +235,37 @@ namespace FlawsFightNight.Managers
                             RoundNumber = round,
                             CreatedOn = DateTime.UtcNow
                         };
-
                         pairings.Add(match);
                     }
-
                     tournament.MatchLog.MatchesToPlayByRound[round] = pairings;
 
-                    // Rotate keeping first fixed
+                    // rotate teams, first element fixed
                     var last = rotating[^1];
                     rotating.RemoveAt(rotating.Count - 1);
                     rotating.Insert(1, last);
                 }
 
-                if (ValidateRoundRobin(tournament))
+                // Double Round Robin Logic
+                if (isDoubleRoundRobin)
                 {
-                    // Valid schedule, done
+                    int currentMaxRound = tournament.MatchLog.MatchesToPlayByRound.Count;
+                    for (int round = 1; round <= currentMaxRound; round++)
+                    {
+                        var original = tournament.MatchLog.MatchesToPlayByRound[round];
+                        var reversed = original.Select(m => new Match(
+                            m.TeamB, m.TeamA)
+                        {
+                            IsByeMatch = m.IsByeMatch,
+                            RoundNumber = round + currentMaxRound,
+                            CreatedOn = DateTime.UtcNow
+                        }).ToList();
+
+                        tournament.MatchLog.MatchesToPlayByRound[round + currentMaxRound] = reversed;
+                    }
+                }
+
+                if (ValidateRoundRobin(tournament, isDoubleRoundRobin))
+                {
                     tournament.TotalRounds = tournament.MatchLog.MatchesToPlayByRound.Count;
                     break;
                 }
@@ -260,22 +274,12 @@ namespace FlawsFightNight.Managers
                     Console.WriteLine($"Validation failed on attempt {attempt}, retrying build...");
                 }
             }
-
             if (attempt == maxRetries)
-            {
                 Console.WriteLine("Failed to build a valid round-robin schedule after max retries.");
-            }
         }
 
-        /// <summary>
-        /// Validates the round robin match schedule for the given tournament.
-        /// Checks for missing, duplicate, or unexpected match pairs and per-round conflicts.
-        /// </summary>
-        /// <param name="tournament">The tournament whose schedule to validate.</param>
-        /// <returns>True if the schedule is valid; otherwise, false.</returns>
-        private bool ValidateRoundRobin(Tournament tournament)
+        private bool ValidateRoundRobin(Tournament tournament, bool isDoubleRoundRobin)
         {
-            // Get distinct team names (case-insensitive)
             var teams = tournament.Teams.Select(t => t.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
             // Build the set of all expected unique team pairings
@@ -284,70 +288,56 @@ namespace FlawsFightNight.Managers
                 for (int j = i + 1; j < teams.Count; j++)
                     expected.Add((teams[i], teams[j]));
 
-            // Track actual pairings, duplicates, and per-round conflicts
             var actual = new HashSet<(string, string)>(new UnorderedPairComparer());
-            var duplicates = new List<(string, string)>();
             var conflicts = new List<string>();
 
-            // Iterate through each round in the match schedule
             foreach (var kv in tournament.MatchLog.MatchesToPlayByRound.OrderBy(k => k.Key))
             {
-                // Track teams seen in this round to detect conflicts
                 var seenThisRound = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var match in kv.Value)
                 {
-                    // Skip bye matches
-                    if (match.IsByeMatch)
-                        continue;
+                    if (match.IsByeMatch) continue;
 
-                    // Check if TeamA appears more than once in this round
-                    if (match.TeamA != null)
-                    {
-                        if (!seenThisRound.Add(match.TeamA))
-                            conflicts.Add($"Round {kv.Key}: {match.TeamA} appears twice.");
-                    }
-                    // Check if TeamB appears more than once in this round
-                    if (match.TeamB != null)
-                    {
-                        if (!seenThisRound.Add(match.TeamB))
-                            conflicts.Add($"Round {kv.Key}: {match.TeamB} appears twice.");
-                    }
+                    if (match.TeamA != null && !seenThisRound.Add(match.TeamA))
+                        conflicts.Add($"Round {kv.Key}: {match.TeamA} appears twice.");
+                    if (match.TeamB != null && !seenThisRound.Add(match.TeamB))
+                        conflicts.Add($"Round {kv.Key}: {match.TeamB} appears twice.");
 
-                    // Add the pairing to actual set, track duplicates
                     if (match.TeamA != null && match.TeamB != null)
-                    {
-                        var pair = (match.TeamA, match.TeamB);
-                        if (!actual.Add(pair))
-                            duplicates.Add(pair);
-                    }
+                        actual.Add((match.TeamA, match.TeamB));
                 }
             }
 
-            // Find missing, unexpected, and duplicate pairs
+            // For double round robin, allow each pair to appear twice
+            var pairCounts = new Dictionary<(string, string), int>(new UnorderedPairComparer());
+            foreach (var pair in actual)
+            {
+                if (!pairCounts.ContainsKey(pair)) pairCounts[pair] = 0;
+                pairCounts[pair]++;
+            }
+
+            var duplicates = new List<(string, string)>();
+            foreach (var kvp in pairCounts)
+            {
+                int allowed = isDoubleRoundRobin ? 2 : 1;
+                if (kvp.Value > allowed)
+                    duplicates.Add(kvp.Key);
+            }
+
             var missing = expected.Except(actual, new UnorderedPairComparer()).ToList();
             var unexpected = actual.Except(expected, new UnorderedPairComparer()).ToList();
 
-            // If no issues, schedule is valid
             if (!missing.Any() && !duplicates.Any() && !unexpected.Any() && !conflicts.Any())
-            {
-                Console.WriteLine($"{DateTime.UtcNow} - (MatchManager): Round Robin Match Schedule Build Validation was a success.");
-                return true;
-            }
+                return true; // No issues, silent success
 
-            // Output validation issues
-            Console.WriteLine("Validation issues found:");
-            if (missing.Any())
-                Console.WriteLine("Missing pairs: " + string.Join(", ", missing.Select(p => $"{p.Item1}-{p.Item2}")));
-            if (duplicates.Any())
-                Console.WriteLine("Duplicate pairs: " + string.Join(", ", duplicates.Select(p => $"{p.Item1}-{p.Item2}")));
-            if (unexpected.Any())
-                Console.WriteLine("Unexpected pairs: " + string.Join(", ", unexpected.Select(p => $"{p.Item1}-{p.Item2}")));
-            if (conflicts.Any())
-                Console.WriteLine("Per-round conflicts: " + string.Join("; ", conflicts));
+            // Only print actual errors
+            if (missing.Any()) Console.WriteLine("Missing pairs: " + string.Join(", ", missing.Select(p => $"{p.Item1}-{p.Item2}")));
+            if (duplicates.Any()) Console.WriteLine("Duplicate pairs: " + string.Join(", ", duplicates.Select(p => $"{p.Item1}-{p.Item2}")));
+            if (unexpected.Any()) Console.WriteLine("Unexpected pairs: " + string.Join(", ", unexpected.Select(p => $"{p.Item1}-{p.Item2}")));
+            if (conflicts.Any()) Console.WriteLine("Per-round conflicts: " + string.Join("; ", conflicts));
 
             return false;
         }
-
 
         public void ClearMatchSchedule(Tournament tournament)
         {
@@ -419,30 +409,61 @@ namespace FlawsFightNight.Managers
         public bool IsTieBreakerNeeded(MatchLog matchLog)
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            // Count wins for each team
-            foreach (var round in matchLog.PostMatchesByRound.Values)
+
+            Console.WriteLine("=== Debug: Starting Tie-Breaker Check ===");
+
+            // Count wins for each team (single or double)
+            foreach (var round in matchLog.PostMatchesByRound)
             {
-                foreach (var postMatch in round)
+                Console.WriteLine($"Checking Round {round.Key} with {round.Value.Count} matches");
+
+                foreach (var postMatch in round.Value)
                 {
                     if (!postMatch.WasByeMatch)
                     {
-                        if (!teamWins.ContainsKey(postMatch.Winner))
-                            teamWins[postMatch.Winner] = 0;
-                        teamWins[postMatch.Winner]++;
+                        // Treat Winner as string directly
+                        string winnerKey = postMatch.Winner ?? "UNKNOWN";
+
+                        Console.WriteLine($"  Winner found: {winnerKey}");
+
+                        if (!teamWins.ContainsKey(winnerKey))
+                        {
+                            teamWins[winnerKey] = 0;
+                            Console.WriteLine($"  -> New entry created for {winnerKey}");
+                        }
+
+                        teamWins[winnerKey]++;
+                        Console.WriteLine($"  -> {winnerKey} now has {teamWins[winnerKey]} wins");
+                    }
+                    else
+                    {
+                        Console.WriteLine("  Skipping bye match");
                     }
                 }
             }
+
+            Console.WriteLine("=== Debug: Final Team Wins ===");
+            foreach (var kvp in teamWins)
+            {
+                Console.WriteLine($"Team {kvp.Key} : {kvp.Value} wins");
+            }
+
             // Check for ties
             var winCounts = teamWins.Values.GroupBy(w => w).ToList();
             foreach (var group in winCounts)
             {
-                if (group.Count() > 1 && group.Key > 0) // More than one team with the same non-zero win count
+                Console.WriteLine($"Checking win count {group.Key} -> {group.Count()} teams");
+                if (group.Count() > 1 && group.Key > 0) // Multiple teams with same non-zero wins
                 {
-                    return true; // Tie-breaker needed
+                    Console.WriteLine("Tie detected! Tie-breaker needed.");
+                    return true;
                 }
             }
-            return false; // No tie-breaker needed
+
+            Console.WriteLine("No ties detected. No tie-breaker needed.");
+            return false;
         }
+
 
         public int GetNumberOfTeamsTied(MatchLog matchLog)
         {
@@ -473,34 +494,63 @@ namespace FlawsFightNight.Managers
             return tiedTeams; // Return number of teams involved in ties
         }
 
-        public List<string> GetTiedTeams(MatchLog matchLog)
+        public List<string> GetTiedTeams(MatchLog matchLog, bool isDoubleRoundRobin)
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            // Count wins for each team
-            foreach (var round in matchLog.PostMatchesByRound.Values)
+
+            Console.WriteLine("=== Debug: Starting Tied Teams Check ===");
+
+            // Count wins
+            foreach (var roundKvp in matchLog.PostMatchesByRound)
             {
-                foreach (var postMatch in round)
+                Console.WriteLine($"Checking Round {roundKvp.Key} with {roundKvp.Value.Count} matches");
+                foreach (var postMatch in roundKvp.Value)
                 {
                     if (!postMatch.WasByeMatch)
                     {
-                        if (!teamWins.ContainsKey(postMatch.Winner))
-                            teamWins[postMatch.Winner] = 0;
-                        teamWins[postMatch.Winner]++;
+                        string winnerKey = postMatch.Winner;
+
+                        if (!teamWins.ContainsKey(winnerKey))
+                        {
+                            teamWins[winnerKey] = 0;
+                            Console.WriteLine($"  -> New entry created for {winnerKey}");
+                        }
+
+                        teamWins[winnerKey]++;
+                        Console.WriteLine($"  Winner found: {winnerKey} -> Total wins now: {teamWins[winnerKey]}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("  Skipping bye match");
                     }
                 }
             }
-            // Check for ties
-            var winCounts = teamWins.Values.GroupBy(w => w).ToList();
-            List<string> tiedTeams = new List<string>();
-            foreach (var group in winCounts)
+
+            if (teamWins.Count == 0)
             {
-                if (group.Count() > 1 && group.Key > 0) // More than one team with the same non-zero win count
+                Console.WriteLine("No wins recorded. Returning empty list.");
+                return new List<string>();
+            }
+
+            // Check ties: any win count that occurs for 2 or more teams
+            var winGroups = teamWins.Values.GroupBy(w => w).ToList();
+            List<string> tiedTeams = new List<string>();
+
+            foreach (var group in winGroups)
+            {
+                Console.WriteLine($"Checking win count {group.Key} -> {group.Count()} teams");
+                if (group.Count() > 1 && group.Key > 0) // Only check for multiple teams with same wins
                 {
-                    tiedTeams.AddRange(teamWins.Where(kvp => kvp.Value == group.Key).Select(kvp => kvp.Key));
+                    var groupTeams = teamWins.Where(kvp => kvp.Value == group.Key).Select(kvp => kvp.Key).ToList();
+                    tiedTeams.AddRange(groupTeams);
+                    Console.WriteLine($"  Tie detected for teams: {string.Join(", ", groupTeams)}");
                 }
             }
-            return tiedTeams; // Return list of teams involved in ties
+
+            Console.WriteLine($"=== Debug: Tied Teams Result ===\n{string.Join(", ", tiedTeams)}");
+            return tiedTeams;
         }
+
 
         public string ResolveTieBreaker(List<string> tiedTeams, MatchLog log)
         {
@@ -629,5 +679,26 @@ namespace FlawsFightNight.Managers
             return chosen;
         }
 
+        public string GetMostWinsWinner(MatchLog matchLog)
+        {
+            var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            // Count wins for each team
+            foreach (var round in matchLog.PostMatchesByRound.Values)
+            {
+                foreach (var postMatch in round)
+                {
+                    if (!postMatch.WasByeMatch)
+                    {
+                        if (!teamWins.ContainsKey(postMatch.Winner))
+                            teamWins[postMatch.Winner] = 0;
+                        teamWins[postMatch.Winner]++;
+                    }
+                }
+            }
+            // Find the team with the most wins
+            if (teamWins.Count == 0)
+                return null;
+            return teamWins.Aggregate((l, r) => l.Value > r.Value ? l : r).Key;
+        }
     }
 }
