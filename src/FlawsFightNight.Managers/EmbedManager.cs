@@ -51,30 +51,36 @@ namespace FlawsFightNight.Managers
                 && matchesToPlay.Count > 0)
             {
                 var sb = new StringBuilder();
-                foreach (var match in matchesToPlay.Where(m => !m.IsByeMatch))
+                foreach (var match in matchesToPlay)
                 {
-                    sb.AppendLine($"🔹 **{match.TeamA}** vs **{match.TeamB}**");
+                    if (match.IsByeMatch)
+                        sb.AppendLine($"💤 **{match.TeamA} vs. {match.TeamB}**");
+                    else
+                        sb.AppendLine($"🔹 **{match.TeamA}** vs **{match.TeamB}**");
                 }
-                embed.AddField("⚔️ Matches To Play", sb.ToString(), false);
+                embed.AddField($"⚔️ Matches To Play (Round {tournament.CurrentRound})", sb.ToString(), false);
             }
             else
             {
                 embed.AddField("⚔️ Matches To Play", "No matches left to play this round ✅", false);
             }
 
-            // --- Past Matches ---
-            if (tournament.MatchLog.PostMatchesByRound.TryGetValue(tournament.CurrentRound, out var pastMatches)
-                && pastMatches.Count > 0)
+            // --- Past Matches (grouped by round) ---
+            if (tournament.MatchLog.PostMatchesByRound.Count > 0)
             {
-                var sb = new StringBuilder();
-                foreach (var postMatch in pastMatches)
+                foreach (var round in tournament.MatchLog.PostMatchesByRound.OrderBy(kvp => kvp.Key))
                 {
-                    if (postMatch.WasByeMatch)
-                        sb.AppendLine($"(Bye) **{postMatch.Winner}** advances");
-                    else
-                        sb.AppendLine($"✅ **{postMatch.Winner}** ({postMatch.WinnerScore}) defeated **{postMatch.Loser}** ({postMatch.LoserScore})");
+                    var sb = new StringBuilder();
+                    foreach (var postMatch in round.Value.OrderBy(pm => pm.CompletedOn))
+                    {
+                        if (postMatch.WasByeMatch)
+                            sb.AppendLine($"💤 **{postMatch.Winner}** -Bye Match-");
+                        else
+                            sb.AppendLine($"✅ **{postMatch.Winner}** ({postMatch.WinnerScore}) defeated **{postMatch.Loser}** ({postMatch.LoserScore})");
+                    }
+
+                    embed.AddField($"📜 Past Matches - Round {round.Key}", sb.ToString(), false);
                 }
-                embed.AddField("📜 Past Matches", sb.ToString(), false);
             }
             else
             {
@@ -83,6 +89,7 @@ namespace FlawsFightNight.Managers
 
             return embed.Build();
         }
+
         #endregion
 
         #region Match Embeds

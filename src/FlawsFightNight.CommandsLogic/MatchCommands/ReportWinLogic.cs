@@ -32,6 +32,12 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, "The losing team score cannot be greater than the winning team score.");
             }
 
+            // Cannot try to report Bye as a team
+            if (winningTeamName.Equals("Bye", StringComparison.OrdinalIgnoreCase))
+            {
+                return _embedManager.ErrorEmbed(Name , $"You may not try to report a Bye team as the winner of a Bye match. \n\nUser input: {winningTeamName}");
+            }
+
             // Check if team exists across all tournaments
             if (!_teamManager.DoesTeamExist(winningTeamName))
             {

@@ -27,6 +27,12 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 
         public Embed RegisterTeamProcess(SocketInteractionContext context, string teamName, string tournamentId, List<IUser> members)
         {
+            // Cannot try to report Bye as a team
+            if (teamName.Equals("Bye", StringComparison.OrdinalIgnoreCase))
+            {
+                return _embedManager.ErrorEmbed(Name, $"Teams are not allowed to have any variation of the singular name 'Bye' for data purposes. \n\nUser input: {teamName}");
+            }
+
             // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
             {
