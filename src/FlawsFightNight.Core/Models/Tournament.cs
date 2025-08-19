@@ -38,6 +38,11 @@ namespace FlawsFightNight.Core.Models
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
         public bool IsDoubleRoundRobin { get; set; } = true;
 
+        // Discord Channel ID's for LiveView
+        public ulong MatchesChannelId { get; set; } = 0;
+        public ulong StandingsChannelId { get; set; } = 0;
+        public ulong TeamsChannelId { get; set; } = 0;
+
         // Match Log to track all matches in the tournament, current and past
         public MatchLog MatchLog { get; set; } = new();
 

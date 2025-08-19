@@ -35,6 +35,56 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
+        #region LiveView Embeds
+        public Embed MatchesLiveView(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"🏆 {tournament.Name} - LiveView")
+                .WithDescription($"**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n" +
+                                 $"Format: {tournament.TeamSizeFormat}\n" +
+                                 $"Teams: {tournament.Teams.Count}")
+                .WithColor(Color.DarkPurple)
+                .WithCurrentTimestamp();
+
+            // --- Matches To Play ---
+            if (tournament.MatchLog.MatchesToPlayByRound.TryGetValue(tournament.CurrentRound, out var matchesToPlay)
+                && matchesToPlay.Count > 0)
+            {
+                var sb = new StringBuilder();
+                foreach (var match in matchesToPlay.Where(m => !m.IsByeMatch))
+                {
+                    sb.AppendLine($"🔹 **{match.TeamA}** vs **{match.TeamB}**");
+                }
+                embed.AddField("⚔️ Matches To Play", sb.ToString(), false);
+            }
+            else
+            {
+                embed.AddField("⚔️ Matches To Play", "No matches left to play this round ✅", false);
+            }
+
+            // --- Past Matches ---
+            if (tournament.MatchLog.PostMatchesByRound.TryGetValue(tournament.CurrentRound, out var pastMatches)
+                && pastMatches.Count > 0)
+            {
+                var sb = new StringBuilder();
+                foreach (var postMatch in pastMatches)
+                {
+                    if (postMatch.WasByeMatch)
+                        sb.AppendLine($"(Bye) **{postMatch.Winner}** advances");
+                    else
+                        sb.AppendLine($"✅ **{postMatch.Winner}** ({postMatch.WinnerScore}) defeated **{postMatch.Loser}** ({postMatch.LoserScore})");
+                }
+                embed.AddField("📜 Past Matches", sb.ToString(), false);
+            }
+            else
+            {
+                embed.AddField("📜 Past Matches", "No matches completed yet.", false);
+            }
+
+            return embed.Build();
+        }
+        #endregion
+
         #region Match Embeds
         public Embed ReportByeMatch(Tournament tournament, Match match)
         {
@@ -58,6 +108,20 @@ namespace FlawsFightNight.Managers
                 .AddField("Tournament ID", tournament.Id)
                 .WithColor(Color.Green)
                 .WithFooter("Match result reported successfully.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+        #endregion
+
+        #region Set Embeds
+        public Embed SetMatchesChannelSuccess(IMessageChannel channel, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Matches Channel Set Successfully")
+                .WithDescription($"The matches/challenges channel for the tournament **{tournament.Name}** has been successfully set to {channel.Name} (ID#: {channel.Id}).")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Matches/Challenges LiveView will now be posted in this channel.")
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }

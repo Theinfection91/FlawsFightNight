@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.CommandsLogic.MatchCommands;
+using FlawsFightNight.CommandsLogic.SetCommands;
 using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Data.Handlers;
@@ -60,6 +61,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<NextRoundLogic>();
                     services.AddSingleton<RegisterTeamLogic>();
                     services.AddSingleton<ReportWinLogic>();
+                    services.AddSingleton<SetMatchesChannelLogic>();
                     services.AddSingleton<SetupTournamentLogic>();
                     services.AddSingleton<StartTournamentLogic>();
                     services.AddSingleton<UnlockRoundLogic>();
