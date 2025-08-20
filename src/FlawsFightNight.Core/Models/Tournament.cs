@@ -40,8 +40,11 @@ namespace FlawsFightNight.Core.Models
 
         // Discord Channel ID's for LiveView
         public ulong MatchesChannelId { get; set; } = 0;
+        public ulong MatchesMessageId { get; set; } = 0;
         public ulong StandingsChannelId { get; set; } = 0;
+        public ulong StandingsMessageId { get; set; } = 0;
         public ulong TeamsChannelId { get; set; } = 0;
+        public ulong TeamsMessageId { get; set; } = 0;
 
         // Match Log to track all matches in the tournament, current and past
         public MatchLog MatchLog { get; set; } = new();
