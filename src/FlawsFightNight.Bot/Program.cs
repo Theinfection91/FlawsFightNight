@@ -21,8 +21,8 @@ namespace FlawsFightNight.Bot
         private CommandService? _commands;
         private InteractionService? _interactionService;
 
-        //private ConfigManager _configManager;
-        public ConfigManager _configManager;
+        public ConfigManager configManager;
+        public LiveViewManager liveViewManager;
 
         public static async Task Main(string[] args)
         {
@@ -73,6 +73,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<ConfigManager>();
                     services.AddSingleton<DataManager>();
                     services.AddSingleton<EmbedManager>();
+                    services.AddSingleton<LiveViewManager>();
                     services.AddSingleton<MatchManager>();
                     services.AddSingleton<MemberManager>();
                     services.AddSingleton<TeamManager>();
@@ -85,10 +86,10 @@ namespace FlawsFightNight.Bot
                 .Build();
 
             _services = host.Services;
-            _configManager = _services.GetRequiredService<ConfigManager>();
+            configManager = _services.GetRequiredService<ConfigManager>();
 
             // Check discord token
-            _configManager.SetDiscordTokenProcess();
+            configManager.SetDiscordTokenProcess();
 
             await RunBotAsync();
         }
@@ -122,7 +123,7 @@ namespace FlawsFightNight.Bot
             };
 
             // Login and start the bot
-            await _client.LoginAsync(TokenType.Bot, _configManager.GetDiscordToken());
+            await _client.LoginAsync(TokenType.Bot, configManager.GetDiscordToken());
             await _client.StartAsync();
 
             // Wait for Ready event
@@ -137,6 +138,9 @@ namespace FlawsFightNight.Bot
 
             Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");
 
+            // Initialize LiveViewManager for automated, updating channel messages
+            liveViewManager = _services.GetRequiredService<LiveViewManager>();
+
             // Keep the bot running
             await Task.Delay(-1);
         }
@@ -147,11 +151,11 @@ namespace FlawsFightNight.Bot
             await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
             // Check guild ID
-            _configManager.SetGuildIdProcess();
+            configManager.SetGuildIdProcess();
 
             // Register commands to guild
-            await _interactionService.RegisterCommandsToGuildAsync(_configManager.GetGuildId());
-            Console.WriteLine($"{DateTime.Now} - Commands registered to guild {_configManager.GetGuildId()}");
+            await _interactionService.RegisterCommandsToGuildAsync(configManager.GetGuildId());
+            Console.WriteLine($"{DateTime.Now} - Commands registered to guild {configManager.GetGuildId()}");
         }
 
         private async Task HandleInteractionAsync(SocketInteraction interaction)
@@ -166,7 +170,7 @@ namespace FlawsFightNight.Bot
 
             int argPos = 0;
             // Get Command Prefix
-            if (message.HasStringPrefix(_configManager.GetCommandPrefix(), ref argPos) ||
+            if (message.HasStringPrefix(configManager.GetCommandPrefix(), ref argPos) ||
                 message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
                 var context = new SocketCommandContext(_client, message);
