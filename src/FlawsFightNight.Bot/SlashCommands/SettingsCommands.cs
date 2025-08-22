@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.SetCommands;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("set", "Set the channel ID for matches of a specified tournament")]
-            //[RequireUserPermission(GuildPermission.Administrator)]
+            [RequireGuildAdmin]
             public async Task SetMatchesChannelIdAsync(
             [Summary("tournament_id", "The ID of the tournament to set the matches channel for")] string tournamentId,
             [Summary("channel_id", "The ID of the channel where matches will be posted")] IMessageChannel channel)
@@ -31,8 +32,6 @@ namespace FlawsFightNight.Bot.SlashCommands
 
                 try
                 {
-                    bool isGuildAdmin = (Context.User as SocketGuildUser)?.GuildPermissions.Administrator ?? false;
-                    if (!isGuildAdmin) await RespondAsync($"isGuildAdmin = {isGuildAdmin}", ephemeral: true);
                     var result = _setMatchesChannelLogic.SetMatchesChannelProcess(tournamentId, channel);
                     await RespondAsync(embed: result);
                 }
@@ -44,19 +43,18 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("remove", "Remove the channel ID for matches of a specified tournament")]
-            //[RequireUserPermission(GuildPermission.Administrator)]
+            [RequireGuildAdmin]
             public async Task SetMatchesChannelIdAsync(
             [Summary("tournament_id", "The ID of the tournament to set the matches channel for")] string tournamentId)
             {
                 try
                 {
-                    bool isGuildAdmin = (Context.User as SocketGuildUser)?.GuildPermissions.Administrator ?? false;
-                    if (!isGuildAdmin) await RespondAsync($"isGuildAdmin = {isGuildAdmin}", ephemeral: true);
-
                     // TODO: Implement the logic to remove the matches channel ID
 
                     //var result = ;
                     //await RespondAsync(embed: result);
+
+                    await RespondAsync("TODO");
                 }
                 catch (Exception ex)
                 {

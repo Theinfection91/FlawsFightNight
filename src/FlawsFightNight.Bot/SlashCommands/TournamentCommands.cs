@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Core.Enums;
 using System;
@@ -37,7 +38,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("create", "Create a new tournament")]
-        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        [RequireGuildAdmin]
         public async Task CreateTournamentAsync(
             [Summary("name", "The name of the tournament")] string name,
             [Summary("type", "The type of the tournament")] TournamentType tournamentType,
@@ -57,7 +58,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("lock-teams", "Lock teams in a tournament")]
-        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        [RequireGuildAdmin]
         public async Task LockTeamsAsync(
             [Summary("tournament_id", "The ID of the tournament to lock teams in")] string tournamentId)
         {
@@ -74,7 +75,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("unlock-teams", "Unlock teams in a tournament")]
-        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        [RequireGuildAdmin]
         public async Task UnlockTeamsAsync(
             [Summary("tournament_id", "The ID of the tournament to unlock teams in")] string tournamentId)
         {
@@ -91,7 +92,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("start", "Start a tournament")]
-        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        [RequireGuildAdmin]
         public async Task StartTournamentAsync(
             [Summary("tournament_id", "The ID of the tournament to start")] string tournamentId)
         {
@@ -108,7 +109,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("setup", "Setup a tournaments rules and habits before starting it.")]
-        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        [RequireGuildAdmin]
         public async Task SetupTournamentAsync(
             [Summary("tournament_id", "The ID of the tournament to setup")] string tournamentId,
             [Summary("tie_breaker_ruleset", "The ruleset to use for tie breakers")] TieBreakerType tieBreakerType,
@@ -127,7 +128,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("end", "End a tournament")]
-        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        [RequireGuildAdmin]
         public async Task EndTournamentAsync(
             [Summary("tournament_id", "The ID of the tournament to end")] string tournamentId)
         {
@@ -144,7 +145,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("lock-in-round", "Lock in round results after all matches for round have been played")]
-        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        [RequireGuildAdmin]
         public async Task LockInRoundAsync(
             [Summary("tournament_id", "The ID of the tournament to round lock")] string tournamentId)
         {
@@ -161,7 +162,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("unlock-round", "Unlock the current round to make changes if needed")]
-        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        [RequireGuildAdmin]
         public async Task UnlockRoundAsync(
             [Summary("tournament_id", "The ID of the tournament to unlock the round")] string tournamentId)
         {
@@ -178,7 +179,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("next-round", "Advance to the next round of certain tournaments if conditions are met.")]
-        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        [RequireGuildAdmin]
         public async Task NextRoundAsync(
             [Summary("tournament_id", "The ID of the tournament to advance the round")] string tournamentId)
         {

@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.TeamCommands;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("register", "Register a new team for a chosen Tournament")]
-        [Discord.Commands.RequireUserPermission(GuildPermission.Administrator)]
+        [RequireGuildAdmin]
         public async Task RegisterTeamAsync(
             [Summary("name", "The name of the team")] string name,
             [Summary("tournament_id", "The ID of the tournament to register for")] string tournamentId,
