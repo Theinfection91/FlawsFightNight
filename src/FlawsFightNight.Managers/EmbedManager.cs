@@ -39,12 +39,20 @@ namespace FlawsFightNight.Managers
         public Embed MatchesLiveView(Tournament tournament)
         {
             var embed = new EmbedBuilder()
-                .WithTitle($"🏆 {tournament.Name} - LiveView")
-                .WithDescription($"**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n" +
-                                 $"Format: {tournament.TeamSizeFormat}\n" +
-                                 $"Teams: {tournament.Teams.Count}")
-                .WithColor(Color.DarkPurple)
+                .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Tournament Matches")
+                .WithDescription($"**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
+                .WithColor(Color.DarkOrange)
                 .WithCurrentTimestamp();
+
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn)
+            {
+                embed.AddField("🔒 Locked", "Round is locked and ready to advance.", true);
+            }
+            if (tournament.IsRoundComplete && !tournament.IsRoundLockedIn)
+            {
+                embed.AddField("🔓 Unlocked", "Round is finished but unlocked. Lock to finalize results then advance.", true);
+            }
+            // TODO Make it show when the tournament is ready to end
 
             // --- Matches To Play ---
             if (tournament.MatchLog.MatchesToPlayByRound.TryGetValue(tournament.CurrentRound, out var matchesToPlay)
@@ -54,15 +62,22 @@ namespace FlawsFightNight.Managers
                 foreach (var match in matchesToPlay)
                 {
                     if (match.IsByeMatch)
-                        sb.AppendLine($"💤 **{match.TeamA} vs. {match.TeamB}**");
+                        continue;
                     else
                         sb.AppendLine($"🔹 **{match.TeamA}** vs **{match.TeamB}**");
+                }
+                foreach (var match in matchesToPlay)
+                {
+                    if (match.IsByeMatch)
+                        sb.AppendLine($"💤 *{match.GetCorrectNameForByeMatch()} Bye Week*");
+                    else
+                        continue;
                 }
                 embed.AddField($"⚔️ Matches To Play (Round {tournament.CurrentRound})", sb.ToString(), false);
             }
             else
             {
-                embed.AddField("⚔️ Matches To Play", "No matches left to play this round ✅", false);
+                embed.AddField("⚔️ Matches To Play", "No matches left to play this round ✅", false);  
             }
 
             // --- Past Matches (grouped by round) ---
@@ -79,12 +94,12 @@ namespace FlawsFightNight.Managers
                             sb.AppendLine($"✅ **{postMatch.Winner}** ({postMatch.WinnerScore}) defeated **{postMatch.Loser}** ({postMatch.LoserScore})");
                     }
 
-                    embed.AddField($"📜 Past Matches - Round {round.Key}", sb.ToString(), false);
+                    embed.AddField($"📜 Previous Matches - Round {round.Key}", sb.ToString(), false);
                 }
             }
             else
             {
-                embed.AddField("📜 Past Matches", "No matches completed yet.", false);
+                embed.AddField("📜 Previous Matches", "No matches completed yet.", false);
             }
 
             return embed.Build();

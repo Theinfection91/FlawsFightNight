@@ -35,9 +35,7 @@ namespace FlawsFightNight.CommandsLogic.SetCommands
             // Save and reload the tournaments database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
 
-            return _embedManager.MatchesLiveView(tournament);
-
-            //return _embedManager.SetMatchesChannelSuccess(channel, tournament);
+            return _embedManager.SetMatchesChannelSuccess(channel, tournament);
         }
     }
 }
