@@ -205,7 +205,7 @@ namespace FlawsFightNight.Managers
 
                 var teams = tournament.Teams.Select(t => t.Name).ToList();
                 bool hasBye = false;
-                const string byePlaceholder = "__BYE__";
+                const string byePlaceholder = "BYE";
                 if (teams.Count % 2 != 0)
                 {
                     hasBye = true;
@@ -228,8 +228,8 @@ namespace FlawsFightNight.Managers
 
                         bool isByeMatch = hasBye && (a == byePlaceholder || b == byePlaceholder);
                         var match = new Match(
-                            a == byePlaceholder ? null : a,
-                            b == byePlaceholder ? null : b)
+                            a == byePlaceholder ? "BYE" : a,
+                            b == byePlaceholder ? "BYE" : b)
                         {
                             IsByeMatch = isByeMatch,
                             RoundNumber = round,

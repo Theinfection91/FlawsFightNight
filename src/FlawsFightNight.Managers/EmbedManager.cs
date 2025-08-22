@@ -35,6 +35,78 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
+        #region LiveView Embeds
+        public Embed MatchesLiveView(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Tournament Matches")
+                .WithDescription($"**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
+                .WithColor(Color.DarkOrange)
+                .WithCurrentTimestamp();
+
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn)
+            {
+                embed.AddField("🔒 Locked", "Round is locked and ready to advance.", true);
+            }
+            if (tournament.IsRoundComplete && !tournament.IsRoundLockedIn)
+            {
+                embed.AddField("🔓 Unlocked", "Round is finished but unlocked. Lock to finalize results then advance.", true);
+            }
+            // TODO Make it show when the tournament is ready to end
+
+            // --- Matches To Play ---
+            if (tournament.MatchLog.MatchesToPlayByRound.TryGetValue(tournament.CurrentRound, out var matchesToPlay)
+                && matchesToPlay.Count > 0)
+            {
+                var sb = new StringBuilder();
+                foreach (var match in matchesToPlay)
+                {
+                    if (match.IsByeMatch)
+                        continue;
+                    else
+                        sb.AppendLine($"🔹 **{match.TeamA}** vs **{match.TeamB}**");
+                }
+                foreach (var match in matchesToPlay)
+                {
+                    if (match.IsByeMatch)
+                        sb.AppendLine($"💤 *{match.GetCorrectNameForByeMatch()} Bye Week*");
+                    else
+                        continue;
+                }
+                embed.AddField($"⚔️ Matches To Play (Round {tournament.CurrentRound})", sb.ToString(), false);
+            }
+            else
+            {
+                embed.AddField("⚔️ Matches To Play", "No matches left to play this round ✅", false);  
+            }
+
+            // --- Past Matches (grouped by round) ---
+            if (tournament.MatchLog.PostMatchesByRound.Count > 0)
+            {
+                foreach (var round in tournament.MatchLog.PostMatchesByRound.OrderBy(kvp => kvp.Key))
+                {
+                    var sb = new StringBuilder();
+                    foreach (var postMatch in round.Value.OrderBy(pm => pm.CompletedOn))
+                    {
+                        if (postMatch.WasByeMatch)
+                            sb.AppendLine($"💤 **{postMatch.Winner}** -Bye Match-");
+                        else
+                            sb.AppendLine($"✅ **{postMatch.Winner}** ({postMatch.WinnerScore}) defeated **{postMatch.Loser}** ({postMatch.LoserScore})");
+                    }
+
+                    embed.AddField($"📜 Previous Matches - Round {round.Key}", sb.ToString(), false);
+                }
+            }
+            else
+            {
+                embed.AddField("📜 Previous Matches", "No matches completed yet.", false);
+            }
+
+            return embed.Build();
+        }
+
+        #endregion
+
         #region Match Embeds
         public Embed ReportByeMatch(Tournament tournament, Match match)
         {
@@ -58,6 +130,20 @@ namespace FlawsFightNight.Managers
                 .AddField("Tournament ID", tournament.Id)
                 .WithColor(Color.Green)
                 .WithFooter("Match result reported successfully.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+        #endregion
+
+        #region Set Embeds
+        public Embed SetMatchesChannelSuccess(IMessageChannel channel, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Matches Channel Set Successfully")
+                .WithDescription($"The matches/challenges channel for the tournament **{tournament.Name}** has been successfully set to {channel.Name} (ID#: {channel.Id}).")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Matches/Challenges LiveView will now be posted in this channel.")
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
