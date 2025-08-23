@@ -573,7 +573,9 @@ namespace FlawsFightNight.Managers
                 }
             }
             if (attempt == maxRetries)
+            {
                 //Console.WriteLine("Failed to build a valid round-robin schedule after max retries.");
+            }
         }
 
         private bool ValidateRoundRobin(Tournament tournament, bool isDoubleRoundRobin)
@@ -629,10 +631,10 @@ namespace FlawsFightNight.Managers
                 return true; // No issues, silent success
 
             // Only print actual errors
-            if (missing.Any()) //Console.WriteLine("Missing pairs: " + string.Join(", ", missing.Select(p => $"{p.Item1}-{p.Item2}")));
-            if (duplicates.Any()) //Console.WriteLine("Duplicate pairs: " + string.Join(", ", duplicates.Select(p => $"{p.Item1}-{p.Item2}")));
-            if (unexpected.Any()) //Console.WriteLine("Unexpected pairs: " + string.Join(", ", unexpected.Select(p => $"{p.Item1}-{p.Item2}")));
-            if (conflicts.Any()) //Console.WriteLine("Per-round conflicts: " + string.Join("; ", conflicts));
+            //if (missing.Any()) Console.WriteLine("Missing pairs: " + string.Join(", ", missing.Select(p => $"{p.Item1}-{p.Item2}")));
+            //if (duplicates.Any()) Console.WriteLine("Duplicate pairs: " + string.Join(", ", duplicates.Select(p => $"{p.Item1}-{p.Item2}")));
+            //if (unexpected.Any()) Console.WriteLine("Unexpected pairs: " + string.Join(", ", unexpected.Select(p => $"{p.Item1}-{p.Item2}")));
+            //if (conflicts.Any()) Console.WriteLine("Per-round conflicts: " + string.Join("; ", conflicts));
 
             return false;
         }

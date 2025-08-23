@@ -81,7 +81,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 {
                     //var result = ;
                     //await RespondAsync(embed: result);
-                    await RespondAsync("TODO");
+                    await RespondAsync("Challenges and Ladder Tournaments coming soon.", ephemeral: true);
                 }
                 catch (Exception ex)
                 {
@@ -97,7 +97,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 {
                     //var result = ;
                     //await RespondAsync(embed: result);
-                    await RespondAsync("TODO");
+                    await RespondAsync("Challenges and Ladder Tournaments coming soon.", ephemeral: true);
                 }
                 catch (Exception ex)
                 {
