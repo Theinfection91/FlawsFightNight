@@ -55,6 +55,9 @@ namespace FlawsFightNight.Bot
                     ///////////////////////////////
 
                     services.AddSingleton<CreateTournamentLogic>();
+                    services.AddSingleton<CancelChallengeLogic>();
+                    services.AddSingleton<EditMatchLogic>();
+                    services.AddSingleton<SendChallengeLogic>();
                     services.AddSingleton<EndTournamentLogic>();
                     services.AddSingleton<LockInRoundLogic>();
                     services.AddSingleton<LockTeamsLogic>();

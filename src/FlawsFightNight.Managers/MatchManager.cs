@@ -32,6 +32,45 @@ namespace FlawsFightNight.Managers
 
         }
 
+        public string? GenerateMatchId()
+        {
+            bool isUnique = false;
+            string uniqueId;
+
+            while (!isUnique)
+            {
+                Random random = new();
+                int randomInt = random.Next(100, 1000);
+                uniqueId = $"M{randomInt}";
+
+                // Check if the generated ID is unique
+                if (!IsMatchIdInDatabase(uniqueId))
+                {
+                    isUnique = true;
+                    return uniqueId;
+                }
+            }
+            return null;
+        }
+
+        public bool IsMatchIdInDatabase(string matchId)
+        {
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
+                {
+                    foreach (var match in round)
+                    {
+                        if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true; // Match ID found
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
         public bool IsMatchMadeForTeam(Tournament tournament, string teamName)
         {
             if (tournament == null)
@@ -231,6 +270,7 @@ namespace FlawsFightNight.Managers
                             a == byePlaceholder ? "BYE" : a,
                             b == byePlaceholder ? "BYE" : b)
                         {
+                            Id = GenerateMatchId(),
                             IsByeMatch = isByeMatch,
                             RoundNumber = round,
                             CreatedOn = DateTime.UtcNow
@@ -252,9 +292,9 @@ namespace FlawsFightNight.Managers
                     for (int round = 1; round <= currentMaxRound; round++)
                     {
                         var original = tournament.MatchLog.MatchesToPlayByRound[round];
-                        var reversed = original.Select(m => new Match(
-                            m.TeamB, m.TeamA)
+                        var reversed = original.Select(m => new Match(m.TeamB, m.TeamA)
                         {
+                            Id = GenerateMatchId(),
                             IsByeMatch = m.IsByeMatch,
                             RoundNumber = round + currentMaxRound,
                             CreatedOn = DateTime.UtcNow
@@ -345,9 +385,9 @@ namespace FlawsFightNight.Managers
             tournament.MatchLog.MatchesToPlayByRound.Clear();
         }
 
-        public PostMatch CreateNewPostMatch(string winningTeamName, int winnerScore, string losingTeamName, int loserScore, DateTime originalCreationDateTime, bool wasByeMatch = false)
+        public PostMatch CreateNewPostMatch(string matchId, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, DateTime originalCreationDateTime, bool wasByeMatch = false)
         {
-            return new PostMatch(winningTeamName, winnerScore, losingTeamName, loserScore, originalCreationDateTime, wasByeMatch);
+            return new PostMatch(matchId, winningTeamName, winnerScore, losingTeamName, loserScore, originalCreationDateTime, wasByeMatch);
         }
 
         public void ConvertMatchToPostMatch(Tournament tournament, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, bool wasByeMatch = false)
@@ -365,7 +405,7 @@ namespace FlawsFightNight.Managers
             }
 
             // Create PostMatch
-            PostMatch postMatch = CreateNewPostMatch(winningTeamName, winnerScore, losingTeamName, loserScore, match.CreatedOn, wasByeMatch);
+            PostMatch postMatch = CreateNewPostMatch(match.Id, winningTeamName, winnerScore, losingTeamName, loserScore, match.CreatedOn, wasByeMatch);
 
             // Add to PostMatchesByRound
             if (!tournament.MatchLog.PostMatchesByRound.ContainsKey(match.RoundNumber))
