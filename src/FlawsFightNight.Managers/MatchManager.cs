@@ -137,34 +137,34 @@ namespace FlawsFightNight.Managers
         {
             if (tournament == null)
             {
-                Console.WriteLine("Tournament is null.");
+                //Console.WriteLine("Tournament is null.");
                 return false;
             }
 
             if (tournament.MatchLog == null)
             {
-                Console.WriteLine("MatchLog is null.");
+                //Console.WriteLine("MatchLog is null.");
                 return false;
             }
 
             if (tournament.MatchLog.MatchesToPlayByRound == null)
             {
-                Console.WriteLine("MatchesToPlayByRound is null.");
+                //Console.WriteLine("MatchesToPlayByRound is null.");
                 return false;
             }
 
             int currentRound = tournament.CurrentRound;
-            Console.WriteLine($"Checking only current round: {currentRound}");
+            //Console.WriteLine($"Checking only current round: {currentRound}");
 
             if (!tournament.MatchLog.MatchesToPlayByRound.TryGetValue(currentRound, out var matches))
             {
-                Console.WriteLine($"No entry for round {currentRound} in MatchesToPlayByRound.");
+                //Console.WriteLine($"No entry for round {currentRound} in MatchesToPlayByRound.");
                 return false;
             }
 
             if (matches == null)
             {
-                Console.WriteLine($"Match list for round {currentRound} is null.");
+                //Console.WriteLine($"Match list for round {currentRound} is null.");
                 return false;
             }
 
@@ -172,28 +172,28 @@ namespace FlawsFightNight.Managers
             {
                 if (match == null)
                 {
-                    Console.WriteLine("Encountered null match in list, skipping.");
+                    //Console.WriteLine("Encountered null match in list, skipping.");
                     continue;
                 }
 
-                Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
 
                 if (!string.IsNullOrEmpty(match.TeamA) &&
                     match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine($"Match found for team '{teamName}' as TeamA in round {currentRound}.");
+                    //Console.WriteLine($"Match found for team '{teamName}' as TeamA in round {currentRound}.");
                     return true;
                 }
 
                 if (!string.IsNullOrEmpty(match.TeamB) &&
                     match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine($"Match found for team '{teamName}' as TeamB in round {currentRound}.");
+                    //Console.WriteLine($"Match found for team '{teamName}' as TeamB in round {currentRound}.");
                     return true;
                 }
             }
 
-            Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
+            //Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
             return false;
         }
 
@@ -201,12 +201,12 @@ namespace FlawsFightNight.Managers
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-            Console.WriteLine("=== Debug: Starting Tie-Breaker Check ===");
+            //Console.WriteLine("=== Debug: Starting Tie-Breaker Check ===");
 
             // Count wins for each team (single or double)
             foreach (var round in matchLog.PostMatchesByRound)
             {
-                Console.WriteLine($"Checking Round {round.Key} with {round.Value.Count} matches");
+                //Console.WriteLine($"Checking Round {round.Key} with {round.Value.Count} matches");
 
                 foreach (var postMatch in round.Value)
                 {
@@ -215,43 +215,43 @@ namespace FlawsFightNight.Managers
                         // Treat Winner as string directly
                         string winnerKey = postMatch.Winner ?? "UNKNOWN";
 
-                        Console.WriteLine($"  Winner found: {winnerKey}");
+                        //Console.WriteLine($"  Winner found: {winnerKey}");
 
                         if (!teamWins.ContainsKey(winnerKey))
                         {
                             teamWins[winnerKey] = 0;
-                            Console.WriteLine($"  -> New entry created for {winnerKey}");
+                            //Console.WriteLine($"  -> New entry created for {winnerKey}");
                         }
 
                         teamWins[winnerKey]++;
-                        Console.WriteLine($"  -> {winnerKey} now has {teamWins[winnerKey]} wins");
+                        //Console.WriteLine($"  -> {winnerKey} now has {teamWins[winnerKey]} wins");
                     }
                     else
                     {
-                        Console.WriteLine("  Skipping bye match");
+                        //Console.WriteLine("  Skipping bye match");
                     }
                 }
             }
 
-            Console.WriteLine("=== Debug: Final Team Wins ===");
+            //Console.WriteLine("=== Debug: Final Team Wins ===");
             foreach (var kvp in teamWins)
             {
-                Console.WriteLine($"Team {kvp.Key} : {kvp.Value} wins");
+                //Console.WriteLine($"Team {kvp.Key} : {kvp.Value} wins");
             }
 
             // Check for ties
             var winCounts = teamWins.Values.GroupBy(w => w).ToList();
             foreach (var group in winCounts)
             {
-                Console.WriteLine($"Checking win count {group.Key} -> {group.Count()} teams");
+                //Console.WriteLine($"Checking win count {group.Key} -> {group.Count()} teams");
                 if (group.Count() > 1 && group.Key > 0) // Multiple teams with same non-zero wins
                 {
-                    Console.WriteLine("Tie detected! Tie-breaker needed.");
+                    //Console.WriteLine("Tie detected! Tie-breaker needed.");
                     return true;
                 }
             }
 
-            Console.WriteLine("No ties detected. No tie-breaker needed.");
+            //Console.WriteLine("No ties detected. No tie-breaker needed.");
             return false;
         }
         #endregion
@@ -293,17 +293,17 @@ namespace FlawsFightNight.Managers
         public Match GetMatchByTeamName(Tournament tournament, string teamName)
         {
             int currentRound = tournament.CurrentRound;
-            Console.WriteLine($"Looking in round: {currentRound}");
+            //Console.WriteLine($"Looking in round: {currentRound}");
 
             if (!tournament.MatchLog.MatchesToPlayByRound.TryGetValue(currentRound, out var matches))
             {
-                Console.WriteLine($"No entry for round {currentRound} in MatchesToPlayByRound.");
+                //Console.WriteLine($"No entry for round {currentRound} in MatchesToPlayByRound.");
                 return null;
             }
 
             if (matches == null)
             {
-                Console.WriteLine($"Match list for round {currentRound} is null.");
+                //Console.WriteLine($"Match list for round {currentRound} is null.");
                 return null;
             }
 
@@ -311,11 +311,11 @@ namespace FlawsFightNight.Managers
             {
                 if (match == null)
                 {
-                    Console.WriteLine("Encountered null match in list, skipping.");
+                    //Console.WriteLine("Encountered null match in list, skipping.");
                     continue;
                 }
 
-                Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
 
                 if (!string.IsNullOrEmpty(match.TeamA) &&
                     match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
@@ -330,7 +330,7 @@ namespace FlawsFightNight.Managers
                 }
             }
 
-            Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
+            //Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
             return null;
         }
 
@@ -417,12 +417,12 @@ namespace FlawsFightNight.Managers
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-            Console.WriteLine("=== Debug: Starting Tied Teams Check ===");
+            //Console.WriteLine("=== Debug: Starting Tied Teams Check ===");
 
             // Count wins
             foreach (var roundKvp in matchLog.PostMatchesByRound)
             {
-                Console.WriteLine($"Checking Round {roundKvp.Key} with {roundKvp.Value.Count} matches");
+                //Console.WriteLine($"Checking Round {roundKvp.Key} with {roundKvp.Value.Count} matches");
                 foreach (var postMatch in roundKvp.Value)
                 {
                     if (!postMatch.WasByeMatch)
@@ -432,22 +432,22 @@ namespace FlawsFightNight.Managers
                         if (!teamWins.ContainsKey(winnerKey))
                         {
                             teamWins[winnerKey] = 0;
-                            Console.WriteLine($"  -> New entry created for {winnerKey}");
+                            //Console.WriteLine($"  -> New entry created for {winnerKey}");
                         }
 
                         teamWins[winnerKey]++;
-                        Console.WriteLine($"  Winner found: {winnerKey} -> Total wins now: {teamWins[winnerKey]}");
+                        //Console.WriteLine($"  Winner found: {winnerKey} -> Total wins now: {teamWins[winnerKey]}");
                     }
                     else
                     {
-                        Console.WriteLine("  Skipping bye match");
+                        //Console.WriteLine("  Skipping bye match");
                     }
                 }
             }
 
             if (teamWins.Count == 0)
             {
-                Console.WriteLine("No wins recorded. Returning empty list.");
+                //Console.WriteLine("No wins recorded. Returning empty list.");
                 return new List<string>();
             }
 
@@ -457,16 +457,16 @@ namespace FlawsFightNight.Managers
 
             foreach (var group in winGroups)
             {
-                Console.WriteLine($"Checking win count {group.Key} -> {group.Count()} teams");
+                //Console.WriteLine($"Checking win count {group.Key} -> {group.Count()} teams");
                 if (group.Count() > 1 && group.Key > 0) // Only check for multiple teams with same wins
                 {
                     var groupTeams = teamWins.Where(kvp => kvp.Value == group.Key).Select(kvp => kvp.Key).ToList();
                     tiedTeams.AddRange(groupTeams);
-                    Console.WriteLine($"  Tie detected for teams: {string.Join(", ", groupTeams)}");
+                    //Console.WriteLine($"  Tie detected for teams: {string.Join(", ", groupTeams)}");
                 }
             }
 
-            Console.WriteLine($"=== Debug: Tied Teams Result ===\n{string.Join(", ", tiedTeams)}");
+            //Console.WriteLine($"=== Debug: Tied Teams Result ===\n{string.Join(", ", tiedTeams)}");
             return tiedTeams;
         }
         #endregion
@@ -484,7 +484,7 @@ namespace FlawsFightNight.Managers
                     break;
 
                 default:
-                    Console.WriteLine($"Match schedule resolver not implemented for tournament type: {tournament.Type}");
+                    //Console.WriteLine($"Match schedule resolver not implemented for tournament type: {tournament.Type}");
                     break;
             }
         }
@@ -569,11 +569,11 @@ namespace FlawsFightNight.Managers
                 }
                 else
                 {
-                    Console.WriteLine($"Validation failed on attempt {attempt}, retrying build...");
+                    //Console.WriteLine($"Validation failed on attempt {attempt}, retrying build...");
                 }
             }
             if (attempt == maxRetries)
-                Console.WriteLine("Failed to build a valid round-robin schedule after max retries.");
+                //Console.WriteLine("Failed to build a valid round-robin schedule after max retries.");
         }
 
         private bool ValidateRoundRobin(Tournament tournament, bool isDoubleRoundRobin)
@@ -629,10 +629,10 @@ namespace FlawsFightNight.Managers
                 return true; // No issues, silent success
 
             // Only print actual errors
-            if (missing.Any()) Console.WriteLine("Missing pairs: " + string.Join(", ", missing.Select(p => $"{p.Item1}-{p.Item2}")));
-            if (duplicates.Any()) Console.WriteLine("Duplicate pairs: " + string.Join(", ", duplicates.Select(p => $"{p.Item1}-{p.Item2}")));
-            if (unexpected.Any()) Console.WriteLine("Unexpected pairs: " + string.Join(", ", unexpected.Select(p => $"{p.Item1}-{p.Item2}")));
-            if (conflicts.Any()) Console.WriteLine("Per-round conflicts: " + string.Join("; ", conflicts));
+            if (missing.Any()) //Console.WriteLine("Missing pairs: " + string.Join(", ", missing.Select(p => $"{p.Item1}-{p.Item2}")));
+            if (duplicates.Any()) //Console.WriteLine("Duplicate pairs: " + string.Join(", ", duplicates.Select(p => $"{p.Item1}-{p.Item2}")));
+            if (unexpected.Any()) //Console.WriteLine("Unexpected pairs: " + string.Join(", ", unexpected.Select(p => $"{p.Item1}-{p.Item2}")));
+            if (conflicts.Any()) //Console.WriteLine("Per-round conflicts: " + string.Join("; ", conflicts));
 
             return false;
         }
@@ -652,13 +652,13 @@ namespace FlawsFightNight.Managers
         {
             if (!tournament.MatchLog.MatchesToPlayByRound.ContainsKey(match.RoundNumber))
             {
-                Console.WriteLine($"Round {match.RoundNumber} does not exist in the match schedule.");
+                //Console.WriteLine($"Round {match.RoundNumber} does not exist in the match schedule.");
                 return;
             }
             var matchesInRound = tournament.MatchLog.MatchesToPlayByRound[match.RoundNumber];
             if (!matchesInRound.Contains(match))
             {
-                Console.WriteLine("The specified match does not exist in the given round.");
+                //Console.WriteLine("The specified match does not exist in the given round.");
                 return;
             }
 
@@ -683,7 +683,7 @@ namespace FlawsFightNight.Managers
                     case TournamentType.RoundRobin:
                         // If this was the last round, set IsRoundComplete to true
                         tournament.IsRoundComplete = true;
-                        Console.WriteLine($"All matches for round {match.RoundNumber} have been completed. Admins now need to double check scores and then lock in the round before advancing.");
+                        //Console.WriteLine($"All matches for round {match.RoundNumber} have been completed. Admins now need to double check scores and then lock in the round before advancing.");
                         break;
                 }
             }
@@ -693,7 +693,7 @@ namespace FlawsFightNight.Managers
         #region Tiebreaker Methods
         public string ResolveTieBreaker(List<string> tiedTeams, MatchLog log)
         {
-            Console.WriteLine("=== Tie-Breaker Resolution Started ===");
+            //Console.WriteLine("=== Tie-Breaker Resolution Started ===");
 
             // Step 1: Head-to-head wins among tied teams
             var wins = tiedTeams.ToDictionary(t => t, t => 0);
@@ -706,19 +706,19 @@ namespace FlawsFightNight.Managers
                     tiedTeams.Contains(pm.Loser))
                 .ToList();
 
-            Console.WriteLine($"Step 1: Head-to-head matches found: {headToHead.Count}");
+            //Console.WriteLine($"Step 1: Head-to-head matches found: {headToHead.Count}");
             foreach (var pm in headToHead)
             {
                 wins[pm.Winner]++;
-                Console.WriteLine($"  {pm.Winner} beat {pm.Loser} ({pm.WinnerScore}-{pm.LoserScore})");
+                //Console.WriteLine($"  {pm.Winner} beat {pm.Loser} ({pm.WinnerScore}-{pm.LoserScore})");
             }
 
             int maxWins = wins.Values.Max();
             var leaders = wins.Where(w => w.Value == maxWins).Select(w => w.Key).ToList();
-            Console.WriteLine($"  Leaders after Step 1 (max wins = {maxWins}): {string.Join(", ", leaders)}");
+            //Console.WriteLine($"  Leaders after Step 1 (max wins = {maxWins}): {string.Join(", ", leaders)}");
             if (leaders.Count == 1)
             {
-                Console.WriteLine($"Tie-breaker resolved by head-to-head wins → Winner: {leaders.First()}");
+                //Console.WriteLine($"Tie-breaker resolved by head-to-head wins → Winner: {leaders.First()}");
                 return leaders.First();
             }
 
@@ -730,23 +730,23 @@ namespace FlawsFightNight.Managers
                 {
                     int diffWinner = pm.WinnerScore - pm.LoserScore;
                     pointDiff[pm.Winner] += diffWinner;
-                    Console.WriteLine($"  Point diff for {pm.Winner}: {diffWinner:+#;-#;0}");
+                    //Console.WriteLine($"  Point diff for {pm.Winner}: {diffWinner:+#;-#;0}");
                 }
 
                 if (leaders.Contains(pm.Loser))
                 {
                     int diffLoser = pm.LoserScore - pm.WinnerScore;
                     pointDiff[pm.Loser] += diffLoser;
-                    Console.WriteLine($"  Point diff for {pm.Loser}: {diffLoser:+#;-#;0}");
+                    //Console.WriteLine($"  Point diff for {pm.Loser}: {diffLoser:+#;-#;0}");
                 }
             }
 
             int maxDiff = pointDiff.Values.Max();
             var leadersByDiff = pointDiff.Where(p => p.Value == maxDiff).Select(p => p.Key).ToList();
-            Console.WriteLine($"  Leaders after Step 2 (max point diff = {maxDiff}): {string.Join(", ", leadersByDiff)}");
+            //Console.WriteLine($"  Leaders after Step 2 (max point diff = {maxDiff}): {string.Join(", ", leadersByDiff)}");
             if (leadersByDiff.Count == 1)
             {
-                Console.WriteLine($"Tie-breaker resolved by point differential → Winner: {leadersByDiff.First()}");
+                //Console.WriteLine($"Tie-breaker resolved by point differential → Winner: {leadersByDiff.First()}");
                 return leadersByDiff.First();
             }
 
@@ -757,13 +757,13 @@ namespace FlawsFightNight.Managers
                 if (totalPointsVsTied.ContainsKey(pm.Winner))
                 {
                     totalPointsVsTied[pm.Winner] += pm.WinnerScore;
-                    Console.WriteLine($"  Total points vs tied teams for {pm.Winner}: +{pm.WinnerScore}");
+                    //Console.WriteLine($"  Total points vs tied teams for {pm.Winner}: +{pm.WinnerScore}");
                 }
 
                 if (totalPointsVsTied.ContainsKey(pm.Loser))
                 {
                     totalPointsVsTied[pm.Loser] += pm.LoserScore;
-                    Console.WriteLine($"  Total points vs tied teams for {pm.Loser}: +{pm.LoserScore}");
+                    //Console.WriteLine($"  Total points vs tied teams for {pm.Loser}: +{pm.LoserScore}");
                 }
             }
 
@@ -772,10 +772,10 @@ namespace FlawsFightNight.Managers
                 .Where(p => p.Value == maxPointsVsTied)
                 .Select(p => p.Key)
                 .ToList();
-            Console.WriteLine($"  Leaders after Step 3 (max points vs tied = {maxPointsVsTied}): {string.Join(", ", leadersByPointsVsTied)}");
+            //Console.WriteLine($"  Leaders after Step 3 (max points vs tied = {maxPointsVsTied}): {string.Join(", ", leadersByPointsVsTied)}");
             if (leadersByPointsVsTied.Count == 1)
             {
-                Console.WriteLine($"Tie-breaker resolved by total points vs tied teams → Winner: {leadersByPointsVsTied.First()}");
+                //Console.WriteLine($"Tie-breaker resolved by total points vs tied teams → Winner: {leadersByPointsVsTied.First()}");
                 return leadersByPointsVsTied.First();
             }
 
@@ -790,13 +790,13 @@ namespace FlawsFightNight.Managers
                 if (totalPointsOverall.ContainsKey(pm.Winner))
                 {
                     totalPointsOverall[pm.Winner] += pm.WinnerScore;
-                    Console.WriteLine($"  Total points overall for {pm.Winner}: +{pm.WinnerScore}");
+                    //Console.WriteLine($"  Total points overall for {pm.Winner}: +{pm.WinnerScore}");
                 }
 
                 if (totalPointsOverall.ContainsKey(pm.Loser))
                 {
                     totalPointsOverall[pm.Loser] += pm.LoserScore;
-                    Console.WriteLine($"  Total points overall for {pm.Loser}: +{pm.LoserScore}");
+                    //Console.WriteLine($"  Total points overall for {pm.Loser}: +{pm.LoserScore}");
                 }
             }
 
@@ -805,16 +805,16 @@ namespace FlawsFightNight.Managers
                 .Where(p => p.Value == maxPointsOverall)
                 .Select(p => p.Key)
                 .ToList();
-            Console.WriteLine($"  Leaders after Step 4 (max points overall = {maxPointsOverall}): {string.Join(", ", leadersByPointsOverall)}");
+            //Console.WriteLine($"  Leaders after Step 4 (max points overall = {maxPointsOverall}): {string.Join(", ", leadersByPointsOverall)}");
             if (leadersByPointsOverall.Count == 1)
             {
-                Console.WriteLine($"Tie-breaker resolved by total points overall → Winner: {leadersByPointsOverall.First()}");
+                //Console.WriteLine($"Tie-breaker resolved by total points overall → Winner: {leadersByPointsOverall.First()}");
                 return leadersByPointsOverall.First();
             }
 
             // Step 5: Still tied — fallback random selection
             var chosen = leadersByPointsOverall.OrderBy(_ => Guid.NewGuid()).First();
-            Console.WriteLine($"Tie-breaker unresolved by all criteria → Randomly selected: {chosen}");
+            //Console.WriteLine($"Tie-breaker unresolved by all criteria → Randomly selected: {chosen}");
             return chosen;
         }
         #endregion
