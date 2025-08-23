@@ -32,6 +32,21 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
+        public bool IsMemberRegisteredInTournament(ulong memberId, Tournament tournament)
+        {
+            foreach (Team team in tournament.Teams)
+            {
+                foreach (Member member in team.Members)
+                {
+                    if (member.DiscordId == memberId)
+                    {
+                        return true; // Member is already registered in the tournament
+                    }
+                }
+            }
+            return false; // Member is not registered in the tournament
+        }
+
         public List<Member> ConvertMembersListToObjects(List<IUser> members)
         {
             List<Member> membersList = new List<Member>();
