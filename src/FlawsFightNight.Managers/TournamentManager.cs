@@ -208,6 +208,24 @@ namespace FlawsFightNight.Managers
             return null;
         }
 
+        public Tournament GetTournamentFromMatchId(string matchId)
+        {
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
+                {
+                    foreach (var match in round)
+                    {
+                        if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return tournament;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
         public string? GenerateTournamentId()
         {
             bool isUnique = false;

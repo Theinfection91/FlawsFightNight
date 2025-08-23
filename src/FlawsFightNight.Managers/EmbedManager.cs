@@ -77,7 +77,7 @@ namespace FlawsFightNight.Managers
             }
             else
             {
-                embed.AddField("⚔️ Matches To Play", "No matches left to play this round ✅", false);  
+                embed.AddField("⚔️ Matches To Play", "No matches left to play this round ✅", false);
             }
 
             // --- Past Matches (grouped by round) ---
@@ -89,9 +89,9 @@ namespace FlawsFightNight.Managers
                     foreach (var postMatch in round.Value.OrderBy(pm => pm.CompletedOn))
                     {
                         if (postMatch.WasByeMatch)
-                            sb.AppendLine($"💤 **{postMatch.Winner}** -Bye Match-");
+                            sb.AppendLine($"💤 *{postMatch.Winner} Bye Week*");
                         else
-                            sb.AppendLine($"✅ **{postMatch.Winner}** ({postMatch.WinnerScore}) defeated **{postMatch.Loser}** ({postMatch.LoserScore})");
+                            sb.AppendLine($"✅ *Match ID#: {postMatch.Id}* || **{postMatch.Winner}** defeated **{postMatch.Loser}** by **{postMatch.WinnerScore}** to **{postMatch.LoserScore}**");
                     }
 
                     embed.AddField($"📜 Previous Matches - Round {round.Key}", sb.ToString(), false);
@@ -108,6 +108,21 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Match Embeds
+
+        public Embed RoundRobinEditMatchSuccess(Tournament tournament, PostMatch match)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✏️ Match Edited Successfully")
+                .WithDescription($"The match between '**{match.Winner}**' and '**{match.Loser}**' has been successfully edited in **{tournament.Name}**.")
+                .AddField("Winning Team (Score)", $"{match.Winner} ({match.WinnerScore})")
+                .AddField("Losing Team (Score)", $"{match.Loser} ({match.LoserScore})")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("Match edited successfully.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
         public Embed ReportByeMatch(Tournament tournament, Match match)
         {
             var embed = new EmbedBuilder()
@@ -117,7 +132,7 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Green)
                 .WithFooter("Bye match completion reported successfully.")
                 .WithTimestamp(DateTimeOffset.Now);
-            return embed.Build(); 
+            return embed.Build();
         }
 
         public Embed ReportWinSuccess(Tournament tournament, Match match, Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore)

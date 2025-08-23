@@ -9,6 +9,7 @@ namespace FlawsFightNight.Core.Models
     public class Match
     {
         // Basic Info
+        public string Id { get; set; }
         public string TeamA { get; set; }
         public string TeamB { get; set; }
         public bool IsByeMatch { get; set; } = false;
