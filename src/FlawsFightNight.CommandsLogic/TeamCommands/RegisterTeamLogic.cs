@@ -43,7 +43,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Can register new teams if Ladder Tournament is running, but cannot register them to Round Robin Tournament or SE/DE Bracket once they have started
             if (_tournamentManager.CanAcceptNewTeams(tournament))
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time. Check if teams are locked.");
             }
 
             // Check if the team name is unique within the tournament

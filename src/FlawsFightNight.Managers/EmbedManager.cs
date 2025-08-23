@@ -178,6 +178,18 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
+        public Embed TeamDeleteSuccess(Team team, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🗑️ Team Deleted Successfully")
+                .WithDescription($"The team **{team.Name}** has been successfully deleted from the tournament **{tournament.Name}**.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Members", string.Join(", ", team.Members.Select(m => m.DisplayName)))
+                .WithColor(Color.Green)
+                .WithFooter("The team has been deleted.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
         #endregion
 
         #region Tournament Embeds
@@ -285,7 +297,7 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🔒 Teams Locked")
-                .WithDescription($"The teams in the {tournament.TeamSizeFormat} tournament **{tournament.Name}** have been successfully locked.")
+                .WithDescription($"The teams in the {tournament.TeamSizeFormat} tournament **{tournament.Name}** have been successfully locked. No more teams may be added or removed while locked. Unlock to make any changes, this is your last chance before starting.")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Teams", string.Join(", ", tournament.Teams.Select(m => m.Name)))
                 .WithColor(Color.Green)
@@ -298,7 +310,7 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🔓 Teams Unlocked")
-                .WithDescription($"The teams in the {tournament.TeamSizeFormat} tournament **{tournament.Name}** have been successfully unlocked.")
+                .WithDescription($"The teams in the {tournament.TeamSizeFormat} tournament **{tournament.Name}** have been successfully unlocked. More teams may now be registered and removal of teams is allowed again.")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Teams", string.Join(", ", tournament.Teams.Select(m => m.Name)))
                 .WithColor(Color.Green)

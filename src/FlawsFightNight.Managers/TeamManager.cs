@@ -13,20 +13,8 @@ namespace FlawsFightNight.Managers
         {
 
         }
-        
-        public bool IsTeamNameUnique(string teamName)
-        {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
-            {
-                if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
-                {
-                    return false; // Team name already exists in the tournament
-                }
-            }
-            return true; // Team name is unique across all tournaments
-        }
 
+        #region Bools
         public bool DoesTeamExist(string teamName)
         {
             List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
@@ -40,11 +28,26 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
+        public bool IsTeamNameUnique(string teamName)
+        {
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (Tournament tournament in tournaments)
+            {
+                if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return false; // Team name already exists in the tournament
+                }
+            }
+            return true; // Team name is unique across all tournaments
+        }
+
         public bool IsDiscordIdOnTeam(Team team, ulong discordId)
         {
             return team.Members.Any(m => m.DiscordId == discordId);
         }
+        #endregion
 
+        #region Gets
         public Team GetTeamByName(string teamName)
         {
             List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
@@ -63,7 +66,8 @@ namespace FlawsFightNight.Managers
         {
             return tournament.Teams
                 .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
-        }
+        } 
+        #endregion
 
         public Team CreateTeam(string teamName, List<Member> members, int rank)
         {
@@ -73,6 +77,20 @@ namespace FlawsFightNight.Managers
                 Members = members,
                 Rank = rank
             };
+        }
+
+        public void DeleteTeamFromDatabase(string teamName)
+        {
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                Team? teamToRemove = tournament.Teams
+                    .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
+                if (teamToRemove != null)
+                {
+                    tournament.Teams.Remove(teamToRemove);
+                    break; // Exit after removing the team
+                }
+            }
         }
     }
 }
