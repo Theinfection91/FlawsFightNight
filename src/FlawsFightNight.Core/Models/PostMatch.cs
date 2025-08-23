@@ -27,5 +27,25 @@ namespace FlawsFightNight.Core.Models
             CreatedOn = createdOn;
             WasByeMatch = wasByeMatch;
         }
+
+        public void UpdateResultsProcess(string winningTeamName, int winningTeamScore, int losingTeamScore)
+        {
+            // Check if winner stays the same
+            if (!Winner.Equals(winningTeamName, StringComparison.OrdinalIgnoreCase))
+            {
+                // Swap winner and loser, update scores
+                string previousWinner = Winner;
+                Winner = winningTeamName;
+                WinnerScore = winningTeamScore;
+                Loser = previousWinner;
+                LoserScore = losingTeamScore;
+            }
+            else
+            {
+                // Just update scores
+                WinnerScore = winningTeamScore;
+                LoserScore = losingTeamScore;
+            }
+        }
     }
 }

@@ -52,11 +52,8 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
-
-
-                //var result = ;
-                //await RespondAsync(embed: result);
-                await RespondAsync("TODO");
+                var result = _editMatchLogic.EditMatchProcess(matchId, winningTeamName, winningTeamScore, losingTeamScore);
+                await RespondAsync(embed: result);
             }
             catch (Exception ex)
             {

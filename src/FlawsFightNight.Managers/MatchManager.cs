@@ -68,8 +68,33 @@ namespace FlawsFightNight.Managers
                         }
                     }
                 }
+                foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
+                {
+                    foreach (var match in round)
+                    {
+                        if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true; // Match ID found
+                        }
+                    }
+                }
             }
             return false;
+        }
+
+        public bool IsPostMatchInCurrentRound(Tournament tournament, string matchId)
+        {
+            if (tournament.MatchLog.PostMatchesByRound.TryGetValue(tournament.CurrentRound, out var matches))
+            {
+                foreach (var match in matches)
+                {
+                    if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true; // Match found in current round
+                    }
+                }
+            }
+            return false; // Match not found in current round
         }
 
         public bool HasByeMatchRemaining(Tournament tournament)
@@ -85,6 +110,27 @@ namespace FlawsFightNight.Managers
                 }
             }
             return false; // No bye matches found
+        }
+
+        public bool HasMatchBeenPlayed(Tournament tournament, string matchId)
+        {
+            foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
+            {
+                foreach (var postMatch in round)
+                {
+                    if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true; // Match has been played
+                    }
+                }
+            }
+            return false; // Match not found in played matches
+        }
+
+        public bool IsGivenTeamNameInPostMatch(string teamName, PostMatch postMatch)
+        {
+            return (!string.IsNullOrEmpty(postMatch.Winner) && postMatch.Winner.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
+                   (!string.IsNullOrEmpty(postMatch.Loser) && postMatch.Loser.Equals(teamName, StringComparison.OrdinalIgnoreCase));
         }
 
         public bool IsMatchMadeForTeam(Tournament tournament, string teamName)
@@ -350,6 +396,21 @@ namespace FlawsFightNight.Managers
                 }
             }
             return tiedTeams; // Return number of teams involved in ties
+        }
+
+        public PostMatch GetPostMatchByIdInTournament(Tournament tournament, string matchId)
+        {
+            foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
+            {
+                foreach (var postMatch in round)
+                {
+                    if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return postMatch; // PostMatch found
+                    }
+                }
+            }
+            return null; // PostMatch ID not found
         }
 
         public List<string> GetTiedTeams(MatchLog matchLog, bool isDoubleRoundRobin)
