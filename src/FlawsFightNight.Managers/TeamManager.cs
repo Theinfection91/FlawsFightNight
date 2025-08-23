@@ -66,7 +66,25 @@ namespace FlawsFightNight.Managers
         {
             return tournament.Teams
                 .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
-        } 
+        }
+        #endregion
+
+        #region Wins/Losses and Streaks
+        public void RecordTeamWin(Team team, int points = 0)
+        {
+            team.Wins++;
+            team.WinStreak++;
+            team.LoseStreak = 0; // Reset loss streak
+            team.TotalScore += points;
+        }
+
+        public void RecordTeamLoss(Team team, int points = 0)
+        {
+            team.Losses++;
+            team.LoseStreak++;
+            team.WinStreak = 0; // Reset win streak
+            team.TotalScore += points;
+        }
         #endregion
 
         public Team CreateTeam(string teamName, List<Member> members, int rank)

@@ -78,7 +78,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Add the new team to the tournament
             _tournamentManager.AddTeamToTournament(newTeam, tournament.Id);
 
-            // TODO Check if tournament can be locked after adding the team
+            // Check if tournament can be locked after adding the team
             if (_tournamentManager.CanTeamsBeLockedResolver(tournament))
             {
                 _tournamentManager.SetCanTeamsBeLocked(tournament, true);

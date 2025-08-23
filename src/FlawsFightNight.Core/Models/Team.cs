@@ -26,7 +26,6 @@ namespace FlawsFightNight.Core.Models
 
         #region Round Robin
         public int TotalScore { get; set; } = 0;
-        public bool IsByeMatchTeam { get; set; } = false;
         #endregion
 
         public Team() { }

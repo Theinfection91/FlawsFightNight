@@ -127,7 +127,7 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("☑️ Bye Match Completion Reported")
-                .WithDescription($"The bye match '**{match.TeamA} vs {match.TeamB}**' has been recorded as complete in **{tournament.Name}**.")
+                .WithDescription($"The bye match for '**{match.GetCorrectNameForByeMatch()}'** has been recorded as complete in **{tournament.Name}**.")
                 .AddField("Tournament ID", tournament.Id)
                 .WithColor(Color.Green)
                 .WithFooter("Bye match completion reported successfully.")
