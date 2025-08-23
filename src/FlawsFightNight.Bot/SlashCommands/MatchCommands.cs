@@ -45,8 +45,10 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         [SlashCommand("edit", "Edit a post-match's details in RR and Elimination.")]
         public async Task EditMatchAsync(
-            [Summary("tournament_id", "The ID of the tournament the match is in.")] string tournamentId,
-            [Summary("team_reference", "The new details for the match.")] string newDetails)
+            [Summary("match_id", "The ID of the match to target.")] string matchId,
+            [Summary("winningTeamName", "The winner of the match, can be the same as before edit.")] string winningTeamName,
+            [Summary("winningTeamScore", "The score of the winning team.")] int winningTeamScore,
+            [Summary("losingTeamScore", "The score of the losing team")] int losingTeamScore)
         {
             try
             {
@@ -60,6 +62,51 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 Console.WriteLine($"Command Error: {ex}");
                 await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [Group("challenge", "Challenge related match commands for ladder tournaments.")]
+        public class MatchesChannelCommands : InteractionModuleBase<SocketInteractionContext>
+        {
+            private SendChallengeLogic _sendChallengeLogic;
+            private CancelChallengeLogic _cancelChallengeLogic;
+            public MatchesChannelCommands(SendChallengeLogic sendChallengeLogic, CancelChallengeLogic cancelChallengeLogic)
+            {
+                _sendChallengeLogic = sendChallengeLogic;
+                _cancelChallengeLogic = cancelChallengeLogic;
+            }
+            [SlashCommand("send", "Send a challenge to another team in a ladder tournament.")]
+            public async Task SendChallengeAsync(
+            [Summary("challenger_team_name", "The name of the team sending the challenge")] string challengerTeamName,
+            [Summary("challenged_team", "The name of the team being challenged")] string opponentTeamName)
+            {
+                try
+                {
+                    //var result = ;
+                    //await RespondAsync(embed: result);
+                    await RespondAsync("TODO");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+            [SlashCommand("cancel", "Cancel a previously sent challenge in a ladder tournament.")]
+            public async Task CancelChallengeAsync(
+            [Summary("challenger_team_name", "The name of the team that sent the challenge")] string challengerTeamName)
+            {
+                try
+                {
+                    //var result = ;
+                    //await RespondAsync(embed: result);
+                    await RespondAsync("TODO");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                }
             }
         }
     }

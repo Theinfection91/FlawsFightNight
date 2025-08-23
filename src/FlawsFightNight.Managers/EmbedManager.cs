@@ -64,12 +64,12 @@ namespace FlawsFightNight.Managers
                     if (match.IsByeMatch)
                         continue;
                     else
-                        sb.AppendLine($"🔹 **{match.TeamA}** vs **{match.TeamB}** | *Match ID#: {match.Id}*");
+                        sb.AppendLine($"🔹 **{match.TeamA}** vs **{match.TeamB}**");
                 }
                 foreach (var match in matchesToPlay)
                 {
                     if (match.IsByeMatch)
-                        sb.AppendLine($"💤 *{match.GetCorrectNameForByeMatch()} Bye Week* | *Match ID#: {match.Id}*");
+                        sb.AppendLine($"💤 *{match.GetCorrectNameForByeMatch()} Bye Week*");
                     else
                         continue;
                 }
@@ -91,7 +91,7 @@ namespace FlawsFightNight.Managers
                         if (postMatch.WasByeMatch)
                             sb.AppendLine($"💤 *{postMatch.Winner} Bye Week* | *Match ID#: {postMatch.Id}*");
                         else
-                            sb.AppendLine($"✅ **{postMatch.Winner}** ({postMatch.WinnerScore}) defeated **{postMatch.Loser}** ({postMatch.LoserScore}) | *Match ID#: {postMatch.Id}*");
+                            sb.AppendLine($"✅ **{postMatch.Winner}** defeated **{postMatch.Loser}** by **{postMatch.WinnerScore}** to **{postMatch.LoserScore}** | *Match ID#: {postMatch.Id}*");
                     }
 
                     embed.AddField($"📜 Previous Matches - Round {round.Key}", sb.ToString(), false);

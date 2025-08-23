@@ -54,16 +54,16 @@ namespace FlawsFightNight.Bot
                     //    ==-Command Logic-==     //
                     ///////////////////////////////
 
-                    services.AddSingleton<CreateTournamentLogic>();
                     services.AddSingleton<CancelChallengeLogic>();
+                    services.AddSingleton<CreateTournamentLogic>();
                     services.AddSingleton<EditMatchLogic>();
-                    services.AddSingleton<SendChallengeLogic>();
                     services.AddSingleton<EndTournamentLogic>();
                     services.AddSingleton<LockInRoundLogic>();
                     services.AddSingleton<LockTeamsLogic>();
                     services.AddSingleton<NextRoundLogic>();
                     services.AddSingleton<RegisterTeamLogic>();
                     services.AddSingleton<ReportWinLogic>();
+                    services.AddSingleton<SendChallengeLogic>();
                     services.AddSingleton<SetMatchesChannelLogic>();
                     services.AddSingleton<SetupTournamentLogic>();
                     services.AddSingleton<StartTournamentLogic>();
