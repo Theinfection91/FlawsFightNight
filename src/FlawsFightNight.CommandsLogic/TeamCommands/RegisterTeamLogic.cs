@@ -12,13 +12,15 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 {
     public class RegisterTeamLogic : Logic
     {
+        private ConfigManager _configManager;
         private EmbedManager _embedManager;
         private MemberManager _memberManager;
         private TournamentManager _tournamentManager;
         private TeamManager _teamManager;
 
-        public RegisterTeamLogic(EmbedManager embedManager, MemberManager memberManager, TournamentManager tournamentManager, TeamManager teamManager) : base("Register Team")
+        public RegisterTeamLogic(ConfigManager configManager, EmbedManager embedManager, MemberManager memberManager, TournamentManager tournamentManager, TeamManager teamManager) : base("Register Team")
         {
+            _configManager = configManager;
             _embedManager = embedManager;
             _memberManager = memberManager;
             _tournamentManager = tournamentManager;
@@ -43,7 +45,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Can register new teams if Ladder Tournament is running, but cannot register them to Round Robin Tournament or SE/DE Bracket once they have started
             if (_tournamentManager.CanAcceptNewTeams(tournament))
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time. Check if teams are locked.");
             }
 
             // Check if the team name is unique within the tournament
@@ -58,10 +60,17 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
                 return _embedManager.ErrorEmbed(Name, $"The number of members ({members.Count}) does not match the required team size ({tournament.TeamSize}) for the tournament '{tournament.Name}'.");
             }
 
-            // TODO Check if all members are valid and not already registered in the tournament
-
             // Convert IUser list to Member objects list
             List<Member> convertedMembersList = _memberManager.ConvertMembersListToObjects(members);
+
+            // Check if all members are valid and not already registered in the tournament (If they are, check if they are in debug admin list)
+            foreach (Member member in convertedMembersList)
+            {
+                if (_memberManager.IsMemberRegisteredInTournament(member.DiscordId, tournament) && !_configManager.IsDiscordIdInDebugAdminList(member.DiscordId))
+                {
+                    return _embedManager.ErrorEmbed(Name, $"Member '{member.DisplayName}' (ID: {member.DiscordId}) is already registered in the tournament '{tournament.Name}'. Each member can only be part of one team per tournament.");
+                }
+            }
 
             // Create Team object
             Team newTeam = _teamManager.CreateTeam(teamName, convertedMembersList, tournament.Teams.Count + 1);
@@ -69,7 +78,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Add the new team to the tournament
             _tournamentManager.AddTeamToTournament(newTeam, tournament.Id);
 
-            // TODO Check if tournament can be locked after adding the team
+            // Check if tournament can be locked after adding the team
             if (_tournamentManager.CanTeamsBeLockedResolver(tournament))
             {
                 _tournamentManager.SetCanTeamsBeLocked(tournament, true);

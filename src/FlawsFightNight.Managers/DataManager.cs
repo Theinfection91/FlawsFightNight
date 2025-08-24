@@ -18,15 +18,22 @@ namespace FlawsFightNight.Managers
         public DiscordCredentialFile DiscordCredentialFile { get; private set; }
         private readonly DiscordCredentialHandler _discordCredentialHandler;
 
-        // Tournaments Database Handler
+        // Permissions Config
+        public PermissionsConfigFile PermissionsConfigFile { get; private set; }
+        private readonly PermissionsConfigHandler _permissionsConfigHandler;
+
+        // Tournaments Database
         public TournamentsDatabaseFile TournamentsDatabaseFile { get; private set; }
         private readonly TournamentsDatabaseHandler _tournamentsDatabaseHandler;
 
         // Constructor is given each handler type for each specific JSON file
-        public DataManager(DiscordCredentialHandler discordCredentialHandler, TournamentsDatabaseHandler tournamentsDatabaseHandler)
+        public DataManager(DiscordCredentialHandler discordCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentsDatabaseHandler tournamentsDatabaseHandler)
         {
             _discordCredentialHandler = discordCredentialHandler;
             LoadDiscordCredentialFile();
+
+            _permissionsConfigHandler = permissionsConfigHandler;
+            LoadPermissionsConfigFile();
 
             _tournamentsDatabaseHandler = tournamentsDatabaseHandler;
             LoadTournamentsDatabase();
@@ -48,6 +55,24 @@ namespace FlawsFightNight.Managers
         {
             _discordCredentialHandler.Save(DiscordCredentialFile);
             LoadDiscordCredentialFile();
+        }
+        #endregion
+
+        #region Permissions Config Data
+        public void LoadPermissionsConfigFile()
+        {
+            PermissionsConfigFile = _permissionsConfigHandler.Load();
+        }
+
+        public void SavePermissionsConfigFile()
+        {
+            _permissionsConfigHandler.Save(PermissionsConfigFile);
+        }
+
+        public void SaveAndReloadPermissionsConfigFile()
+        {
+            _permissionsConfigHandler.Save(PermissionsConfigFile);
+            LoadPermissionsConfigFile();
         }
         #endregion
 

@@ -4,6 +4,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.CommandsLogic.MatchCommands;
 using FlawsFightNight.CommandsLogic.SetCommands;
+using FlawsFightNight.CommandsLogic.SettingsCommands;
 using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Data.Handlers;
@@ -54,14 +55,17 @@ namespace FlawsFightNight.Bot
                     //    ==-Command Logic-==     //
                     ///////////////////////////////
 
+                    services.AddSingleton<AddDebugAdminLogic>();
                     services.AddSingleton<CancelChallengeLogic>();
                     services.AddSingleton<CreateTournamentLogic>();
+                    services.AddSingleton<DeleteTeamLogic>();
                     services.AddSingleton<EditMatchLogic>();
                     services.AddSingleton<EndTournamentLogic>();
                     services.AddSingleton<LockInRoundLogic>();
                     services.AddSingleton<LockTeamsLogic>();
                     services.AddSingleton<NextRoundLogic>();
                     services.AddSingleton<RegisterTeamLogic>();
+                    services.AddSingleton<RemoveDebugAdminLogic>();
                     services.AddSingleton<ReportWinLogic>();
                     services.AddSingleton<SendChallengeLogic>();
                     services.AddSingleton<SetMatchesChannelLogic>();
@@ -84,6 +88,7 @@ namespace FlawsFightNight.Bot
 
                     // Data Handlers
                     services.AddSingleton<DiscordCredentialHandler>();
+                    services.AddSingleton<PermissionsConfigHandler>();
                     services.AddSingleton<TournamentsDatabaseHandler>();
                 })
                 .Build();

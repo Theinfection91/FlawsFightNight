@@ -35,12 +35,36 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
+        #region Debug Admin Embeds
+        public Embed DebugAdminAddSuccess(ulong userId)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Debug Admin Added Successfully")
+                .WithDescription($"The user with ID **{userId}** has been successfully added as a Debug Admin.")
+                .WithColor(Color.Green)
+                .WithFooter("The user now has special permissions.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed DebugAdminRemoveSuccess(ulong userId)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Debug Admin Removed Successfully")
+                .WithDescription($"The user with ID **{userId}** has been successfully removed from the Debug Admin list.")
+                .WithColor(Color.Green)
+                .WithFooter("The user no longer has special permissions.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+        #endregion
+
         #region LiveView Embeds
         public Embed MatchesLiveView(Tournament tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Tournament Matches")
-                .WithDescription($"**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
                 .WithColor(Color.DarkOrange)
                 .WithCurrentTimestamp();
 
@@ -127,7 +151,7 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("☑️ Bye Match Completion Reported")
-                .WithDescription($"The bye match '**{match.TeamA} vs {match.TeamB}**' has been recorded as complete in **{tournament.Name}**.")
+                .WithDescription($"The bye match for '**{match.GetCorrectNameForByeMatch()}'** has been recorded as complete in **{tournament.Name}**.")
                 .AddField("Tournament ID", tournament.Id)
                 .WithColor(Color.Green)
                 .WithFooter("Bye match completion reported successfully.")
@@ -178,6 +202,18 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
+        public Embed TeamDeleteSuccess(Team team, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🗑️ Team Deleted Successfully")
+                .WithDescription($"The team **{team.Name}** has been successfully deleted from the tournament **{tournament.Name}**.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Members", string.Join(", ", team.Members.Select(m => m.DisplayName)))
+                .WithColor(Color.Green)
+                .WithFooter("The team has been deleted.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
         #endregion
 
         #region Tournament Embeds
@@ -285,7 +321,7 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🔒 Teams Locked")
-                .WithDescription($"The teams in the {tournament.TeamSizeFormat} tournament **{tournament.Name}** have been successfully locked.")
+                .WithDescription($"The teams in the {tournament.TeamSizeFormat} tournament **{tournament.Name}** have been successfully locked. No more teams may be added or removed while locked. Unlock to make any changes, this is your last chance before starting.")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Teams", string.Join(", ", tournament.Teams.Select(m => m.Name)))
                 .WithColor(Color.Green)
@@ -298,7 +334,7 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🔓 Teams Unlocked")
-                .WithDescription($"The teams in the {tournament.TeamSizeFormat} tournament **{tournament.Name}** have been successfully unlocked.")
+                .WithDescription($"The teams in the {tournament.TeamSizeFormat} tournament **{tournament.Name}** have been successfully unlocked. More teams may now be registered and removal of teams is allowed again.")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Teams", string.Join(", ", tournament.Teams.Select(m => m.Name)))
                 .WithColor(Color.Green)

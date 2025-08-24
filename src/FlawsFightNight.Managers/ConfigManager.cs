@@ -23,8 +23,8 @@ namespace FlawsFightNight.Managers
             {
                 if (!IsValidBotTokenSet())
                 {
-                    Console.WriteLine($"{DateTime.Now} SettingsManager - Incorrect Bot Token found in Settings\\config.json");
-                    Console.WriteLine($"{DateTime.Now} SettingsManager - Please enter your Bot Token now (This can be changed manually in Settings\\config.json as well if entered incorrectly and a connection can not be established): ");
+                    Console.WriteLine($"{DateTime.Now} ConfigManager - Incorrect Bot Token found in Discord Credentials\\discord_credentials.json");
+                    Console.WriteLine($"{DateTime.Now} SettingsManager - Please enter your Bot Token now (This can be changed manually in Discord Credentials\\discord_credentials.json as well if entered incorrectly and a connection can not be established): ");
                     string? botToken = Console.ReadLine();
                     if (IsValidBotToken(botToken))
                     {
@@ -60,9 +60,9 @@ namespace FlawsFightNight.Managers
             {
                 if (!IsGuildIdSet())
                 {
-                    Console.WriteLine($"{DateTime.Now} SettingsManager - Incorrect Guild Id found in Settings\\config.json");
-                    Console.WriteLine($"{DateTime.Now} SettingsManager - Please set a valid Guild ID for SlashCommands.");
-                    Console.WriteLine($"{DateTime.Now} SettingsManager - Select a guild from the list below: ");
+                    Console.WriteLine($"{DateTime.Now} ConfigManager - Incorrect Guild Id found in Discord Credentials\\discord_credentials.json");
+                    Console.WriteLine($"{DateTime.Now} ConfigManager - Please set a valid Guild ID for SlashCommands.");
+                    Console.WriteLine($"{DateTime.Now} ConfigManager - Select a guild from the list below: ");
                     foreach (var guild in _client.Guilds)
                     {
                         Console.WriteLine($"Guild: {guild.Name} (ID: {guild.Id})");
@@ -137,6 +137,32 @@ namespace FlawsFightNight.Managers
         {
             _dataManager.DiscordCredentialFile.GuildId = guildId;
             _dataManager.SaveDiscordCredentialFile();
+        }
+        #endregion
+
+        #region Permissions Config
+        public bool IsDiscordIdInDebugAdminList(ulong discordId)
+        {
+            foreach (ulong id in _dataManager.PermissionsConfigFile.DebugAdminList)
+            {
+                if (id.Equals(discordId))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void AddDiscordIdToDebugAdminList(ulong discordId)
+        {
+            _dataManager.PermissionsConfigFile.DebugAdminList.Add(discordId);
+            _dataManager.SaveAndReloadPermissionsConfigFile();
+        }
+
+        public void RemoveDiscordIdFromDebugAdminList(ulong discordId)
+        {
+            _dataManager.PermissionsConfigFile.DebugAdminList.Remove(discordId);
+            _dataManager.SaveAndReloadPermissionsConfigFile();
         }
         #endregion
     }

@@ -94,6 +94,8 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             {
                 // TODO Handle Round Robin Win Logic
                 _matchManager.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
+                _teamManager.RecordTeamWin(winningTeam, winningTeamScore);
+                _teamManager.RecordTeamLoss(losingTeam, losingTeamScore);
             }
             else
             {
