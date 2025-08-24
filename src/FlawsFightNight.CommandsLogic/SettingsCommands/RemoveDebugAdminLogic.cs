@@ -8,26 +8,25 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.CommandsLogic.SettingsCommands
 {
-    public class AddDebugAdminLogic : Logic
+    public class RemoveDebugAdminLogic : Logic
     {
         private ConfigManager _configManager;
         private EmbedManager _embedManager;
-        public AddDebugAdminLogic(ConfigManager configManager, EmbedManager embedManager) : base("Add Debug Admin")
+        public RemoveDebugAdminLogic(ConfigManager configManager, EmbedManager embedManager) : base("Remove Debug Admin")
         {
             _configManager = configManager;
             _embedManager = embedManager;
         }
-
-        public Embed AddDebugAdminProcess(ulong userId)
+        public Embed RemoveDebugAdminProcess(ulong userId)
         {
-            if (_configManager.IsDiscordIdInDebugAdminList(userId))
+            if (!_configManager.IsDiscordIdInDebugAdminList(userId))
             {
-                return _embedManager.ErrorEmbed(Name, "User is already a Debug Admin.");
+                return _embedManager.ErrorEmbed(Name, "User is not a Debug Admin.");
             }
             else
             {
-                _configManager.AddDiscordIdToDebugAdminList(userId);
-                return _embedManager.DebugAdminAddSuccess(userId);
+                _configManager.RemoveDiscordIdFromDebugAdminList(userId);
+                return _embedManager.DebugAdminRemoveSuccess(userId);
             }
         }
     }

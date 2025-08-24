@@ -35,12 +35,36 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
+        #region Debug Admin Embeds
+        public Embed DebugAdminAddSuccess(ulong userId)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Debug Admin Added Successfully")
+                .WithDescription($"The user with ID **{userId}** has been successfully added as a Debug Admin.")
+                .WithColor(Color.Green)
+                .WithFooter("The user now has special permissions.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed DebugAdminRemoveSuccess(ulong userId)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Debug Admin Removed Successfully")
+                .WithDescription($"The user with ID **{userId}** has been successfully removed from the Debug Admin list.")
+                .WithColor(Color.Green)
+                .WithFooter("The user no longer has special permissions.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+        #endregion
+
         #region LiveView Embeds
         public Embed MatchesLiveView(Tournament tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Tournament Matches")
-                .WithDescription($"**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
                 .WithColor(Color.DarkOrange)
                 .WithCurrentTimestamp();
 

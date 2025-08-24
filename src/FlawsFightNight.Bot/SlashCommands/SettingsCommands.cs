@@ -16,9 +16,11 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class SettingsCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private AddDebugAdminLogic _addDebugAdminLogic;
-        public SettingsCommands(AddDebugAdminLogic addDebugAdminLogic)
+        private RemoveDebugAdminLogic _removeDebugAdminLogic;
+        public SettingsCommands(AddDebugAdminLogic addDebugAdminLogic, RemoveDebugAdminLogic removeDebugAdminLogic)
         {
             _addDebugAdminLogic = addDebugAdminLogic;
+            _removeDebugAdminLogic = removeDebugAdminLogic;
         }
 
         #region Debug Commands
@@ -30,6 +32,23 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _addDebugAdminLogic.AddDebugAdminProcess(user.Id);
+                await RespondAsync(embed: result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("remove_debug_admin", "Remove a user from debug admins")]
+        [RequireGuildAdmin]
+        public async Task RemoveDebugAdminAsync(
+            [Summary("user", "The user to remove from debug admins")] IUser user)
+        {
+            try
+            {
+                var result = _removeDebugAdminLogic.RemoveDebugAdminProcess(user.Id);
                 await RespondAsync(embed: result);
             }
             catch (Exception ex)
