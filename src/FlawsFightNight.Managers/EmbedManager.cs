@@ -129,6 +129,30 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
+        public Embed RoundRobinStandingsLiveView(Tournament tournament, RoundRobinStandings roundRobinStandings)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Tournament Standings")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
+                .WithColor(Color.DarkBlue)
+                .WithCurrentTimestamp();
+            if (roundRobinStandings.Entries.Count == 0)
+            {
+                embed.AddField("No Teams Registered", "No teams have been registered yet.", false);
+                return embed.Build();
+            }
+            var sb = new StringBuilder();
+            sb.AppendLine("**Rank | Team Name | Wins | Losses | Total Score**");
+            sb.AppendLine("-----------------------------------------------------");
+            foreach (var teamStanding in roundRobinStandings.Entries)
+            {
+                
+                sb.AppendLine($"{teamStanding.Rank,4} | {teamStanding.TeamName,-20} | {teamStanding.Wins,4} | {teamStanding.Losses,6} | {teamStanding.TotalScore,11}");
+            }
+            embed.AddField("🏅 Current Standings", sb.ToString(), false);
+            return embed.Build();
+        }
+
         #endregion
 
         #region Match Embeds
