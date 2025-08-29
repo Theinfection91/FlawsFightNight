@@ -15,6 +15,8 @@ namespace FlawsFightNight.Core.Models
         public int Losses { get; set; }
         public int LoseStreak { get; set; }
         public int TotalScore { get; set; }
+        public int PointsFor { get; set; }
+        public int PointsAgainst { get; set; }
 
         public StandingsEntry(Team team)
         {

@@ -124,14 +124,33 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 .Where(p => p.Value == maxPointsOverall)
                 .Select(p => p.Key)
                 .ToList();
-            Console.WriteLine($"  Leaders after Step 4 (max points overall = {maxPointsOverall}): {string.Join(", ", leadersByPointsOverall)}");
+            Console.WriteLine($"  Leaders after Step 4 WTF!! (max points overall = {maxPointsOverall}): {string.Join(", ", leadersByPointsOverall)}");
             if (leadersByPointsOverall.Count == 1)
             {
                 Console.WriteLine($"Tie-breaker resolved by total points overall → Winner: {leadersByPointsOverall.First()}");
                 return leadersByPointsOverall.First();
             }
 
-            // Step 5: Still tied — fallback random selection
+            // Step 5: Least amount of points against
+            var pointsAgainst = leadersByPointsOverall.ToDictionary(t => t, t => 0);
+            foreach ( var p in pointsAgainst) {
+                var (forPoints, againstPoints) = log.GetPointsForAndPointsAgainstForTeam(p.Key);
+                pointsAgainst[p.Key] = againstPoints;
+                Console.WriteLine($"  Points against for {p.Key}: {againstPoints}");
+            }
+            int minPointsAgainst = pointsAgainst.Values.Min();
+            var leadersByLeastPointsAgainst = pointsAgainst
+                .Where(p => p.Value == minPointsAgainst)
+                .Select(p => p.Key)
+                .ToList();
+            Console.WriteLine($"  Leaders after Step 5 (min points against = {minPointsAgainst}): {string.Join(", ", leadersByLeastPointsAgainst)}");
+            if (leadersByLeastPointsAgainst.Count == 1)
+            {
+                Console.WriteLine($"Tie-breaker resolved by least points against → Winner: {leadersByLeastPointsAgainst.First()}");
+                return leadersByLeastPointsAgainst.First();
+            }
+
+            // Step 6: Still tied — fallback random selection
             var chosen = leadersByPointsOverall.OrderBy(_ => Guid.NewGuid()).First();
             Console.WriteLine($"Tie-breaker unresolved by all criteria → Randomly selected: {chosen}");
             return chosen;

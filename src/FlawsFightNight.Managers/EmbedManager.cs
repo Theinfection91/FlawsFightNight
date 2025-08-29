@@ -145,12 +145,14 @@ namespace FlawsFightNight.Managers
 
             foreach (var teamStanding in roundRobinStandings.Entries.OrderBy(e => e.Rank))
             {
-                // TODO Add 🏅 emojis and sort for top 3 teams
+                var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(teamStanding.TeamName);
+
                 embed.Description +=
                     $"\n#{teamStanding.Rank} **{teamStanding.TeamName}**\n" +
                     $"✅ Wins: {teamStanding.Wins} | " +
                     $"❌ Losses: {teamStanding.Losses} | " +
-                    $"⭐ Points: {teamStanding.TotalScore}\n";
+                    $"⭐ Points For: {pointsFor} | " +
+                    $"🛡️ Points Against: {pointsAgainst}\n";
             }
 
             return embed.Build();
