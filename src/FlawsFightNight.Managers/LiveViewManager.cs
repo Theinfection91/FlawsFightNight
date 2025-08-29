@@ -120,47 +120,61 @@ namespace FlawsFightNight.Managers
             {
                 var entry = new StandingsEntry(team);
                 standings.Entries.Add(entry);
-                Console.WriteLine($"[DEBUG] Added team entry: {entry.TeamName}, Wins: {entry.Wins}, Score: {entry.TotalScore}");
+                Console.WriteLine($"[DEBUG] Added team entry: {entry.TeamName}, Wins: {entry.Wins}, Losses: {entry.Losses}, Score: {entry.TotalScore}");
             }
 
-            // Initial sort by win/loss or points
-            Console.WriteLine("[DEBUG] Sorting initial standings...");
+            // Initial sort (by wins/score/etc.)
             standings.SortStandings();
-            Console.WriteLine("[DEBUG] After Sort:");
+
+            Console.WriteLine("[DEBUG] After initial sort:");
             foreach (var entry in standings.Entries)
-                Console.WriteLine($"   Team: {entry.TeamName}, Wins: {entry.Wins}, Score: {entry.TotalScore}");
+                Console.WriteLine($"   {entry.TeamName}: {entry.Wins}-{entry.Losses}, {entry.TotalScore} pts");
 
-            // Detect ties
-            List<string> tiedTeams = _matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin);
-            Console.WriteLine($"[DEBUG] Tied Teams Found: {string.Join(", ", tiedTeams)}");
+            // Group by full record (Wins + Losses)
+            var groupedByRecord = standings.Entries
+                .GroupBy(e => new { e.Wins, e.Losses })
+                .OrderByDescending(g => g.Key.Wins)   // more wins first
+                .ThenBy(g => g.Key.Losses);           // fewer losses first
 
-            if (tiedTeams.Any())
+            var resolvedList = new List<StandingsEntry>();
+
+            foreach (var group in groupedByRecord)
             {
-                // Resolve tie-breaker for the tied group
-                string winner = _matchManager.ResolveTieBreaker(tiedTeams, tournament.MatchLog);
-                Console.WriteLine($"[DEBUG] Tie-breaker winner: {winner}");
+                var tiedTeams = group.Select(e => e.TeamName).ToList();
 
-                // Force the tiebreaker winner to bubble up among equals
-                standings.Entries = standings.Entries
-                    .OrderByDescending(e => e.TeamName == winner) // winner comes first in tied group
-                    .ThenByDescending(e => e.Wins)
-                    .ThenByDescending(e => e.TotalScore) // or whatever secondary stat you track
-                    .ToList();
+                if (tiedTeams.Count > 1)
+                {
+                    Console.WriteLine($"[DEBUG] Tie detected in {group.Key.Wins}-{group.Key.Losses} group: {string.Join(", ", tiedTeams)}");
 
-                Console.WriteLine("[DEBUG] After Tie Resolution:");
-                foreach (var entry in standings.Entries)
-                    Console.WriteLine($"   Team: {entry.TeamName}, Wins: {entry.Wins}, Score: {entry.TotalScore}");
+                    // Keep resolving until all tied teams are ranked
+                    var remaining = new List<string>(tiedTeams);
+                    while (remaining.Count > 0)
+                    {
+                        string winner = _matchManager.ResolveTieBreaker(remaining, tournament.MatchLog);
+                        var winnerEntry = group.First(e => e.TeamName == winner);
+
+                        resolvedList.Add(winnerEntry);
+                        remaining.Remove(winner);
+
+                        Console.WriteLine($"[DEBUG] -> Placed {winner} at next rank, {remaining.Count} left in tie group");
+                    }
+                }
+                else
+                {
+                    resolvedList.AddRange(group);
+                }
             }
 
-            // Assign ranks after tie resolution
-            Console.WriteLine("[DEBUG] Assigning final ranks...");
-            for (int i = 0; i < standings.Entries.Count; i++)
-            {
-                standings.Entries[i].Rank = i + 1;
-                Console.WriteLine($"   Team: {standings.Entries[i].TeamName}, Rank: {standings.Entries[i].Rank}");
-            }
+            // Assign ranks after resolution
+            for (int i = 0; i < resolvedList.Count; i++)
+                resolvedList[i].Rank = i + 1;
 
-            Console.WriteLine("[DEBUG] Standings complete.");
+            standings.Entries = resolvedList;
+
+            Console.WriteLine("[DEBUG] Final Standings:");
+            foreach (var entry in standings.Entries)
+                Console.WriteLine($"   Rank {entry.Rank}: {entry.TeamName} ({entry.Wins}-{entry.Losses}, {entry.TotalScore} pts)");
+
             return standings;
         }
 
