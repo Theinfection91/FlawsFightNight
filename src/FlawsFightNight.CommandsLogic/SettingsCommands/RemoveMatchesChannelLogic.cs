@@ -25,13 +25,21 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
+
+            // Check if a matches channel is set
+            if (tournament.MatchesChannelId == 0)
+            {
+                return _embedManager.ErrorEmbed(Name, $"Tournament {tournament.Name} ({tournament.Id}) does not have a matches channel set.");
+            }
+
             // Remove the matches channel
             tournament.MatchesChannelId = 0;
+            tournament.MatchesMessageId = 0;
+
             // Save and reload the tournaments database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
 
-            // TODO Create a success embed for this
-            return _embedManager.ToDoEmbed($"Need to build correct embed, but executed the method and set {tournament.Name}'s Matches Channel ID to {tournament.MatchesChannelId}");
+            return _embedManager.RemoveMatchesChannelSuccess(tournament);
         }
     }
 }

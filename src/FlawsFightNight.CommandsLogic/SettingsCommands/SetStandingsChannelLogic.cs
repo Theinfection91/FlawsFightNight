@@ -6,20 +6,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.SetCommands
+namespace FlawsFightNight.CommandsLogic.SettingsCommands
 {
-    public class SetMatchesChannelLogic : Logic
+    public class SetStandingsChannelLogic : Logic
     {
         private EmbedManager _embedManager;
         private TournamentManager _tournamentManager;
-
-        public SetMatchesChannelLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Set Matches Channel")
+        public SetStandingsChannelLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Set Standings Channel")
         {
             _embedManager = embedManager;
             _tournamentManager = tournamentManager;
         }
 
-        public Embed SetMatchesChannelProcess(string tournamentId, IMessageChannel channel)
+        public Embed SetStandingsChannelProcess(string tournamentId, IMessageChannel channel)
         {
             // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
@@ -28,12 +27,12 @@ namespace FlawsFightNight.CommandsLogic.SetCommands
             }
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
-            tournament.MatchesChannelId = channel.Id;
+            tournament.StandingsChannelId = channel.Id;
 
             // Save and reload the tournaments database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
 
-            return _embedManager.SetMatchesChannelSuccess(channel, tournament);
+            return _embedManager.SetStandingsChannelSuccess(channel, tournament);
         }
     }
 }

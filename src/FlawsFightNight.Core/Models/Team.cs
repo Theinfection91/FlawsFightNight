@@ -29,5 +29,17 @@ namespace FlawsFightNight.Core.Models
         #endregion
 
         public Team() { }
+
+        public string GetFormattedChallengeStatus()
+        {
+            if (IsChallengeable)
+            {
+                return "Free";
+            }
+            else
+            {
+                return "Challenged";
+            }
+        }
     }
 }

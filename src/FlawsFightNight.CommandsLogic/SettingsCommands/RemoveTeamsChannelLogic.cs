@@ -6,20 +6,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.SetCommands
+namespace FlawsFightNight.CommandsLogic.SettingsCommands
 {
-    public class SetMatchesChannelLogic : Logic
+    public class RemoveTeamsChannelLogic : Logic
     {
         private EmbedManager _embedManager;
         private TournamentManager _tournamentManager;
-
-        public SetMatchesChannelLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Set Matches Channel")
+        public RemoveTeamsChannelLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Remove Teams Channel")
         {
             _embedManager = embedManager;
             _tournamentManager = tournamentManager;
         }
 
-        public Embed SetMatchesChannelProcess(string tournamentId, IMessageChannel channel)
+        public Embed RemoveTeamsChannelProcess(string tournamentId)
         {
             // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
@@ -27,13 +26,18 @@ namespace FlawsFightNight.CommandsLogic.SetCommands
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
-
-            tournament.MatchesChannelId = channel.Id;
+            // Check if a teams channel is set
+            if (tournament.TeamsChannelId == 0)
+            {
+                return _embedManager.ErrorEmbed(Name, $"Tournament {tournament.Name} ({tournament.Id}) does not have a teams channel set.");
+            }
+            // Remove the teams channel
+            tournament.TeamsChannelId = 0;
+            tournament.TeamsMessageId = 0;
 
             // Save and reload the tournaments database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-            return _embedManager.SetMatchesChannelSuccess(channel, tournament);
+            return _embedManager.RemoveTeamsChannelSuccess(tournament);
         }
     }
 }

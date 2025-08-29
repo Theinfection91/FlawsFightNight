@@ -6,20 +6,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.SetCommands
+namespace FlawsFightNight.CommandsLogic.SettingsCommands
 {
-    public class SetMatchesChannelLogic : Logic
+    public class SetTeamsChannelLogic : Logic
     {
         private EmbedManager _embedManager;
         private TournamentManager _tournamentManager;
-
-        public SetMatchesChannelLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Set Matches Channel")
+        public SetTeamsChannelLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Set Teams Channel")
         {
             _embedManager = embedManager;
             _tournamentManager = tournamentManager;
         }
 
-        public Embed SetMatchesChannelProcess(string tournamentId, IMessageChannel channel)
+        public Embed SetTeamsChannelProcess(string tournamentId, IMessageChannel channel)
         {
             // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
@@ -27,13 +26,11 @@ namespace FlawsFightNight.CommandsLogic.SetCommands
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
-
-            tournament.MatchesChannelId = channel.Id;
+            tournament.TeamsChannelId = channel.Id;
 
             // Save and reload the tournaments database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-            return _embedManager.SetMatchesChannelSuccess(channel, tournament);
+            return _embedManager.SetTeamsChannelSuccess(channel, tournament);
         }
     }
 }
