@@ -65,7 +65,7 @@ namespace FlawsFightNight.Managers
             var embed = new EmbedBuilder()
                 .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Tournament Matches")
                 .WithDescription($"*ID#: {tournament.Id}*\n**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
-                .WithColor(Color.DarkOrange)
+                .WithColor(Color.Orange)
                 .WithCurrentTimestamp();
 
             if (tournament.IsRoundComplete && tournament.IsRoundLockedIn)
@@ -134,7 +134,7 @@ namespace FlawsFightNight.Managers
             var embed = new EmbedBuilder()
                 .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Tournament Standings")
                 .WithDescription($"*ID#: {tournament.Id}*\n**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
-                .WithColor(Color.DarkBlue)
+                .WithColor(Color.Gold)
                 .WithCurrentTimestamp();
 
             if (roundRobinStandings.Entries.Count == 0)
@@ -151,6 +151,7 @@ namespace FlawsFightNight.Managers
                     $"\n#{teamStanding.Rank} **{teamStanding.TeamName}**\n" +
                     $"✅ Wins: {teamStanding.Wins} | " +
                     $"❌ Losses: {teamStanding.Losses} | " +
+                    $"{teamStanding.GetCorrectStreakEmoji()} W/L Streak: {teamStanding.GetFormattedStreakString()}\n" +
                     $"⭐ Points For: {pointsFor} | " +
                     $"🛡️ Points Against: {pointsAgainst}\n";
             }
@@ -158,23 +159,33 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed TeamsLiveView(Tournament tournament)
+        public Embed TeamsLiveView(Tournament tournament, RoundRobinStandings standings)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"👥 {tournament.Name} - {tournament.TeamSizeFormat} Tournament Teams")
                 .WithDescription($"*ID#: {tournament.Id}*\n**Total Teams: {tournament.Teams.Count}**\n")
-                .WithColor(Color.DarkGreen)
+                .WithColor(Color.Blue)
                 .WithCurrentTimestamp();
             if (tournament.Teams.Count == 0)
             {
                 embed.Description += "\n_No teams have been registered yet._";
                 return embed.Build();
             }
-            foreach (var team in tournament.Teams.OrderBy(t => t.Name))
+
+            foreach (var teamStanding in standings.Entries.OrderBy(e => e.Rank))
             {
-                embed.Description +=
-                    $"\n**{team.Name}**\n" +
-                    $"👤 Members: {string.Join(", ", team.Members.Select(m => m.DisplayName))}\n";
+                var team = tournament.Teams.FirstOrDefault(t => t.Name == teamStanding.TeamName);
+                if (team != null)
+                {
+                    embed.Description +=
+                        $"\n**{team.Name}** (#{teamStanding.Rank})\n" +
+                        $"👤 Members: {string.Join(", ", team.Members.Select(m => m.DisplayName))}\n";
+                    // If Ladder Tournament, display challenge status
+                    if (tournament.Type == TournamentType.Ladder)
+                    {
+                        embed.Description += $"Challenge Status: {team.GetFormattedChallengeStatus()}\n";
+                    }
+                }
             }
             return embed.Build();
         }

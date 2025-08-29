@@ -27,5 +27,31 @@ namespace FlawsFightNight.Core.Models
             LoseStreak = team.LoseStreak;
             TotalScore = team.TotalScore;
         }
+
+        public string GetFormattedStreakString()
+        {
+            if (WinStreak > 0 && LoseStreak == 0)
+            {
+                return $"W{WinStreak}";
+            }
+            if (LoseStreak > 0 && WinStreak == 0)
+            {
+                return $"L{LoseStreak}";
+            }
+            return "--";
+        }
+
+        public  string GetCorrectStreakEmoji()
+        {
+            if (WinStreak > 0 && LoseStreak == 0)
+            {
+                return "📈";
+            }
+            if (LoseStreak > 0 && WinStreak == 0)
+            {
+                return "📉";
+            }
+            return "⌛";
+        }
     }
 }

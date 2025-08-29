@@ -20,6 +20,7 @@ namespace FlawsFightNight.Managers
             _embedManager = embedManager;
             StartMatchesLiveViewTask();
             StartStandingsLiveViewTask();
+            StartTeamsLiveViewTask();
             _matchManager = matchManager;
         }
 
@@ -311,8 +312,10 @@ namespace FlawsFightNight.Managers
                     //Console.WriteLine($"Channel with ID {tournament.TeamsChannelId} not found for tournament {tournament.Name}. Skipping.");
                     continue;
                 }
+                // Grab standings for correct ranks
+                RoundRobinStandings standings = GetRoundRobinStandings(tournament);
                 // Get the embed for the teams live view
-                var teamsEmbed = _embedManager.TeamsLiveView(tournament);
+                var teamsEmbed = _embedManager.TeamsLiveView(tournament, standings);
                 ulong messageId = tournament.TeamsMessageId;
                 if (messageId != 0)
                 {

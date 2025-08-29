@@ -156,5 +156,50 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
             }
         }
+
+        [Group("teams_channel_id", "Set or remove the channel ID for teams of a specified tournament")]
+        public class TeamsChannelCommands : InteractionModuleBase<SocketInteractionContext>
+        {
+            private SetTeamsChannelLogic _setTeamsChannelLogic;
+            private RemoveTeamsChannelLogic _removeTeamsChannelLogic;
+            public TeamsChannelCommands(SetTeamsChannelLogic setTeamsChannelLogic, RemoveTeamsChannelLogic removeTeamsChannelLogic)
+            {
+                _setTeamsChannelLogic = setTeamsChannelLogic;
+                _removeTeamsChannelLogic = removeTeamsChannelLogic;
+            }
+            [SlashCommand("set", "Set the channel ID for teams of a specified tournament")]
+            [RequireGuildAdmin]
+            public async Task SetTeamsChannelIdAsync(
+            [Summary("tournament_id", "The ID of the tournament to set the teams channel for")] string tournamentId,
+            [Summary("channel_id", "The ID of the channel where teams will be posted")] IMessageChannel channel)
+            {
+                try
+                {
+                    var result = _setTeamsChannelLogic.SetTeamsChannelProcess(tournamentId, channel);
+                    await RespondAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+            [SlashCommand("remove", "Remove the channel ID for teams of a specified tournament")]
+            [RequireGuildAdmin]
+            public async Task RemoveTeamsChannelIdAsync(
+            [Summary("tournament_id", "The ID of the tournament to stop the teams LiveView.")] string tournamentId)
+            {
+                try
+                {
+                    var result = _removeTeamsChannelLogic.RemoveTeamsChannelProcess(tournamentId);
+                    await RespondAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+        }
     }
 }
