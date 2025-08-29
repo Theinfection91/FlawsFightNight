@@ -64,7 +64,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
-                await RespondWithModalAsync<DeleteLeagueModal>("delete_tournament");
+                await RespondWithModalAsync<DeleteTournamentModal>("delete_tournament");
             }
             catch (Exception ex)
             {

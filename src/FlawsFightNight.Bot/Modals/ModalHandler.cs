@@ -18,7 +18,7 @@ namespace FlawsFightNight.Bot.Modals
 
         #region Tournament Start/End/Delete
         [ModalInteraction("delete_tournament")]
-        public async Task HandleDeleteTournamentModalAsync(DeleteLeagueModal modal)
+        public async Task HandleDeleteTournamentModalAsync(DeleteTournamentModal modal)
         {
             try
             {

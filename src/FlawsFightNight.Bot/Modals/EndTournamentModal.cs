@@ -7,10 +7,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Bot.Modals
 {
-    public class DeleteLeagueModal : IModal
+    public class EndTournamentModal : IModal
     {
-
-        public string Title => "Delete League";
+        public string Title => "End Tournament";
 
         [InputLabel("Tournament ID (Case Sensitive)")]
         [ModalTextInput("tournament_id_one", placeholder: "Enter the Tournament ID...", maxLength: 4)]
@@ -19,5 +18,7 @@ namespace FlawsFightNight.Bot.Modals
         [InputLabel("Tournament ID (Case Sensitive)")]
         [ModalTextInput("tournament_id_two", placeholder: "Re-enter the Tournament ID...", maxLength: 4)]
         public string TournamentIdTwo { get; set; }
+    }
+    {
     }
 }
