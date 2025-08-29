@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Bot.Modals;
 using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Core.Enums;
@@ -49,6 +50,21 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 var result = _createTournamentLogic.CreateTournamentProcess(Context, name, tournamentType, teamSize, description);
                 await RespondAsync(embed: result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("delete", "Delete a tournament")]
+        [RequireGuildAdmin]
+        public async Task DeleteTournamentAsync()
+        {
+            try
+            {
+                await RespondWithModalAsync<DeleteLeagueModal>("delete_tournament");
             }
             catch (Exception ex)
             {
