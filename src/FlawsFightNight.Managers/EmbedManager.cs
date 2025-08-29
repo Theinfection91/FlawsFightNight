@@ -158,6 +158,27 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
+        public Embed TeamsLiveView(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"👥 {tournament.Name} - {tournament.TeamSizeFormat} Tournament Teams")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Total Teams: {tournament.Teams.Count}**\n")
+                .WithColor(Color.DarkGreen)
+                .WithCurrentTimestamp();
+            if (tournament.Teams.Count == 0)
+            {
+                embed.Description += "\n_No teams have been registered yet._";
+                return embed.Build();
+            }
+            foreach (var team in tournament.Teams.OrderBy(t => t.Name))
+            {
+                embed.Description +=
+                    $"\n**{team.Name}**\n" +
+                    $"👤 Members: {string.Join(", ", team.Members.Select(m => m.DisplayName))}\n";
+            }
+            return embed.Build();
+        }
+
         #endregion
 
         #region Match Embeds
@@ -248,6 +269,30 @@ namespace FlawsFightNight.Managers
                 .AddField("Tournament ID", tournament.Id)
                 .WithColor(Color.Green)
                 .WithFooter("The Standings LiveView will no longer be posted in a channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed SetTeamsChannelSuccess(IMessageChannel channel, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Teams Channel Set Successfully")
+                .WithDescription($"The teams channel for the tournament **{tournament.Name}** has been successfully set to {channel.Name} (ID#: {channel.Id}).")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Teams LiveView will now be posted in this channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveTeamsChannelSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Teams Channel Removed Successfully")
+                .WithDescription($"The teams channel for the tournament **{tournament.Name}** has been successfully removed. No channel is currently set.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Teams LiveView will no longer be posted in a channel.")
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }

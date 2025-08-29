@@ -150,7 +150,7 @@ namespace FlawsFightNight.Managers
                     var remaining = new List<string>(tiedTeams);
                     while (remaining.Count > 0)
                     {
-                        string winner = _matchManager.ResolveTieBreaker(remaining, tournament.MatchLog);
+                        string winner = tournament.TieBreakerRule.ResolveTie(remaining, tournament.MatchLog);
                         var winnerEntry = group.First(e => e.TeamName == winner);
 
                         resolvedList.Add(winnerEntry);
@@ -264,6 +264,82 @@ namespace FlawsFightNight.Managers
                     default:
                         //Console.WriteLine($"Tournament type {tournament.Type} not supported for standings live view. Skipping.");
                         break;
+                }
+            }
+        }
+        #endregion
+
+        #region Teams LiveView
+        public void StartTeamsLiveViewTask()
+        {
+            Task.Run(() => RunTeamsUpdateTaskAsync());
+        }
+
+        private async Task RunTeamsUpdateTaskAsync()
+        {
+            while (true)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(7));
+                await SendTeamsToChannelAsync();
+            }
+        }
+
+        private async Task SendTeamsToChannelAsync()
+        {
+            if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
+            {
+                //Console.WriteLine("No tournaments found. No need to post to teams channels.");
+                await Task.CompletedTask;
+            }
+
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                if (tournament == null)
+                {
+                    //Console.WriteLine("Tournament is null. Skipping.");
+                    continue;
+                }
+                if (tournament.TeamsChannelId == 0)
+                {
+                    //Console.WriteLine($"Tournament {tournament.Name} has no Teams Channel ID set. Skipping.");
+                    continue;
+                }
+                // Get the channel from the client
+                var channel = _client.GetChannel(tournament.TeamsChannelId) as IMessageChannel;
+                if (channel == null)
+                {
+                    //Console.WriteLine($"Channel with ID {tournament.TeamsChannelId} not found for tournament {tournament.Name}. Skipping.");
+                    continue;
+                }
+                // Get the embed for the teams live view
+                var teamsEmbed = _embedManager.TeamsLiveView(tournament);
+                ulong messageId = tournament.TeamsMessageId;
+                if (messageId != 0)
+                {
+                    // Try to get the existing message
+                    var message = await channel.GetMessageAsync(messageId) as IUserMessage;
+                    if (message != null)
+                    {
+                        // Edit the existing message with the new embed
+                        await message.ModifyAsync(msg => msg.Embed = teamsEmbed);
+                        //Console.WriteLine($"Updated teams message for tournament {tournament.Name} in channel {channel.Name}.");
+                    }
+                    else
+                    {
+                        // If the message doesn't exist, send a new one
+                        var newMessage = await channel.SendMessageAsync(embed: teamsEmbed);
+                        tournament.TeamsMessageId = newMessage.Id;
+                        //Console.WriteLine($"Sent new teams message for tournament {tournament.Name} in channel {channel.Name}.");
+                        _dataManager.SaveAndReloadTournamentsDatabase();
+                    }
+                }
+                else
+                {
+                    // If no message ID is set, send a new message
+                    var newMessage = await channel.SendMessageAsync(embed: teamsEmbed);
+                    tournament.TeamsMessageId = newMessage.Id;
+                    //Console.WriteLine($"Sent new teams message for tournament {tournament.Name} in channel {channel.Name}.");
+                    _dataManager.SaveAndReloadTournamentsDatabase();
                 }
             }
         }
