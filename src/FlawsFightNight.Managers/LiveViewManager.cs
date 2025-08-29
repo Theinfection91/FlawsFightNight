@@ -112,7 +112,7 @@ namespace FlawsFightNight.Managers
         #region Standings LiveView
         public RoundRobinStandings GetRoundRobinStandings(Tournament tournament)
         {
-            Console.WriteLine($"[DEBUG] Building standings for tournament: {tournament.Name}, Teams: {tournament.Teams.Count}");
+            //Console.Write.WriteLine($"[DEBUG] Building standings for tournament: {tournament.Name}, Teams: {tournament.Teams.Count}");
 
             var standings = new RoundRobinStandings();
 
@@ -121,15 +121,17 @@ namespace FlawsFightNight.Managers
             {
                 var entry = new StandingsEntry(team);
                 standings.Entries.Add(entry);
-                Console.WriteLine($"[DEBUG] Added team entry: {entry.TeamName}, Wins: {entry.Wins}, Losses: {entry.Losses}, Score: {entry.TotalScore}");
+                //Console.Write.WriteLine($"[DEBUG] Added team entry: {entry.TeamName}, Wins: {entry.Wins}, Losses: {entry.Losses}, Score: {entry.TotalScore}");
             }
 
             // Initial sort (by wins/score/etc.)
             standings.SortStandings();
 
-            Console.WriteLine("[DEBUG] After initial sort:");
+            //Console.Write.WriteLine("[DEBUG] After initial sort:");
             foreach (var entry in standings.Entries)
-                Console.WriteLine($"   {entry.TeamName}: {entry.Wins}-{entry.Losses}, {entry.TotalScore} pts");
+            {
+                //Console.Write.WriteLine($"   {entry.TeamName}: {entry.Wins}-{entry.Losses}, {entry.TotalScore} pts");
+            }
 
             // Group by full record (Wins + Losses)
             var groupedByRecord = standings.Entries
@@ -145,7 +147,7 @@ namespace FlawsFightNight.Managers
 
                 if (tiedTeams.Count > 1)
                 {
-                    Console.WriteLine($"[DEBUG] Tie detected in {group.Key.Wins}-{group.Key.Losses} group: {string.Join(", ", tiedTeams)}");
+                    //Console.Write.WriteLine($"[DEBUG] Tie detected in {group.Key.Wins}-{group.Key.Losses} group: {string.Join(", ", tiedTeams)}");
 
                     // Keep resolving until all tied teams are ranked
                     var remaining = new List<string>(tiedTeams);
@@ -157,7 +159,7 @@ namespace FlawsFightNight.Managers
                         resolvedList.Add(winnerEntry);
                         remaining.Remove(winner);
 
-                        Console.WriteLine($"[DEBUG] -> Placed {winner} at next rank, {remaining.Count} left in tie group");
+                        //Console.WriteLine($"[DEBUG] -> Placed {winner} at next rank, {remaining.Count} left in tie group");
                     }
                 }
                 else
@@ -172,9 +174,11 @@ namespace FlawsFightNight.Managers
 
             standings.Entries = resolvedList;
 
-            Console.WriteLine("[DEBUG] Final Standings:");
+            //Console.Write.WriteLine("[DEBUG] Final Standings:");
             foreach (var entry in standings.Entries)
-                Console.WriteLine($"   Rank {entry.Rank}: {entry.TeamName} ({entry.Wins}-{entry.Losses}, {entry.TotalScore} pts)");
+            {
+                //Console.WriteLine($"   Rank {entry.Rank}: {entry.TeamName} ({entry.Wins}-{entry.Losses}, {entry.TotalScore} pts)");
+            }
 
             return standings;
         }

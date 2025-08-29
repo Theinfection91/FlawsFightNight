@@ -691,19 +691,19 @@ namespace FlawsFightNight.Managers
                     tiedTeams.Contains(pm.Loser))
                 .ToList();
 
-            Console.WriteLine($"Step 1: Head-to-head matches found: {headToHead.Count}");
+            //Console.Write.WriteLine($"Step 1: Head-to-head matches found: {headToHead.Count}");
             foreach (var pm in headToHead)
             {
                 wins[pm.Winner]++;
-                Console.WriteLine($"  {pm.Winner} beat {pm.Loser} ({pm.WinnerScore}-{pm.LoserScore})");
+                //Console.Write.WriteLine($"  {pm.Winner} beat {pm.Loser} ({pm.WinnerScore}-{pm.LoserScore})");
             }
 
             int maxWins = wins.Values.Max();
             var leaders = wins.Where(w => w.Value == maxWins).Select(w => w.Key).ToList();
-            Console.WriteLine($"  Leaders after Step 1 (max wins = {maxWins}): {string.Join(", ", leaders)}");
+            //Console.Write.WriteLine($"  Leaders after Step 1 (max wins = {maxWins}): {string.Join(", ", leaders)}");
             if (leaders.Count == 1)
             {
-                Console.WriteLine($"Tie-breaker resolved by head-to-head wins → Winner: {leaders.First()}");
+                //Console.Write.WriteLine($"Tie-breaker resolved by head-to-head wins → Winner: {leaders.First()}");
                 return leaders.First();
             }
 
@@ -715,23 +715,23 @@ namespace FlawsFightNight.Managers
                 {
                     int diffWinner = pm.WinnerScore - pm.LoserScore;
                     pointDiff[pm.Winner] += diffWinner;
-                    Console.WriteLine($"  Point diff for {pm.Winner}: {diffWinner:+#;-#;0}");
+                    //Console.Write.WriteLine($"  Point diff for {pm.Winner}: {diffWinner:+#;-#;0}");
                 }
 
                 if (leaders.Contains(pm.Loser))
                 {
                     int diffLoser = pm.LoserScore - pm.WinnerScore;
                     pointDiff[pm.Loser] += diffLoser;
-                    Console.WriteLine($"  Point diff for {pm.Loser}: {diffLoser:+#;-#;0}");
+                    //Console.Write.WriteLine($"  Point diff for {pm.Loser}: {diffLoser:+#;-#;0}");
                 }
             }
 
             int maxDiff = pointDiff.Values.Max();
             var leadersByDiff = pointDiff.Where(p => p.Value == maxDiff).Select(p => p.Key).ToList();
-            Console.WriteLine($"  Leaders after Step 2 (max point diff = {maxDiff}): {string.Join(", ", leadersByDiff)}");
+            //Console.Write.WriteLine($"  Leaders after Step 2 (max point diff = {maxDiff}): {string.Join(", ", leadersByDiff)}");
             if (leadersByDiff.Count == 1)
             {
-                Console.WriteLine($"Tie-breaker resolved by point differential → Winner: {leadersByDiff.First()}");
+                //Console.Write.WriteLine($"Tie-breaker resolved by point differential → Winner: {leadersByDiff.First()}");
                 return leadersByDiff.First();
             }
 
@@ -742,13 +742,13 @@ namespace FlawsFightNight.Managers
                 if (totalPointsVsTied.ContainsKey(pm.Winner))
                 {
                     totalPointsVsTied[pm.Winner] += pm.WinnerScore;
-                    Console.WriteLine($"  Total points vs tied teams for {pm.Winner}: +{pm.WinnerScore}");
+                    //Console.Write.WriteLine($"  Total points vs tied teams for {pm.Winner}: +{pm.WinnerScore}");
                 }
 
                 if (totalPointsVsTied.ContainsKey(pm.Loser))
                 {
                     totalPointsVsTied[pm.Loser] += pm.LoserScore;
-                    Console.WriteLine($"  Total points vs tied teams for {pm.Loser}: +{pm.LoserScore}");
+                    //Console.Write.WriteLine($"  Total points vs tied teams for {pm.Loser}: +{pm.LoserScore}");
                 }
             }
 
@@ -757,10 +757,10 @@ namespace FlawsFightNight.Managers
                 .Where(p => p.Value == maxPointsVsTied)
                 .Select(p => p.Key)
                 .ToList();
-            Console.WriteLine($"  Leaders after Step 3 (max points vs tied = {maxPointsVsTied}): {string.Join(", ", leadersByPointsVsTied)}");
+            //Console.Write.WriteLine($"  Leaders after Step 3 (max points vs tied = {maxPointsVsTied}): {string.Join(", ", leadersByPointsVsTied)}");
             if (leadersByPointsVsTied.Count == 1)
             {
-                Console.WriteLine($"Tie-breaker resolved by total points vs tied teams → Winner: {leadersByPointsVsTied.First()}");
+                //Console.Write.WriteLine($"Tie-breaker resolved by total points vs tied teams → Winner: {leadersByPointsVsTied.First()}");
                 return leadersByPointsVsTied.First();
             }
 
@@ -775,13 +775,13 @@ namespace FlawsFightNight.Managers
                 if (totalPointsOverall.ContainsKey(pm.Winner))
                 {
                     totalPointsOverall[pm.Winner] += pm.WinnerScore;
-                    Console.WriteLine($"  Total points overall for {pm.Winner}: +{pm.WinnerScore}");
+                    //Console.Write.WriteLine($"  Total points overall for {pm.Winner}: +{pm.WinnerScore}");
                 }
 
                 if (totalPointsOverall.ContainsKey(pm.Loser))
                 {
                     totalPointsOverall[pm.Loser] += pm.LoserScore;
-                    Console.WriteLine($"  Total points overall for {pm.Loser}: +{pm.LoserScore}");
+                    //Console.Write.WriteLine($"  Total points overall for {pm.Loser}: +{pm.LoserScore}");
                 }
             }
 
@@ -790,10 +790,10 @@ namespace FlawsFightNight.Managers
                 .Where(p => p.Value == maxPointsOverall)
                 .Select(p => p.Key)
                 .ToList();
-            Console.WriteLine($"  Leaders after Step 4 (max points overall = {maxPointsOverall}): {string.Join(", ", leadersByPointsOverall)}");
+            //Console.Write.WriteLine($"  Leaders after Step 4 (max points overall = {maxPointsOverall}): {string.Join(", ", leadersByPointsOverall)}");
             if (leadersByPointsOverall.Count == 1)
             {
-                Console.WriteLine($"Tie-breaker resolved by total points overall → Winner: {leadersByPointsOverall.First()}");
+                //Console.Write.WriteLine($"Tie-breaker resolved by total points overall → Winner: {leadersByPointsOverall.First()}");
                 return leadersByPointsOverall.First();
             }
 
@@ -803,23 +803,23 @@ namespace FlawsFightNight.Managers
             {
                 var (forPoints, againstPoints) = log.GetPointsForAndPointsAgainstForTeam(p.Key);
                 pointsAgainst[p.Key] = againstPoints;
-                Console.WriteLine($"  Points against for {p.Key}: {againstPoints}");
+                //Console.Write.WriteLine($"  Points against for {p.Key}: {againstPoints}");
             }
             int minPointsAgainst = pointsAgainst.Values.Min();
             var leadersByLeastPointsAgainst = pointsAgainst
                 .Where(p => p.Value == minPointsAgainst)
                 .Select(p => p.Key)
                 .ToList();
-            Console.WriteLine($"  Leaders after Step 5 (min points against = {minPointsAgainst}): {string.Join(", ", leadersByLeastPointsAgainst)}");
+            //Console.Write.WriteLine($"  Leaders after Step 5 (min points against = {minPointsAgainst}): {string.Join(", ", leadersByLeastPointsAgainst)}");
             if (leadersByLeastPointsAgainst.Count == 1)
             {
-                Console.WriteLine($"Tie-breaker resolved by least points against → Winner: {leadersByLeastPointsAgainst.First()}");
+                //Console.Write.WriteLine($"Tie-breaker resolved by least points against → Winner: {leadersByLeastPointsAgainst.First()}");
                 return leadersByLeastPointsAgainst.First();
             }
 
             // Step 6: Still tied — fallback random selection
             var chosen = leadersByPointsOverall.OrderBy(_ => Guid.NewGuid()).First();
-            Console.WriteLine($"Tie-breaker unresolved by all criteria → Randomly selected: {chosen}");
+            //Console.Write.WriteLine($"Tie-breaker unresolved by all criteria → Randomly selected: {chosen}");
             return chosen;
         }
         #endregion
