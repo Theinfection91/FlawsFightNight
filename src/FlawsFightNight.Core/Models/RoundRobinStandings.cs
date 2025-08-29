@@ -16,9 +16,11 @@ namespace FlawsFightNight.Core.Models
         public void SortStandings()
         {
             Entries = Entries
-                .OrderByDescending(e => e.Wins)
+                .OrderBy(e => e.Rank)
+                .ThenByDescending(e => e.Wins)
+                .ThenBy(e => e.Losses)
                 .ThenByDescending(e => e.TotalScore)
-                .ThenBy(e => e.TeamName) // stable alphabetical fallback
+                //.ThenBy(e => e.TeamName)
                 .ToList();
         }
     }

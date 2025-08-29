@@ -115,7 +115,7 @@ namespace FlawsFightNight.Managers
                         if (postMatch.WasByeMatch)
                             sb.AppendLine($"💤 *{postMatch.Winner} Bye Week*");
                         else
-                            sb.AppendLine($"✅ *Match ID#: {postMatch.Id}* || **{postMatch.Winner}** defeated **{postMatch.Loser}** by **{postMatch.WinnerScore}** to **{postMatch.LoserScore}**");
+                            sb.AppendLine($"✅ *Match ID#: {postMatch.Id}* | " + $"**{postMatch.Winner}** defeated **{postMatch.Loser}** " + $"by **{postMatch.WinnerScore}** to **{postMatch.LoserScore}**");
                     }
 
                     embed.AddField($"📜 Previous Matches - Round {round.Key}", sb.ToString(), false);
@@ -136,20 +136,23 @@ namespace FlawsFightNight.Managers
                 .WithDescription($"*ID#: {tournament.Id}*\n**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
                 .WithColor(Color.DarkBlue)
                 .WithCurrentTimestamp();
+
             if (roundRobinStandings.Entries.Count == 0)
             {
-                embed.AddField("No Teams Registered", "No teams have been registered yet.", false);
+                embed.Description += "\n_No teams have been registered yet._";
                 return embed.Build();
             }
-            var sb = new StringBuilder();
-            sb.AppendLine("**Rank | Team Name | Wins | Losses | Total Score**");
-            sb.AppendLine("-----------------------------------------------------");
-            foreach (var teamStanding in roundRobinStandings.Entries)
+
+            foreach (var teamStanding in roundRobinStandings.Entries.OrderBy(e => e.Rank))
             {
-                
-                sb.AppendLine($"{teamStanding.Rank,4} | {teamStanding.TeamName,-20} | {teamStanding.Wins,4} | {teamStanding.Losses,6} | {teamStanding.TotalScore,11}");
+                // TODO Add 🏅 emojis and sort for top 3 teams
+                embed.Description +=
+                    $"\n#{teamStanding.Rank} **{teamStanding.TeamName}**\n" +
+                    $"✅ Wins: {teamStanding.Wins} | " +
+                    $"❌ Losses: {teamStanding.Losses} | " +
+                    $"⭐ Points: {teamStanding.TotalScore}\n";
             }
-            embed.AddField("🏅 Current Standings", sb.ToString(), false);
+
             return embed.Build();
         }
 
@@ -198,7 +201,7 @@ namespace FlawsFightNight.Managers
         }
         #endregion
 
-        #region Set Embeds
+        #region Set LiveView Embeds
         public Embed SetMatchesChannelSuccess(IMessageChannel channel, Tournament tournament)
         {
             var embed = new EmbedBuilder()
@@ -207,6 +210,42 @@ namespace FlawsFightNight.Managers
                 .AddField("Tournament ID", tournament.Id)
                 .WithColor(Color.Green)
                 .WithFooter("The Matches/Challenges LiveView will now be posted in this channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveMatchesChannelSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Matches Channel Removed Successfully")
+                .WithDescription($"The matches/challenges channel for the tournament **{tournament.Name}** has been successfully removed. No channel is currently set.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Matches/Challenges LiveView will no longer be posted in a channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed SetStandingsChannelSuccess(IMessageChannel channel, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Standings Channel Set Successfully")
+                .WithDescription($"The standings channel for the tournament **{tournament.Name}** has been successfully set to {channel.Name} (ID#: {channel.Id}).")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Standings LiveView will now be posted in this channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveStandingsChannelSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Standings Channel Removed Successfully")
+                .WithDescription($"The standings channel for the tournament **{tournament.Name}** has been successfully removed. No channel is currently set.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Standings LiveView will no longer be posted in a channel.")
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }

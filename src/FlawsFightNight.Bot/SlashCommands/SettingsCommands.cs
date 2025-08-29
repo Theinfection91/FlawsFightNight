@@ -63,9 +63,11 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class MatchesChannelCommands : InteractionModuleBase<SocketInteractionContext>
         {
             private SetMatchesChannelLogic _setMatchesChannelLogic;
-            public MatchesChannelCommands(SetMatchesChannelLogic setMatchesChannelLogic)
+            private RemoveMatchesChannelLogic _removeMatchesChannelLogic;
+            public MatchesChannelCommands(SetMatchesChannelLogic setMatchesChannelLogic, RemoveMatchesChannelLogic removeMatchesChannelLogic)
             {
                 _setMatchesChannelLogic = setMatchesChannelLogic;
+                _removeMatchesChannelLogic = removeMatchesChannelLogic;
             }
 
             [SlashCommand("set", "Set the channel ID for matches of a specified tournament")]
@@ -89,17 +91,63 @@ namespace FlawsFightNight.Bot.SlashCommands
 
             [SlashCommand("remove", "Remove the channel ID for matches of a specified tournament")]
             [RequireGuildAdmin]
-            public async Task SetMatchesChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the matches channel for")] string tournamentId)
+            public async Task RemoveMatchesChannelIdAsync(
+            [Summary("tournament_id", "The ID of the tournament to stop the matches LiveView.")] string tournamentId)
             {
                 try
                 {
-                    // TODO: Implement the logic to remove the matches channel ID
+                    var result = _removeMatchesChannelLogic.RemoveMatchesChannelProcess(tournamentId);
+                    await RespondAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+        }
 
-                    //var result = ;
-                    //await RespondAsync(embed: result);
+        [Group("standings_channel_id", "Set or remove the channel ID for standings of a specified tournament")]
+        public class StandingsChannelCommands : InteractionModuleBase<SocketInteractionContext>
+        {
+            private SetStandingsChannelLogic _setStandingsChannelLogic;
+            private RemoveStandingsChannelLogic _removeStandingsChannelLogic;
 
-                    await RespondAsync("TODO");
+            public StandingsChannelCommands(SetStandingsChannelLogic setStandingsChannelLogic, RemoveStandingsChannelLogic removeStandingsChannelLogic)
+            {
+                _setStandingsChannelLogic = setStandingsChannelLogic;
+                _removeStandingsChannelLogic = removeStandingsChannelLogic;
+            }
+
+            [SlashCommand("set", "Set the channel ID for standings of a specified tournament")]
+            [RequireGuildAdmin]
+            public async Task SetStandingsChannelIdAsync(
+            [Summary("tournament_id", "The ID of the tournament to set the standings channel for")] string tournamentId,
+            [Summary("channel_id", "The ID of the channel where standings will be posted")] IMessageChannel channel)
+            {
+
+                try
+                {
+                    var result = _setStandingsChannelLogic.SetStandingsChannelProcess(tournamentId, channel);
+                    await RespondAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("remove", "Remove the channel ID for standings of a specified tournament")]
+            [RequireGuildAdmin]
+            public async Task RemoveStandingsChannelIdAsync(
+            [Summary("tournament_id", "The ID of the tournament to stop the standings LiveView.")] string tournamentId)
+            {
+                try
+                {
+
+                    var result = _removeStandingsChannelLogic.RemoveStandingsChannelProcess(tournamentId);
+                    await RespondAsync(embed: result);
                 }
                 catch (Exception ex)
                 {

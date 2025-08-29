@@ -13,12 +13,14 @@ namespace FlawsFightNight.Managers
     {
         private DiscordSocketClient _client;
         private EmbedManager _embedManager;
-        public LiveViewManager(DiscordSocketClient discordSocketClient, DataManager dataManager, EmbedManager embedManager) : base("LiveViewManager", dataManager)
+        private MatchManager _matchManager;
+        public LiveViewManager(DiscordSocketClient discordSocketClient, DataManager dataManager, EmbedManager embedManager, MatchManager matchManager) : base("LiveViewManager", dataManager)
         {
             _client = discordSocketClient;
             _embedManager = embedManager;
             StartMatchesLiveViewTask();
             StartStandingsLiveViewTask();
+            _matchManager = matchManager;
         }
 
         #region Matches LiveView
@@ -109,13 +111,56 @@ namespace FlawsFightNight.Managers
         #region Standings LiveView
         public RoundRobinStandings GetRoundRobinStandings(Tournament tournament)
         {
+            Console.WriteLine($"[DEBUG] Building standings for tournament: {tournament.Name}, Teams: {tournament.Teams.Count}");
+
             var standings = new RoundRobinStandings();
+
+            // Build entries
             foreach (var team in tournament.Teams)
             {
                 var entry = new StandingsEntry(team);
                 standings.Entries.Add(entry);
+                Console.WriteLine($"[DEBUG] Added team entry: {entry.TeamName}, Wins: {entry.Wins}, Score: {entry.TotalScore}");
             }
+
+            // Initial sort by win/loss or points
+            Console.WriteLine("[DEBUG] Sorting initial standings...");
             standings.SortStandings();
+            Console.WriteLine("[DEBUG] After Sort:");
+            foreach (var entry in standings.Entries)
+                Console.WriteLine($"   Team: {entry.TeamName}, Wins: {entry.Wins}, Score: {entry.TotalScore}");
+
+            // Detect ties
+            List<string> tiedTeams = _matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin);
+            Console.WriteLine($"[DEBUG] Tied Teams Found: {string.Join(", ", tiedTeams)}");
+
+            if (tiedTeams.Any())
+            {
+                // Resolve tie-breaker for the tied group
+                string winner = _matchManager.ResolveTieBreaker(tiedTeams, tournament.MatchLog);
+                Console.WriteLine($"[DEBUG] Tie-breaker winner: {winner}");
+
+                // Force the tiebreaker winner to bubble up among equals
+                standings.Entries = standings.Entries
+                    .OrderByDescending(e => e.TeamName == winner) // winner comes first in tied group
+                    .ThenByDescending(e => e.Wins)
+                    .ThenByDescending(e => e.TotalScore) // or whatever secondary stat you track
+                    .ToList();
+
+                Console.WriteLine("[DEBUG] After Tie Resolution:");
+                foreach (var entry in standings.Entries)
+                    Console.WriteLine($"   Team: {entry.TeamName}, Wins: {entry.Wins}, Score: {entry.TotalScore}");
+            }
+
+            // Assign ranks after tie resolution
+            Console.WriteLine("[DEBUG] Assigning final ranks...");
+            for (int i = 0; i < standings.Entries.Count; i++)
+            {
+                standings.Entries[i].Rank = i + 1;
+                Console.WriteLine($"   Team: {standings.Entries[i].TeamName}, Rank: {standings.Entries[i].Rank}");
+            }
+
+            Console.WriteLine("[DEBUG] Standings complete.");
             return standings;
         }
 
@@ -128,18 +173,18 @@ namespace FlawsFightNight.Managers
         {
             while (true)
             {
-                await Task.Delay(TimeSpan.FromSeconds(11));
+                await Task.Delay(TimeSpan.FromSeconds(7));
                 await SendStandingsToChannelAsync();
             }
         }
 
         private async Task SendStandingsToChannelAsync()
         {
-            Console.WriteLine($"{DateTime.Now} - Sending standings updates to channel...");
+            //Console.WriteLine($"{DateTime.Now} - Sending standings updates to channel...");
 
             if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
             {
-                Console.WriteLine("No tournaments found. No need to post to standings channels.");
+                //Console.WriteLine("No tournaments found. No need to post to standings channels.");
                 return;
             }
 
@@ -147,23 +192,21 @@ namespace FlawsFightNight.Managers
             {
                 if (tournament == null)
                 {
-                    Console.WriteLine("Tournament is null. Skipping.");
+                    //Console.WriteLine("Tournament is null. Skipping.");
                     continue;
                 }
                 if (tournament.StandingsChannelId == 0)
                 {
-                    Console.WriteLine($"Tournament {tournament.Name} has no Standings Channel ID set. Skipping.");
+                    //Console.WriteLine($"Tournament {tournament.Name} has no Standings Channel ID set. Skipping.");
                     continue;
                 }
 
                 var channel = _client.GetChannel(tournament.StandingsChannelId) as IMessageChannel;
                 if (channel == null)
                 {
-                    Console.WriteLine($"Channel with ID {tournament.StandingsChannelId} not found for tournament {tournament.Name}. Skipping.");
+                    //Console.WriteLine($"Channel with ID {tournament.StandingsChannelId} not found for tournament {tournament.Name}. Skipping.");
                     continue;
                 }
-
-                Console.WriteLine("Test");
 
                 switch (tournament.Type)
                 {
@@ -172,7 +215,7 @@ namespace FlawsFightNight.Managers
 
                         if (standings == null)
                         {
-                            Console.WriteLine("Standings came back null.");
+                            //Console.WriteLine("Standings came back null.");
                             continue;
                         }
 
@@ -185,13 +228,13 @@ namespace FlawsFightNight.Managers
                             if (message != null)
                             {
                                 await message.ModifyAsync(msg => msg.Embed = standingsEmbed);
-                                Console.WriteLine($"Updated standings message for tournament {tournament.Name} in channel {channel.Name}.");
+                                //Console.WriteLine($"Updated standings message for tournament {tournament.Name} in channel {channel.Name}.");
                             }
                             else
                             {
                                 var newMessage = await channel.SendMessageAsync(embed: standingsEmbed);
                                 tournament.StandingsMessageId = newMessage.Id;
-                                Console.WriteLine($"Sent new standings message for tournament {tournament.Name} in channel {channel.Name}.");
+                                //Console.WriteLine($"Sent new standings message for tournament {tournament.Name} in channel {channel.Name}.");
                                 _dataManager.SaveAndReloadTournamentsDatabase();
                             }
                         }
@@ -199,13 +242,13 @@ namespace FlawsFightNight.Managers
                         {
                             var newMessage = await channel.SendMessageAsync(embed: standingsEmbed);
                             tournament.StandingsMessageId = newMessage.Id;
-                            Console.WriteLine($"Sent new standings message for tournament {tournament.Name} in channel {channel.Name}.");
+                            //Console.WriteLine($"Sent new standings message for tournament {tournament.Name} in channel {channel.Name}.");
                             _dataManager.SaveAndReloadTournamentsDatabase();
                         }
                         break;
 
                     default:
-                        Console.WriteLine($"Tournament type {tournament.Type} not supported for standings live view. Skipping.");
+                        //Console.WriteLine($"Tournament type {tournament.Type} not supported for standings live view. Skipping.");
                         break;
                 }
             }

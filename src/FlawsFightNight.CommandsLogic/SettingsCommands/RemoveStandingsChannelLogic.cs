@@ -6,20 +6,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.SetCommands
+namespace FlawsFightNight.CommandsLogic.SettingsCommands
 {
-    public class SetMatchesChannelLogic : Logic
+    public class RemoveStandingsChannelLogic : Logic
     {
         private EmbedManager _embedManager;
         private TournamentManager _tournamentManager;
-
-        public SetMatchesChannelLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Set Matches Channel")
+        public RemoveStandingsChannelLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Remove Standings Channel")
         {
             _embedManager = embedManager;
             _tournamentManager = tournamentManager;
         }
 
-        public Embed SetMatchesChannelProcess(string tournamentId, IMessageChannel channel)
+        public Embed RemoveStandingsChannelProcess(string tournamentId)
         {
             // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
@@ -28,12 +27,20 @@ namespace FlawsFightNight.CommandsLogic.SetCommands
             }
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
-            tournament.MatchesChannelId = channel.Id;
+            // Check if a standings channel is set
+            if (tournament.StandingsChannelId == 0)
+            {
+                return _embedManager.ErrorEmbed(Name, $"Tournament {tournament.Name} ({tournament.Id}) does not have a standings channel set.");
+            }
+
+            // Remove the standings channel
+            tournament.StandingsChannelId = 0;
+            tournament.StandingsMessageId = 0;
 
             // Save and reload the tournaments database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
 
-            return _embedManager.SetMatchesChannelSuccess(channel, tournament);
+            return _embedManager.RemoveStandingsChannelSuccess(tournament);
         }
     }
 }
