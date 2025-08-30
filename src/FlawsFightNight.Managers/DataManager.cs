@@ -99,9 +99,14 @@ namespace FlawsFightNight.Managers
             SaveAndReloadTournamentsDatabase();
         }
 
-        public void RemoveTournament()
+        public void RemoveTournament(string tournamentId)
         {
-            // TODO: Implement removal logic
+            var tournament = TournamentsDatabaseFile.Tournaments.FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
+            if (tournament != null)
+            {
+                TournamentsDatabaseFile.Tournaments.Remove(tournament);
+                SaveAndReloadTournamentsDatabase();
+            }
         }
         #endregion
     }

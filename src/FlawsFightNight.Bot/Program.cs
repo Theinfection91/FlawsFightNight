@@ -51,9 +51,9 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<CommandService>();
                     services.AddSingleton<InteractionService>();
 
-                    /////////////////////////////////
-                    //    ==-Command Logic-==     //
-                    ///////////////////////////////
+                      ////////////////////////////////
+                     //    ==-Command Logic-==     //
+                    ////////////////////////////////
 
                     services.AddSingleton<AddDebugAdminLogic>();
                     services.AddSingleton<CancelChallengeLogic>();

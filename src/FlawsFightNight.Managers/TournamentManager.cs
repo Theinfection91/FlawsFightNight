@@ -61,6 +61,11 @@ namespace FlawsFightNight.Managers
             };
         }
 
+        public void DeleteTournament(string tournamentId)
+        {
+            _dataManager.RemoveTournament(tournamentId);
+        }
+
         public bool CanAcceptNewTeams(Tournament tournament)
         {
             switch (tournament.Type)
@@ -159,23 +164,6 @@ namespace FlawsFightNight.Managers
         {
             // Logic to handle the end of a round robin tournament
             tournament.IsRunning = false;
-        }
-
-        public bool IsTournamentReadyToEnd(Tournament tournament)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    return false; // Ladder tournaments do not end based on rounds
-                case TournamentType.RoundRobin:
-                    return tournament.IsRunning && tournament.CanEndTournament;
-                case TournamentType.SingleElimination:
-                case TournamentType.DoubleElimination:
-                    // SE/DE end logic would go here
-                    return false;
-                default:
-                    return false; // Unknown tournament type
-            }
         }
 
         public bool IsTournamentIdInDatabase(string tournamentId, bool isCaseSensitive = false)

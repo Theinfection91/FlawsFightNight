@@ -10,7 +10,7 @@ namespace FlawsFightNight.Bot.Modals
     public class DeleteTournamentModal : IModal
     {
 
-        public string Title => "Delete League";
+        public string Title => "Delete Tournament";
 
         [InputLabel("Tournament ID (Case Sensitive)")]
         [ModalTextInput("tournament_id_one", placeholder: "Enter the Tournament ID...", maxLength: 4)]

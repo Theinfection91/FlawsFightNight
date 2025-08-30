@@ -23,12 +23,6 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         public Embed StartTournamentProcess(string tournamentId)
         {
-            // Check if the tournament exists, grab it if so
-            //if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
-            //{
-            //    return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
-            //}
-
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
             // Check if the tournament is already running

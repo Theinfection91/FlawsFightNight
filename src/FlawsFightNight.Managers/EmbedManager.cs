@@ -349,6 +349,18 @@ namespace FlawsFightNight.Managers
             }
         }
 
+        public Embed DeleteTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🗑️ Tournament Deleted Successfully")
+                .WithDescription($"The tournament **{tournament.Name}** has been successfully deleted.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The tournament has been deleted.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
         public Embed RoundRobinCreateTournamentSuccess(Tournament tournament)
         {
             var embed = new EmbedBuilder()
