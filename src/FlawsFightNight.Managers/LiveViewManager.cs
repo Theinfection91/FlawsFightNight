@@ -215,7 +215,7 @@ namespace FlawsFightNight.Managers
 
         private async Task SendStandingsToChannelAsync()
         {
-            Console.WriteLine($"{DateTime.Now} - Sending standings updates to channel...");
+            //Console.WriteLine($"{DateTime.Now} - Sending standings updates to channel...");
 
             if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
             {

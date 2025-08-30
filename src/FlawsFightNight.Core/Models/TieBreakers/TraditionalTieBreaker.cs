@@ -12,6 +12,8 @@ namespace FlawsFightNight.Core.Models.TieBreakers
         public string Name => "Traditional";
         public (string, string) ResolveTie(List<string> tiedTeams, MatchLog log)
         {
+            //if (tiedTeams == null || tiedTeams.Count == 0) return ("null", "null"); 
+
             //Console.WriteLine("=== Tie-Breaker Resolution Started ===");
             StringBuilder tieBreakerLog = new();
             // Step 1: Head-to-head wins among tied teams
