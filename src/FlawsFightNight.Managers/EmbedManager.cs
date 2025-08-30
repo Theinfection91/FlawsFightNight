@@ -142,7 +142,7 @@ namespace FlawsFightNight.Managers
 
             if (roundRobinStandings.Entries.Count == 0)
             {
-                embed.Description += "\n_No teams have been registered yet._";
+                embed.Description += "\n_No teams registered._";
                 return embed.Build();
             }
 
