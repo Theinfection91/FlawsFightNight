@@ -208,14 +208,14 @@ namespace FlawsFightNight.Managers
         {
             while (true)
             {
-                await Task.Delay(TimeSpan.FromSeconds(7));
+                await Task.Delay(TimeSpan.FromSeconds(5));
                 await SendStandingsToChannelAsync();
             }
         }
 
         private async Task SendStandingsToChannelAsync()
         {
-            //Console.WriteLine($"{DateTime.Now} - Sending standings updates to channel...");
+            Console.WriteLine($"{DateTime.Now} - Sending standings updates to channel...");
 
             if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
             {
