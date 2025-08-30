@@ -16,24 +16,20 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class TournamentCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private CreateTournamentLogic _createTournamentLogic;
-        private EndTournamentLogic _endTournamentLogic;
         private LockInRoundLogic _lockInRoundLogic;
         private LockTeamsLogic _lockTeamsLogic;
         private NextRoundLogic _nextRoundLogic;
         private SetupTournamentLogic _setupTournamentLogic;
-        private StartTournamentLogic _startTournamentLogic;
         private UnlockRoundLogic _unlockRoundLogic;
         private UnlockTeamsLogic _unlockTeamsLogic;
 
-        public TournamentCommands(CreateTournamentLogic createTournamentLogic, EndTournamentLogic endTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupTournamentLogic setupTournamentLogic, StartTournamentLogic startTournamentLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
+        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupTournamentLogic setupTournamentLogic, StartTournamentLogic startTournamentLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
         {
             _createTournamentLogic = createTournamentLogic;
-            _endTournamentLogic = endTournamentLogic;
             _lockInRoundLogic = lockInRoundLogic;
             _lockTeamsLogic = lockTeamsLogic;
             _nextRoundLogic = nextRoundLogic;
             _setupTournamentLogic = setupTournamentLogic;
-            _startTournamentLogic = startTournamentLogic;
             _unlockRoundLogic = unlockRoundLogic;
             _unlockTeamsLogic = unlockTeamsLogic;
         }
@@ -109,13 +105,11 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         [SlashCommand("start", "Start a tournament")]
         [RequireGuildAdmin]
-        public async Task StartTournamentAsync(
-            [Summary("tournament_id", "The ID of the tournament to start")] string tournamentId)
+        public async Task StartTournamentAsync()
         {
             try
             {
-                var result = _startTournamentLogic.StartTournamentProcess(tournamentId);
-                await RespondAsync(embed: result);
+                await RespondWithModalAsync<StartTournamentModal>("start_tournament");
             }
             catch (Exception ex)
             {
@@ -149,8 +143,6 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
-                //var result = _endTournamentLogic.EndTournamentProcess(tournamentId);
-                //await RespondAsync(embed: result);
                 await RespondWithModalAsync<EndTournamentModal>("end_tournament");
             }
             catch (Exception ex)

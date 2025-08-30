@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Bot.Modals;
 using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.TeamCommands;
 using System;
@@ -13,12 +14,10 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("team", "Commands related to teams like creating, removal, etc.")]
     public class TeamCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        private DeleteTeamLogic _deleteTeamLogic;
         private RegisterTeamLogic _registerTeamLogic;
 
-        public TeamCommands(DeleteTeamLogic deleteTeamLogic, RegisterTeamLogic registerTeamLogic)
+        public TeamCommands(RegisterTeamLogic registerTeamLogic)
         {
-            _deleteTeamLogic = deleteTeamLogic;
             _registerTeamLogic = registerTeamLogic;
         }
 
@@ -86,13 +85,13 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         [SlashCommand("delete", "Remove a team from the bot's database.")]
         [RequireGuildAdmin]
-        public async Task DeleteTeamAsync(
-            [Summary("team_name", "The name of the team to remove.")] string teamName)
+        public async Task DeleteTeamAsync()
         {
             try
             {
-                var result = _deleteTeamLogic.DeleteTeamProcess(teamName);
-                await RespondAsync(embed: result);
+                await RespondWithModalAsync<DeleteTeamModal>("delete_team");
+                //var result = _deleteTeamLogic.DeleteTeamProcess(teamName);
+                //await RespondAsync(embed: result);
             }
             catch (Exception ex)
             {
