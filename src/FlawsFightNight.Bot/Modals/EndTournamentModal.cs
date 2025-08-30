@@ -19,6 +19,4 @@ namespace FlawsFightNight.Bot.Modals
         [ModalTextInput("tournament_id_two", placeholder: "Re-enter the Tournament ID...", maxLength: 4)]
         public string TournamentIdTwo { get; set; }
     }
-    {
-    }
 }

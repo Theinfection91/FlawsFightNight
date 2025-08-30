@@ -178,16 +178,18 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public bool IsTournamentIdInDatabase(string tournamentId)
+        public bool IsTournamentIdInDatabase(string tournamentId, bool isCaseSensitive = false)
         {
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            if (isCaseSensitive)
             {
-                if (tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
+                return _dataManager.TournamentsDatabaseFile.Tournaments
+                    .Any(t => t.Id.Equals(tournamentId));
             }
-            return false;
+            else
+            {
+                return _dataManager.TournamentsDatabaseFile.Tournaments
+                    .Any(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
+            }
         }
 
         public Tournament? GetTournamentById(string tournamentId)

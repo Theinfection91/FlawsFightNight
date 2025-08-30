@@ -145,13 +145,13 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         [SlashCommand("end", "End a tournament")]
         [RequireGuildAdmin]
-        public async Task EndTournamentAsync(
-            [Summary("tournament_id", "The ID of the tournament to end")] string tournamentId)
+        public async Task EndTournamentAsync()
         {
             try
             {
-                var result = _endTournamentLogic.EndTournamentProcess(tournamentId);
-                await RespondAsync(embed: result);
+                //var result = _endTournamentLogic.EndTournamentProcess(tournamentId);
+                //await RespondAsync(embed: result);
+                await RespondWithModalAsync<EndTournamentModal>("end_tournament");
             }
             catch (Exception ex)
             {
