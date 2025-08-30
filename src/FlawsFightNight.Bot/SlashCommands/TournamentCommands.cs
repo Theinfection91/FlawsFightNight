@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Bot.Modals;
 using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Core.Enums;
@@ -49,6 +50,21 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 var result = _createTournamentLogic.CreateTournamentProcess(Context, name, tournamentType, teamSize, description);
                 await RespondAsync(embed: result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("delete", "Delete a tournament")]
+        [RequireGuildAdmin]
+        public async Task DeleteTournamentAsync()
+        {
+            try
+            {
+                await RespondWithModalAsync<DeleteTournamentModal>("delete_tournament");
             }
             catch (Exception ex)
             {
@@ -129,13 +145,13 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         [SlashCommand("end", "End a tournament")]
         [RequireGuildAdmin]
-        public async Task EndTournamentAsync(
-            [Summary("tournament_id", "The ID of the tournament to end")] string tournamentId)
+        public async Task EndTournamentAsync()
         {
             try
             {
-                var result = _endTournamentLogic.EndTournamentProcess(tournamentId);
-                await RespondAsync(embed: result);
+                //var result = _endTournamentLogic.EndTournamentProcess(tournamentId);
+                //await RespondAsync(embed: result);
+                await RespondWithModalAsync<EndTournamentModal>("end_tournament");
             }
             catch (Exception ex)
             {
