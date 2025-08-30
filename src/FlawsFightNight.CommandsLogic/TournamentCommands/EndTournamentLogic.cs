@@ -28,7 +28,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Check if tournament is already running
             if (!tournament.IsRunning)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Rounds cannot be unlocked while the tournament is inactive.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
             }
 
             // Check if the tournament can be ended
@@ -47,12 +47,19 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
                 (string, string) tieBreakerResult = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog);
 
+                tournament.InitiateEndTournament();
+
+                // Save the updated tournament state
+                _tournamentManager.SaveAndReloadTournamentsDatabase();
+
                 return _embedManager.RoundRobinEndTournamentWithTieBreakerSuccess(tournament, tieBreakerResult);
             }
             else
             {
                 // TODO Will change this to a more robust solution later
                 string winner = _liveViewManager.GetRoundRobinStandings(tournament).Entries.FirstOrDefault().TeamName;
+
+                tournament.InitiateEndTournament();
 
                 // Save the updated tournament state
                 _tournamentManager.SaveAndReloadTournamentsDatabase();

@@ -41,5 +41,14 @@ namespace FlawsFightNight.Core.Models
                 return "Challenged";
             }
         }
+
+        public void ResetTeamToZero()
+        {
+            Wins = 0;
+            Losses = 0;
+            WinStreak = 0;
+            LoseStreak = 0;
+            TotalScore = 0;
+        }
     }
 }

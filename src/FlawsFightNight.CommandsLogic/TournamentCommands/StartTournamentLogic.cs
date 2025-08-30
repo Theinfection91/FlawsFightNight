@@ -35,6 +35,12 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"The teams in the tournament '{tournament.Name}' are not locked. Please lock the teams before starting the tournament.");
             }
+            // Ensure all teams start with no wins/losses or points
+            foreach (var team in tournament.Teams)
+            {
+                team.ResetTeamToZero();
+            }
+
             // Start the tournament
             _matchManager.BuildMatchScheduleResolver(tournament);
             tournament.InitiateStartTournament();

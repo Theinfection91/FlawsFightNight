@@ -626,6 +626,7 @@ namespace FlawsFightNight.Managers
         {
             // Clear the match schedule for the tournament
             tournament.MatchLog.MatchesToPlayByRound.Clear();
+            tournament.MatchLog.PostMatchesByRound.Clear();
         }
 
         public PostMatch CreateNewPostMatch(string matchId, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, DateTime originalCreationDateTime, bool wasByeMatch = false)
