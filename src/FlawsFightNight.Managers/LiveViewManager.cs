@@ -153,7 +153,8 @@ namespace FlawsFightNight.Managers
                     var remaining = new List<string>(tiedTeams);
                     while (remaining.Count > 0)
                     {
-                        string winner = tournament.TieBreakerRule.ResolveTie(remaining, tournament.MatchLog);
+                        (string, string) tieBreakerResult = tournament.TieBreakerRule.ResolveTie(remaining, tournament.MatchLog);
+                        string winner = tieBreakerResult.Item2;
                         var winnerEntry = group.First(e => e.TeamName == winner);
 
                         resolvedList.Add(winnerEntry);

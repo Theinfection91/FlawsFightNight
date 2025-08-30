@@ -68,15 +68,18 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Orange)
                 .WithCurrentTimestamp();
 
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn)
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEndTournament)
             {
                 embed.AddField("🔒 Locked", "Round is locked and ready to advance.", true);
+            }
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEndTournament)
+            {
+                embed.AddField("🔒 Locked - Ready to end tournament 🏅", "Round is locked and the tournament is ready to end have the results locked in.", true);
             }
             if (tournament.IsRoundComplete && !tournament.IsRoundLockedIn)
             {
                 embed.AddField("🔓 Unlocked", "Round is finished but unlocked. Lock to finalize results then advance.", true);
             }
-            // TODO Make it show when the tournament is ready to end
 
             // --- Matches To Play ---
             if (tournament.MatchLog.MatchesToPlayByRound.TryGetValue(tournament.CurrentRound, out var matchesToPlay)
@@ -443,6 +446,21 @@ namespace FlawsFightNight.Managers
                 .WithDescription($"The Round Robin tournament **{tournament.Name}** has been successfully ended!")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Winner", $"{winner}")
+                .AddField("Total Teams", tournament.Teams.Count)
+                .WithColor(Color.Green)
+                .WithFooter("Thank you for participating!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RoundRobinEndTournamentWithTieBreakerSuccess(Tournament tournament, (string, string) tieBreakerInfo)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🏁 Tournament Ended with Tiebreaker")
+                .WithDescription($"The Round Robin tournament **{tournament.Name}** has been successfully ended!\n\nA tiebreaker was needed to determine the winner.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithDescription(tieBreakerInfo.Item1)
+                .AddField("Winner", $"{tieBreakerInfo.Item2}")
                 .AddField("Total Teams", tournament.Teams.Count)
                 .WithColor(Color.Green)
                 .WithFooter("Thank you for participating!")
