@@ -97,6 +97,11 @@ namespace FlawsFightNight.Managers
                                 // Copy newly cloned files from BackupRepo to Databases
                                 Console.WriteLine($"{DateTime.Now} GitBackupManager - Copying files from 'BackupRepo' folder to 'Databases' folder.");
                                 CopyFilesFromBackupRepoToDatabases();
+
+                                // Reload the newly cloned databases
+                                _dataManager.LoadTournamentsDatabase();
+                                _dataManager.LoadPermissionsConfigFile();
+
                                 isQuestionProcessComplete = true;
                                 break;
 
