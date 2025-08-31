@@ -212,7 +212,7 @@ namespace FlawsFightNight.Managers
                 if (repo.RetrieveStatus().IsDirty)
                 {
                     // Create a commit with the current timestamp
-                    Signature author = new Signature("Ladderbot4", "ladderbot4@bot.com", DateTimeOffset.Now);
+                    Signature author = new Signature("FlawsFightNight", "Mr.Flaw@bot.com", DateTimeOffset.Now);
                     Commit commit = repo.Commit($"Backup: Update data files ({DateTime.Now})", author, author);
 
                     // Push changes to the remote repository
@@ -272,7 +272,7 @@ namespace FlawsFightNight.Managers
                 }
 
                 // Create a commit with the current timestamp
-                Signature author = new Signature("Ladderbot4", "ladderbot4@bot.com", DateTimeOffset.Now);
+                Signature author = new Signature("FlawsFightNight", "Mr.Flaw@bot.com", DateTimeOffset.Now);
                 try
                 {
                     Commit commit = repo.Commit(
@@ -287,7 +287,7 @@ namespace FlawsFightNight.Managers
                     {
                         CredentialsProvider = (_, _, _) => new UsernamePasswordCredentials
                         {
-                            Username = "Ladderbot4",
+                            Username = "FlawsFightNight",
                             Password = _token
                         }
                     };
