@@ -14,14 +14,16 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
     {
         private ConfigManager _configManager;
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private MemberManager _memberManager;
         private TournamentManager _tournamentManager;
         private TeamManager _teamManager;
 
-        public RegisterTeamLogic(ConfigManager configManager, EmbedManager embedManager, MemberManager memberManager, TournamentManager tournamentManager, TeamManager teamManager) : base("Register Team")
+        public RegisterTeamLogic(ConfigManager configManager, EmbedManager embedManager, GitBackupManager gitBackupManager, MemberManager memberManager, TournamentManager tournamentManager, TeamManager teamManager) : base("Register Team")
         {
             _configManager = configManager;
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _memberManager = memberManager;
             _tournamentManager = tournamentManager;
             _teamManager = teamManager;
@@ -90,6 +92,9 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
 
             return _embedManager.TeamRegistrationSuccess(newTeam, tournament);
         }

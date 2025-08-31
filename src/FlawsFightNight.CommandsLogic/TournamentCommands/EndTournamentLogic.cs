@@ -11,12 +11,14 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
     public class EndTournamentLogic : Logic
     {
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private LiveViewManager _liveViewManager;
         private MatchManager _matchManager;
         private TournamentManager _tournamentManager;
-        public EndTournamentLogic(EmbedManager embedManager, LiveViewManager liveViewManager, MatchManager matchManager, TournamentManager tournamentManager) : base("End Tournament")
+        public EndTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager , LiveViewManager liveViewManager, MatchManager matchManager, TournamentManager tournamentManager) : base("End Tournament")
         {
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _liveViewManager = liveViewManager;
             _matchManager = matchManager;
             _tournamentManager = tournamentManager;
@@ -59,6 +61,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
                 // Save the updated tournament state
                 _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+                // Backup to git repo
+                _gitBackupManager.CopyAndBackupFilesToGit();
 
                 return _embedManager.EndTournamentSuccessResolver(tournament, winner);
             }   

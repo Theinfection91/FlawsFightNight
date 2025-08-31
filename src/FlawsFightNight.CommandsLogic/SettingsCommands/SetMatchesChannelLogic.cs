@@ -11,11 +11,13 @@ namespace FlawsFightNight.CommandsLogic.SetCommands
     public class SetMatchesChannelLogic : Logic
     {
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private TournamentManager _tournamentManager;
 
-        public SetMatchesChannelLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Set Matches Channel")
+        public SetMatchesChannelLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager) : base("Set Matches Channel")
         {
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _tournamentManager = tournamentManager;
         }
 
@@ -32,6 +34,9 @@ namespace FlawsFightNight.CommandsLogic.SetCommands
 
             // Save and reload the tournaments database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
 
             return _embedManager.SetMatchesChannelSuccess(channel, tournament);
         }

@@ -12,10 +12,13 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
     {
         private ConfigManager _configManager;
         private EmbedManager _embedManager;
-        public RemoveDebugAdminLogic(ConfigManager configManager, EmbedManager embedManager) : base("Remove Debug Admin")
+        private GitBackupManager _gitBackupManager;
+
+        public RemoveDebugAdminLogic(ConfigManager configManager, EmbedManager embedManager, GitBackupManager gitBackupManager) : base("Remove Debug Admin")
         {
             _configManager = configManager;
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
         }
         public Embed RemoveDebugAdminProcess(ulong userId)
         {
@@ -25,7 +28,12 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             }
             else
             {
+                // This will also save the file
                 _configManager.RemoveDiscordIdFromDebugAdminList(userId);
+
+                // Backup to git repo
+                _gitBackupManager.CopyAndBackupFilesToGit();
+
                 return _embedManager.DebugAdminRemoveSuccess(userId);
             }
         }

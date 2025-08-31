@@ -13,11 +13,13 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
     public class DeleteTournamentLogic : Logic
     {
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private TournamentManager _tournamentManager;
 
-        public DeleteTournamentLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Delete Tournament")
+        public DeleteTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager) : base("Delete Tournament")
         {
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _tournamentManager = tournamentManager;
         }
 
@@ -43,7 +45,11 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, "Even though the tournament is not running, the teams are still locked. Unlock teams first if you want to delete this tournament. Once started, it cannot be deleted until it is ended.");
             }
 
+            // Delete the tournament, this will also save and reload the database
             _tournamentManager.DeleteTournament(tournament.Id);
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
 
             return _embedManager.DeleteTournamentSuccess(tournament);
         }

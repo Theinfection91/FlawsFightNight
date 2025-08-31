@@ -12,11 +12,13 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
     public class EditMatchLogic : Logic
     {
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private MatchManager _matchManager;
         private TournamentManager _tournamentManager;
-        public EditMatchLogic(EmbedManager embedManager, MatchManager matchManager, TournamentManager tournamentManager) : base("Edit Match")
+        public EditMatchLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TournamentManager tournamentManager) : base("Edit Match")
         {
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _matchManager = matchManager;
             _tournamentManager = tournamentManager;
         }
@@ -98,6 +100,9 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
 
             return _embedManager.RoundRobinEditMatchSuccess(tournament, postMatch);
         }

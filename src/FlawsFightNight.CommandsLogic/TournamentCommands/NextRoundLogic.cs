@@ -12,10 +12,12 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
     public class NextRoundLogic : Logic
     {
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private TournamentManager _tournamentManager;
-        public NextRoundLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Next Round")
+        public NextRoundLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager) : base("Next Round")
         {
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _tournamentManager = tournamentManager;
         }
 
@@ -47,7 +49,13 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
             // Advance to the next round
             _tournamentManager.NextRoundResolver(tournament);
+
+            // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
+
             return _embedManager.NextRoundSuccess(tournament);
         }
     }

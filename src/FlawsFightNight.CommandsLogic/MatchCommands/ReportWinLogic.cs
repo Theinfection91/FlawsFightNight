@@ -14,12 +14,14 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
     public class ReportWinLogic : Logic
     {
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private MatchManager _matchManager;
         private TeamManager _teamManager;
         private TournamentManager _tournamentManager;
-        public ReportWinLogic(EmbedManager embedManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Report Win")
+        public ReportWinLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Report Win")
         {
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _matchManager = matchManager;
             _teamManager = teamManager;
             _tournamentManager = tournamentManager;
@@ -107,7 +109,11 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 _matchManager.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, 0, "BYE", 0, match.IsByeMatch);
             }
 
+            // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
 
             if (match.IsByeMatch)
             {

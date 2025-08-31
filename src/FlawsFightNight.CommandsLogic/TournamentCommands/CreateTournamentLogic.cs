@@ -37,9 +37,11 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed("Null", "Invalid tournament type specified.");
             }
-            
+
+            // Add the tournament, this will also save and reload the database
             _tournamentManager.AddTournament(tournament);
 
+            // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
             return _embedManager.CreateTournamentSuccessResolver(tournament);
