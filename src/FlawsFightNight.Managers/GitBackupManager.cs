@@ -13,7 +13,6 @@ namespace FlawsFightNight.Managers
         private readonly string _remoteUrl;
         private readonly string _token;
         private readonly string _databasesFolderPath;
-        private readonly string _configFolderPath;
 
         private ConfigManager _configManager;
         public GitBackupManager(ConfigManager configManager, DataManager dataManager) : base("Git Backup Manager", dataManager)
@@ -206,7 +205,7 @@ namespace FlawsFightNight.Managers
                     if (file.Contains(".git")) continue;
 
                     // Stage the file
-                    LibGit2Sharp.Commands.Stage(repo, file);
+                    Commands.Stage(repo, file);
                 }
 
                 // Check if there are any changes to commit
@@ -269,7 +268,7 @@ namespace FlawsFightNight.Managers
                     if (file.Contains(".git")) continue;
 
                     // Stage the file
-                    LibGit2Sharp.Commands.Stage(repo, file);
+                    Commands.Stage(repo, file);
                 }
 
                 // Create a commit with the current timestamp
@@ -295,7 +294,7 @@ namespace FlawsFightNight.Managers
                     repo.Network.Push(repo.Branches["main"], options);
                     Console.WriteLine($"{DateTime.Now} GitBackupManager - Automated Backup pushed successfully.");
                 }
-                catch (LibGit2Sharp.EmptyCommitException)
+                catch (EmptyCommitException)
                 {
                     Console.WriteLine($"{DateTime.Now} - GitBackupManager - No changes; empty commit was skipped.");
                 }

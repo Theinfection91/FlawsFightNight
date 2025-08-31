@@ -86,6 +86,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<ConfigManager>();
                     services.AddSingleton<DataManager>();
                     services.AddSingleton<EmbedManager>();
+                    services.AddSingleton<GitBackupManager>();
                     services.AddSingleton<LiveViewManager>();
                     services.AddSingleton<MatchManager>();
                     services.AddSingleton<MemberManager>();
