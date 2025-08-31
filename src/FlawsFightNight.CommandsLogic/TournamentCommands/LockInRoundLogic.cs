@@ -12,11 +12,13 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
     public class LockInRoundLogic : Logic
     {
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private MatchManager _matchManager;
         private TournamentManager _tournamentManager;
-        public LockInRoundLogic(EmbedManager embedManager, MatchManager matchManager, TournamentManager tournamentManager) : base("Lock In Round")
+        public LockInRoundLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TournamentManager tournamentManager) : base("Lock In Round")
         {
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _matchManager = matchManager;
             _tournamentManager = tournamentManager;
         }
@@ -47,8 +49,13 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
             // Lock in the round
             tournament.IsRoundLockedIn = true;
+
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
+
             return _embedManager.LockInRoundSuccess(tournament);
         }
     }

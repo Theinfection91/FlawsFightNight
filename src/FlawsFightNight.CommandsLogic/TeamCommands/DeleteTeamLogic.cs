@@ -13,24 +13,20 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
     public class DeleteTeamLogic : Logic
     {
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private TeamManager _teamManager;
         private TournamentManager _tournamentManager;
 
-        public DeleteTeamLogic(EmbedManager embedManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Remove Team")
+        public DeleteTeamLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Remove Team")
         {
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _teamManager = teamManager;
             _tournamentManager = tournamentManager;
         }
 
         public Embed DeleteTeamProcess(string teamName)
         {
-            // Check if the team exists
-            //if (_teamManager.IsTeamNameUnique(teamName))
-            //{
-            //    return _embedManager.ErrorEmbed(Name, $"No team found with the name: {teamName}. Please check the name and try again.");
-            //}
-
             // Grab tournament from team name
             var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
 
@@ -64,6 +60,9 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
 
             return _embedManager.TeamDeleteSuccess(team, tournament);
         }

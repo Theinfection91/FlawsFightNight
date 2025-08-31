@@ -11,12 +11,14 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
     public class StartTournamentLogic : Logic
     {
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private MatchManager _matchManager;
         private TournamentManager _tournamentManager;
 
-        public StartTournamentLogic(EmbedManager embedManager, MatchManager matchManager, TournamentManager tournamentManager) : base("Start Tournament")
+        public StartTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TournamentManager tournamentManager) : base("Start Tournament")
         {
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _matchManager = matchManager;
             _tournamentManager = tournamentManager;
         }
@@ -47,7 +49,10 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
-            
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
+
             // Return Embed with tournament information
             return _embedManager.StartTournamentSuccessResolver(tournament);
         }

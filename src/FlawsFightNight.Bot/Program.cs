@@ -86,6 +86,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<ConfigManager>();
                     services.AddSingleton<DataManager>();
                     services.AddSingleton<EmbedManager>();
+                    services.AddSingleton<GitBackupManager>();
                     services.AddSingleton<LiveViewManager>();
                     services.AddSingleton<MatchManager>();
                     services.AddSingleton<MemberManager>();
@@ -94,6 +95,7 @@ namespace FlawsFightNight.Bot
 
                     // Data Handlers
                     services.AddSingleton<DiscordCredentialHandler>();
+                    services.AddSingleton<GitHubCredentialHandler>();
                     services.AddSingleton<PermissionsConfigHandler>();
                     services.AddSingleton<TournamentsDatabaseHandler>();
                 })
@@ -104,6 +106,9 @@ namespace FlawsFightNight.Bot
 
             // Check discord token
             configManager.SetDiscordTokenProcess();
+
+            // Git Backup Setup
+            configManager.SetGitBackupProcess();
 
             await RunBotAsync();
         }

@@ -12,10 +12,13 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
     {
         private ConfigManager _configManager;
         private EmbedManager _embedManager;
-        public AddDebugAdminLogic(ConfigManager configManager, EmbedManager embedManager) : base("Add Debug Admin")
+        private GitBackupManager _gitBackupManager;
+
+        public AddDebugAdminLogic(ConfigManager configManager, EmbedManager embedManager, GitBackupManager gitBackupManager) : base("Add Debug Admin")
         {
             _configManager = configManager;
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
         }
 
         public Embed AddDebugAdminProcess(ulong userId)
@@ -26,7 +29,12 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             }
             else
             {
+                // This will also save the file
                 _configManager.AddDiscordIdToDebugAdminList(userId);
+
+                // Backup to git repo
+                _gitBackupManager.CopyAndBackupFilesToGit();
+
                 return _embedManager.DebugAdminAddSuccess(userId);
             }
         }

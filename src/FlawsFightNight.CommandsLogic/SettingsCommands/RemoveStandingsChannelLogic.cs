@@ -11,10 +11,13 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
     public class RemoveStandingsChannelLogic : Logic
     {
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private TournamentManager _tournamentManager;
-        public RemoveStandingsChannelLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Remove Standings Channel")
+
+        public RemoveStandingsChannelLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager) : base("Remove Standings Channel")
         {
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _tournamentManager = tournamentManager;
         }
 
@@ -39,6 +42,9 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
 
             // Save and reload the tournaments database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
 
             return _embedManager.RemoveStandingsChannelSuccess(tournament);
         }

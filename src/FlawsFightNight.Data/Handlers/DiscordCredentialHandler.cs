@@ -9,7 +9,7 @@ namespace FlawsFightNight.Data.Handlers
 {
     public class DiscordCredentialHandler : BaseDataHandler<DiscordCredentialFile>
     {
-        public DiscordCredentialHandler() : base("discord_credentials.json", "Discord Credentials")
+        public DiscordCredentialHandler() : base("discord_credentials.json", "Credentials")
         {
 
         }

@@ -13,10 +13,12 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
     public class LockTeamsLogic : Logic
     {
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private TournamentManager _tournamentManager;
-        public LockTeamsLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Lock Teams")
+        public LockTeamsLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager) : base("Lock Teams")
         {
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _tournamentManager = tournamentManager;
         }
 
@@ -52,6 +54,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
 
             // Return success embed
             return _embedManager.LockTeamsSuccess(tournament);

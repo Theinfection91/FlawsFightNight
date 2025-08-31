@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public class PermissionsConfigHandler : BaseDataHandler<PermissionsConfigFile>
+    public class GitHubCredentialHandler : BaseDataHandler<GitHubCredentialFile>
     {
-        public PermissionsConfigHandler() : base("permissions_config.json", "Databases")
+        public GitHubCredentialHandler() : base("github_credentials.json", "Credentials")
         {
 
         }

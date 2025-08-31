@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FlawsFightNight.Managers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,9 +9,11 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 {
     public class CancelChallengeLogic : Logic
     {
-        public CancelChallengeLogic() : base("Cancel Challenge")
+        private GitBackupManager _gitBackupManager;
+        public CancelChallengeLogic(GitBackupManager gitBackupManager) : base("Cancel Challenge")
         {
             // Initialize any necessary components or services here
+            _gitBackupManager = gitBackupManager;
         }
     }
 }
