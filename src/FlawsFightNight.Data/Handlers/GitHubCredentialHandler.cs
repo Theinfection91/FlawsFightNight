@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public class DiscordCredentialHandler : BaseDataHandler<DiscordCredentialFile>
+    public class GitHubCredentialHandler : BaseDataHandler<GitHubCredentialFile>
     {
-        public DiscordCredentialHandler() : base("discord_credentials.json", "Credentials")
+        public GitHubCredentialHandler() : base("github_credentials.json", "Credentials")
         {
 
         }

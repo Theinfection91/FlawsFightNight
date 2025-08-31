@@ -18,6 +18,10 @@ namespace FlawsFightNight.Managers
         public DiscordCredentialFile DiscordCredentialFile { get; private set; }
         private readonly DiscordCredentialHandler _discordCredentialHandler;
 
+        // GitHub Credential File
+        public GitHubCredentialFile GitHubCredentialFile { get; private set; }
+        private readonly GitHubCredentialHandler _gitHubCredentialHandler;
+
         // Permissions Config
         public PermissionsConfigFile PermissionsConfigFile { get; private set; }
         private readonly PermissionsConfigHandler _permissionsConfigHandler;
@@ -27,10 +31,13 @@ namespace FlawsFightNight.Managers
         private readonly TournamentsDatabaseHandler _tournamentsDatabaseHandler;
 
         // Constructor is given each handler type for each specific JSON file
-        public DataManager(DiscordCredentialHandler discordCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentsDatabaseHandler tournamentsDatabaseHandler)
+        public DataManager(DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentsDatabaseHandler tournamentsDatabaseHandler)
         {
             _discordCredentialHandler = discordCredentialHandler;
             LoadDiscordCredentialFile();
+
+            _gitHubCredentialHandler = gitHubCredentialHandler;
+            LoadGitHubCredentialFile();
 
             _permissionsConfigHandler = permissionsConfigHandler;
             LoadPermissionsConfigFile();
@@ -55,6 +62,24 @@ namespace FlawsFightNight.Managers
         {
             _discordCredentialHandler.Save(DiscordCredentialFile);
             LoadDiscordCredentialFile();
+        }
+        #endregion
+
+        #region GitHub Credential File Data
+        public void LoadGitHubCredentialFile()
+        {
+            GitHubCredentialFile = _gitHubCredentialHandler.Load();
+        }
+
+        public void SaveGitHubCredentialFile()
+        {
+            _gitHubCredentialHandler.Save(GitHubCredentialFile);
+        }
+
+        public void SaveAndReloadGitHubCredentialFile()
+        {
+            _gitHubCredentialHandler.Save(GitHubCredentialFile);
+            LoadGitHubCredentialFile();
         }
         #endregion
 
