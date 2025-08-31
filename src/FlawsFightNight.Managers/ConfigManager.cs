@@ -140,6 +140,46 @@ namespace FlawsFightNight.Managers
         }
         #endregion
 
+        #region GitHub Config
+        public bool IsGitPatTokenSet()
+        {
+            return _dataManager.GitHubCredentialFile.GitPatToken != "ENTER_GIT_PAT_TOKEN_HERE";
+        }
+
+        public void SetGitBackupProcess()
+        {
+            bool IsGitBackupProcessComplete = false;
+            while (!IsGitBackupProcessComplete)
+            {
+                if (!IsGitPatTokenSet())
+                {
+                    Console.WriteLine($"{DateTime.Now} SettingsManager - Enter your Git PAT Token now if you want to have online backup storage through a GitHub repo you control.\nIf you wish to skip this feature for now, enter 0 for the PAT token.\nRefer to documentation for more help with the Git Backup Storage.");
+                    string? gitPatToken = Console.ReadLine();
+                    if (!gitPatToken.Equals("0") && gitPatToken.Length > 15)
+                    {
+                        _dataManager.GitHubCredentialFile.GitPatToken = gitPatToken;
+                        Console.WriteLine($"{DateTime.Now} SettingsManager - Git PAT Token accepted. Now give the https url path to your Git repo. It will look something like this: https://github.com/YourUsername/YourGitStorageRepo.git");
+                        string? gitUrlPath = Console.ReadLine();
+                        _dataManager.GitHubCredentialFile.GitUrlPath = gitUrlPath;
+                        Console.WriteLine($"{DateTime.Now} SettingsManager - Repo Url set to: {gitUrlPath}\nYou can manually change your token and url path in the Credentials/github_credentials.json file as well.");
+                        _dataManager.SaveAndReloadGitHubCredentialFile();
+                        IsGitBackupProcessComplete = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{DateTime.Now} SettingsManager - Git Backup Storage was not set up. You can manually change your token and url path in the Credentials/github_credentials.json file.");
+                        IsGitBackupProcessComplete = true;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"{DateTime.Now} SettingsManager - Non-default value found for GitPatToken in Credentials/github_credentials.json file. Skipping backup setup process. If you entered in the token or url incorrectly, you can manually change it in the Credentials/github_credentials.json file for now.");
+                    IsGitBackupProcessComplete = true;
+                }
+            }
+        }
+        #endregion
+
         #region Permissions Config
         public bool IsDiscordIdInDebugAdminList(ulong discordId)
         {

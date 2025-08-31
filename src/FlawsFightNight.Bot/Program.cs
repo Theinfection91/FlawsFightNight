@@ -106,6 +106,9 @@ namespace FlawsFightNight.Bot
             // Check discord token
             configManager.SetDiscordTokenProcess();
 
+            // Git Backup Setup
+            configManager.SetGitBackupProcess();
+
             await RunBotAsync();
         }
 

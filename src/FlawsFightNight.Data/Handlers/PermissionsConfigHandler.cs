@@ -9,7 +9,7 @@ namespace FlawsFightNight.Data.Handlers
 {
     public class PermissionsConfigHandler : BaseDataHandler<PermissionsConfigFile>
     {
-        public PermissionsConfigHandler() : base("permissions_config.json", "Config")
+        public PermissionsConfigHandler() : base("permissions_config.json", "Databases")
         {
 
         }
