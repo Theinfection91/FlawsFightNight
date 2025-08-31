@@ -310,6 +310,37 @@ namespace FlawsFightNight.Managers
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
+
+        public Embed RoundRobinMatchScheduleNotification(Tournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"{tournament.Name} - {tournament.TeamSizeFormat} Round Robin Match Schedule")
+                .WithColor(Color.Gold)
+                .AddField("Team Name", teamName)
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Total Rounds", tournament.TotalRounds);
+
+            var sb = new StringBuilder();
+            sb.AppendLine("Here is the schedule for your team:\n");
+
+            foreach (var match in matches)
+            {
+                if (match.IsByeMatch)
+                {
+                    sb.AppendLine($"Round {match.RoundNumber} - *Bye Week* 💤");
+                }
+                else
+                {
+                    sb.AppendLine($"Round {match.RoundNumber} - {match.TeamA} vs. {match.TeamB}");
+                }
+            }
+
+            embed.WithDescription(sb.ToString())
+                .WithFooter("Good luck to you!")
+                .WithTimestamp(DateTimeOffset.Now);
+
+            return embed.Build();
+        }
         #endregion
 
         #region Team Embeds

@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Enums;
+﻿using Discord.WebSocket;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -27,9 +28,13 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public MatchManager(DataManager dataManager) : base("MatchManager", dataManager)
-        {
+        private readonly DiscordSocketClient _client;
+        private EmbedManager _embedManager;
 
+        public MatchManager(DataManager dataManager, DiscordSocketClient client, EmbedManager embedManager) : base("MatchManager", dataManager)
+        {
+            _client = client;
+            _embedManager = embedManager;
         }
 
         public string? GenerateMatchId()
@@ -488,6 +493,7 @@ namespace FlawsFightNight.Managers
 
         #endregion
 
+        #region Match/PostMatch Schedule Build/Validate/Clear
         public void BuildMatchScheduleResolver(Tournament tournament)
         {
             switch (tournament.Type)
@@ -506,7 +512,6 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        #region Match/PostMatch Schedule Build/Validate/Clear
         public void BuildRoundRobinMatchSchedule(Tournament tournament, bool isDoubleRoundRobin = true)
         {
             const int maxRetries = 10;
@@ -705,6 +710,92 @@ namespace FlawsFightNight.Managers
                         tournament.IsRoundComplete = true;
                         //Console.WriteLine($"All matches for round {match.RoundNumber} have been completed. Admins now need to double check scores and then lock in the round before advancing.");
                         break;
+                }
+            }
+        }
+        #endregion
+
+        #region Match Message System
+        public async void SendMatchScheduleNotificationToDiscordId(ulong discordId, Tournament tournament)
+        {
+            // This is a fire-and-forget method. Errors are logged but not thrown.
+            try
+            {
+                var user = await _client.GetUserAsync(discordId);
+                if (user == null)
+                {
+                    //Console.WriteLine($"User with Discord ID {discordId} not found.");
+                    return;
+                }
+
+                // Check if the user is a bot
+                if (user.IsBot)
+                {
+                    return;
+                }
+
+                // Grab matches
+                var teamName = GetTeamNameFromDiscordId(user.Id, tournament.Id);
+                var matches = GetMatchesForTeamName(teamName, tournament.MatchLog);
+
+                var dmChannel = await user.CreateDMChannelAsync();
+                if (dmChannel == null)
+                {
+                    //Console.WriteLine($"Failed to create DM channel with user {user.Username}.");
+                    return;
+                }
+                var message = _embedManager.RoundRobinMatchScheduleNotification(tournament, matches, user.Username, discordId, teamName);
+                await dmChannel.SendMessageAsync(embed: message);
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine($"Error sending DM to user with Discord ID {discordId}: {ex.Message}");
+            }
+        }
+
+        public string GetTeamNameFromDiscordId(ulong discordId, string tournamentId)
+        {
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                foreach(var team in tournament.Teams)
+                {
+                    foreach (var member in team.Members)
+                    {
+                        if (member.DiscordId.Equals(discordId) && tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return team.Name;
+                        }
+                    }
+                }
+            }
+            return "null";
+        }
+
+        public List<Match> GetMatchesForTeamName(string teamName, MatchLog matchLog)
+        {
+            var matches = new List<Match>();
+            foreach (var round in matchLog.MatchesToPlayByRound.Keys)
+            {
+                foreach (var match in matchLog.MatchesToPlayByRound[round])
+                {
+                    if ((match.TeamA != null && match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
+                        (match.TeamB != null && match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        matches.Add(match);
+                        matches = matches.OrderBy(m => m.RoundNumber).ToList();
+                    }
+                }
+            }
+            return matches;
+        }
+
+        public void SendMatchSchedulesToTeams(Tournament tournament)
+        {
+            foreach (var team in tournament.Teams)
+            {
+                foreach (var user in team.Members)
+                {
+                    SendMatchScheduleNotificationToDiscordId(user.DiscordId, tournament);
                 }
             }
         }

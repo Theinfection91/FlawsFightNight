@@ -47,6 +47,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _matchManager.BuildMatchScheduleResolver(tournament);
             tournament.InitiateStartTournament();
 
+            // Send team match schedules to each user
+            _matchManager.SendMatchSchedulesToTeams(tournament);
+
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
 
