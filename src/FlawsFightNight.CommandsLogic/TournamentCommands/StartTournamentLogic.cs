@@ -23,12 +23,8 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         public Embed StartTournamentProcess(string tournamentId)
         {
-            // Check if the tournament exists, grab it if so
-            if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
-            {
-                return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
-            }
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
+
             // Check if the tournament is already running
             if (tournament.IsRunning)
             {
@@ -39,6 +35,12 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"The teams in the tournament '{tournament.Name}' are not locked. Please lock the teams before starting the tournament.");
             }
+            // Ensure all teams start with no wins/losses or points
+            foreach (var team in tournament.Teams)
+            {
+                team.ResetTeamToZero();
+            }
+
             // Start the tournament
             _matchManager.BuildMatchScheduleResolver(tournament);
             tournament.InitiateStartTournament();

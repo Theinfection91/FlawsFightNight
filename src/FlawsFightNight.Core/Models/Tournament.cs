@@ -62,5 +62,15 @@ namespace FlawsFightNight.Core.Models
             CanTeamsBeLocked = false;
             CanTeamsBeUnlocked = false;
         }
+
+        public void InitiateEndTournament()
+        {
+            IsRunning = false;
+            IsTeamsLocked = false;
+            CanTeamsBeUnlocked = false;
+            CanTeamsBeLocked = true;
+            IsRoundComplete = false;
+            IsRoundLockedIn = false;
+        }
     }
 }

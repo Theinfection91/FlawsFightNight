@@ -9,7 +9,7 @@ namespace FlawsFightNight.Core.Interfaces
 {
     public interface ITieBreakerRule
     {
-        string ResolveTie(List<string> tiedTeams, MatchLog matchLog);
+        (string, string) ResolveTie(List<string> tiedTeams, MatchLog matchLog);
         string Name { get; }
         }
 }

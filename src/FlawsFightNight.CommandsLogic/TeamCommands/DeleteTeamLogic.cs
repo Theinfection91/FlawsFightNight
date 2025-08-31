@@ -26,10 +26,10 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
         public Embed DeleteTeamProcess(string teamName)
         {
             // Check if the team exists
-            if (_teamManager.IsTeamNameUnique(teamName))
-            {
-                return _embedManager.ErrorEmbed(Name, $"No team found with the name: {teamName}. Please check the name and try again.");
-            }
+            //if (_teamManager.IsTeamNameUnique(teamName))
+            //{
+            //    return _embedManager.ErrorEmbed(Name, $"No team found with the name: {teamName}. Please check the name and try again.");
+            //}
 
             // Grab tournament from team name
             var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);

@@ -47,6 +47,11 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Grab the tournament associated with the match
             Tournament tournament = _tournamentManager.GetTournamentFromTeamName(winningTeamName);
 
+            if (!tournament.IsRunning)
+            {
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
+            }
+
             if (tournament.IsRoundComplete) return _embedManager.ErrorEmbed(Name, "The tournament is showing the round has been marked as complete.");
 
             // Check if the team has a match scheduled

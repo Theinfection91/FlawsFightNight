@@ -15,17 +15,27 @@ namespace FlawsFightNight.Managers
         }
 
         #region Bools
-        public bool DoesTeamExist(string teamName)
+        public bool DoesTeamExist(string teamName, bool isCaseSensitive = false)
         {
             List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
             foreach (Tournament tournament in tournaments)
             {
-                if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
+                if (isCaseSensitive)
                 {
-                    return true;
+                    if (tournament.Teams.Any(t => t.Name.Equals(teamName)))
+                    {
+                        return true; // Team name exists in the tournament
+                    }
+                }
+                else
+                {
+                    if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return true; // Team name exists in the tournament
+                    }
                 }
             }
-            return false;
+            return false; // Team name does not exist in any tournament
         }
 
         public bool IsTeamNameUnique(string teamName)

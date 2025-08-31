@@ -112,7 +112,7 @@ namespace FlawsFightNight.Managers
         #region Standings LiveView
         public RoundRobinStandings GetRoundRobinStandings(Tournament tournament)
         {
-            //Console.Write.WriteLine($"[DEBUG] Building standings for tournament: {tournament.Name}, Teams: {tournament.Teams.Count}");
+            //Console.WriteLine($"[DEBUG] Building standings for tournament: {tournament.Name}, Teams: {tournament.Teams.Count}");
 
             var standings = new RoundRobinStandings();
 
@@ -121,20 +121,21 @@ namespace FlawsFightNight.Managers
             {
                 var entry = new StandingsEntry(team);
                 standings.Entries.Add(entry);
-                //Console.Write.WriteLine($"[DEBUG] Added team entry: {entry.TeamName}, Wins: {entry.Wins}, Losses: {entry.Losses}, Score: {entry.TotalScore}");
+                //Console.WriteLine($"[DEBUG] Added team entry: {entry.TeamName}, Wins: {entry.Wins}, Losses: {entry.Losses}, Score: {entry.TotalScore}");
             }
 
             // Initial sort (by wins/score/etc.)
             standings.SortStandings();
 
-            //Console.Write.WriteLine("[DEBUG] After initial sort:");
+            //Console.WriteLine("[DEBUG] After initial sort:");
             foreach (var entry in standings.Entries)
             {
-                //Console.Write.WriteLine($"   {entry.TeamName}: {entry.Wins}-{entry.Losses}, {entry.TotalScore} pts");
+                //Console.WriteLine($"   {entry.TeamName}: {entry.Wins}-{entry.Losses}, {entry.TotalScore} pts");
             }
 
             // Group by full record (Wins + Losses)
             var groupedByRecord = standings.Entries
+                //.Where(e => !(e.Wins == 0 && e.Losses == 0))
                 .GroupBy(e => new { e.Wins, e.Losses })
                 .OrderByDescending(g => g.Key.Wins)   // more wins first
                 .ThenBy(g => g.Key.Losses);           // fewer losses first
@@ -147,13 +148,14 @@ namespace FlawsFightNight.Managers
 
                 if (tiedTeams.Count > 1)
                 {
-                    //Console.Write.WriteLine($"[DEBUG] Tie detected in {group.Key.Wins}-{group.Key.Losses} group: {string.Join(", ", tiedTeams)}");
+                    //Console.WriteLine($"[DEBUG] Tie detected in {group.Key.Wins}-{group.Key.Losses} group: {string.Join(", ", tiedTeams)}");
 
                     // Keep resolving until all tied teams are ranked
                     var remaining = new List<string>(tiedTeams);
                     while (remaining.Count > 0)
                     {
-                        string winner = tournament.TieBreakerRule.ResolveTie(remaining, tournament.MatchLog);
+                        (string, string) tieBreakerResult = tournament.TieBreakerRule.ResolveTie(remaining, tournament.MatchLog);
+                        string winner = tieBreakerResult.Item2;
                         var winnerEntry = group.First(e => e.TeamName == winner);
 
                         resolvedList.Add(winnerEntry);
@@ -174,7 +176,21 @@ namespace FlawsFightNight.Managers
 
             standings.Entries = resolvedList;
 
-            //Console.Write.WriteLine("[DEBUG] Final Standings:");
+            // Update ranks in original entries as well
+            foreach (var entry in standings.Entries)
+            {
+                //if (entry.Wins == 0 && entry.Losses == 0)
+                //{
+                //    continue;
+                //}
+                var original = tournament.Teams.First(t => t.Name == entry.TeamName);
+                original.Rank = entry.Rank;
+                tournament.Teams = tournament.Teams.OrderBy(t => t.Rank).ToList();
+            }
+            
+            //_dataManager.SaveAndReloadTournamentsDatabase();
+
+            //Console.WriteLine("[DEBUG] Final Standings:");
             foreach (var entry in standings.Entries)
             {
                 //Console.WriteLine($"   Rank {entry.Rank}: {entry.TeamName} ({entry.Wins}-{entry.Losses}, {entry.TotalScore} pts)");
@@ -192,7 +208,7 @@ namespace FlawsFightNight.Managers
         {
             while (true)
             {
-                await Task.Delay(TimeSpan.FromSeconds(7));
+                await Task.Delay(TimeSpan.FromSeconds(5));
                 await SendStandingsToChannelAsync();
             }
         }
@@ -248,6 +264,7 @@ namespace FlawsFightNight.Managers
                             {
                                 await message.ModifyAsync(msg => msg.Embed = standingsEmbed);
                                 //Console.WriteLine($"Updated standings message for tournament {tournament.Name} in channel {channel.Name}.");
+                                _dataManager.SaveAndReloadTournamentsDatabase();
                             }
                             else
                             {
@@ -261,7 +278,7 @@ namespace FlawsFightNight.Managers
                         {
                             var newMessage = await channel.SendMessageAsync(embed: standingsEmbed);
                             tournament.StandingsMessageId = newMessage.Id;
-                            //Console.WriteLine($"Sent new standings message for tournament {tournament.Name} in channel {channel.Name}.");
+                            //Console.WriteLine($"{newMessage.Id} Sent new standings message for tournament {tournament.Name} in channel {channel.Name}.");
                             _dataManager.SaveAndReloadTournamentsDatabase();
                         }
                         break;

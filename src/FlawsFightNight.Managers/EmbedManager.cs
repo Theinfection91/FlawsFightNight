@@ -68,15 +68,18 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Orange)
                 .WithCurrentTimestamp();
 
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn)
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEndTournament)
             {
                 embed.AddField("🔒 Locked", "Round is locked and ready to advance.", true);
+            }
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEndTournament)
+            {
+                embed.AddField("🔒 Locked - Ready to end tournament 🏅", "Round is locked and the tournament is ready to end have the results locked in.", true);
             }
             if (tournament.IsRoundComplete && !tournament.IsRoundLockedIn)
             {
                 embed.AddField("🔓 Unlocked", "Round is finished but unlocked. Lock to finalize results then advance.", true);
             }
-            // TODO Make it show when the tournament is ready to end
 
             // --- Matches To Play ---
             if (tournament.MatchLog.MatchesToPlayByRound.TryGetValue(tournament.CurrentRound, out var matchesToPlay)
@@ -139,7 +142,7 @@ namespace FlawsFightNight.Managers
 
             if (roundRobinStandings.Entries.Count == 0)
             {
-                embed.Description += "\n_No teams have been registered yet._";
+                embed.Description += "\n_No teams registered._";
                 return embed.Build();
             }
 
@@ -172,7 +175,7 @@ namespace FlawsFightNight.Managers
                 return embed.Build();
             }
 
-            foreach (var teamStanding in standings.Entries.OrderBy(e => e.Rank))
+            foreach (var teamStanding in standings.Entries.OrderBy(e => e.TeamName))
             {
                 var team = tournament.Teams.FirstOrDefault(t => t.Name == teamStanding.TeamName);
                 if (team != null)
@@ -349,6 +352,18 @@ namespace FlawsFightNight.Managers
             }
         }
 
+        public Embed DeleteTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🗑️ Tournament Deleted Successfully")
+                .WithDescription($"The tournament **{tournament.Name}** has been successfully deleted.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The tournament has been deleted.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
         public Embed RoundRobinCreateTournamentSuccess(Tournament tournament)
         {
             var embed = new EmbedBuilder()
@@ -428,9 +443,24 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🏁 Tournament Ended")
-                .WithDescription($"The Round Robin tournament **{tournament.Name}** has been successfully ended!")
-                .AddField("Tournament ID", tournament.Id)
+                .WithDescription($"The Round Robin tournament **{tournament.Name}** has ended and a winner has been declared! Teams have been unlocked. You may add/delete teams from this tournament now and then lock and play again, or you may delete this tournament safely now.")
                 .AddField("Winner", $"{winner}")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Total Teams", tournament.Teams.Count)
+                .WithColor(Color.Green)
+                .WithFooter("Thank you for participating!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RoundRobinEndTournamentWithTieBreakerSuccess(Tournament tournament, (string, string) tieBreakerInfo)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🏁 Tournament Ended with Tiebreaker")
+                .WithDescription($"The Round Robin tournament **{tournament.Name}** has been successfully ended!\n\nA tiebreaker was needed to determine the winner.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithDescription(tieBreakerInfo.Item1 + "\nTeams have been unlocked. You may add/delete teams from this tournament now and then lock and play again, or you may delete this tournament safely now.")
+                .AddField("Winner", $"{tieBreakerInfo.Item2}")
                 .AddField("Total Teams", tournament.Teams.Count)
                 .WithColor(Color.Green)
                 .WithFooter("Thank you for participating!")

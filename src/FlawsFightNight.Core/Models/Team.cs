@@ -10,7 +10,7 @@ namespace FlawsFightNight.Core.Models
     {
         // Basic Info
         public string Name { get; set; }
-        public int? Rank { get; set; }
+        public int Rank { get; set; }
         public int Wins { get; set; } = 0;
         public int Losses { get; set; } = 0;
         public List<Member> Members { get; set; }
@@ -40,6 +40,15 @@ namespace FlawsFightNight.Core.Models
             {
                 return "Challenged";
             }
+        }
+
+        public void ResetTeamToZero()
+        {
+            Wins = 0;
+            Losses = 0;
+            WinStreak = 0;
+            LoseStreak = 0;
+            TotalScore = 0;
         }
     }
 }

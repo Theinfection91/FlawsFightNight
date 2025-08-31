@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Bot.Modals;
 using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Core.Enums;
@@ -15,24 +16,20 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class TournamentCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private CreateTournamentLogic _createTournamentLogic;
-        private EndTournamentLogic _endTournamentLogic;
         private LockInRoundLogic _lockInRoundLogic;
         private LockTeamsLogic _lockTeamsLogic;
         private NextRoundLogic _nextRoundLogic;
         private SetupTournamentLogic _setupTournamentLogic;
-        private StartTournamentLogic _startTournamentLogic;
         private UnlockRoundLogic _unlockRoundLogic;
         private UnlockTeamsLogic _unlockTeamsLogic;
 
-        public TournamentCommands(CreateTournamentLogic createTournamentLogic, EndTournamentLogic endTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupTournamentLogic setupTournamentLogic, StartTournamentLogic startTournamentLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
+        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupTournamentLogic setupTournamentLogic, StartTournamentLogic startTournamentLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
         {
             _createTournamentLogic = createTournamentLogic;
-            _endTournamentLogic = endTournamentLogic;
             _lockInRoundLogic = lockInRoundLogic;
             _lockTeamsLogic = lockTeamsLogic;
             _nextRoundLogic = nextRoundLogic;
             _setupTournamentLogic = setupTournamentLogic;
-            _startTournamentLogic = startTournamentLogic;
             _unlockRoundLogic = unlockRoundLogic;
             _unlockTeamsLogic = unlockTeamsLogic;
         }
@@ -49,6 +46,21 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 var result = _createTournamentLogic.CreateTournamentProcess(Context, name, tournamentType, teamSize, description);
                 await RespondAsync(embed: result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("delete", "Delete a tournament")]
+        [RequireGuildAdmin]
+        public async Task DeleteTournamentAsync()
+        {
+            try
+            {
+                await RespondWithModalAsync<DeleteTournamentModal>("delete_tournament");
             }
             catch (Exception ex)
             {
@@ -93,13 +105,11 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         [SlashCommand("start", "Start a tournament")]
         [RequireGuildAdmin]
-        public async Task StartTournamentAsync(
-            [Summary("tournament_id", "The ID of the tournament to start")] string tournamentId)
+        public async Task StartTournamentAsync()
         {
             try
             {
-                var result = _startTournamentLogic.StartTournamentProcess(tournamentId);
-                await RespondAsync(embed: result);
+                await RespondWithModalAsync<StartTournamentModal>("start_tournament");
             }
             catch (Exception ex)
             {
@@ -129,13 +139,11 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         [SlashCommand("end", "End a tournament")]
         [RequireGuildAdmin]
-        public async Task EndTournamentAsync(
-            [Summary("tournament_id", "The ID of the tournament to end")] string tournamentId)
+        public async Task EndTournamentAsync()
         {
             try
             {
-                var result = _endTournamentLogic.EndTournamentProcess(tournamentId);
-                await RespondAsync(embed: result);
+                await RespondWithModalAsync<EndTournamentModal>("end_tournament");
             }
             catch (Exception ex)
             {

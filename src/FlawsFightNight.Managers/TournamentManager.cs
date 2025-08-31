@@ -61,6 +61,11 @@ namespace FlawsFightNight.Managers
             };
         }
 
+        public void DeleteTournament(string tournamentId)
+        {
+            _dataManager.RemoveTournament(tournamentId);
+        }
+
         public bool CanAcceptNewTeams(Tournament tournament)
         {
             switch (tournament.Type)
@@ -161,33 +166,18 @@ namespace FlawsFightNight.Managers
             tournament.IsRunning = false;
         }
 
-        public bool IsTournamentReadyToEnd(Tournament tournament)
+        public bool IsTournamentIdInDatabase(string tournamentId, bool isCaseSensitive = false)
         {
-            switch (tournament.Type)
+            if (isCaseSensitive)
             {
-                case TournamentType.Ladder:
-                    return false; // Ladder tournaments do not end based on rounds
-                case TournamentType.RoundRobin:
-                    return tournament.IsRunning && tournament.CanEndTournament;
-                case TournamentType.SingleElimination:
-                case TournamentType.DoubleElimination:
-                    // SE/DE end logic would go here
-                    return false;
-                default:
-                    return false; // Unknown tournament type
+                return _dataManager.TournamentsDatabaseFile.Tournaments
+                    .Any(t => t.Id.Equals(tournamentId));
             }
-        }
-
-        public bool IsTournamentIdInDatabase(string tournamentId)
-        {
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            else
             {
-                if (tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
+                return _dataManager.TournamentsDatabaseFile.Tournaments
+                    .Any(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
             }
-            return false;
         }
 
         public Tournament? GetTournamentById(string tournamentId)

@@ -51,14 +51,15 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<CommandService>();
                     services.AddSingleton<InteractionService>();
 
-                    /////////////////////////////////
-                    //    ==-Command Logic-==     //
-                    ///////////////////////////////
+                      ////////////////////////////////
+                     //    ==-Command Logic-==     //
+                    ////////////////////////////////
 
                     services.AddSingleton<AddDebugAdminLogic>();
                     services.AddSingleton<CancelChallengeLogic>();
                     services.AddSingleton<CreateTournamentLogic>();
                     services.AddSingleton<DeleteTeamLogic>();
+                    services.AddSingleton<DeleteTournamentLogic>();
                     services.AddSingleton<EditMatchLogic>();
                     services.AddSingleton<EndTournamentLogic>();
                     services.AddSingleton<LockInRoundLogic>();

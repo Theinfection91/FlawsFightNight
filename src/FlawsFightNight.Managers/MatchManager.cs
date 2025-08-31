@@ -254,6 +254,40 @@ namespace FlawsFightNight.Managers
             //Console.WriteLine("No ties detected. No tie-breaker needed.");
             return false;
         }
+
+        public bool IsTieBreakerNeededForFirstPlace(MatchLog matchLog)
+        {
+            var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            // Count wins
+            foreach (var round in matchLog.PostMatchesByRound)
+            {
+                foreach (var postMatch in round.Value)
+                {
+                    if (postMatch.WasByeMatch) continue;
+
+                    string winnerKey = postMatch.Winner ?? "UNKNOWN";
+
+                    if (!teamWins.ContainsKey(winnerKey))
+                        teamWins[winnerKey] = 0;
+
+                    teamWins[winnerKey]++;
+                }
+            }
+
+            if (teamWins.Count == 0)
+                return false; // no matches played
+
+            // Find the highest win count
+            int maxWins = teamWins.Values.Max();
+
+            // Count how many teams have that max
+            int teamsWithMax = teamWins.Count(kvp => kvp.Value == maxWins);
+
+            // A tiebreaker is only needed if more than 1 team has the top score
+            return teamsWithMax > 1;
+        }
+
         #endregion
 
         #region Gets
@@ -626,6 +660,7 @@ namespace FlawsFightNight.Managers
         {
             // Clear the match schedule for the tournament
             tournament.MatchLog.MatchesToPlayByRound.Clear();
+            tournament.MatchLog.PostMatchesByRound.Clear();
         }
 
         public PostMatch CreateNewPostMatch(string matchId, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, DateTime originalCreationDateTime, bool wasByeMatch = false)
