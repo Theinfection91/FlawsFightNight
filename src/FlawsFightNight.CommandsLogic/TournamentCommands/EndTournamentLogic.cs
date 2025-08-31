@@ -41,7 +41,6 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // TODO Tiebreaker Logic
             if (_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog))
             {
-                
                 (string, string) tieBreakerResult = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog);
 
                 tournament.InitiateEndTournament();

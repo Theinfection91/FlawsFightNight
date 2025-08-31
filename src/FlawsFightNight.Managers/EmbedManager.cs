@@ -175,7 +175,7 @@ namespace FlawsFightNight.Managers
                 return embed.Build();
             }
 
-            foreach (var teamStanding in standings.Entries.OrderBy(e => e.Rank))
+            foreach (var teamStanding in standings.Entries.OrderBy(e => e.TeamName))
             {
                 var team = tournament.Teams.FirstOrDefault(t => t.Name == teamStanding.TeamName);
                 if (team != null)
@@ -443,9 +443,9 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🏁 Tournament Ended")
-                .WithDescription($"The Round Robin tournament **{tournament.Name}** has been successfully ended!")
-                .AddField("Tournament ID", tournament.Id)
+                .WithDescription($"The Round Robin tournament **{tournament.Name}** has ended and a winner has been declared! Teams have been unlocked. You may add/delete teams from this tournament now and then lock and play again, or you may delete this tournament safely now.")
                 .AddField("Winner", $"{winner}")
+                .AddField("Tournament ID", tournament.Id)
                 .AddField("Total Teams", tournament.Teams.Count)
                 .WithColor(Color.Green)
                 .WithFooter("Thank you for participating!")
@@ -459,7 +459,7 @@ namespace FlawsFightNight.Managers
                 .WithTitle("🏁 Tournament Ended with Tiebreaker")
                 .WithDescription($"The Round Robin tournament **{tournament.Name}** has been successfully ended!\n\nA tiebreaker was needed to determine the winner.")
                 .AddField("Tournament ID", tournament.Id)
-                .WithDescription(tieBreakerInfo.Item1)
+                .WithDescription(tieBreakerInfo.Item1 + "\nTeams have been unlocked. You may add/delete teams from this tournament now and then lock and play again, or you may delete this tournament safely now.")
                 .AddField("Winner", $"{tieBreakerInfo.Item2}")
                 .AddField("Total Teams", tournament.Teams.Count)
                 .WithColor(Color.Green)
