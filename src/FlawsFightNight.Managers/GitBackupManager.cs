@@ -76,7 +76,7 @@ namespace FlawsFightNight.Managers
                         {
                             CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials
                             {
-                                Username = "Ladderbot4",
+                                Username = "FlawsFightNight",
                                 Password = _token
                             }
                         }
@@ -85,7 +85,7 @@ namespace FlawsFightNight.Managers
                     Console.WriteLine($"{DateTime.Now} - GitBackupManager - Repository cloned successfully.");
 
                     // Ask if user wants to use this data copied to database
-                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Do you want to use the newly cloned backup data from the repository as your Database? Yes is typically the answer here. NOTE - This will overwrite data currently present in your JSON files in 'Database'. This can not be reversed. \n\nHINT: If the files in your backup repo online is more up to date than your local files in the 'Database' folder then input Y, if your JSON files in the 'Database' folder is more up to date than the files in your backup repo online, then input N");
+                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Do you want to use the newly cloned backup data from the repository as your Database? Yes is typically the answer here. NOTE - This will overwrite data currently present in your JSON files in 'Databases'. This can not be reversed. \n\nHINT: If the files in your backup repo online is more up to date than your local files in the 'Database' folder then input Y, if your JSON files in the 'Database' folder is more up to date than the files in your backup repo online, then input N");
                     bool isQuestionProcessComplete = false;
                     while (!isQuestionProcessComplete)
                     {
