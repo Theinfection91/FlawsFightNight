@@ -63,7 +63,3 @@ The bot includes 30+ slash commands organized into categories, with a lot more p
 - ✅ 30+ slash commands
 - ✅ Real-time live views
 - ✅ Git backup integration
-
----
-
-**Ready to organize your next tournament?** Start with `/showcase` to see what Flaw's Fight Night can do!
