@@ -180,6 +180,11 @@ namespace FlawsFightNight.Managers
             }
         }
 
+        public List<Tournament> GetAllTournaments()
+        {
+            return _dataManager.TournamentsDatabaseFile.Tournaments;
+        }
+
         public Tournament? GetTournamentById(string tournamentId)
         {
             return _dataManager.TournamentsDatabaseFile.Tournaments

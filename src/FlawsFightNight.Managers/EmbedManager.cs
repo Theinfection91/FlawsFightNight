@@ -578,6 +578,42 @@ namespace FlawsFightNight.Managers
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
+
+        public Embed ShowAllTournamentsSuccess(List<Tournament> tournaments)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("📋 All Tournaments")
+                .WithColor(Color.Blue)
+                .WithCurrentTimestamp();
+
+            if (tournaments == null || tournaments.Count == 0)
+            {
+                embed.WithDescription("_No tournaments found._");
+                return embed.Build();
+            }
+
+            foreach (var tournament in tournaments.OrderByDescending(t => t.CreatedOn))
+            {
+                string status = tournament.IsRunning ? "🟢 Running" : "🔴 Not Running";
+                string teamsLockedStatus = tournament.IsTeamsLocked ? "🔒 Locked" : "🔓 Unlocked";
+                string roundInfo = tournament.TotalRounds.HasValue
+                    ? $"{tournament.CurrentRound}/{tournament.TotalRounds.Value}"
+                    : $"{tournament.CurrentRound}/N/A";
+                string description = string.Join("\n", new[]
+                {
+                    $"**Type:** {tournament.Type}",
+                    $"**Status:** {status}",
+                    $"**Teams:** {tournament.Teams.Count} ({teamsLockedStatus})",
+                    $"**Round:** {roundInfo}",
+                    $"**Created On:** {tournament.CreatedOn:yyyy-MM-dd}",
+                    tournament.Description != null ? $"**Description:** {tournament.Description}" : null
+                }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+                embed.AddField($"{tournament.Name} (ID#: {tournament.Id})", description, false);
+            }
+
+            return embed.Build();
+        }
         #endregion
     }
 }
