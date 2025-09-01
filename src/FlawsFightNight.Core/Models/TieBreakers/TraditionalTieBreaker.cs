@@ -124,18 +124,16 @@ namespace FlawsFightNight.Core.Models.TieBreakers
             foreach (var pm in allMatches)
             {
                 if (totalPointsOverall.ContainsKey(pm.Winner))
-                {
                     totalPointsOverall[pm.Winner] += pm.WinnerScore;
-                    //Console.WriteLine($"  Total points overall for {pm.Winner}: +{pm.WinnerScore}");
-                    tieBreakerLog.AppendLine($"  Total points overall for {pm.Winner}: +{pm.WinnerScore}");
-                }
 
                 if (totalPointsOverall.ContainsKey(pm.Loser))
-                {
                     totalPointsOverall[pm.Loser] += pm.LoserScore;
-                    //Console.WriteLine($"  Total points overall for {pm.Loser}: +{pm.LoserScore}");
-                    tieBreakerLog.AppendLine($"  Total points overall for {pm.Loser}: +{pm.LoserScore}");
-                }
+            }
+
+            // After processing all matches, log once per player
+            foreach (var kvp in totalPointsOverall)
+            {
+                tieBreakerLog.AppendLine($"  Total points overall for {kvp.Key}: {kvp.Value}");
             }
 
             int maxPointsOverall = totalPointsOverall.Values.Max();

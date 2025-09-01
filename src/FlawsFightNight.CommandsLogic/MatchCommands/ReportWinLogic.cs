@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Discord.WebSocket;
 
 namespace FlawsFightNight.CommandsLogic.MatchCommands
 {
@@ -71,12 +72,18 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Grab the losing team
             Team? losingTeam = _teamManager.GetTeamByName(_matchManager.GetLosingTeamName(match, winningTeamName));
 
-            // Check if invoker is on winning team
-            if (!_teamManager.IsDiscordIdOnTeam(winningTeam, context.User.Id))
+            // Check if invoker is on winning team (or guild admin)
+            if (context.User is not SocketGuildUser guildUser)
             {
-                return _embedManager.ErrorEmbed(Name, $"You are not a member of the team '{winningTeamName}' and cannot report a win for them.");
+                return _embedManager.ErrorEmbed(Name, "Only members of the guild may use this command.");
+            }
+            bool isGuildAdmin = guildUser.GuildPermissions.Administrator;
+            if (!_teamManager.IsDiscordIdOnTeam(winningTeam, context.User.Id) && !isGuildAdmin)
+            {
+                return _embedManager.ErrorEmbed(Name, $"You are not a member of the team '{winningTeamName}', or an admin on this server, and cannot report a win for them.");
             }
 
+            // Resolve by tournament type
             switch (tournament.Type)
             {
                 case TournamentType.Ladder:
@@ -85,7 +92,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                     break;
                 case TournamentType.RoundRobin:
                     // Handle Round Robin specific logic
-                    return HandleRoundRobinWin(tournament, match, winningTeam, losingTeam, winningTeamScore, losingTeamScore);
+                    return HandleRoundRobinWin(tournament, match, winningTeam, losingTeam, winningTeamScore, losingTeamScore, isGuildAdmin);
                 case TournamentType.SingleElimination:
                 case TournamentType.DoubleElimination:
                     // Handle Single/Double Elimination specific logic
@@ -95,7 +102,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             return _embedManager.ErrorEmbed(Name, "Should not have reached this message.");
         }
 
-        private Embed HandleRoundRobinWin(Tournament tournament, Match match, Team winningTeam, Team losingTeam, int winningTeamScore, int losingTeamScore)
+        private Embed HandleRoundRobinWin(Tournament tournament, Match match, Team winningTeam, Team losingTeam, int winningTeamScore, int losingTeamScore, bool isGuildAdmin)
         {
             if (!match.IsByeMatch)
             {
@@ -117,10 +124,10 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 
             if (match.IsByeMatch)
             {
-                return _embedManager.ReportByeMatch(tournament, match);
+                return _embedManager.ReportByeMatch(tournament, match, isGuildAdmin);
             }
 
-            return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore);
+            return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin);
         }
     }
 }

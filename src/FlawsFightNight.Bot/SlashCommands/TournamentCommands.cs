@@ -20,16 +20,18 @@ namespace FlawsFightNight.Bot.SlashCommands
         private LockTeamsLogic _lockTeamsLogic;
         private NextRoundLogic _nextRoundLogic;
         private SetupTournamentLogic _setupTournamentLogic;
+        private ShowAllTournamentsLogic _showAllTournamentsLogic;
         private UnlockRoundLogic _unlockRoundLogic;
         private UnlockTeamsLogic _unlockTeamsLogic;
 
-        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupTournamentLogic setupTournamentLogic, StartTournamentLogic startTournamentLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
+        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupTournamentLogic setupTournamentLogic, ShowAllTournamentsLogic showAllTournamentsLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
         {
             _createTournamentLogic = createTournamentLogic;
             _lockInRoundLogic = lockInRoundLogic;
             _lockTeamsLogic = lockTeamsLogic;
             _nextRoundLogic = nextRoundLogic;
             _setupTournamentLogic = setupTournamentLogic;
+            _showAllTournamentsLogic = showAllTournamentsLogic;
             _unlockRoundLogic = unlockRoundLogic;
             _unlockTeamsLogic = unlockTeamsLogic;
         }
@@ -194,6 +196,21 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 var result = _nextRoundLogic.NextRoundProcess(tournamentId);
+                await RespondAsync(embed: result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("show-all", "Get information on every tournament on file right now.")]
+        public async Task ShowAllTournamentsAsync()
+        {
+            try
+            {
+                var result = _showAllTournamentsLogic.ShowAllTournamentsProcess();
                 await RespondAsync(embed: result);
             }
             catch (Exception ex)
