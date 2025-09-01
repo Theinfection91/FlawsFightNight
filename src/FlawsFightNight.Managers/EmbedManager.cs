@@ -211,31 +211,47 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed ReportByeMatch(Tournament tournament, Match match)
+        public Embed ReportByeMatch(Tournament tournament, Match match, bool isGuildAdminReporting)
         {
+            string reporterText = isGuildAdminReporting
+                ? "An **admin** reported this bye match."
+                : "The bye match was reported normally.";
+
             var embed = new EmbedBuilder()
                 .WithTitle("☑️ Bye Match Completion Reported")
-                .WithDescription($"The bye match for '**{match.GetCorrectNameForByeMatch()}'** has been recorded as complete in **{tournament.Name}**.")
+                .WithDescription(
+                    $"The bye match for '**{match.GetCorrectNameForByeMatch()}'** has been recorded as complete in **{tournament.Name}**.\n\n{reporterText}"
+                )
                 .AddField("Tournament ID", tournament.Id)
                 .WithColor(Color.Green)
                 .WithFooter("Bye match completion reported successfully.")
                 .WithTimestamp(DateTimeOffset.Now);
+
             return embed.Build();
         }
 
-        public Embed ReportWinSuccess(Tournament tournament, Match match, Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore)
+
+        public Embed ReportWinSuccess(Tournament tournament, Match match, Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, bool isGuildAdminReporting)
         {
+            string reporterText = isGuildAdminReporting
+                ? "An **admin** reported this match result."
+                : "The match result was reported normally.";
+
             var embed = new EmbedBuilder()
                 .WithTitle("🏆 Match Result Reported")
-                .WithDescription($"The match '**{match.TeamA} vs {match.TeamB}**' has been successfully reported in **{tournament.Name}**.")
-                .AddField("Winning Team (Score)", $"{winningTeam.Name} ({winningTeamScore})")
-                .AddField("Losing Team (Score)", $"{losingTeam.Name} ({losingTeamScore})")
-                .AddField("Tournament ID", tournament.Id)
+                .WithDescription(
+                    $"The match '**{match.TeamA} vs {match.TeamB}**' has been recorded in **{tournament.Name}**.\n\n{reporterText}"
+                )
+                .AddField("Winning Team (Score)", $"{winningTeam.Name} ({winningTeamScore})", true)
+                .AddField("Losing Team (Score)", $"{losingTeam.Name} ({losingTeamScore})", true)
+                .AddField("Tournament ID", tournament.Id, false)
                 .WithColor(Color.Green)
                 .WithFooter("Match result reported successfully.")
                 .WithTimestamp(DateTimeOffset.Now);
+
             return embed.Build();
         }
+
         #endregion
 
         #region Set LiveView Embeds
