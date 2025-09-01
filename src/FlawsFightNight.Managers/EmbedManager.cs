@@ -96,7 +96,7 @@ namespace FlawsFightNight.Managers
                 foreach (var match in matchesToPlay)
                 {
                     if (match.IsByeMatch)
-                        sb.AppendLine($"💤 *{match.GetCorrectNameForByeMatch()} Bye Week*");
+                        sb.AppendLine($"💤 *{match.GetCorrectNameForByeMatch()} Bye Match*");
                     else
                         continue;
                 }
@@ -116,7 +116,7 @@ namespace FlawsFightNight.Managers
                     foreach (var postMatch in round.Value.OrderBy(pm => pm.CompletedOn))
                     {
                         if (postMatch.WasByeMatch)
-                            sb.AppendLine($"💤 *{postMatch.Winner} Bye Week*");
+                            sb.AppendLine($"💤 *{postMatch.Winner} Bye Match*");
                         else
                             sb.AppendLine($"✅ *Match ID#: {postMatch.Id}* | " + $"**{postMatch.Winner}** defeated **{postMatch.Loser}** " + $"by **{postMatch.WinnerScore}** to **{postMatch.LoserScore}**");
                     }
@@ -314,33 +314,35 @@ namespace FlawsFightNight.Managers
         public Embed RoundRobinMatchScheduleNotification(Tournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
         {
             var embed = new EmbedBuilder()
-                .WithTitle($"{tournament.Name} - {tournament.TeamSizeFormat} Round Robin Match Schedule")
+                .WithTitle($"📅 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Schedule")
                 .WithColor(Color.Gold)
-                .AddField("Team Name", teamName)
-                .AddField("Tournament ID", tournament.Id)
-                .AddField("Total Rounds", tournament.TotalRounds);
+                .AddField("👥 Team", teamName, true)
+                .AddField("🏷️ Tournament ID", tournament.Id, true)
+                .AddField("🎯 Total Rounds", tournament.TotalRounds?.ToString() ?? "N/A", true);
 
             var sb = new StringBuilder();
-            sb.AppendLine("Here is the schedule for your team:\n");
+            sb.AppendLine("**Your Match Schedule:**");
+            sb.AppendLine("────────────────────────");
 
-            foreach (var match in matches)
+            foreach (var match in matches.OrderBy(m => m.RoundNumber))
             {
                 if (match.IsByeMatch)
                 {
-                    sb.AppendLine($"Round {match.RoundNumber} - *Bye Week* 💤");
+                    sb.AppendLine($"`Round {match.RoundNumber}` - *Bye Match* 💤");
                 }
                 else
                 {
-                    sb.AppendLine($"Round {match.RoundNumber} - {match.TeamA} vs. {match.TeamB}");
+                    sb.AppendLine($"`Round {match.RoundNumber}` - **{match.TeamA}** vs. **{match.TeamB}**");
                 }
             }
 
             embed.WithDescription(sb.ToString())
-                .WithFooter("Good luck to you!")
+                .WithFooter($"Scheduled for: {userName}")
                 .WithTimestamp(DateTimeOffset.Now);
 
             return embed.Build();
         }
+
         #endregion
 
         #region Team Embeds

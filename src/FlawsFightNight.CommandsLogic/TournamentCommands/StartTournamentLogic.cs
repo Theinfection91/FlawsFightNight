@@ -1,4 +1,6 @@
 ﻿using Discord;
+using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -37,12 +39,25 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"The teams in the tournament '{tournament.Name}' are not locked. Please lock the teams before starting the tournament.");
             }
+
             // Ensure all teams start with no wins/losses or points
             foreach (var team in tournament.Teams)
             {
                 team.ResetTeamToZero();
             }
 
+            switch (tournament.Type)
+            {
+                case TournamentType.RoundRobin:
+                    return RoundRobinStartTournamentProcess(tournament);
+
+                default:
+                    return _embedManager.ErrorEmbed(Name, "Only Round Robin tournaments are implemented right now. Can not start any other time at this point.");
+            }
+        }
+
+        private Embed RoundRobinStartTournamentProcess(Tournament tournament)
+        {
             // Start the tournament
             _matchManager.BuildMatchScheduleResolver(tournament);
             tournament.InitiateStartTournament();
