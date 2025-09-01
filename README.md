@@ -51,7 +51,7 @@ Flaw's Fight Night is a comprehensive Discord bot being designed to manage tourn
 
 ## 📋 Available Commands
 
-The bot includes 30+ slash commands organized into categories, with a lot more planned for the future:
+The bot includes 20+ slash commands organized into categories, with a lot more planned for the future:
 - **Tournament Commands** - Create, manage, and control tournaments
 - **Team Commands** - Register and manage teams
 - **Match Commands** - Handle match reporting and challenges
@@ -63,6 +63,6 @@ The bot includes 30+ slash commands organized into categories, with a lot more p
 ## 📊 Current Status
 
 - ✅ Round Robin tournaments working
-- ✅ 30+ slash commands
+- ✅ 20+ slash commands
 - ✅ Real-time live views
 - ✅ Git backup integration
