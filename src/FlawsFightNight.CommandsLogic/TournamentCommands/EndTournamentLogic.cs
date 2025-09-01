@@ -50,6 +50,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 // Save the updated tournament state
                 _tournamentManager.SaveAndReloadTournamentsDatabase();
 
+                // Backup to git repo
+                _gitBackupManager.CopyAndBackupFilesToGit();
+
                 return _embedManager.RoundRobinEndTournamentWithTieBreakerSuccess(tournament, tieBreakerResult);
             }
             else
