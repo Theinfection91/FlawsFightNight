@@ -381,32 +381,152 @@ Once a tournament is created, certain ones allow for customization. Round Robin 
 
 ---
 
+## Team Commands
 
+### Register Team To Tournament (`/team register`)
 
-
+**Description**:
+Using the tournament's ID#, create and register a new team to it. Team names are unique across all tournaments, so even if in different tournaments you may not have two team Alpha's. Can only register teams to tournaments where teams are unlocked where required like Round Robin. Up to 20 members may be added to a team currently. If a tournament is a 3v3, a team must be created with 3 members when giving the command. If any member is already on a team in the same tournament, the command will not proceed. Members can only be on one team per tournament, but be in as many tournaments as theyd like.
 
 **Usage**
 ```csharp
-
+/team register team_name:<string> tournament_id:<string> member1:<IUser> member2:<IUser> member3<IUser> etc.
 ```
 
+---
 
+### Delete Team From Tournament (`/team delete`)
 
+**Description**:
+Loads the modal confirmation box and asks for team name that is case sensitive and will delete a desired team from a tournament if conditions are right. Teams may only be removed from Round Robin tournaments before it starts and teams are unlocked, or after it ends and teams are unlocked. If a team can not finish the tournament, an admin should just use report win and declare the other team the winner and give both teams 0 points.
 
+**Usage**
+```csharp
+/team delete 
+```
 
+---
 
+## Match Commands
 
+## Report Win For Match (`/match report-win`)
 
+**Description**:
+Using the winning teams name, as well as the score for winning team and losing team this will close out a match and turn it into a post match. This command is universal for admins and regular players. A player may only report wins for their team, but an admin can use this command and report for anyone. It also will accept a winner with a score of 0 to 0 in case a team forfeits or doesnt show that way the other team can win but also not gain any points. Will not accept losing team's score being higher than winning team's score.
 
+**Usage**
+```csharp
+/match report-win winning_team_name:<string> winning_team_score:<int> losing_team_score:<int>
+```
 
+---
 
+## Edit Post Match (`/match edit`)
 
+**Description**:
+If a round is unlocked and a match has been played, using the Match ID# that it is assigned an admin can edit the winner and scores of a post match. Once a round is locked or if the round has passed then a match may not be changed.
 
+**Usage**
+```csharp
+/match edit match_id:<string> winning_team_name:<string> winning_team_score:<int> losing_team_score:<int>
+```
 
+---
 
+### Settings Commands
 
+## Set Matches Channel LiveView (`/settings matches_channel_id set`)
 
+**Description**:
+This command will take look for the given tournament ID and if found set the given discord channel to be the auto updating Match Log for that tournament. Once the tournament starts for Round Robin it will display all matches to be played for this round and then all previous matchs that have already been played with the result and match ID#.
 
+**Usage**
+```csharp
+/settings matches_channel_id set tournament_id:<string> channel_id:<IMessageChannel>
+```
 
+---
 
+## Remove Matches Channel LiveView (`/settings matches_channel_id remove`)
 
+**Description**:
+Stops the given tournament's task of sending the Matches LiveView to a channel
+
+**Usage**
+```csharp
+/settings matches_channel_id remove tournament_id:<string>
+```
+
+---
+
+## Set Standings Channel LiveView (`/settings standings_channel_id set`)
+
+**Description**:
+This command will take look for the given tournament ID and if found set the given discord channel to be the auto updating Standings for that tournament. Currently teams jump around when all at 0-0 because of tie breaker logic but will sort out when games are played. If two teams keep swapping ranks its cause they are equally tied and the logic is falling back to a coin flip of who would win. This will be patched out before I move on to Ladder tournaments.
+
+**Usage**
+```csharp
+/settings standings_channel_id set tournament_id:<string> channel_id:<IMessageChannel>
+```
+
+---
+
+## Remove Standings Channel LiveView (`/settings standings_channel_id remove`)
+
+**Description**:
+Stops the given tournament's task of sending the Standings LiveView to a channel
+
+**Usage**
+```csharp
+/settings standings_channel_id remove tournament_id:<string>
+```
+
+---
+
+## Set Teams Channel LiveView (`/settings teams_channel_id set`)
+
+**Description**:
+This command will take look for the given tournament ID and if found set the given discord channel to be the auto updating Teams information for that tournament like all it's members and rank. Currently you'll see rank jumping when teams are equally tied like I mentioned in Standings LiveView. This will be patched out eventually.
+
+**Usage**
+```csharp
+/settings teams_channel_id set tournament_id:<string> channel_id:<IMessageChannel>
+```
+
+---
+
+## Remove Teams Channel LiveView (`/settings teams_channel_id remove`)
+
+**Description**:
+Stops the given tournament's task of sending the Teams LiveView to a channel
+
+**Usage**
+```csharp
+/settings teams_channel_id remove tournament_id:<string>
+```
+
+---
+
+## Add Debug Admin (`/settings add_debug_admin`)
+
+**Description**:
+This is a nifty test command I use to bypass a player being on multiple teams within the same tournament. It could be useful for some people if they dont have enough people to fill a tournament and have someone play as two teams, or if admins just want to be nice and help me test sometime and give feedback.
+
+**Usage**
+```csharp
+/settings add_debug_admin user:<IUser>
+```
+
+---
+
+## Remove Debug Admin (`/settings remove_debug_admin`)
+
+**Description**:
+This just removes the given user from the debug admin list if they are on it.
+
+**Usage**
+```csharp
+/settings remove_debug_admin user:<IUser>
+```
+
+---
