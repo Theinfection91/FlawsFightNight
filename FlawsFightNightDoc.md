@@ -245,20 +245,7 @@ Your window should now look similar to mine, with it saying the bot is logged in
 
 ![Step 4: Checking Commands and Backup Storage](examples/LB4Setup/lbsu8.png)
 
-Let's enter our first command and get things started. By pressing `/` on your keyboard in the text input bar of your Discord server the bot is assigned to you should see all of the interactive SlashCommands under a category by the name in which you assigned the bot in the Discord Developer Portal. SlashCommands allow for easy auto-fill and show you the arguments that are required to be passed to the commands before they can be properly executed. If these did not appear then your Guild ID was entered incorrectly. 
+Let's enter our first command and get things started. By pressing `/` on your keyboard in the text input bar of your Discord server the bot is assigned to you should see all of the interactive SlashCommands under a category by the name in which you assigned the bot in the Discord Developer Portal. If these did not appear then your Guild ID was entered incorrectly. 
 
-![Step 4: Checking Commands and Backup Storage](examples/LB4Setup/lbsu9.png)
-
-To get things going we first need a league in which to register teams into. Let's create a league with `/league create`. Try hitting `/` and start even typing `/crea` and the interactive suggestions even start to limit the result to just `/league create`. You can now just hit `Tab` and auto populate the data into the input bar. You'll notice this format of commands even show the arguments needed for the command. I'll start off by creating a simple 1v1 Test league to make sure everything is working properly.
-
-![Step 4: Checking Commands and Backup Storage](examples/LB4Setup/lbsu10.png)
-
-Beautiful! If you received an error of some sort please try the steps again. If any issues persist then you are more than welcome to message me directly for help.
-
-![Step 4: Checking Commands and Backup Storage](examples/LB4Setup/lbsu11.png)
-
-Since there aren't any errors, this means the backup system should have worked but let's go to the GitHub repo and check for ourselves. If yours looks similar to the image below then you have successfully set up **FlawsFightNight**! I hope you enjoy the program and be sure to check back for any major updates.
-
-![Step 4: Checking Commands and Backup Storage](examples/LB4Setup/lbsu12.png)
-
+If you receive any errors then please repeat this guide, or reach out directly to me for any questions or help.
 ---
