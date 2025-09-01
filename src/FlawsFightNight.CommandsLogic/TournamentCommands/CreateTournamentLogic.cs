@@ -33,9 +33,16 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             Tournament tournament = _tournamentManager.CreateTournament(name, tournamentType, teamSize, description);
+
+            // Prevent any tournament types that are not Round Robin for now
+            if (!tournament.Type.Equals(TournamentType.RoundRobin))
+            {
+                return _embedManager.ToDoEmbed("Sorry, but for now only Round Robin tournaments may be created and played. Please try again.");
+            }
+
             if (tournament == null)
             {
-                return _embedManager.ErrorEmbed("Null", "Invalid tournament type specified.");
+                return _embedManager.ErrorEmbed(Name, "Null tournament returned. Canceling command.");
             }
 
             // Add the tournament, this will also save and reload the database
