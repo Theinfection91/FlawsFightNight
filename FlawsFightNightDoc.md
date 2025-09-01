@@ -248,4 +248,165 @@ Your window should now look similar to mine, with it saying the bot is logged in
 Let's enter our first command and get things started. By pressing `/` on your keyboard in the text input bar of your Discord server the bot is assigned to you should see all of the interactive SlashCommands under a category by the name in which you assigned the bot in the Discord Developer Portal. If these did not appear then your Guild ID was entered incorrectly. 
 
 If you receive any errors then please repeat this guide, or reach out directly to me for any questions or help.
+
 ---
+
+## Using Commands
+Extensive information and how to use the various commands in FlawsFightNight:
+
+## Tournament Commands
+
+### Create Tournament (`/tournament create`)
+
+**Description**
+Create a new tournament of the given tournament type and given team size format. Upon success, it will give back a Tournament ID# that is used in commands to target it. Tournament names are unique, can not have two tournaments with the same name.
+
+**Usage**
+```csharp
+/tournament create tournamentName:<string> tournamentType:<TournamentType> teamSize<int>
+```
+
+---
+
+### Delete Tournament (`/tournament delete`)
+
+**Description**:
+Upon invoking command, will load a modal box to receive input from user. This is same as Ladderbot but takes the Tournament ID#. Must enter with an uppercase 'T' as this input is case sensitive like Ladderbot4 was. Tournaments can only be deleted before they start or after they end for safety. Will patch in overrides later.
+
+**Usage**
+```csharp
+/tournament delete
+```
+
+---
+
+### Lock Teams In Tournament (`/tournament lock-teams`)
+
+**Description**:
+**This command will only be used for Round Robin and Elimination tournaments, no need in Ladders.**
+In Round Robin, once at least three teams are registered to a tournament then an admin can lock the teams. This prevents any new teams from being added and also any exisiting from being deleted from it. This lock must be done before starting the tournament.
+
+**Usage**
+```csharp
+/tournament lock-teams
+```
+
+---
+
+### Unlock Teams In Tournament (`/tournament unlock-teams`)
+
+**Description**:
+**This command will only be used for Round Robin and Elimination tournaments, no need in Ladders.** 
+Using this will unlock the teams before starting a tournament, allowing adding or removal of them. Lock again to be able to start.
+
+**Usage**
+```csharp
+/tournament unlock-teams
+```
+
+---
+
+### Start Tournament (`/tournament start`)
+
+**Description**:
+For a Round Robin tournament, once teams are locked you may use this command to load a modal confirmation box that will ask for you to input the tournament ID twice, with your input being case sensitive meaning the T must be uppercase. On success, it will initiate the starting procedures of the tournament like sending each player their teams match schedule by round.
+
+**Usage**
+```csharp
+/tournament start
+```
+
+---
+
+### Lock In Round Of Tournament (`/tournament lock-in-round`)
+
+**Description**:
+**This command will only be used for Round Robin and Elimination tournaments, no need in Ladders.**
+Once all matches of a round have been played, an admin must lock in the round before being able to advance to the next round. Once locked, admins may not use `/match edit` to make any changes to a post match within the current round.
+
+**Usage**
+```csharp
+/tournament lock-in-round
+```
+
+---
+
+### Unlock Round In Tournament (`/tournament unlock-round`)
+
+**Description**:
+**This command will only be used for Round Robin and Elimination tournaments, no need in Ladders.**
+If a round has been locked and an admin needs to make a change then use this. Once unlocked, admins may use `/match edit` to make any changes to a post match within the current round.
+
+**Usage**
+```csharp
+/tournament unlock-round
+```
+
+---
+
+### Next Round In Tournament (`/tournament next-round`)
+
+**Description**:
+**This command will only be used for Round Robin and Elimination tournaments, no need in Ladders.**
+Once the round is locked in, an admin will use this to advance to the next round.
+
+**Usage**
+```csharp
+/tournament next-round
+```
+
+---
+
+### End Tournament (`/tournament end`)
+
+**Description**:
+Attempt to end the tournament if all conditions are met. Currently for Round Robin a tournament will only be able to end once the last match of the last round has been reported. Only then will this command work correctly. This too will load the modal confirmation system I designed and ask for the case sensitive input of the tournament ID to end.
+
+**Usage**
+```csharp
+/tournament end
+```
+
+---
+
+### Setup Tournament (`/tournament setup`)
+
+**Description**:
+Once a tournament is created, certain ones allow for customization. Round Robin tournaments will have different tie breaker logic you can choose from eventually. It will also allow for a Round Robin tournament to just be a single round robin and not double like default. This command must be used before starting the tournament to take effect.
+
+**Usage**
+```csharp
+/tournament setup tournamentId:<string> tie_breaker_ruleset:<TieBreakerLogic> is_double_round_robin<bool>
+```
+
+---
+
+
+
+
+
+**Usage**
+```csharp
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
