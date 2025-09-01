@@ -35,11 +35,6 @@ Flaw's Fight Night is a comprehensive Discord bot being designed to manage tourn
 
 ## 🚀 Quick Start
 
-### Creating Your First Tournament
-```
-/tournament create name:"My Tournament" type:RoundRobin team_size:5
-```
-
 ### Key Commands
 - `/tournament create` - Create a new tournament
 - `/team register` - Register a team for a tournament
