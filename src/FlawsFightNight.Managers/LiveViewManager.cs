@@ -170,6 +170,7 @@ namespace FlawsFightNight.Managers
                 }
             }
 
+            // TODO Move rank assignment logic to Report Match Logic to fix bugs
             // Assign ranks after resolution
             for (int i = 0; i < resolvedList.Count; i++)
                 resolvedList[i].Rank = i + 1;
@@ -215,6 +216,7 @@ namespace FlawsFightNight.Managers
 
         private async Task SendStandingsToChannelAsync()
         {
+
             //Console.WriteLine($"{DateTime.Now} - Sending standings updates to channel...");
 
             if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
