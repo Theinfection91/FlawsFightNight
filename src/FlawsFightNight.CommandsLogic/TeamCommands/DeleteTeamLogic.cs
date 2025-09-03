@@ -58,6 +58,9 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Remove the team from the tournament
             _teamManager.DeleteTeamFromDatabase(teamName);
 
+            // Update the tournament standings
+            _tournamentManager.UpdateTournamentStandings(tournament);
+
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
 

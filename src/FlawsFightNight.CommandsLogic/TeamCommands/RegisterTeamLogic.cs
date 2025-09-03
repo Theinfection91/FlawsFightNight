@@ -93,6 +93,14 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
 
+            // Update the tournament standings
+            _tournamentManager.UpdateTournamentStandings(tournament);
+
+            Console.WriteLine($"After updated method: {tournament.RoundRobinStandings.Entries.Count}");
+
+            // Save and reload the tournament database
+            //_tournamentManager.SaveTournamentsDatabase();
+
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
