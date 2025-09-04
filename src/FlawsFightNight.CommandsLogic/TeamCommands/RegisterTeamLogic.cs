@@ -90,13 +90,11 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
                 _tournamentManager.SetCanTeamsBeLocked(tournament, false);
             }
 
+            // Adjust ranks of remaining teams
+            tournament.SetRanksByTieBreakerLogic();
+
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-            // Update the tournament standings
-            _tournamentManager.UpdateTournamentStandings(tournament);
-
-            Console.WriteLine($"After updated method: {tournament.RoundRobinStandings.Entries.Count}");
 
             // Save and reload the tournament database
             //_tournamentManager.SaveTournamentsDatabase();

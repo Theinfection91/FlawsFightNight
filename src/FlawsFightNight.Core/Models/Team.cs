@@ -42,6 +42,32 @@ namespace FlawsFightNight.Core.Models
             }
         }
 
+        public string GetFormattedStreakString()
+        {
+            if (WinStreak > 0 && LoseStreak == 0)
+            {
+                return $"W{WinStreak}";
+            }
+            if (LoseStreak > 0 && WinStreak == 0)
+            {
+                return $"L{LoseStreak}";
+            }
+            return "--";
+        }
+
+        public string GetCorrectStreakEmoji()
+        {
+            if (WinStreak > 0 && LoseStreak == 0)
+            {
+                return "📈";
+            }
+            if (LoseStreak > 0 && WinStreak == 0)
+            {
+                return "📉";
+            }
+            return "⌛";
+        }
+
         public void ResetTeamToZero()
         {
             Wins = 0;

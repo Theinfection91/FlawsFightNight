@@ -15,7 +15,7 @@ namespace FlawsFightNight.Core.Models
         public string Id { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
-        public TournamentType Type { get; set; }        
+        public TournamentType Type { get; set; }
         public int TeamSize { get; set; }
         public string TeamSizeFormat => $"{TeamSize}v{TeamSize}";
         public List<Team> Teams { get; set; } = [];
@@ -37,7 +37,6 @@ namespace FlawsFightNight.Core.Models
         // Round Robin Specific Properties
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
         public bool IsDoubleRoundRobin { get; set; } = true;
-        public RoundRobinStandings RoundRobinStandings { get; set; } = new();
 
         // Discord Channel ID's for LiveView
         public ulong MatchesChannelId { get; set; } = 0;
@@ -73,5 +72,58 @@ namespace FlawsFightNight.Core.Models
             IsRoundComplete = false;
             IsRoundLockedIn = false;
         }
+
+        #region Round Robin Helpers
+        public void SetRanksByTieBreakerLogic()
+        {
+            // Sort teams
+            Teams = Teams
+            .OrderBy(e => e.Rank)
+            .ThenByDescending(e => e.Wins)
+            .ThenBy(e => e.Losses)
+            .ThenByDescending(e => e.TotalScore)
+            //.ThenBy(e => e.TeamName)
+            .ToList();
+
+            // Group teams by record
+            var groupedTeamsByRecord = Teams
+                .GroupBy(e => new { e.Wins, e.Losses })
+                .OrderByDescending(g => g.Key.Wins)   // more wins first
+                .ThenBy(g => g.Key.Losses);           // fewer losses first
+
+            var resolvedTeamsList = new List<Team>();
+
+            foreach (var group in groupedTeamsByRecord)
+            {
+                var tiedTeams = group.Select(e => e.Name).ToList();
+
+                if (tiedTeams.Count > 1)
+                {
+                    // Work only with tiedTeams
+                    while (tiedTeams.Count > 0)
+                    {
+                        // Resolve tie and get a winner
+                        var (loser, winner) = TieBreakerRule.ResolveTie(tiedTeams, MatchLog);
+                        var winnerTeam = group.First(e => e.Name == winner);
+
+                        resolvedTeamsList.Add(winnerTeam);
+
+                        // Remove the winner so it's not picked again
+                        tiedTeams.Remove(winner);
+                    }
+                }
+                else
+                {
+                    resolvedTeamsList.AddRange(group);
+                }
+            }
+            // Assign ranks after resolution
+            for (int i = 0; i < resolvedTeamsList.Count; i++)
+                resolvedTeamsList[i].Rank = i + 1;
+
+            // Update the tournament's team list
+            Teams = resolvedTeamsList;
+        }
+        #endregion
     }
 }

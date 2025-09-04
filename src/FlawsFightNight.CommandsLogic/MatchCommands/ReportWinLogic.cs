@@ -116,8 +116,8 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 _matchManager.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, 0, "BYE", 0, match.IsByeMatch);
             }
 
-            // Update the tournament standings
-            _tournamentManager.UpdateTournamentStandings(tournament);
+            // Adjust ranks of remaining teams
+            tournament.SetRanksByTieBreakerLogic();
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();

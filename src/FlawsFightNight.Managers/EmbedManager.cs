@@ -132,7 +132,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed RoundRobinStandingsLiveView(Tournament tournament, RoundRobinStandings roundRobinStandings)
+        public Embed RoundRobinStandingsLiveView(Tournament tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Tournament Standings")
@@ -140,21 +140,21 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Gold)
                 .WithCurrentTimestamp();
 
-            if (roundRobinStandings.Entries.Count == 0)
+            if (tournament.Teams.Count == 0)
             {
                 embed.Description += "\n_No teams registered._";
                 return embed.Build();
             }
 
-            foreach (var teamStanding in roundRobinStandings.Entries.OrderBy(e => e.Rank))
+            foreach (var team in tournament.Teams.OrderBy(e => e.Rank))
             {
-                var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(teamStanding.TeamName);
+                var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(team.Name);
 
                 embed.Description +=
-                    $"\n#{teamStanding.Rank} **{teamStanding.TeamName}**\n" +
-                    $"✅ Wins: {teamStanding.Wins} | " +
-                    $"❌ Losses: {teamStanding.Losses} | " +
-                    $"{teamStanding.GetCorrectStreakEmoji()} W/L Streak: {teamStanding.GetFormattedStreakString()}\n" +
+                    $"\n#{team.Rank} **{team.Name}**\n" +
+                    $"✅ Wins: {team.Wins} | " +
+                    $"❌ Losses: {team.Losses} | " +
+                    $"{team.GetCorrectStreakEmoji()} W/L Streak: {team.GetFormattedStreakString()}\n" +
                     $"⭐ Points For: {pointsFor} | " +
                     $"🛡️ Points Against: {pointsAgainst}\n";
             }
@@ -162,7 +162,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed TeamsLiveView(Tournament tournament, RoundRobinStandings standings)
+        public Embed TeamsLiveView(Tournament tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"👥 {tournament.Name} - {tournament.TeamSizeFormat} Tournament Teams")
@@ -175,13 +175,12 @@ namespace FlawsFightNight.Managers
                 return embed.Build();
             }
 
-            foreach (var teamStanding in standings.Entries.OrderBy(e => e.TeamName))
+            foreach (var team in tournament.Teams)
             {
-                var team = tournament.Teams.FirstOrDefault(t => t.Name == teamStanding.TeamName);
                 if (team != null)
                 {
                     embed.Description +=
-                        $"\n**{team.Name}** (#{teamStanding.Rank})\n" +
+                        $"\n**{team.Name}** (#{team.Rank})\n" +
                         $"👤 Members: {string.Join(", ", team.Members.Select(m => m.DisplayName))}\n";
                     // If Ladder Tournament, display challenge status
                     if (tournament.Type == TournamentType.Ladder)

@@ -188,7 +188,7 @@ namespace FlawsFightNight.Managers
         //        original.Rank = entry.Rank;
         //        tournament.Teams = tournament.Teams.OrderBy(t => t.Rank).ToList();
         //    }
-            
+
         //    //_dataManager.SaveAndReloadTournamentsDatabase();
 
         //    //Console.WriteLine("[DEBUG] Final Standings:");
@@ -248,15 +248,7 @@ namespace FlawsFightNight.Managers
                 switch (tournament.Type)
                 {
                     case Core.Enums.TournamentType.RoundRobin:
-                        var standings = tournament.RoundRobinStandings;
-
-                        if (standings == null)
-                        {
-                            //Console.WriteLine("Standings came back null.");
-                            continue;
-                        }
-
-                        var standingsEmbed = _embedManager.RoundRobinStandingsLiveView(tournament, standings);
+                        var standingsEmbed = _embedManager.RoundRobinStandingsLiveView(tournament);
                         ulong messageId = tournament.StandingsMessageId;
 
                         if (messageId != 0)
@@ -335,10 +327,8 @@ namespace FlawsFightNight.Managers
                     //Console.WriteLine($"Channel with ID {tournament.TeamsChannelId} not found for tournament {tournament.Name}. Skipping.");
                     continue;
                 }
-                // Grab standings for correct ranks
-                RoundRobinStandings standings = tournament.RoundRobinStandings;
                 // Get the embed for the teams live view
-                var teamsEmbed = _embedManager.TeamsLiveView(tournament, standings);
+                var teamsEmbed = _embedManager.TeamsLiveView(tournament);
                 ulong messageId = tournament.TeamsMessageId;
                 if (messageId != 0)
                 {

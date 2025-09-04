@@ -57,8 +57,8 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
             else
             {
-                // No tie breaker needed, grab winner with most wins
-                string winner = tournament.RoundRobinStandings.Entries.FirstOrDefault().TeamName;
+                // No tie breaker needed, grab winner rank at #1
+                string winner = tournament.Teams.OrderBy(t => t.Rank).First().Name;
 
                 tournament.InitiateEndTournament();
 
