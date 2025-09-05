@@ -202,6 +202,7 @@ namespace FlawsFightNight.Managers
 
         public void StartStandingsLiveViewTask()
         {
+            // TODO Redo LiveView Task system
             Task.Run(() => RunStandingsUpdateTaskAsync());
         }
 
@@ -215,8 +216,7 @@ namespace FlawsFightNight.Managers
         }
 
         private async Task SendStandingsToChannelAsync()
-        {
-
+        { 
             //Console.WriteLine($"{DateTime.Now} - Sending standings updates to channel...");
 
             if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
