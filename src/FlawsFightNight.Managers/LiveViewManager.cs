@@ -43,6 +43,7 @@ namespace FlawsFightNight.Managers
         #region Watchdog
         public void StartWatchdogTask()
         {
+            Console.WriteLine($"{DateTime.Now} [Watchdog] Starting watchdog task...");
             _watchdogTask = Task.Run(async () =>
             {
                 while (!_cts.Token.IsCancellationRequested)
