@@ -202,7 +202,6 @@ namespace FlawsFightNight.Managers
 
         public void StartStandingsLiveViewTask()
         {
-            // TODO Figure out why Standings Task silently fails after some time, other tasks work fine
             Task.Run(() => RunStandingsUpdateTaskAsync());
         }
 
