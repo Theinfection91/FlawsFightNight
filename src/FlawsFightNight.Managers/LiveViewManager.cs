@@ -43,7 +43,7 @@ namespace FlawsFightNight.Managers
         #region Watchdog
         public void StartWatchdogTask()
         {
-            Console.WriteLine($"{DateTime.Now} [Watchdog] Starting watchdog task...");
+            Console.WriteLine($"{DateTime.Now} [LiveView - Watchdog] Starting watchdog task...");
             _watchdogTask = Task.Run(async () =>
             {
                 while (!_cts.Token.IsCancellationRequested)
@@ -54,14 +54,14 @@ namespace FlawsFightNight.Managers
                     bool standingsDead = _standingsLiveViewTask?.IsFaulted ?? true;
                     bool teamsDead = _teamsLiveViewTask?.IsFaulted ?? true;
 
-                    // also check if they haven't updated in >1 min
+                    // Also check if they haven't updated in >1 min
                     bool matchesHung = (DateTime.UtcNow - _lastMatchesUpdate) > TimeSpan.FromMinutes(1);
                     bool standingsHung = (DateTime.UtcNow - _lastStandingsUpdate) > TimeSpan.FromMinutes(1);
                     bool teamsHung = (DateTime.UtcNow - _lastTeamsUpdate) > TimeSpan.FromMinutes(1);
 
                     if (matchesDead || standingsDead || teamsDead || matchesHung || standingsHung || teamsHung)
                     {
-                        Console.WriteLine($"{DateTime.Now} [Watchdog] Detected dead/hung task. Restarting all live view tasks...");
+                        Console.WriteLine($"{DateTime.Now} [LiveView - Watchdog] Detected dead/hung task. Restarting all live view tasks...");
                         await RestartAllAsync();
                     }
                 }
