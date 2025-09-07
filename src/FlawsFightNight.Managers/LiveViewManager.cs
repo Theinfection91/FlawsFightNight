@@ -13,6 +13,7 @@ namespace FlawsFightNight.Managers
     {
         private DiscordSocketClient _client;
         private EmbedManager _embedManager;
+        private GitBackupManager _gitBackupManager;
         private MatchManager _matchManager;
 
         // Tasks
@@ -23,14 +24,15 @@ namespace FlawsFightNight.Managers
         private CancellationTokenSource _cts = new();
 
         // Watchdog timestamps
-        private DateTime _lastMatchesUpdate = DateTime.MinValue;
-        private DateTime _lastStandingsUpdate = DateTime.MinValue;
-        private DateTime _lastTeamsUpdate = DateTime.MinValue;
+        private DateTime _lastMatchesUpdate = DateTime.UtcNow;
+        private DateTime _lastStandingsUpdate = DateTime.UtcNow;
+        private DateTime _lastTeamsUpdate = DateTime.UtcNow;
 
-        public LiveViewManager(DiscordSocketClient discordSocketClient, DataManager dataManager, EmbedManager embedManager, MatchManager matchManager) : base("LiveViewManager", dataManager)
+        public LiveViewManager(DiscordSocketClient discordSocketClient, DataManager dataManager, EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager) : base("LiveViewManager", dataManager)
         {
             _client = discordSocketClient;
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _matchManager = matchManager;
 
             StartMatchesLiveViewTask();
@@ -73,7 +75,12 @@ namespace FlawsFightNight.Managers
         public void StartMatchesLiveViewTask()
         {
             //Task.Run(() => RunMatchesUpdateTaskAsync());
-            _matchesLiveViewTask = RunMatchesUpdateTaskAsync(_cts.Token);
+            _matchesLiveViewTask = Task.Run(() => RunMatchesUpdateTaskAsync(_cts.Token))
+            .ContinueWith(t =>
+            {
+                if (t.IsFaulted) Console.WriteLine($"MatchesLiveViewTask crashed: {t.Exception}");
+                StartMatchesLiveViewTask();
+            });
         }
 
         private async Task RunMatchesUpdateTaskAsync(CancellationToken token)
@@ -100,6 +107,7 @@ namespace FlawsFightNight.Managers
             if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
             {
                 //Console.WriteLine("No tournaments found. No need to post to matches channels.");
+                _lastMatchesUpdate = DateTime.UtcNow;
                 return;
             }
 
@@ -114,6 +122,7 @@ namespace FlawsFightNight.Managers
                 if (tournament.MatchesChannelId == 0)
                 {
                     //Console.WriteLine($"Tournament {tournament.Name} has no Matches Channel ID set. Skipping.");
+                    _lastMatchesUpdate = DateTime.UtcNow;
                     continue;
                 }
 
@@ -154,7 +163,8 @@ namespace FlawsFightNight.Managers
                         _lastMatchesUpdate = DateTime.UtcNow;
 
                         //Console.WriteLine($"Sent new matches message for tournament {tournament.Name} in channel {channel.Name}.");
-                        _dataManager.SaveAndReloadTournamentsDatabase();
+                        await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
+                        await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                     }
                 }
                 else
@@ -167,7 +177,8 @@ namespace FlawsFightNight.Managers
                     _lastMatchesUpdate = DateTime.UtcNow;
 
                     //Console.WriteLine($"Sent new matches message for tournament {tournament.Name} in channel {channel.Name}.");
-                    _dataManager.SaveAndReloadTournamentsDatabase();
+                    await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
+                    await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                 }
             }
         }
@@ -177,7 +188,12 @@ namespace FlawsFightNight.Managers
         public void StartStandingsLiveViewTask()
         {
             //Task.Run(() => RunStandingsUpdateTaskAsync());
-            _standingsLiveViewTask = RunStandingsUpdateTaskAsync(_cts.Token);
+            _standingsLiveViewTask = Task.Run(() => RunStandingsUpdateTaskAsync(_cts.Token))
+                .ContinueWith(t =>
+                {
+                    if (t.IsFaulted) Console.WriteLine($"StandingsLiveViewTask crashed: {t.Exception}");
+                    StartStandingsLiveViewTask();
+                });
         }
 
         private async Task RunStandingsUpdateTaskAsync(CancellationToken token)
@@ -205,6 +221,7 @@ namespace FlawsFightNight.Managers
             if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
             {
                 //Console.WriteLine("No tournaments found. No need to post to standings channels.");
+                _lastStandingsUpdate = DateTime.UtcNow;
                 return;
             }
 
@@ -218,6 +235,7 @@ namespace FlawsFightNight.Managers
                 if (tournament.StandingsChannelId == 0)
                 {
                     //Console.WriteLine($"Tournament {tournament.Name} has no Standings Channel ID set. Skipping.");
+                    _lastStandingsUpdate = DateTime.UtcNow;
                     continue;
                 }
 
@@ -255,7 +273,8 @@ namespace FlawsFightNight.Managers
                                 _lastStandingsUpdate = DateTime.UtcNow;
 
                                 //Console.WriteLine($"Sent new standings message for tournament {tournament.Name} in channel {channel.Name}.");
-                                _dataManager.SaveAndReloadTournamentsDatabase();
+                                await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
+                                await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                             }
                         }
                         else
@@ -267,7 +286,8 @@ namespace FlawsFightNight.Managers
                             _lastStandingsUpdate = DateTime.UtcNow;
 
                             //Console.WriteLine($"{newMessage.Id} Sent new standings message for tournament {tournament.Name} in channel {channel.Name}.");
-                            _dataManager.SaveAndReloadTournamentsDatabase();
+                            await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
+                            await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                         }
                         break;
 
@@ -283,7 +303,12 @@ namespace FlawsFightNight.Managers
         public void StartTeamsLiveViewTask()
         {
             //Task.Run(() => RunTeamsUpdateTaskAsync());
-            _teamsLiveViewTask = RunTeamsUpdateTaskAsync(_cts.Token);
+            _teamsLiveViewTask = Task.Run(() => RunTeamsUpdateTaskAsync(_cts.Token))
+                .ContinueWith(t =>
+                {
+                    if (t.IsFaulted) Console.WriteLine($"StandingsLiveViewTask crashed: {t.Exception}");
+                    StartTeamsLiveViewTask();
+                });
         }
 
         private async Task RunTeamsUpdateTaskAsync(CancellationToken token)
@@ -309,6 +334,7 @@ namespace FlawsFightNight.Managers
             if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
             {
                 //Console.WriteLine("No tournaments found. No need to post to teams channels.");
+                _lastTeamsUpdate = DateTime.UtcNow;
                 return;
             }
 
@@ -322,6 +348,7 @@ namespace FlawsFightNight.Managers
                 if (tournament.TeamsChannelId == 0)
                 {
                     //Console.WriteLine($"Tournament {tournament.Name} has no Teams Channel ID set. Skipping.");
+                    _lastTeamsUpdate = DateTime.UtcNow;
                     continue;
                 }
                 // Get the channel from the client
@@ -358,7 +385,8 @@ namespace FlawsFightNight.Managers
                         _lastTeamsUpdate = DateTime.UtcNow;
 
                         //Console.WriteLine($"Sent new teams message for tournament {tournament.Name} in channel {channel.Name}.");
-                        _dataManager.SaveAndReloadTournamentsDatabase();
+                        await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
+                        await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                     }
                 }
                 else
@@ -371,7 +399,8 @@ namespace FlawsFightNight.Managers
                     _lastTeamsUpdate = DateTime.UtcNow;
 
                     //Console.WriteLine($"Sent new teams message for tournament {tournament.Name} in channel {channel.Name}.");
-                    _dataManager.SaveAndReloadTournamentsDatabase();
+                    await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
+                    await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                 }
             }
         }
