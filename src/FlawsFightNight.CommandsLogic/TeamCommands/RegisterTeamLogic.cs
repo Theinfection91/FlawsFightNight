@@ -90,8 +90,14 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
                 _tournamentManager.SetCanTeamsBeLocked(tournament, false);
             }
 
+            // Adjust ranks of remaining teams
+            tournament.SetRanksByTieBreakerLogic();
+
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Save and reload the tournament database
+            //_tournamentManager.SaveTournamentsDatabase();
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
