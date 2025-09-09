@@ -161,6 +161,9 @@ namespace FlawsFightNight.Managers
                     if (channel == null)
                     {
                         //Console.WriteLine($"Channel with ID {tournament.MatchesChannelId} not found for tournament {tournament.Name}. Skipping.");
+                        tournament.MatchesChannelId = 0;
+                        await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
+                        await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                         continue;
                     }
 
@@ -279,6 +282,9 @@ namespace FlawsFightNight.Managers
                     if (channel == null)
                     {
                         //Console.WriteLine($"Channel with ID {tournament.StandingsChannelId} not found for tournament {tournament.Name}. Skipping.");
+                        tournament.StandingsChannelId = 0;
+                        await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
+                        await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                         continue;
                     }
 
@@ -400,6 +406,9 @@ namespace FlawsFightNight.Managers
                     if (channel == null)
                     {
                         //Console.WriteLine($"Channel with ID {tournament.TeamsChannelId} not found for tournament {tournament.Name}. Skipping.");
+                        tournament.TeamsChannelId = 0;
+                        await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
+                        await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                         continue;
                     }
                     // Get the embed for the teams live view
