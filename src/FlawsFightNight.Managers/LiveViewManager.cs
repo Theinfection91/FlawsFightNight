@@ -15,7 +15,7 @@ namespace FlawsFightNight.Managers
         private DiscordSocketClient _client;
         private EmbedManager _embedManager;
         private GitBackupManager _gitBackupManager;
-        private MatchManager _matchManager;
+
 
         // Tasks
         private Task _watchdogTask;
@@ -35,14 +35,13 @@ namespace FlawsFightNight.Managers
 
         private SemaphoreSlim _semaphore = new(1, 1);
 
-        private static readonly bool _testMode = true;
+        //private static readonly bool _testMode = true;
 
-        public LiveViewManager(DiscordSocketClient discordSocketClient, DataManager dataManager, EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager) : base("LiveViewManager", dataManager)
+        public LiveViewManager(DiscordSocketClient discordSocketClient, DataManager dataManager, EmbedManager embedManager, GitBackupManager gitBackupManager) : base("LiveViewManager", dataManager)
         {
             _client = discordSocketClient;
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
-            _matchManager = matchManager;
 
             StartMatchesLiveViewTask();
             StartStandingsLiveViewTask();
