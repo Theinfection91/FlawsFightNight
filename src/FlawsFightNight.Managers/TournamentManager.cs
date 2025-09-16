@@ -160,12 +160,6 @@ namespace FlawsFightNight.Managers
             tournament.IsRoundLockedIn = false;
         }
 
-        private void EndRoundRobinTournament(Tournament tournament)
-        {
-            // Logic to handle the end of a round robin tournament
-            tournament.IsRunning = false;
-        }
-
         public bool IsTournamentIdInDatabase(string tournamentId, bool isCaseSensitive = false)
         {
             if (isCaseSensitive)
@@ -250,98 +244,5 @@ namespace FlawsFightNight.Managers
                 tournament.Teams.Add(team);
             }
         }
-
-        //public void UpdateTournamentStandings(Tournament tournament)
-        //{
-
-        //    Console.WriteLine($"Update Tournament - RR Test Count: {tournament.RoundRobinStandings.Entries.Count}");
-
-        //    Console.WriteLine($"[DEBUG] Building standings for tournament: {tournament.Name}, Teams: {tournament.Teams.Count}");
-
-        //    var standings = new RoundRobinStandings();
-
-        //    // Build entries
-        //    foreach (var team in tournament.Teams)
-        //    {
-        //        var entry = new StandingsEntry(team);
-        //        standings.Entries.Add(entry);
-        //        Console.WriteLine($"[DEBUG] Added team entry: {entry.TeamName}, Wins: {entry.Wins}, Losses: {entry.Losses}, Score: {entry.TotalScore}");
-        //    }
-
-        //    // Initial sort (by wins/score/etc.)
-        //    standings.SortStandings();
-
-        //    Console.WriteLine("[DEBUG] After initial sort:");
-        //    foreach (var entry in standings.Entries)
-        //    {
-        //        Console.WriteLine($"   {entry.TeamName}: {entry.Wins}-{entry.Losses}, {entry.TotalScore} pts");
-        //    }
-
-        //    // Group by full record (Wins + Losses)
-        //    var groupedByRecord = standings.Entries
-        //        //.Where(e => !(e.Wins == 0 && e.Losses == 0))
-        //        .GroupBy(e => new { e.Wins, e.Losses })
-        //        .OrderByDescending(g => g.Key.Wins)   // more wins first
-        //        .ThenBy(g => g.Key.Losses);           // fewer losses first
-
-        //    var resolvedList = new List<StandingsEntry>();
-
-        //    foreach (var group in groupedByRecord)
-        //    {
-        //        var tiedTeams = group.Select(e => e.TeamName).ToList();
-
-        //        if (tiedTeams.Count > 1)
-        //        {
-        //            Console.WriteLine($"[DEBUG] Tie detected in {group.Key.Wins}-{group.Key.Losses} group: {string.Join(", ", tiedTeams)}");
-
-        //            // Keep resolving until all tied teams are ranked
-        //            var remaining = new List<string>(tiedTeams);
-        //            while (remaining.Count > 0)
-        //            {
-        //                (string, string) tieBreakerResult = tournament.TieBreakerRule.ResolveTie(remaining, tournament.MatchLog);
-        //                string winner = tieBreakerResult.Item2;
-        //                var winnerEntry = group.First(e => e.TeamName == winner);
-
-        //                resolvedList.Add(winnerEntry);
-        //                remaining.Remove(winner);
-
-        //                Console.WriteLine($"[DEBUG] -> Placed {winner} at next rank, {remaining.Count} left in tie group");
-        //            }
-        //        }
-        //        else
-        //        {
-        //            resolvedList.AddRange(group);
-        //        }
-        //    }
-
-        //    // TODO Move rank assignment logic to Report Match Logic to fix bugs
-        //    // Assign ranks after resolution
-        //    for (int i = 0; i < resolvedList.Count; i++)
-        //        resolvedList[i].Rank = i + 1;
-
-        //    standings.Entries = resolvedList;
-
-        //    // Update ranks in original entries as well
-        //    foreach (var entry in standings.Entries)
-        //    {
-        //        //if (entry.Wins == 0 && entry.Losses == 0)
-        //        //{
-        //        //    continue;
-        //        //}
-        //        var original = tournament.Teams.First(t => t.Name == entry.TeamName);
-        //        original.Rank = entry.Rank;
-        //        tournament.Teams = tournament.Teams.OrderBy(t => t.Rank).ToList();
-        //    }
-
-        //    //_dataManager.SaveAndReloadTournamentsDatabase();
-
-        //    Console.WriteLine("[DEBUG] Final Standings:");
-        //    foreach (var entry in standings.Entries)
-        //    {
-        //        Console.WriteLine($"   Rank {entry.Rank}: {entry.TeamName} ({entry.Wins}-{entry.Losses}, {entry.TotalScore} pts)");
-        //    }
-
-        //    tournament.RoundRobinStandings = standings;
-        //}
     }
 }
