@@ -106,7 +106,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
         {
             if (!match.IsByeMatch)
             {
-                // TODO Handle Round Robin Win Logic
+                // Convert match to post-match and record win/loss
                 _matchManager.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
                 _teamManager.RecordTeamWin(winningTeam, winningTeamScore);
                 _teamManager.RecordTeamLoss(losingTeam, losingTeamScore);

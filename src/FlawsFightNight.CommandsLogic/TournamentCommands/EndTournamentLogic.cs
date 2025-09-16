@@ -40,7 +40,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be ended at this time. Ensure that all rounds are complete and locked in.");
             }
             //Console.WriteLine($"{_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog)}");
-            // TODO Tiebreaker Logic
+            // Check if a tie breaker is needed for first place
             if (_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog))
             {
                 (string, string) tieBreakerResult = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog);
