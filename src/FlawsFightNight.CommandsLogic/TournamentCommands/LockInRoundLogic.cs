@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
@@ -22,6 +23,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _matchManager = matchManager;
             _tournamentManager = tournamentManager;
         }
+
         public Embed LockInRoundProcess(string tournamentId)
         {
             // Check if the tournament exists, grab it if so
@@ -29,8 +31,28 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            Tournament? tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
+            // Check if tournament is running
+            if (!tournament.IsRunning)
+            {
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
+            }
+
+            // Handle different tournament types
+            switch (tournament.Type)
+            {
+                case TournamentType.Ladder:
+                    return _embedManager.ErrorEmbed(Name, "Ladder tournaments do not have rounds to lock in.");
+                case TournamentType.RoundRobin:
+                    return RoundRobinLockInRoundProcess(tournament);
+                default:
+                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for locking in rounds yet.");
+            }
+        }
+
+        public Embed RoundRobinLockInRoundProcess(Tournament tournament)
+        {
             // Check if the round is complete
             if (!tournament.IsRoundComplete)
             {

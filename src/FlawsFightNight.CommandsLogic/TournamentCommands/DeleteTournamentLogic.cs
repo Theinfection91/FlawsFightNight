@@ -38,6 +38,15 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             return _embedManager.ErrorEmbed(Name, "Tournament type not supported for deletion yet.");
         }
 
+        public Embed LadderDeleteTournament(Tournament tournament)
+        {
+            // Ladder tournaments can be deleted if not running, no extra checks needed
+            _tournamentManager.DeleteTournament(tournament.Id);
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
+            return _embedManager.DeleteTournamentSuccess(tournament);
+        }
+
         public Embed RoundRobinDeleteTournament(Tournament tournament)
         {
             if (!tournament.IsRunning && tournament.IsTeamsLocked)

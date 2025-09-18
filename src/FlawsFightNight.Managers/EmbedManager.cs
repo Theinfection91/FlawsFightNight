@@ -68,11 +68,11 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Orange)
                 .WithCurrentTimestamp();
 
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEndTournament)
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEndRoundRobinTournament)
             {
                 embed.AddField("🔒 Locked", "Round is locked and ready to advance.", true);
             }
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEndTournament)
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEndRoundRobinTournament)
             {
                 embed.AddField("🔒 Locked - Ready to end tournament 🏅", "Round is locked and the tournament is ready to end have the results locked in.", true);
             }
@@ -406,6 +406,7 @@ namespace FlawsFightNight.Managers
                 .WithTitle("🗑️ Tournament Deleted Successfully")
                 .WithDescription($"The tournament **{tournament.Name}** has been successfully deleted.")
                 .AddField("Tournament ID", tournament.Id)
+                .AddField("Type", tournament.Type.ToString())
                 .WithColor(Color.Green)
                 .WithFooter("The tournament has been deleted.")
                 .WithTimestamp(DateTimeOffset.Now);

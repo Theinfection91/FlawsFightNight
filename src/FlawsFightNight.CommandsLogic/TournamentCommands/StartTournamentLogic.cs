@@ -60,7 +60,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
         {
             // Start the tournament
             _matchManager.BuildMatchScheduleResolver(tournament);
-            tournament.InitiateStartTournament();
+            tournament.RoundRobinStartTournamentProcess();
 
             // Send team match schedules to each user
             _matchManager.SendMatchSchedulesToTeams(tournament);

@@ -1,10 +1,12 @@
 ﻿using Discord;
 using FlawsFightNight.Managers;
+using FlawsFightNight.Core.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Core.Models;
 
 namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
@@ -34,8 +36,39 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
             }
 
+            // Handle different tournament types
+            switch (tournament.Type)
+            {
+                case TournamentType.Ladder:
+                    LadderEndTournament(tournament);
+                    break;
+                case TournamentType.RoundRobin:
+                    RoundRobinEndTournament(tournament);
+                    break;
+            }
+
+            // Return error if tournament type not supported
+            return _embedManager.ErrorEmbed(Name, "Tournament type not supported for ending yet.");
+        }
+
+        public Embed LadderEndTournament(Tournament tournament)
+        {
+            // Ladder tournaments can be ended anytime
+            tournament.IsRunning = false;
+            tournament.IsTeamsLocked = false;
+            tournament.CanTeamsBeUnlocked = false;
+            tournament.CanTeamsBeLocked = true;
+            // Save the updated tournament state
+            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
+            return _embedManager.EndTournamentSuccessResolver(tournament, "N/A");
+        }
+
+        public Embed RoundRobinEndTournament(Tournament tournament)
+        {
             // Check if the tournament can be ended
-            if (!tournament.CanEndTournament)
+            if (!tournament.CanEndRoundRobinTournament)
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be ended at this time. Ensure that all rounds are complete and locked in.");
             }
@@ -45,7 +78,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 (string, string) tieBreakerResult = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog);
 
-                tournament.InitiateEndTournament();
+                tournament.RoundRobinEndTournamentProcess();
 
                 // Save the updated tournament state
                 _tournamentManager.SaveAndReloadTournamentsDatabase();
@@ -60,7 +93,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 // No tie breaker needed, grab winner rank at #1
                 string winner = tournament.Teams.OrderBy(t => t.Rank).First().Name;
 
-                tournament.InitiateEndTournament();
+                tournament.RoundRobinEndTournamentProcess();
 
                 // Save the updated tournament state
                 _tournamentManager.SaveAndReloadTournamentsDatabase();
@@ -69,7 +102,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 _gitBackupManager.CopyAndBackupFilesToGit();
 
                 return _embedManager.EndTournamentSuccessResolver(tournament, winner);
-            }   
+            }
         }
     }
 }

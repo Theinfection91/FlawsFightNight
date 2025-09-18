@@ -42,7 +42,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"The round for tournament '{tournament.Name}' is not locked in.");
             }
 
-            if (tournament.CanEndTournament)
+            if (tournament.CanEndRoundRobinTournament)
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is ready to end so you cannot go to the next round. Please use the appropriate command to end it.");
             }
