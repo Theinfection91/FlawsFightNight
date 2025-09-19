@@ -17,7 +17,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
         private LiveViewManager _liveViewManager;
         private MatchManager _matchManager;
         private TournamentManager _tournamentManager;
-        public EndTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager , LiveViewManager liveViewManager, MatchManager matchManager, TournamentManager tournamentManager) : base("End Tournament")
+        public EndTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, LiveViewManager liveViewManager, MatchManager matchManager, TournamentManager tournamentManager) : base("End Tournament")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
@@ -28,44 +28,45 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         public Embed EndTournamentProcess(string tournamentId)
         {
+            // Grab tournament, modal should have ensured it exists
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
             // Check if tournament is already running
             if (!tournament.IsRunning)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Cannot end a tournament that has not started.");
             }
 
             // Handle different tournament types
             switch (tournament.Type)
             {
                 case TournamentType.Ladder:
-                    LadderEndTournament(tournament);
-                    break;
+                    return LadderEndTournament(tournament);
                 case TournamentType.RoundRobin:
-                    RoundRobinEndTournament(tournament);
-                    break;
+                    return RoundRobinEndTournament(tournament);
+                default:
+                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for ending yet.");
             }
-
-            // Return error if tournament type not supported
-            return _embedManager.ErrorEmbed(Name, "Tournament type not supported for ending yet.");
         }
 
-        public Embed LadderEndTournament(Tournament tournament)
+        private Embed LadderEndTournament(Tournament tournament)
         {
             // Ladder tournaments can be ended anytime
-            tournament.IsRunning = false;
-            tournament.IsTeamsLocked = false;
-            tournament.CanTeamsBeUnlocked = false;
-            tournament.CanTeamsBeLocked = true;
+            tournament.LadderEndTournamentProcess();
+
+            // Grab winner (top ranked team)
+            string winnerName = tournament.LadderGetRankOneTeam().Name;
+
             // Save the updated tournament state
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
-            return _embedManager.EndTournamentSuccessResolver(tournament, "N/A");
+
+            return _embedManager.EndTournamentSuccessResolver(tournament, winnerName);
         }
 
-        public Embed RoundRobinEndTournament(Tournament tournament)
+        private Embed RoundRobinEndTournament(Tournament tournament)
         {
             // Check if the tournament can be ended
             if (!tournament.CanEndRoundRobinTournament)

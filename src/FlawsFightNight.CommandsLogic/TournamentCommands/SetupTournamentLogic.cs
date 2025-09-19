@@ -11,13 +11,13 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
-    public class SetupTournamentLogic
+    public class SetupTournamentLogic : Logic
     {
         private EmbedManager _embedManager;
         private GitBackupManager _gitBackupManager;
         private TournamentManager _tournamentManager;
 
-        public SetupTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager)
+        public SetupTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager) : base("Setup Tournament")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
@@ -26,17 +26,23 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         public Embed SetupTournamentProcess(string tournamentId, TieBreakerType tieBreakerType, RoundRobinType roundRobinType)
         {
+            // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
             {
-                return _embedManager.ErrorEmbed("Setup Tournament", $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
+                return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-
-            // Grab the tournament
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
+            // Check if tournament is Round Robin or not (only Round Robin supported for now)
+            if (!tournament.Type.Equals(TournamentType.RoundRobin))
+            {
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a Round Robin tournament. Only Round Robin tournaments can have their settings changed at the moment.");
+            }
+
+            // Check if tournament is already running
             if (tournament.IsRunning)
             {
-                return _embedManager.ErrorEmbed("Setup Tournament", $"The tournament '{tournament.Name}' is already running. You cannot change its settings now.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is already running. You cannot change its settings now.");
             }
 
             // Change tie breaker logic to choosen type

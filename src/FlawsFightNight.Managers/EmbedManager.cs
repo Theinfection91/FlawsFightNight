@@ -393,6 +393,8 @@ namespace FlawsFightNight.Managers
         {
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    return LadderCreateTournamentSuccess(tournament);
                 case TournamentType.RoundRobin:
                     return RoundRobinCreateTournamentSuccess(tournament);
                 default:
@@ -418,6 +420,19 @@ namespace FlawsFightNight.Managers
             var embed = new EmbedBuilder()
                 .WithTitle("🎉 Round Robin Tournament Created")
                 .WithDescription($"A Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember the following Tournament ID for future commands.\n\nDefault tie breaker rules are 'Traditional' and the default duration is set to 'Double Round Robin'. To change either of these settings, use /tournament setup anytime before starting the tournament.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .WithColor(Color.Green)
+                .WithFooter("Let's get some teams registered to this tournament now.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed LadderCreateTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🎉 Ladder Tournament Created")
+                .WithDescription($"A Ladder tournament named **{tournament.Name}** has been successfully created!\n\nRemember the following Tournament ID for future commands.\n\nUnlike Round Robin and Elimination tournaments, there are no rounds and teams may be added or dropped at any time by an admin.")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Match Format", tournament.TeamSizeFormat)
                 .WithColor(Color.Green)
@@ -455,11 +470,27 @@ namespace FlawsFightNight.Managers
         {
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    return LadderStartTournamentSuccess(tournament);
                 case TournamentType.RoundRobin:
                     return RoundRobinStartTournamentSuccess(tournament);
                 default:
                     return ErrorEmbed("Unsupported tournament type.");
             }
+        }
+
+        private Embed LadderStartTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🏆 Tournament Started")
+                .WithDescription($"The Ladder tournament **{tournament.Name}** has been successfully started!")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .AddField("Total Teams", tournament.Teams.Count)
+                .WithColor(Color.Green)
+                .WithFooter("Good luck to all teams!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
         }
 
         private Embed RoundRobinStartTournamentSuccess(Tournament tournament)
@@ -481,11 +512,27 @@ namespace FlawsFightNight.Managers
         {
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    return LadderEndTournamentSuccess(tournament, winner);
                 case TournamentType.RoundRobin:
                     return RoundRobinEndTournamentSuccess(tournament, winner);
                 default:
                     return ErrorEmbed("Unsupported tournament type.");
             }
+        }
+
+        private Embed LadderEndTournamentSuccess(Tournament tournament, string winner)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🏁 Tournament Ended")
+                .WithDescription($"The Ladder tournament **{tournament.Name}** has ended and a winner has been declared!")
+                .AddField("Winner", $"{winner}")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Total Teams", tournament.Teams.Count)
+                .WithColor(Color.Green)
+                .WithFooter("Thank you for participating!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
         }
 
         private Embed RoundRobinEndTournamentSuccess(Tournament tournament, string winner)

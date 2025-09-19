@@ -73,7 +73,7 @@ namespace FlawsFightNight.Managers
                 case TournamentType.Ladder:
                     return true; // Ladder tournaments can always accept new teams
                 case TournamentType.RoundRobin:
-                    return tournament.IsTeamsLocked;
+                    return !tournament.IsTeamsLocked;
                 case TournamentType.SingleElimination:
                 case TournamentType.DoubleElimination:
                     return !tournament.IsRunning; // SE/DE tournaments cannot accept new teams once they start

@@ -25,29 +25,39 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         public Embed DeleteTournamentProcess(string tournamentId)
         {
+            // Grab tournament, modal should have ensured it exists
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
+
+            // Check if tournament is running
             if (tournament.IsRunning)
             {
                 return _embedManager.ErrorEmbed(Name, "Cannot delete a tournament that is currently running. End the tournament and try again.");
             }
+
+            // Handle different tournament types
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    return LadderDeleteTournament(tournament);
                 case TournamentType.RoundRobin:
                     return RoundRobinDeleteTournament(tournament);
+                default:
+                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for deletion yet.");
             }
-            return _embedManager.ErrorEmbed(Name, "Tournament type not supported for deletion yet.");
         }
 
-        public Embed LadderDeleteTournament(Tournament tournament)
+        private Embed LadderDeleteTournament(Tournament tournament)
         {
             // Ladder tournaments can be deleted if not running, no extra checks needed
             _tournamentManager.DeleteTournament(tournament.Id);
+
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
+
             return _embedManager.DeleteTournamentSuccess(tournament);
         }
 
-        public Embed RoundRobinDeleteTournament(Tournament tournament)
+        private Embed RoundRobinDeleteTournament(Tournament tournament)
         {
             if (!tournament.IsRunning && tournament.IsTeamsLocked)
             {

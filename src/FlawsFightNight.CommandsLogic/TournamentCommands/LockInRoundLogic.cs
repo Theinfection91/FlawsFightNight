@@ -51,7 +51,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
         }
 
-        public Embed RoundRobinLockInRoundProcess(Tournament tournament)
+        private Embed RoundRobinLockInRoundProcess(Tournament tournament)
         {
             // Check if the round is complete
             if (!tournament.IsRoundComplete)

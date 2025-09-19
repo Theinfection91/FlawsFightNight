@@ -34,8 +34,8 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
             Tournament tournament = _tournamentManager.CreateTournament(name, tournamentType, teamSize, description);
 
-            // Prevent any tournament types that are not Round Robin for now
-            if (!tournament.Type.Equals(TournamentType.RoundRobin) || !tournament.Type.Equals(TournamentType.Ladder))
+            // Prevent any tournament types that are not Round Robin or Ladder for now
+            if (!tournament.Type.Equals(TournamentType.RoundRobin) && !tournament.Type.Equals(TournamentType.Ladder))
             {
                 return _embedManager.ToDoEmbed("Sorry, but for now only Round Robin or Ladder tournaments may be created and played. Please try again.");
             }
@@ -51,6 +51,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
+            Console.WriteLine($"{tournament.Type.ToString()}");
             return _embedManager.CreateTournamentSuccessResolver(tournament);
         }
     }

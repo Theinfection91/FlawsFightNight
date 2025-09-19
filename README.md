@@ -1,4 +1,4 @@
-# Flaw's Fight Night v0.1.2
+# Flaw's Fight Night v0.2.0
 
 🏆 **The Ultimate Discord Tournament Management Bot** 🏆
 
