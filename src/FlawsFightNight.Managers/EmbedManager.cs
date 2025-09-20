@@ -13,6 +13,23 @@ namespace FlawsFightNight.Managers
     {
         public EmbedManager() { }
 
+        public string GetFormattedTournamentType(Tournament tournament)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.Ladder:
+                    return "Ladder";
+                case TournamentType.RoundRobin:
+                    return "Round Robin";
+                case TournamentType.SingleElimination:
+                    return "Single Elimination";
+                case TournamentType.DoubleElimination:
+                    return "Double Elimination";
+                default:
+                    return "null";
+            }
+        }
+
         public Embed ToDoEmbed(string message = "This feature is not yet implemented.")
         {
             var embed = new EmbedBuilder()
@@ -365,8 +382,9 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🎉 Team Registered Successfully")
-                .WithDescription($"The team **{team.Name}** has been successfully registered in the tournament **{tournament.Name}**!")
+                .WithDescription($"The team **{team.Name}** has been successfully registered in the **{GetFormattedTournamentType(tournament)}** tournament **{tournament.Name}**!")
                 .AddField("Tournament ID", tournament.Id)
+                .AddField("Tournament Type", GetFormattedTournamentType(tournament))
                 .AddField("Members", string.Join(", ", team.Members.Select(m => m.DisplayName)))
                 .WithColor(Color.Green)
                 .WithFooter("Good luck to your team!")

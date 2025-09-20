@@ -51,7 +51,6 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
-            Console.WriteLine($"{tournament.Type.ToString()}");
             return _embedManager.CreateTournamentSuccessResolver(tournament);
         }
     }

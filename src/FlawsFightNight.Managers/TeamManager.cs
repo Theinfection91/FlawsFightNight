@@ -45,7 +45,7 @@ namespace FlawsFightNight.Managers
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
                 {
-                    return false; // Team name already exists in the tournament
+                    return false; // Team name already exists in the database somewhere
                 }
             }
             return true; // Team name is unique across all tournaments
