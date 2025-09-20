@@ -39,13 +39,13 @@ namespace FlawsFightNight.Bot.Modals
             {
                 if (modal.TeamNameOne != modal.TeamNameTwo)
                 {
-                    await RespondAsync(embed: _embedManager.ErrorEmbed("Delete Team", "The Team Names do not match. Please try again. The inputs are case sensitive."), ephemeral: true);
+                    await RespondAsync(embed: _embedManager.ErrorEmbed(modal.Title, "The Team Names do not match. Please try again. The inputs are case sensitive."), ephemeral: true);
                     return;
                 }
 
                 if (!_teamManager.DoesTeamExist(modal.TeamNameOne, true))
                 {
-                    await RespondAsync(embed: _embedManager.ErrorEmbed("Delete Team", $"No team found with the name: {modal.TeamNameOne}. Please check the name and try again. This is also case sensitive."), ephemeral: true);
+                    await RespondAsync(embed: _embedManager.ErrorEmbed(modal.Title, $"No team found with the name: {modal.TeamNameOne}. Please check the name and try again. This is also case sensitive."), ephemeral: true);
                     return;
                 }
                 var result = _deleteTeamLogic.DeleteTeamProcess(modal.TeamNameOne);
@@ -67,13 +67,13 @@ namespace FlawsFightNight.Bot.Modals
             {
                 if (modal.TournamentIdOne != modal.TournamentIdTwo)
                 {
-                    await RespondAsync(embed: _embedManager.ErrorEmbed("Delete Tournament", "The Tournament IDs do not match. Please try again. The inputs are case sensitive so the T must be uppercase."), ephemeral: true);
+                    await RespondAsync(embed: _embedManager.ErrorEmbed(modal.Title, "The Tournament IDs do not match. Please try again. The inputs are case sensitive so the T must be uppercase."), ephemeral: true);
                     return;
                 }
 
                 if (!_tournamentManager.IsTournamentIdInDatabase(modal.TournamentIdOne, true))
                 {
-                    await RespondAsync(embed: _embedManager.ErrorEmbed("Delete Tournament", $"No tournament found with ID: {modal.TournamentIdOne}. Please check the ID and try again. This is also case sensitive and the T must be uppercase."), ephemeral: true);
+                    await RespondAsync(embed: _embedManager.ErrorEmbed(modal.Title, $"No tournament found with ID: {modal.TournamentIdOne}. Please check the ID and try again. This is also case sensitive and the T must be uppercase."), ephemeral: true);
                     return;
                 }
 
@@ -94,13 +94,13 @@ namespace FlawsFightNight.Bot.Modals
             {
                 if (modal.TournamentIdOne != modal.TournamentIdTwo)
                 {
-                    await RespondAsync(embed: _embedManager.ErrorEmbed("End Tournament", "The Tournament IDs do not match. Please try again. The inputs are case sensitive so the T must be uppercase."), ephemeral: true);
+                    await RespondAsync(embed: _embedManager.ErrorEmbed(modal.Title, "The Tournament IDs do not match. Please try again. The inputs are case sensitive so the T must be uppercase."), ephemeral: true);
                     return;
                 }
 
                 if (!_tournamentManager.IsTournamentIdInDatabase(modal.TournamentIdOne, true))
                 {
-                    await RespondAsync(embed: _embedManager.ErrorEmbed("End Tournament", $"No tournament found with ID: {modal.TournamentIdOne}. Please check the ID and try again. This is also case sensitive and the T must be uppercase."), ephemeral: true);
+                    await RespondAsync(embed: _embedManager.ErrorEmbed(modal.Title, $"No tournament found with ID: {modal.TournamentIdOne}. Please check the ID and try again. This is also case sensitive and the T must be uppercase."), ephemeral: true);
                     return;
                 }
                 var result = _endTournamentLogic.EndTournamentProcess(modal.TournamentIdOne);
@@ -120,12 +120,12 @@ namespace FlawsFightNight.Bot.Modals
             {
                 if (modal.TournamentIdOne != modal.TournamentIdTwo)
                 {
-                    await RespondAsync(embed: _embedManager.ErrorEmbed("Start Tournament", "The Tournament IDs do not match. Please try again. The inputs are case sensitive so the T must be uppercase."), ephemeral: true);
+                    await RespondAsync(embed: _embedManager.ErrorEmbed(modal.Title, "The Tournament IDs do not match. Please try again. The inputs are case sensitive so the T must be uppercase."), ephemeral: true);
                     return;
                 }
                 if (!_tournamentManager.IsTournamentIdInDatabase(modal.TournamentIdOne, true))
                 {
-                    await RespondAsync(embed: _embedManager.ErrorEmbed("Start Tournament", $"No tournament found with ID: {modal.TournamentIdOne}. Please check the ID and try again. This is also case sensitive and the T must be uppercase."), ephemeral: true);
+                    await RespondAsync(embed: _embedManager.ErrorEmbed(modal.Title, $"No tournament found with ID: {modal.TournamentIdOne}. Please check the ID and try again. This is also case sensitive and the T must be uppercase."), ephemeral: true);
                     return;
                 }
                 var result = _startTournamentLogic.StartTournamentProcess(modal.TournamentIdOne);
