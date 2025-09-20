@@ -78,7 +78,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
-                var result = _lockTeamsLogic.LockTeamsProcess(Context, tournamentId);
+                var result = _lockTeamsLogic.LockTeamsProcess(tournamentId);
                 await RespondAsync(embed: result);
             }
             catch (Exception ex)

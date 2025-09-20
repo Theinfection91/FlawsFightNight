@@ -32,7 +32,7 @@ namespace FlawsFightNight.Core.Models
         public int? TotalRounds { get; set; } = null;
         public bool IsRoundComplete { get; set; } = false;
         public bool IsRoundLockedIn { get; set; } = false;
-        public bool CanEndTournament => CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
+        public bool CanEndRoundRobinTournament => CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
 
         // Round Robin Specific Properties
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
@@ -55,7 +55,35 @@ namespace FlawsFightNight.Core.Models
             Description = description;
         }
 
-        public void InitiateStartTournament()
+        public bool IsLadderTournamentReadyToStart()
+        {
+            // Need at least 3 teams to start a ladder tournament
+            return Teams.Count >= 3;
+        }
+
+        public void LadderStartTournamentProcess()
+        {
+            IsRunning = true;
+        }
+
+        public void LadderEndTournamentProcess()
+        {
+            IsRunning = false;
+        }
+
+        public Team LadderGetRankOneTeam()
+        {
+            // Return null if no teams exist
+            if (Teams == null || Teams.Count == 0)
+            {
+                return null;
+            }
+
+            // Return the team with Rank 1
+            return Teams.FirstOrDefault(t => t.Rank == 1);
+        }
+
+        public void RoundRobinStartTournamentProcess()
         {
             CurrentRound = 1;
             IsRunning = true;
@@ -63,7 +91,7 @@ namespace FlawsFightNight.Core.Models
             CanTeamsBeUnlocked = false;
         }
 
-        public void InitiateEndTournament()
+        public void RoundRobinEndTournamentProcess()
         {
             IsRunning = false;
             IsTeamsLocked = false;

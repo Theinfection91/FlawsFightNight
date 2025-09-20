@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
@@ -28,8 +29,22 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            Tournament? tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
+            // Handle different tournament types
+            switch (tournament.Type)
+            {
+                case TournamentType.Ladder:
+                    return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is a Ladder tournament and does not have rounds.");
+                case TournamentType.RoundRobin:
+                    return RoundRobinNextRoundProcess(tournament);
+                default:
+                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for advancing rounds yet.");
+            }
+        }
+
+        private Embed RoundRobinNextRoundProcess(Tournament tournament)
+        {
             // Check if the round is complete
             if (!tournament.IsRoundComplete)
             {
@@ -42,7 +57,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"The round for tournament '{tournament.Name}' is not locked in.");
             }
 
-            if (tournament.CanEndTournament)
+            if (tournament.CanEndRoundRobinTournament)
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is ready to end so you cannot go to the next round. Please use the appropriate command to end it.");
             }

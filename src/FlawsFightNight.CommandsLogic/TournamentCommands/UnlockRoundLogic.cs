@@ -1,4 +1,6 @@
 ﻿using Discord;
+using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -27,9 +29,22 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
+            // Handle different tournament types
+            switch (tournament.Type)
+            {
+                case TournamentType.Ladder:
+                    return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is a Ladder tournament and does not have rounds to unlock.");
+                case TournamentType.RoundRobin:
+                    return RoundRobinUnlockRoundProcess(tournament);
+                default:
+                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for unlocking rounds yet.");
+            }
+        }
+
+        private Embed RoundRobinUnlockRoundProcess(Tournament tournament)
+        {
             // Check if tournament is already running
             if (!tournament.IsRunning)
             {
