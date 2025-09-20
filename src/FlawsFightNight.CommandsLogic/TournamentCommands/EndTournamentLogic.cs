@@ -54,6 +54,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Ladder tournaments can be ended anytime
             tournament.LadderEndTournamentProcess();
 
+            // TODO - Replace with better system of grabbing Ladder winner
             // Grab winner (top ranked team)
             string winnerName = tournament.LadderGetRankOneTeam().Name;
 
