@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.CommandsLogic.TeamCommands
 {
-    public class RemoveLossLogic : Logic
+    public class RemoveTeamLossLogic : Logic
     {
-        public RemoveLossLogic() : base("Remove Loss")
+        public RemoveTeamLossLogic() : base("Remove Loss")
         {
 
         }

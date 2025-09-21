@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.CommandsLogic.TeamCommands
 {
-    public class RemoveWinLogic : Logic
+    public class RemoveTeamWinLogic : Logic
     {
-        public RemoveWinLogic() : base("Remove Win")
+        public RemoveTeamWinLogic() : base("Remove Win")
         {
 
         }

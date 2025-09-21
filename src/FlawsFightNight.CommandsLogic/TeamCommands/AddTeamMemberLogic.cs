@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.CommandsLogic.TeamCommands
 {
-    public class AddMemberLogic : Logic
+    public class AddTeamMemberLogic : Logic
     {
-        public AddMemberLogic() : base("Add Member")
+        public AddTeamMemberLogic() : base("Add Member")
         {
 
         }

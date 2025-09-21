@@ -56,11 +56,11 @@ namespace FlawsFightNight.Bot
                     ////////////////////////////////
 
                     services.AddSingleton<AddTeamLossLogic>();
-                    services.AddSingleton<AddWinLogic>();
-                    services.AddSingleton<AddMemberLogic>();
-                    services.AddSingleton<RemoveLossLogic>();
-                    services.AddSingleton<RemoveWinLogic>();
-                    services.AddSingleton<RemoveMemberLogic>();
+                    services.AddSingleton<AddTeamWinLogic>();
+                    services.AddSingleton<AddTeamMemberLogic>();
+                    services.AddSingleton<RemoveTeamLossLogic>();
+                    services.AddSingleton<RemoveTeamWinLogic>();
+                    services.AddSingleton<RemoveTeamMemberLogic>();
                     services.AddSingleton<AddDebugAdminLogic>();
                     services.AddSingleton<CancelChallengeLogic>();
                     services.AddSingleton<CreateTournamentLogic>();

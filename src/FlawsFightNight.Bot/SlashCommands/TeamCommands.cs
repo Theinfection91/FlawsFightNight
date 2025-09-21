@@ -15,11 +15,11 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class TeamCommands : InteractionModuleBase<SocketInteractionContext>
     {
         
-        private RemoveLossLogic _removeLossLogic;
+        private RemoveTeamLossLogic _removeLossLogic;
 
-        private RemoveWinLogic _removeWinLogic;
+        private RemoveTeamWinLogic _removeWinLogic;
 
-        private RemoveMemberLogic _removeMemberLogic;
+        private RemoveTeamMemberLogic _removeMemberLogic;
         private RegisterTeamLogic _registerTeamLogic;
 
         public TeamCommands(RegisterTeamLogic registerTeamLogic)
@@ -108,9 +108,9 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class TeamAddCommands : InteractionModuleBase<SocketInteractionContext>
         {
             private AddTeamLossLogic _addTeamLossLogic;
-            private AddWinLogic _addTeamWinLogic;
-            private AddMemberLogic _addTeamMemberLogic;
-            public TeamAddCommands(AddTeamLossLogic addTeamLossLogic, AddWinLogic addTeamWinLogic, AddMemberLogic addTeamMemberLogic)
+            private AddTeamWinLogic _addTeamWinLogic;
+            private AddTeamMemberLogic _addTeamMemberLogic;
+            public TeamAddCommands(AddTeamLossLogic addTeamLossLogic, AddTeamWinLogic addTeamWinLogic, AddTeamMemberLogic addTeamMemberLogic)
             {
                 _addTeamLossLogic = addTeamLossLogic;
                 _addTeamWinLogic = addTeamWinLogic;
