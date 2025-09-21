@@ -55,7 +55,7 @@ namespace FlawsFightNight.Bot
                      //    ==-Command Logic-==     //
                     ////////////////////////////////
 
-                    services.AddSingleton<AddLossLogic>();
+                    services.AddSingleton<AddTeamLossLogic>();
                     services.AddSingleton<AddWinLogic>();
                     services.AddSingleton<AddMemberLogic>();
                     services.AddSingleton<RemoveLossLogic>();

@@ -16,12 +16,7 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("tournament", "Commands related to tournaments like creating, removal, etc.")]
     public class TournamentCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        private AddLossLogic _addLossLogic;
-        private RemoveLossLogic _removeLossLogic;
-        private AddWinLogic _addWinLogic;
-        private RemoveWinLogic _removeWinLogic;
-        private AddMemberLogic _addMemberLogic;
-        private RemoveMemberLogic _removeMemberLogic;
+        
         private CreateTournamentLogic _createTournamentLogic;
         private LockInRoundLogic _lockInRoundLogic;
         private LockTeamsLogic _lockTeamsLogic;
@@ -31,14 +26,8 @@ namespace FlawsFightNight.Bot.SlashCommands
         private UnlockRoundLogic _unlockRoundLogic;
         private UnlockTeamsLogic _unlockTeamsLogic;
 
-        public TournamentCommands(AddLossLogic addLossLogic, RemoveLossLogic removeLossLogic, AddWinLogic addWinLogic, RemoveWinLogic removeWinLogic, AddMemberLogic addMemberLogic, RemoveMemberLogic removeMemberLogic, CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupTournamentLogic setupTournamentLogic, ShowAllTournamentsLogic showAllTournamentsLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
+        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupTournamentLogic setupTournamentLogic, ShowAllTournamentsLogic showAllTournamentsLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
         {
-            _addLossLogic = addLossLogic;
-            _removeLossLogic = removeLossLogic;
-            _addWinLogic = addWinLogic;
-            _removeWinLogic = removeWinLogic;
-            _addMemberLogic = addMemberLogic;
-            _removeMemberLogic = removeMemberLogic;
             _createTournamentLogic = createTournamentLogic;
             _lockInRoundLogic = lockInRoundLogic;
             _lockTeamsLogic = lockTeamsLogic;

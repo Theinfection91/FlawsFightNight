@@ -404,6 +404,19 @@ namespace FlawsFightNight.Managers
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
+
+        public Embed AddTeamLossSuccess(Team team, Tournament tournament, int numberOfLosses)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("❌ Team Loss Recorded Successfully")
+                .WithDescription($"The team **{team.Name}** has been assigned **{numberOfLosses}** loss(es) in the tournament **{tournament.Name}**.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Total Losses", team.Losses)
+                .WithColor(Color.Green)
+                .WithFooter("The team's losses have been updated.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
         #endregion
 
         #region Tournament Embeds

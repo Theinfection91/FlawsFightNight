@@ -14,6 +14,12 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("team", "Commands related to teams like creating, removal, etc.")]
     public class TeamCommands : InteractionModuleBase<SocketInteractionContext>
     {
+        
+        private RemoveLossLogic _removeLossLogic;
+
+        private RemoveWinLogic _removeWinLogic;
+
+        private RemoveMemberLogic _removeMemberLogic;
         private RegisterTeamLogic _registerTeamLogic;
 
         public TeamCommands(RegisterTeamLogic registerTeamLogic)
@@ -101,12 +107,18 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("add", "Commands related to addings things to a team.")]
         public class TeamAddCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            public TeamAddCommands()
+            private AddTeamLossLogic _addTeamLossLogic;
+            private AddWinLogic _addTeamWinLogic;
+            private AddMemberLogic _addTeamMemberLogic;
+            public TeamAddCommands(AddTeamLossLogic addTeamLossLogic, AddWinLogic addTeamWinLogic, AddMemberLogic addTeamMemberLogic)
             {
-
+                _addTeamLossLogic = addTeamLossLogic;
+                _addTeamWinLogic = addTeamWinLogic;
+                _addTeamMemberLogic = addTeamMemberLogic;
             }
 
             [SlashCommand("member", "Add a member to an existing team.")]
+            [RequireGuildAdmin]
             public async Task AddMemberAsync(
                 [Summary("team_name", "The name of the team to add a member to.")] string teamName,
                 [Summary("member", "The member to add to the team.")] IUser member)
@@ -125,6 +137,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("win", "Admin command - Add number of wins to a team.")]
+            [RequireGuildAdmin]
             public async Task AddWinAsync(
                 [Summary("team_name", "The name of the team to add wins.")] string teamName,
                 [Summary("number_of_wins", "The amount of wins to add.")] int number_of_wins)
@@ -143,15 +156,15 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("loss", "Admin command - Add number of losses to a team.")]
+            [RequireGuildAdmin]
             public async Task AddLossAsync(
                 [Summary("team_name", "The name of the team to add losses.")] string teamName,
                 [Summary("number_of_losses", "The amount of losses to add.")] int number_of_losses)
             {
                 try
                 {
-                    //var result = ;
-                    //await RespondAsync(embed: result);
-                    await RespondAsync("Not yet implemented.");
+                    var result = _addTeamLossLogic.AddLossProcess(teamName, number_of_losses);
+                    await RespondAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
@@ -170,6 +183,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("member", "Add a member to an existing team.")]
+            [RequireGuildAdmin]
             public async Task AddMemberAsync(
                 [Summary("team_name", "The name of the team to add a member to.")] string teamName,
                 [Summary("member", "The member to add to the team.")] IUser member)
@@ -188,6 +202,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("win", "Admin command - Add number of wins to a team.")]
+            [RequireGuildAdmin]
             public async Task AddWinAsync(
                 [Summary("team_name", "The name of the team to add wins.")] string teamName,
                 [Summary("number_of_wins", "The amount of wins to add.")] int number_of_wins)
@@ -206,6 +221,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("loss", "Admin command - Add number of losses to a team.")]
+            [RequireGuildAdmin]
             public async Task AddLossAsync(
                 [Summary("team_name", "The name of the team to add losses.")] string teamName,
                 [Summary("number_of_losses", "The amount of losses to add.")] int number_of_losses)
