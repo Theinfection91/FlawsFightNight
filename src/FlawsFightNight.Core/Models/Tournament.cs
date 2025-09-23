@@ -37,6 +37,7 @@ namespace FlawsFightNight.Core.Models
         // Round Robin Specific Properties
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
         public bool IsDoubleRoundRobin { get; set; } = true;
+        public RoundRobinMatchType RoundRobinMatchType { get; set; } = RoundRobinMatchType.Normal;
 
         // Discord Channel ID's for LiveView
         public ulong MatchesChannelId { get; set; } = 0;

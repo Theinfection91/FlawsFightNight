@@ -19,12 +19,12 @@ namespace FlawsFightNight.Bot.SlashCommands
         private LockInRoundLogic _lockInRoundLogic;
         private LockTeamsLogic _lockTeamsLogic;
         private NextRoundLogic _nextRoundLogic;
-        private SetupTournamentLogic _setupTournamentLogic;
+        private SetupRoundRobinTournamentLogic _setupTournamentLogic;
         private ShowAllTournamentsLogic _showAllTournamentsLogic;
         private UnlockRoundLogic _unlockRoundLogic;
         private UnlockTeamsLogic _unlockTeamsLogic;
 
-        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupTournamentLogic setupTournamentLogic, ShowAllTournamentsLogic showAllTournamentsLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
+        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupRoundRobinTournamentLogic setupTournamentLogic, ShowAllTournamentsLogic showAllTournamentsLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
         {
             _createTournamentLogic = createTournamentLogic;
             _lockInRoundLogic = lockInRoundLogic;
@@ -120,16 +120,17 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
         }
 
-        [SlashCommand("setup", "Setup a tournaments rules and habits before starting it.")]
+        [SlashCommand("setup_round_robin", "Setup a RR tournaments rules and habits before starting it.")]
         [RequireGuildAdmin]
         public async Task SetupTournamentAsync(
             [Summary("tournament_id", "The ID of the tournament to setup")] string tournamentId,
+            [Summary("match_type", "")] RoundRobinMatchType matchType,
             [Summary("tie_breaker_ruleset", "The ruleset to use for tie breakers")] TieBreakerType tieBreakerType,
-            [Summary("is_double_round_robin", "Whether the tournament is a double round robin (only for Round Robin type)")] RoundRobinLengthType roundRobinType)
+            [Summary("length", "Whether the tournament is a double or single round robin")] RoundRobinLengthType roundRobinType)
         {
             try
             {
-                var result = _setupTournamentLogic.SetupTournamentProcess(tournamentId, tieBreakerType, roundRobinType);
+                var result = _setupTournamentLogic.SetupRoundRobinTournamentProcess(tournamentId, matchType, tieBreakerType, roundRobinType);
                 await RespondAsync(embed: result);
             }
             catch (Exception ex)
