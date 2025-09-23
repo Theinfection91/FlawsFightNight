@@ -503,7 +503,18 @@ namespace FlawsFightNight.Managers
                     break;
 
                 case TournamentType.RoundRobin:
-                    BuildRoundRobinMatchSchedule(tournament, tournament.IsDoubleRoundRobin);
+                    switch (tournament.RoundRobinMatchType)
+                    {
+                        case RoundRobinMatchType.Normal:
+                            BuildNormalRoundRobinMatchSchedule(tournament, tournament.IsDoubleRoundRobin);
+                            break;
+                        case RoundRobinMatchType.Open:
+                            BuildOpenRoundRobinMatchSchedule(tournament, tournament.IsDoubleRoundRobin);
+                            break;
+                        default:
+                            //Console.WriteLine($"Match schedule resolver not implemented for round robin match type: {tournament.RoundRobinMatchType}");
+                            break;
+                    }
                     break;
 
                 default:
@@ -512,7 +523,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public void BuildRoundRobinMatchSchedule(Tournament tournament, bool isDoubleRoundRobin = true)
+        public void BuildNormalRoundRobinMatchSchedule(Tournament tournament, bool isDoubleRoundRobin = true)
         {
             const int maxRetries = 10;
             int attempt = 0;
@@ -584,7 +595,7 @@ namespace FlawsFightNight.Managers
                     }
                 }
 
-                if (ValidateRoundRobin(tournament, isDoubleRoundRobin))
+                if (ValidateNormalRoundRobin(tournament, isDoubleRoundRobin))
                 {
                     tournament.TotalRounds = tournament.MatchLog.MatchesToPlayByRound.Count;
                     break;
@@ -600,7 +611,12 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private bool ValidateRoundRobin(Tournament tournament, bool isDoubleRoundRobin)
+        public void BuildOpenRoundRobinMatchSchedule(Tournament tournament, bool isDoubleRoundRobin = true)
+        {
+            
+        }
+
+        private bool ValidateNormalRoundRobin(Tournament tournament, bool isDoubleRoundRobin)
         {
             var teams = tournament.Teams.Select(t => t.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
