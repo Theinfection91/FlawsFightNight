@@ -16,8 +16,10 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
         private TeamManager _teamManager;
         private TournamentManager _tournamentManager;
 
-        public AddTeamLossLogic(TeamManager teamManager, TournamentManager tournamentManager) : base("Add Loss")
+        public AddTeamLossLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Add Loss")
         {
+            _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _teamManager = teamManager;
             _tournamentManager = tournamentManager;
         }
