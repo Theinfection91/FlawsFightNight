@@ -24,7 +24,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed SetupTournamentProcess(string tournamentId, TieBreakerType tieBreakerType, RoundRobinType roundRobinType)
+        public Embed SetupTournamentProcess(string tournamentId, TieBreakerType tieBreakerType, RoundRobinLengthType roundRobinType)
         {
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
             {
@@ -50,10 +50,10 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Change round robin type
            switch (roundRobinType)
             {
-                case RoundRobinType.Single:
+                case RoundRobinLengthType.Single:
                     tournament.IsDoubleRoundRobin = false;
                     break;
-                case RoundRobinType.Double:
+                case RoundRobinLengthType.Double:
                     tournament.IsDoubleRoundRobin = true;
                     break;
             }

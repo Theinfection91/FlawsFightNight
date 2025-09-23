@@ -443,7 +443,7 @@ namespace FlawsFightNight.Managers
                 .WithDescription($"The Round Robin tournament **{tournament.Name}** has been successfully updated.")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Tie Breaker Rules", tournament.TieBreakerRule.Name)
-                .AddField("Round Robin Type", tournament.IsDoubleRoundRobin ? RoundRobinType.Double : RoundRobinType.Single)
+                .AddField("Round Robin Type", tournament.IsDoubleRoundRobin ? RoundRobinLengthType.Double : RoundRobinLengthType.Single)
                 .WithColor(Color.Green)
                 .WithFooter("You can change the settings again anytime before starting.")
                 .WithTimestamp(DateTimeOffset.Now);
