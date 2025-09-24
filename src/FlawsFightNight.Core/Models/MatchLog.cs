@@ -8,8 +8,13 @@ namespace FlawsFightNight.Core.Models
 {
     public class MatchLog
     {
+        // Normal Round Robin Properties
         public Dictionary<int, List<Match>> MatchesToPlayByRound { get; set; } = [];
         public Dictionary<int, List<PostMatch>> PostMatchesByRound { get; set; } = [];
+
+        // Open Round Robin Properties
+        public List<Match> OpenRoundRobinMatchesToPlay { get; set; } = [];
+        public List<PostMatch> OpenRoundRobinPostMatches { get; set; } = [];
 
         public MatchLog() { }
 
