@@ -61,6 +61,7 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool IsMatchIdInDatabase(string matchId)
         {
+            // Check Normal Round Robin
             foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
@@ -81,6 +82,24 @@ namespace FlawsFightNight.Managers
                         {
                             return true; // Match ID found
                         }
+                    }
+                }
+            }
+            // Check Open Round Robin
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
+                {
+                    if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true; // Match ID found
+                    }
+                }
+                foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
+                {
+                    if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true; // Match ID found
                     }
                 }
             }
@@ -531,7 +550,7 @@ namespace FlawsFightNight.Managers
             while (attempt < maxRetries)
             {
                 attempt++;
-                ClearMatchSchedule(tournament);
+                ClearNormalMatchSchedule(tournament);
 
                 var teams = tournament.Teams.Select(t => t.Name).ToList();
                 bool hasBye = false;
@@ -613,7 +632,69 @@ namespace FlawsFightNight.Managers
 
         public void BuildOpenRoundRobinMatchSchedule(Tournament tournament, bool isDoubleRoundRobin = true)
         {
-            
+            var teams = tournament.Teams.Select(t => t.Name).ToList();
+            bool hasBye = false;
+            const string byePlaceholder = "BYE";
+            if (teams.Count % 2 != 0)
+            {
+                hasBye = true;
+                teams.Add(byePlaceholder);
+            }
+            int numRounds = teams.Count - 1;
+            int half = teams.Count / 2;
+            var rotating = new List<string>(teams); // first element fixed
+
+            // Single Round Robin Logic
+            for (int round = 1; round <= numRounds; round++)
+            {
+                var pairings = new List<Match>();
+                for (int i = 0; i < half; i++)
+                {
+                    string a = rotating[i];
+                    string b = rotating[teams.Count - 1 - i];
+                    if (a == byePlaceholder && b == byePlaceholder) continue;
+
+                    bool isByeMatch = hasBye && (a == byePlaceholder || b == byePlaceholder);
+                    var match = new Match(
+                        a == byePlaceholder ? "BYE" : a,
+                        b == byePlaceholder ? "BYE" : b)
+                    {
+                        Id = GenerateMatchId(),
+                        IsByeMatch = isByeMatch,
+                        RoundNumber = 0,
+                        CreatedOn = DateTime.UtcNow
+                    };
+                    pairings.Add(match);
+                }
+                // Add pairings to the open list
+                foreach (var pairing in pairings)
+                    tournament.MatchLog.OpenRoundRobinMatchesToPlay.Add(pairing);
+
+                // rotate teams, first element fixed
+                var last = rotating[^1];
+                rotating.RemoveAt(rotating.Count - 1);
+                rotating.Insert(1, last);
+            }
+
+            // Double Round Robin Logic
+            if (isDoubleRoundRobin)
+            {
+                int currentMaxRound = tournament.MatchLog.MatchesToPlayByRound.Count;
+
+                var original = tournament.MatchLog.OpenRoundRobinMatchesToPlay;
+                var reversed = original.Select(m => new Match(m.TeamB, m.TeamA)
+                {
+                    Id = GenerateMatchId(),
+                    IsByeMatch = m.IsByeMatch,
+                    RoundNumber = 0,
+                    CreatedOn = DateTime.UtcNow
+                }).ToList();
+
+                // Add reversed to the open list
+                tournament.MatchLog.OpenRoundRobinMatchesToPlay.AddRange(reversed);
+
+                // TODO Need a validation method for open round robin
+            }
         }
 
         private bool ValidateNormalRoundRobin(Tournament tournament, bool isDoubleRoundRobin)
@@ -677,7 +758,7 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public void ClearMatchSchedule(Tournament tournament)
+        public void ClearNormalMatchSchedule(Tournament tournament)
         {
             // Clear the match schedule for the tournament
             tournament.MatchLog.MatchesToPlayByRound.Clear();
@@ -773,7 +854,7 @@ namespace FlawsFightNight.Managers
         {
             foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
-                foreach(var team in tournament.Teams)
+                foreach (var team in tournament.Teams)
                 {
                     foreach (var member in team.Members)
                     {

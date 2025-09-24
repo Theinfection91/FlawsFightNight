@@ -35,7 +35,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
             // Ensure it is a round robin tournament
-            if (tournament.Type.Equals(TournamentType.RoundRobin))
+            if (!tournament.Type.Equals(TournamentType.RoundRobin))
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a Round Robin tournament. This command can only be used for Round Robin tournaments.");
             }

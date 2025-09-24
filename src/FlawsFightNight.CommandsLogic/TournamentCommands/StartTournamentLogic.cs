@@ -85,13 +85,16 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
         private Embed RoundRobinOpenStartTournamentProcess(Tournament tournament)
         {
             // Start the tournament, build schedule without rounds
+            _matchManager.BuildMatchScheduleResolver(tournament);
 
-            // Send out messages, no schedule since it is open
+            // TODO Send out messages, no schedule since it is open
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
+
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
+
             // Return Embed with tournament information
             return _embedManager.StartTournamentSuccessResolver(tournament);
         }
