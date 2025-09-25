@@ -378,28 +378,16 @@ namespace FlawsFightNight.Managers
             return teamsWithMax > 1;
         }
 
+        public bool IsTeamInMatch(Match match, string teamName)
+        {
+            return (!string.IsNullOrEmpty(match.TeamA) && match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
+                   (!string.IsNullOrEmpty(match.TeamB) && match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase));
+        }
         #endregion
 
         #region Gets
-        public Match GetMatchById(string matchId)
-        {
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            {
-                foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
-                {
-                    foreach (var match in round)
-                    {
-                        if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return match; // Match found
-                        }
-                    }
-                }
-            }
-            return null; // Match ID not found
-        }
 
-        public Match GetMatchByIdInTournament(Tournament tournament, string matchId)
+        private Match GetMatchByIdInNormalRoundRobinTournament(Tournament tournament, string matchId)
         {
             foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
             {
@@ -412,6 +400,38 @@ namespace FlawsFightNight.Managers
                 }
             }
             return null; // Match ID not found
+        }
+
+        private Match GetMatchByIdInOpenRoundRobinTournament(Tournament tournament, string matchId)
+        {
+            foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
+            {
+                if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match; // Match found
+                }
+            }
+            return null; // Match ID not found
+        }
+
+        public Match GetMatchByMatchIdResolver(Tournament tournament, string matchId)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.RoundRobin:
+                    switch (tournament.RoundRobinMatchType)
+                    {
+                        case RoundRobinMatchType.Normal:
+                            return GetMatchByIdInNormalRoundRobinTournament(tournament, matchId);
+                        case RoundRobinMatchType.Open:
+                            return GetMatchByIdInOpenRoundRobinTournament(tournament, matchId);
+                        default:
+                            //Console.WriteLine($"Match retrieval not implemented for round robin match type: {tournament.RoundRobinMatchType}");
+                            return null;
+                    }
+                default:
+                    return null;
+            }
         }
 
         public Match GetMatchByTeamNameResolver(Tournament tournament, string teamName)

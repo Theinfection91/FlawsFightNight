@@ -12,14 +12,14 @@ using Discord.WebSocket;
 
 namespace FlawsFightNight.CommandsLogic.MatchCommands
 {
-    public class ReportWinLogic : Logic
+    public class ReportRoundRobinWinLogic : Logic
     {
         private EmbedManager _embedManager;
         private GitBackupManager _gitBackupManager;
         private MatchManager _matchManager;
         private TeamManager _teamManager;
         private TournamentManager _tournamentManager;
-        public ReportWinLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Report Win")
+        public ReportRoundRobinWinLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Report Win")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
@@ -28,7 +28,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed ReportWinProcess(SocketInteractionContext context, string winningTeamName, int winningTeamScore, int losingTeamScore)
+        public Embed ReportRoundRobinWinProcess(SocketInteractionContext context, string matchId, string winningTeamName, int winningTeamScore, int losingTeamScore)
         {
             if (losingTeamScore > winningTeamScore)
             {
@@ -55,15 +55,30 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
             }
 
+            // Check if match exists in database
+            if (!_matchManager.IsMatchIdInDatabase(matchId))
+            {
+                return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' does not exist.");
+            }
+
+            // Grab the match associated with report
+            Match match = _matchManager.GetMatchByMatchIdResolver(tournament, matchId);
+
+            // Check if team is part of the match
+            if (!_matchManager.IsTeamInMatch(match, winningTeamName))
+            {
+                return _embedManager.ErrorEmbed(Name, $"The team '{winningTeamName}' is not part of the match with ID '{matchId}'.");
+            }
+
             switch (tournament.Type)
             {
                 case TournamentType.RoundRobin:
                     switch (tournament.RoundRobinMatchType)
                     {
                         case RoundRobinMatchType.Normal:
-                            return RoundRobinNormalReportWinProcess(context, winningTeamName, winningTeamScore, losingTeamScore, tournament);
+                            return RoundRobinNormalReportWinProcess(context, winningTeamName, winningTeamScore, losingTeamScore, tournament, match);
                         case RoundRobinMatchType.Open:
-                            return RoundRobinOpenReportWinProcess(context, winningTeamName, winningTeamScore, losingTeamScore, tournament);
+                            return RoundRobinOpenReportWinProcess(context, winningTeamName, winningTeamScore, losingTeamScore, tournament, match);
                         default:
                             return _embedManager.ErrorEmbed(Name, "The Round Robin match type is not recognized.");
                     }
@@ -77,7 +92,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
         }
 
-        private Embed RoundRobinNormalReportWinProcess(SocketInteractionContext context, string winningTeamName, int winningTeamScore, int losingTeamScore, Tournament tournament)
+        private Embed RoundRobinNormalReportWinProcess(SocketInteractionContext context, string winningTeamName, int winningTeamScore, int losingTeamScore, Tournament tournament, Match match)
         {
             // Check if the tournament is Normal Round Robin and the round is marked complete
             if (tournament.IsRoundComplete)
@@ -90,9 +105,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"The team '{winningTeamName}' does not have a match scheduled.");
             }
-
-            // Grab the match associated with report
-            Match match = _matchManager.GetMatchByTeamNameResolver(tournament, winningTeamName);
 
             // Grab the winning team
             Team? winningTeam = _teamManager.GetTeamByName(tournament, winningTeamName);
@@ -140,16 +152,13 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin);
         }
 
-        private Embed RoundRobinOpenReportWinProcess(SocketInteractionContext context, string winningTeamName, int winningTeamScore, int losingTeamScore, Tournament tournament)
+        private Embed RoundRobinOpenReportWinProcess(SocketInteractionContext context, string winningTeamName, int winningTeamScore, int losingTeamScore, Tournament tournament, Match match)
         {
             // Check if the team has a match scheduled
             if (!_matchManager.IsMatchMadeForTeamResolver(tournament, winningTeamName))
             {
                 return _embedManager.ErrorEmbed(Name, $"The team '{winningTeamName}' does not have a match scheduled.");
             }
-
-            // Grab the match associated with report
-            Match match = _matchManager.GetMatchByTeamNameResolver(tournament, winningTeamName);
 
             // Grab the winning team
             Team? winningTeam = _teamManager.GetTeamByName(tournament, winningTeamName);
@@ -180,6 +189,15 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 // Convert to Open Post-Match
                 _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, 0, "BYE", 0, match.IsByeMatch);
             }
+
+            // Adjust ranks of remaining teams
+            tournament.SetRanksByTieBreakerLogic();
+
+            // Save and reload the tournament database
+            _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
 
             return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin);
         }

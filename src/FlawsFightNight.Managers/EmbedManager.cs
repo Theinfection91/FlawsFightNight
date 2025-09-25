@@ -329,6 +329,7 @@ namespace FlawsFightNight.Managers
                 .AddField("Winning Team (Score)", $"{winningTeam.Name} ({winningTeamScore})", true)
                 .AddField("Losing Team (Score)", $"{losingTeam.Name} ({losingTeamScore})", true)
                 .AddField("Tournament ID", tournament.Id, false)
+                .AddField("Match ID", match.Id, false)
                 .WithColor(Color.Green)
                 .WithFooter("Match result reported successfully.")
                 .WithTimestamp(DateTimeOffset.Now);
