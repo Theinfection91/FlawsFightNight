@@ -156,8 +156,29 @@ namespace FlawsFightNight.Managers
             return (!string.IsNullOrEmpty(postMatch.Winner) && postMatch.Winner.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
                    (!string.IsNullOrEmpty(postMatch.Loser) && postMatch.Loser.Equals(teamName, StringComparison.OrdinalIgnoreCase));
         }
+        // TODO Turn into switch resolver for different tournament types
+        public bool IsMatchMadeForTeamResolver(Tournament tournament, string teamName)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.RoundRobin:
+                    switch (tournament.RoundRobinMatchType)
+                    {
+                        case RoundRobinMatchType.Normal:
+                            return IsMatchMadeForTeamNormalRoundRobin(tournament, teamName);
+                        case RoundRobinMatchType.Open:
+                            // Open round robin does not have scheduled matches
+                            return IsMatchMadeForTeamOpenRoundRobin(tournament, teamName);
+                        default:
+                            //Console.WriteLine($"Match check not implemented for round robin match type: {tournament.RoundRobinMatchType}");
+                            return false;
+                    }
+                default:
+                    return false;
+            }
+        }
 
-        public bool IsMatchMadeForTeam(Tournament tournament, string teamName)
+        private bool IsMatchMadeForTeamNormalRoundRobin(Tournament tournament, string teamName)
         {
             if (tournament == null)
             {
@@ -218,6 +239,51 @@ namespace FlawsFightNight.Managers
             }
 
             //Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
+            return false;
+        }
+
+        private bool IsMatchMadeForTeamOpenRoundRobin(Tournament tournament, string teamName)
+        {
+            if (tournament == null)
+            {
+                //Console.WriteLine("Tournament is null.");
+                return false;
+            }
+
+            if (tournament.MatchLog == null)
+            {
+                //Console.WriteLine("MatchLog is null.");
+                return false;
+            }
+
+            if (tournament.MatchLog.OpenRoundRobinMatchesToPlay == null)
+            {
+                //Console.WriteLine("OpenRoundRobinMatchesToPlay is null.");
+                return false;
+            }
+
+            foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
+            {
+                if (match == null)
+                {
+                    //Console.WriteLine("Encountered null match in list, skipping.");
+                    continue;
+                }
+                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+                if (!string.IsNullOrEmpty(match.TeamA) &&
+                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    //Console.WriteLine($"Match found for team '{teamName}' as TeamA in open round robin.");
+                    return true;
+                }
+                if (!string.IsNullOrEmpty(match.TeamB) &&
+                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    //Console.WriteLine($"Match found for team '{teamName}' as TeamB in open round robin.");
+                    return true;
+                }
+            }
+            //Console.WriteLine($"No match found for team '{teamName}' in open round robin.");
             return false;
         }
 
@@ -348,7 +414,27 @@ namespace FlawsFightNight.Managers
             return null; // Match ID not found
         }
 
-        public Match GetMatchByTeamName(Tournament tournament, string teamName)
+        public Match GetMatchByTeamNameResolver(Tournament tournament, string teamName)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.RoundRobin:
+                    switch (tournament.RoundRobinMatchType)
+                    {
+                        case RoundRobinMatchType.Normal:
+                            return GetMatchByTeamNameNormalRoundRobin(tournament, teamName);
+                        case RoundRobinMatchType.Open:
+                            return GetMatchByTeamNameOpenRoundRobin(tournament, teamName);
+                        default:
+                            //Console.WriteLine($"Match retrieval not implemented for round robin match type: {tournament.RoundRobinMatchType}");
+                            return null;
+                    }
+                default:
+                    return null;
+            }
+        }
+
+        private Match GetMatchByTeamNameNormalRoundRobin(Tournament tournament, string teamName)
         {
             int currentRound = tournament.CurrentRound;
             //Console.WriteLine($"Looking in round: {currentRound}");
@@ -389,6 +475,31 @@ namespace FlawsFightNight.Managers
             }
 
             //Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
+            return null;
+        }
+
+        private Match GetMatchByTeamNameOpenRoundRobin(Tournament tournament, string teamName)
+        {
+            foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
+            {
+                if (match == null)
+                {
+                    //Console.WriteLine("Encountered null match in list, skipping.");
+                    continue;
+                }
+                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+                if (!string.IsNullOrEmpty(match.TeamA) &&
+                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+                if (!string.IsNullOrEmpty(match.TeamB) &&
+                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+            }
+            //Console.WriteLine($"No match found for team '{teamName}' in open round robin.");
             return null;
         }
 
@@ -770,7 +881,31 @@ namespace FlawsFightNight.Managers
             return new PostMatch(matchId, winningTeamName, winnerScore, losingTeamName, loserScore, originalCreationDateTime, wasByeMatch);
         }
 
-        public void ConvertMatchToPostMatch(Tournament tournament, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, bool wasByeMatch = false)
+        public void ConvertMatchToPostMatchResolver(Tournament tournament, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, bool wasByeMatch = false)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.RoundRobin:
+                    switch (tournament.RoundRobinMatchType)
+                    {
+                        case RoundRobinMatchType.Normal:
+                            ConvertMatchToPostMatchNormalRoundRobin(tournament, match, winningTeamName, winnerScore, losingTeamName, loserScore, wasByeMatch);
+                            break;
+                        case RoundRobinMatchType.Open:
+                            ConvertMatchToPostMatchOpenRoundRobin(tournament, match, winningTeamName, winnerScore, losingTeamName, loserScore, wasByeMatch);
+                            break;
+                        default:
+                            //Console.WriteLine($"Match conversion not implemented for round robin match type: {tournament.RoundRobinMatchType}");
+                            break;
+                    }
+                    break;
+                default:
+                    //Console.WriteLine($"Match conversion not implemented for tournament type: {tournament.Type}");
+                    break;
+            }
+        }
+
+        private void ConvertMatchToPostMatchNormalRoundRobin(Tournament tournament, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, bool wasByeMatch = false)
         {
             if (!tournament.MatchLog.MatchesToPlayByRound.ContainsKey(match.RoundNumber))
             {
@@ -800,15 +935,26 @@ namespace FlawsFightNight.Managers
             {
                 tournament.MatchLog.MatchesToPlayByRound.Remove(match.RoundNumber);
 
-                switch (tournament.Type)
-                {
-                    case TournamentType.RoundRobin:
-                        // If this was the last round, set IsRoundComplete to true
-                        tournament.IsRoundComplete = true;
-                        //Console.WriteLine($"All matches for round {match.RoundNumber} have been completed. Admins now need to double check scores and then lock in the round before advancing.");
-                        break;
-                }
+                //Console.WriteLine($"All matches for round {match.RoundNumber} have been completed. Admins now need to double check scores and then lock in the round before advancing.");
+                tournament.IsRoundComplete = true;
             }
+        }
+
+        private void ConvertMatchToPostMatchOpenRoundRobin(Tournament tournament, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, bool wasByeMatch = false)
+        {
+            if (!tournament.MatchLog.OpenRoundRobinMatchesToPlay.Contains(match))
+            {
+                //Console.WriteLine("The specified match does not exist in the open round robin match list.");
+                return;
+            }
+            // Create PostMatch
+            PostMatch postMatch = CreateNewPostMatch(match.Id, winningTeamName, winnerScore, losingTeamName, loserScore, match.CreatedOn, wasByeMatch);
+
+            // Add to OpenRoundRobinPostMatches list
+            tournament.MatchLog.OpenRoundRobinPostMatches.Add(postMatch);
+
+            // Remove from OpenRoundRobinMatchesToPlay
+            tournament.MatchLog.OpenRoundRobinMatchesToPlay.Remove(match);
         }
         #endregion
 

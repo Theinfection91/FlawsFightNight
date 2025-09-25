@@ -56,7 +56,7 @@ namespace FlawsFightNight.Core.Models
             Description = description;
         }
 
-        public void InitiateStartTournament()
+        public void InitiateStartNormalRoundRobinTournament()
         {
             CurrentRound = 1;
             IsRunning = true;
@@ -64,7 +64,7 @@ namespace FlawsFightNight.Core.Models
             CanTeamsBeUnlocked = false;
         }
 
-        public void InitiateEndTournament()
+        public void InitiateEndNormalRoundRobinTournament()
         {
             IsRunning = false;
             IsTeamsLocked = false;
@@ -72,6 +72,21 @@ namespace FlawsFightNight.Core.Models
             CanTeamsBeLocked = true;
             IsRoundComplete = false;
             IsRoundLockedIn = false;
+        }
+
+        public void InitiateStartOpenRoundRobinTournament()
+        {
+            IsRunning = true;
+            CanTeamsBeLocked = false;
+            CanTeamsBeUnlocked = false;
+        }
+
+        public void InitiateEndOpenRoundRobinTournament()
+        {
+            IsRunning = false;
+            IsTeamsLocked = false;
+            CanTeamsBeUnlocked = false;
+            CanTeamsBeLocked = true;
         }
 
         #region Round Robin Helpers

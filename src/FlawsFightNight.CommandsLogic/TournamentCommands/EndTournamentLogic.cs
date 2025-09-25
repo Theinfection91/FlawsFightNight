@@ -45,7 +45,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 (string, string) tieBreakerResult = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog);
 
-                tournament.InitiateEndTournament();
+                tournament.InitiateEndNormalRoundRobinTournament();
 
                 // Save the updated tournament state
                 _tournamentManager.SaveAndReloadTournamentsDatabase();
@@ -60,7 +60,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 // No tie breaker needed, grab winner rank at #1
                 string winner = tournament.Teams.OrderBy(t => t.Rank).First().Name;
 
-                tournament.InitiateEndTournament();
+                tournament.InitiateEndNormalRoundRobinTournament();
 
                 // Save the updated tournament state
                 _tournamentManager.SaveAndReloadTournamentsDatabase();

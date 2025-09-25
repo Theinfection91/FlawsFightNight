@@ -67,7 +67,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
         {
             // Start the tournament, build normal schedule with rounds
             _matchManager.BuildMatchScheduleResolver(tournament);
-            tournament.InitiateStartTournament();
+            tournament.InitiateStartNormalRoundRobinTournament();
 
             // Send team match schedules to each user
             _matchManager.SendMatchSchedulesToTeams(tournament);
@@ -86,6 +86,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
         {
             // Start the tournament, build schedule without rounds
             _matchManager.BuildMatchScheduleResolver(tournament);
+            tournament.InitiateStartOpenRoundRobinTournament();
 
             // TODO Send out messages, no schedule since it is open
 
