@@ -171,26 +171,26 @@ namespace FlawsFightNight.Managers
                 && matchesToPlay.Count > 0)
             {
                 var sb = new StringBuilder();
-                foreach (var match in matchesToPlay)
+
+                // Normal matches first
+                foreach (var match in matchesToPlay.Where(m => !m.IsByeMatch))
                 {
-                    if (match.IsByeMatch)
-                        continue;
-                    else
-                        sb.AppendLine($"🔹 **{match.TeamA}** vs **{match.TeamB}**");
+                    sb.AppendLine($"🔹 *Match ID#: {match.Id}* | **{match.TeamA}** vs **{match.TeamB}**");
                 }
-                foreach (var match in matchesToPlay)
+
+                // Bye matches after
+                foreach (var match in matchesToPlay.Where(m => m.IsByeMatch))
                 {
-                    if (match.IsByeMatch)
-                        sb.AppendLine($"💤 *{match.GetCorrectNameForByeMatch()} Bye Match*");
-                    else
-                        continue;
+                    sb.AppendLine($"💤 *Match ID#: {match.Id}* | *{match.GetCorrectNameForByeMatch()} Bye Match*");
                 }
+
                 embed.AddField($"⚔️ Matches To Play (Round {tournament.CurrentRound})", sb.ToString(), false);
             }
             else
             {
                 embed.AddField("⚔️ Matches To Play", "No matches left to play this round ✅", false);
             }
+
 
             // --- Past Matches (grouped by round) ---
             if (tournament.MatchLog.PostMatchesByRound.Count > 0)

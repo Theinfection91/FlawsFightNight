@@ -764,67 +764,39 @@ namespace FlawsFightNight.Managers
         public void BuildOpenRoundRobinMatchSchedule(Tournament tournament, bool isDoubleRoundRobin = true)
         {
             var teams = tournament.Teams.Select(t => t.Name).ToList();
-            bool hasBye = false;
-            const string byePlaceholder = "BYE";
-            if (teams.Count % 2 != 0)
-            {
-                hasBye = true;
-                teams.Add(byePlaceholder);
-            }
-            int numRounds = teams.Count - 1;
-            int half = teams.Count / 2;
-            var rotating = new List<string>(teams); // first element fixed
 
-            // Single Round Robin Logic
-            for (int round = 1; round <= numRounds; round++)
+            // generate all unique pairings
+            var matches = new List<Match>();
+            for (int i = 0; i < teams.Count; i++)
             {
-                var pairings = new List<Match>();
-                for (int i = 0; i < half; i++)
+                for (int j = i + 1; j < teams.Count; j++)
                 {
-                    string a = rotating[i];
-                    string b = rotating[teams.Count - 1 - i];
-                    if (a == byePlaceholder && b == byePlaceholder) continue;
-
-                    bool isByeMatch = hasBye && (a == byePlaceholder || b == byePlaceholder);
-                    var match = new Match(
-                        a == byePlaceholder ? "BYE" : a,
-                        b == byePlaceholder ? "BYE" : b)
+                    var match = new Match(teams[i], teams[j])
                     {
                         Id = GenerateMatchId(),
-                        IsByeMatch = isByeMatch,
+                        IsByeMatch = false,
                         RoundNumber = 0,
                         CreatedOn = DateTime.UtcNow
                     };
-                    pairings.Add(match);
+                    matches.Add(match);
                 }
-                // Add pairings to the open list
-                foreach (var pairing in pairings)
-                    tournament.MatchLog.OpenRoundRobinMatchesToPlay.Add(pairing);
-
-                // rotate teams, first element fixed
-                var last = rotating[^1];
-                rotating.RemoveAt(rotating.Count - 1);
-                rotating.Insert(1, last);
             }
 
-            // Double Round Robin Logic
+            // Add matches to the open list
+            tournament.MatchLog.OpenRoundRobinMatchesToPlay.AddRange(matches);
+
+            // If double round robin, add reversed pairings
             if (isDoubleRoundRobin)
             {
-                int currentMaxRound = tournament.MatchLog.MatchesToPlayByRound.Count;
-
-                var original = tournament.MatchLog.OpenRoundRobinMatchesToPlay;
-                var reversed = original.Select(m => new Match(m.TeamB, m.TeamA)
+                var reversed = matches.Select(m => new Match(m.TeamB, m.TeamA)
                 {
                     Id = GenerateMatchId(),
-                    IsByeMatch = m.IsByeMatch,
+                    IsByeMatch = false,
                     RoundNumber = 0,
                     CreatedOn = DateTime.UtcNow
                 }).ToList();
 
-                // Add reversed to the open list
                 tournament.MatchLog.OpenRoundRobinMatchesToPlay.AddRange(reversed);
-
-                // Need a validation method for open round robin
             }
         }
 

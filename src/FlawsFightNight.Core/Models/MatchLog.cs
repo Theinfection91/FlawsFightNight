@@ -20,6 +20,7 @@ namespace FlawsFightNight.Core.Models
 
         public (int, int) GetPointsForAndPointsAgainstForTeam(string teamName)
         {
+            // Normal Round Robin
             int pointsFor = 0;
             int pointsAgainst = 0;
             foreach (var round in PostMatchesByRound.Values)
@@ -37,6 +38,21 @@ namespace FlawsFightNight.Core.Models
                         pointsFor += pm.LoserScore;
                         pointsAgainst += pm.WinnerScore;
                     }
+                }
+            }
+            // Open Round Robin
+            foreach (var pm in OpenRoundRobinPostMatches)
+            {
+                if (pm.WasByeMatch) continue;
+                if (pm.Winner == teamName)
+                {
+                    pointsFor += pm.WinnerScore;
+                    pointsAgainst += pm.LoserScore;
+                }
+                else if (pm.Loser == teamName)
+                {
+                    pointsFor += pm.LoserScore;
+                    pointsAgainst += pm.WinnerScore;
                 }
             }
             return (pointsFor, pointsAgainst);
