@@ -70,7 +70,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             tournament.InitiateStartNormalRoundRobinTournament();
 
             // Send team match schedules to each user
-            _matchManager.SendMatchSchedulesToTeams(tournament);
+            _matchManager.SendMatchSchedulesToTeamsResolver(tournament);
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
@@ -88,7 +88,8 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _matchManager.BuildMatchScheduleResolver(tournament);
             tournament.InitiateStartOpenRoundRobinTournament();
 
-            // TODO Send out messages, no schedule since it is open
+            // Send out messages, no schedule since it is open
+            _matchManager.SendMatchSchedulesToTeamsResolver(tournament);
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();

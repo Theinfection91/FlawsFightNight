@@ -199,6 +199,11 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
+            if (match.IsByeMatch)
+            {
+                return _embedManager.ReportByeMatch(tournament, match, isGuildAdmin);
+            }
+
             return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin);
         }
     }

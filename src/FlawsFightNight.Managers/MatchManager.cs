@@ -156,7 +156,7 @@ namespace FlawsFightNight.Managers
             return (!string.IsNullOrEmpty(postMatch.Winner) && postMatch.Winner.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
                    (!string.IsNullOrEmpty(postMatch.Loser) && postMatch.Loser.Equals(teamName, StringComparison.OrdinalIgnoreCase));
         }
-        // TODO Turn into switch resolver for different tournament types
+        
         public bool IsMatchMadeForTeamResolver(Tournament tournament, string teamName)
         {
             switch (tournament.Type)
@@ -824,7 +824,7 @@ namespace FlawsFightNight.Managers
                 // Add reversed to the open list
                 tournament.MatchLog.OpenRoundRobinMatchesToPlay.AddRange(reversed);
 
-                // TODO Need a validation method for open round robin
+                // Need a validation method for open round robin
             }
         }
 
@@ -979,7 +979,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Match Message System
-        public async void SendMatchScheduleNotificationToDiscordId(ulong discordId, Tournament tournament)
+        public async void SendNormalRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, Tournament tournament)
         {
             // This is a fire-and-forget method. Errors are logged but not thrown.
             try
@@ -999,7 +999,7 @@ namespace FlawsFightNight.Managers
 
                 // Grab matches
                 var teamName = GetTeamNameFromDiscordId(user.Id, tournament.Id);
-                var matches = GetMatchesForTeamName(teamName, tournament.MatchLog);
+                var matches = GetMatchesForTeamNormalRoundRobin(teamName, tournament.MatchLog);
 
                 var dmChannel = await user.CreateDMChannelAsync();
                 if (dmChannel == null)
@@ -1007,7 +1007,44 @@ namespace FlawsFightNight.Managers
                     //Console.WriteLine($"Failed to create DM channel with user {user.Username}.");
                     return;
                 }
-                var message = _embedManager.RoundRobinMatchScheduleNotification(tournament, matches, user.Username, discordId, teamName);
+                var message = _embedManager.NormalRoundRobinMatchScheduleNotification(tournament, matches, user.Username, discordId, teamName);
+                await dmChannel.SendMessageAsync(embed: message);
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine($"Error sending DM to user with Discord ID {discordId}: {ex.Message}");
+            }
+        }
+
+        public async void SendOpenRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, Tournament tournament)
+        {
+            // This is a fire-and-forget method. Errors are logged but not thrown.
+            try
+            {
+                var user = await _client.GetUserAsync(discordId);
+                if (user == null)
+                {
+                    //Console.WriteLine($"User with Discord ID {discordId} not found.");
+                    return;
+                }
+
+                // Check if the user is a bot
+                if (user.IsBot)
+                {
+                    return;
+                }
+
+                // Grab matches
+                var teamName = GetTeamNameFromDiscordId(user.Id, tournament.Id);
+                var matches = GetMatchesForTeamOpenRoundRobin(teamName, tournament.MatchLog);
+
+                var dmChannel = await user.CreateDMChannelAsync();
+                if (dmChannel == null)
+                {
+                    //Console.WriteLine($"Failed to create DM channel with user {user.Username}.");
+                    return;
+                }
+                var message = _embedManager.OpenRoundRobinMatchScheduleNotification(tournament, matches, user.Username, discordId, teamName);
                 await dmChannel.SendMessageAsync(embed: message);
             }
             catch (Exception ex)
@@ -1034,7 +1071,7 @@ namespace FlawsFightNight.Managers
             return "null";
         }
 
-        public List<Match> GetMatchesForTeamName(string teamName, MatchLog matchLog)
+        public List<Match> GetMatchesForTeamNormalRoundRobin(string teamName, MatchLog matchLog)
         {
             var matches = new List<Match>();
             foreach (var round in matchLog.MatchesToPlayByRound.Keys)
@@ -1052,15 +1089,55 @@ namespace FlawsFightNight.Managers
             return matches;
         }
 
-        public void SendMatchSchedulesToTeams(Tournament tournament)
+        public List<Match> GetMatchesForTeamOpenRoundRobin(string teamName, MatchLog matchLog)
         {
-            foreach (var team in tournament.Teams)
+            var matches = new List<Match>();
+            foreach (var match in matchLog.OpenRoundRobinMatchesToPlay)
             {
-                foreach (var user in team.Members)
+                if ((match.TeamA != null && match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
+                    (match.TeamB != null && match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
                 {
-                    SendMatchScheduleNotificationToDiscordId(user.DiscordId, tournament);
+                    matches.Add(match);
                 }
             }
+            return matches;
+        }
+
+        public void SendMatchSchedulesToTeamsResolver(Tournament tournament)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.RoundRobin:
+                    switch (tournament.RoundRobinMatchType)
+                    {
+                        case RoundRobinMatchType.Normal:
+                            foreach (var team in tournament.Teams)
+                            {
+                                foreach (var user in team.Members)
+                                {
+                                    SendNormalRoundRobinMatchScheduleNotificationToDiscordId(user.DiscordId, tournament);
+                                }
+                            }
+                            break;
+                        case RoundRobinMatchType.Open:
+                            foreach (var team in tournament.Teams)
+                            {
+                                foreach (var user in team.Members)
+                                {
+                                    SendOpenRoundRobinMatchScheduleNotificationToDiscordId(user.DiscordId, tournament);
+                                }
+                            }
+                            break;
+                        default:
+                            //Console.WriteLine($"Match schedule sending not implemented for round robin match type: {tournament.RoundRobinMatchType}");
+                            break;
+                    }
+                    break;
+                default:
+                    //Console.WriteLine($"Match schedule sending not implemented for tournament type: {tournament.Type}");
+                    break;
+            }
+            
         }
         #endregion
 

@@ -32,7 +32,8 @@ namespace FlawsFightNight.Core.Models
         public int? TotalRounds { get; set; } = null;
         public bool IsRoundComplete { get; set; } = false;
         public bool IsRoundLockedIn { get; set; } = false;
-        public bool CanEndTournament => CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
+        public bool CanEndNormalRoundRobinTournament => CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
+        public bool CanEndOpenRoundRobinTournament => MatchLog.OpenRoundRobinMatchesToPlay.Count == 0 && IsRunning;
 
         // Round Robin Specific Properties
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();

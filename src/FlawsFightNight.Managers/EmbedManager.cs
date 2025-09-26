@@ -97,7 +97,7 @@ namespace FlawsFightNight.Managers
 
                 var byeMatches = tournament.MatchLog.OpenRoundRobinMatchesToPlay
                     .Where(m => m.IsByeMatch)
-                    .Select(m => $"💤 *{m.GetCorrectNameForByeMatch()} Bye Match*");
+                    .Select(m => $"💤 *Match ID#: {m.Id}* | *{m.GetCorrectNameForByeMatch()} Bye Match*");
 
                 var orderedMatches = normalMatches.Concat(byeMatches).ToList();
 
@@ -153,11 +153,11 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Orange)
                 .WithCurrentTimestamp();
 
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEndTournament)
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEndNormalRoundRobinTournament)
             {
                 embed.AddField("🔒 Locked", "Round is locked and ready to advance.", true);
             }
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEndTournament)
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEndNormalRoundRobinTournament)
             {
                 embed.AddField("🔒 Locked - Ready to end tournament 🏅", "Round is locked and the tournament is ready to end have the results locked in.", true);
             }
@@ -412,7 +412,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed RoundRobinMatchScheduleNotification(Tournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
+        public Embed NormalRoundRobinMatchScheduleNotification(Tournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"📅 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Schedule")
@@ -434,6 +434,37 @@ namespace FlawsFightNight.Managers
                 else
                 {
                     sb.AppendLine($"`Round {match.RoundNumber}` - **{match.TeamA}** vs. **{match.TeamB}**");
+                }
+            }
+
+            embed.WithDescription(sb.ToString())
+                .WithFooter($"Scheduled for: {userName}")
+                .WithTimestamp(DateTimeOffset.Now);
+
+            return embed.Build();
+        }
+
+        public Embed OpenRoundRobinMatchScheduleNotification(Tournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"📅 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Schedule")
+                .WithColor(Color.Gold)
+                .AddField("👥 Team", teamName, true)
+                .AddField("🏷️ Tournament ID", tournament.Id, true);
+
+            var sb = new StringBuilder();
+            sb.AppendLine("**Your Match Schedule:**");
+            sb.AppendLine("────────────────────────");
+
+            foreach (var match in matches.OrderBy(m => m.RoundNumber))
+            {
+                if (match.IsByeMatch)
+                {
+                    sb.AppendLine($"*Bye Match* 💤");
+                }
+                else
+                {
+                    sb.AppendLine($"**{match.TeamA}** vs. **{match.TeamB}**");
                 }
             }
 
