@@ -19,13 +19,29 @@ namespace FlawsFightNight.Core.Models.TieBreakers
             // Step 1: Head-to-head wins among tied teams
             var wins = tiedTeams.ToDictionary(t => t, t => 0);
 
-            var headToHead = log.PostMatchesByRound
-                .SelectMany(kvp => kvp.Value)
-                .Where(pm =>
-                    !pm.WasByeMatch &&
-                    tiedTeams.Contains(pm.Winner) &&
-                    tiedTeams.Contains(pm.Loser))
-                .ToList();
+            var headToHead = new List<PostMatch>();
+            // If PostMatchesByRound is not empty, tournament is Normal Round Robin
+            if (log.PostMatchesByRound.Count > 0)
+            {
+                headToHead = log.PostMatchesByRound
+                    .SelectMany(kvp => kvp.Value)
+                    .Where(pm =>
+                        !pm.WasByeMatch &&
+                        tiedTeams.Contains(pm.Winner) &&
+                        tiedTeams.Contains(pm.Loser))
+                    .ToList();
+                Console.WriteLine($"PostMatchesByRound count: {log.PostMatchesByRound.Count}");
+            }
+            // If OpenRoundRobinPostMatches is not empty, tournament is Open Round Robin
+            if (log.OpenRoundRobinPostMatches.Count > 0)
+            {
+                headToHead.AddRange(log.OpenRoundRobinPostMatches
+                    .Where(pm =>
+                        !pm.WasByeMatch &&
+                        tiedTeams.Contains(pm.Winner) &&
+                        tiedTeams.Contains(pm.Loser)));
+                Console.WriteLine($"OpenRoundRobinPostMatches count: {log.OpenRoundRobinPostMatches.Count}");
+            }
 
             //Console.WriteLine($"Step 1: Head-to-head matches found: {headToHead.Count}");
             tieBreakerLog.AppendLine($"Step 1: Head-to-head matches found: {headToHead.Count}");
@@ -116,9 +132,23 @@ namespace FlawsFightNight.Core.Models.TieBreakers
 
             tieBreakerLog.AppendLine("\nMultiple leaders remain after Step 3, proceeding to Step 4: Total Points Scored Overall");
             // Step 4: Total points scored against all teams
-            var allMatches = log.PostMatchesByRound
-                .SelectMany(kvp => kvp.Value)
-                .Where(pm => !pm.WasByeMatch);
+            var allMatches = new List<PostMatch>();
+            // If PostMatchesByRound is not empty, tournament is Normal Round Robin
+            if (log.PostMatchesByRound.Count > 0)
+            {
+                allMatches.AddRange(log.PostMatchesByRound
+                    .SelectMany(kvp => kvp.Value)
+                    .Where(pm => !pm.WasByeMatch));
+                Console.WriteLine($"PostMatchesByRound count: {log.PostMatchesByRound.Count}" );
+            }
+            // If OpenRoundRobinPostMatches is not empty, tournament is Open Round Robin
+            if (log.OpenRoundRobinPostMatches.Count > 0)
+            {
+                allMatches.AddRange(log.OpenRoundRobinPostMatches
+                    .Where(pm => !pm.WasByeMatch));
+                Console.WriteLine($"OpenRoundRobinPostMatches count: {log.OpenRoundRobinPostMatches.Count}");
+            }
+
 
             var totalPointsOverall = leadersByPointsVsTied.ToDictionary(t => t, t => 0);
             foreach (var pm in allMatches)
@@ -153,7 +183,8 @@ namespace FlawsFightNight.Core.Models.TieBreakers
             tieBreakerLog.AppendLine("\nMultiple leaders remain after Step 4, proceeding to Step 5: Least Points Against Overall");
             // Step 5: Least amount of points against
             var pointsAgainst = leadersByPointsOverall.ToDictionary(t => t, t => 0);
-            foreach ( var p in pointsAgainst) {
+            foreach (var p in pointsAgainst)
+            {
                 var (forPoints, againstPoints) = log.GetPointsForAndPointsAgainstForTeam(p.Key);
                 pointsAgainst[p.Key] = againstPoints;
                 //Console.WriteLine($"  Points against for {p.Key}: {againstPoints}");

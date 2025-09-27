@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
@@ -53,7 +54,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // Check if round is unlocked
-            if (tournament.IsRoundLockedIn)
+            if (tournament.RoundRobinMatchType is RoundRobinMatchType.Normal && tournament.IsRoundLockedIn)
             {
                 return _embedManager.ErrorEmbed(Name, "The current round is locked. You cannot edit previous matches unless a round is unlocked.");
             }
@@ -78,7 +79,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             var postMatch = _matchManager.GetPostMatchByIdInTournament(tournament, matchId);
 
             // Check if post match to edit is within current round being played, cannot edit matches from previous rounds that were locked in
-            if (!_matchManager.IsPostMatchInCurrentRound(tournament, postMatch.Id))
+            if (tournament.RoundRobinMatchType is RoundRobinMatchType.Normal &&  !_matchManager.IsPostMatchInCurrentRound(tournament, postMatch.Id))
             {
                 return _embedManager.ErrorEmbed(Name, $"The match with ID: {matchId} is not in the current round being played. You can only edit matches from the current round.");
             }

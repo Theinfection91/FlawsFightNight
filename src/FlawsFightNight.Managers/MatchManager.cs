@@ -148,6 +148,13 @@ namespace FlawsFightNight.Managers
                     }
                 }
             }
+            foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
+            {
+                if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true; // Match has been played
+                }
+            }
             return false; // Match not found in played matches
         }
 
@@ -597,6 +604,13 @@ namespace FlawsFightNight.Managers
                     {
                         return postMatch; // PostMatch found
                     }
+                }
+            }
+            foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
+            {
+                if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return postMatch; // PostMatch found
                 }
             }
             return null; // PostMatch ID not found
