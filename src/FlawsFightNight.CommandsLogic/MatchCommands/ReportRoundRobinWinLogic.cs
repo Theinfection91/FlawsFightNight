@@ -64,6 +64,11 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Grab the match associated with report
             Match match = _matchManager.GetMatchByMatchIdResolver(tournament, matchId);
 
+            if (match == null)
+            {
+                return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' could not be found in the tournament '{tournament.Name}'. Make sure you are not trying to report a match that has already been played.");
+            }
+
             // Check if team is part of the match
             if (!_matchManager.IsTeamInMatch(match, winningTeamName))
             {

@@ -14,14 +14,12 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
     {
         private EmbedManager _embedManager;
         private GitBackupManager _gitBackupManager;
-        private LiveViewManager _liveViewManager;
         private MatchManager _matchManager;
         private TournamentManager _tournamentManager;
-        public EndTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager , LiveViewManager liveViewManager, MatchManager matchManager, TournamentManager tournamentManager) : base("End Tournament")
+        public EndTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager , MatchManager matchManager, TournamentManager tournamentManager) : base("End Tournament")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
-            _liveViewManager = liveViewManager;
             _matchManager = matchManager;
             _tournamentManager = tournamentManager;
         }

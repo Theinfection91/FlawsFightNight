@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
@@ -29,6 +30,11 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
             Tournament? tournament = _tournamentManager.GetTournamentById(tournamentId);
+
+            if (!tournament.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal))
+            {
+                return _embedManager.ErrorEmbed(Name, $"Only Normal Round Robin tournaments support advancing to the next round at this time.");
+            }
 
             // Check if the round is complete
             if (!tournament.IsRoundComplete)

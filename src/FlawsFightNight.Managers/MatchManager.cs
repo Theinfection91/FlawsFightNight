@@ -163,7 +163,7 @@ namespace FlawsFightNight.Managers
             return (!string.IsNullOrEmpty(postMatch.Winner) && postMatch.Winner.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
                    (!string.IsNullOrEmpty(postMatch.Loser) && postMatch.Loser.Equals(teamName, StringComparison.OrdinalIgnoreCase));
         }
-        
+
         public bool IsMatchMadeForTeamResolver(Tournament tournament, string teamName)
         {
             switch (tournament.Type)
@@ -372,6 +372,15 @@ namespace FlawsFightNight.Managers
                 }
             }
 
+            foreach (var match in matchLog.OpenRoundRobinPostMatches)
+            {
+                if (match.WasByeMatch) continue;
+                string winnerKey = match.Winner ?? "UNKNOWN";
+                if (!teamWins.ContainsKey(winnerKey))
+                    teamWins[winnerKey] = 0;
+                teamWins[winnerKey]++;
+            }
+
             if (teamWins.Count == 0)
                 return false; // no matches played
 
@@ -393,7 +402,6 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Gets
-
         private Match GetMatchByIdInNormalRoundRobinTournament(Tournament tournament, string matchId)
         {
             foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
@@ -637,6 +645,17 @@ namespace FlawsFightNight.Managers
                         teamWins[winnerKey]++;
                     }
                 }
+            }
+
+            foreach (var match in matchLog.OpenRoundRobinPostMatches)
+            {
+                if (match.WasByeMatch) continue;
+                string winnerKey = match.Winner;
+                if (!teamWins.ContainsKey(winnerKey))
+                {
+                    teamWins[winnerKey] = 0;
+                }
+                teamWins[winnerKey]++;
             }
 
             if (teamWins.Count == 0)
@@ -1123,7 +1142,7 @@ namespace FlawsFightNight.Managers
                     //Console.WriteLine($"Match schedule sending not implemented for tournament type: {tournament.Type}");
                     break;
             }
-            
+
         }
         #endregion
 
@@ -1274,6 +1293,64 @@ namespace FlawsFightNight.Managers
             //Console.Write.WriteLine($"Tie-breaker unresolved by all criteria → Randomly selected: {chosen}");
             return chosen;
         }
+        #endregion
+
+        #region Edit Match Helpers
+        public void RecalculateAllWinLossStreaks(Tournament tournament)
+        {
+            // Reset all team streaks
+            foreach (var team in tournament.Teams)
+            {
+                team.WinStreak = 0;
+                team.LoseStreak = 0;
+            }
+
+            // Flatten all matches, order most recent first
+            var allMatches = tournament.MatchLog.PostMatchesByRound.Values.SelectMany(v => v)
+                .Concat(tournament.MatchLog.OpenRoundRobinPostMatches)
+                .OrderByDescending(pm => pm.CreatedOn)
+                .ToList();
+
+            // For each team, calculate streak starting from the most recent match
+            foreach (var team in tournament.Teams)
+            {
+                foreach (var match in allMatches.Where(m =>
+                    m.Winner.Equals(team.Name, StringComparison.OrdinalIgnoreCase) ||
+                    m.Loser.Equals(team.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    if (match.Winner.Equals(team.Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        team.WinStreak++;
+                        // streak continues only if next is also a win
+                    }
+                    else if (match.Loser.Equals(team.Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        team.LoseStreak++;
+                        // streak continues only if next is also a loss
+                    }
+                    else
+                    {
+                        break; // shouldn't happen, but safe guard
+                    }
+
+                    // break out if streak was broken
+                    var lastWasWin = match.Winner.Equals(team.Name, StringComparison.OrdinalIgnoreCase);
+                    var nextMatch = allMatches.FirstOrDefault(m =>
+                        (m.Winner.Equals(team.Name, StringComparison.OrdinalIgnoreCase) ||
+                         m.Loser.Equals(team.Name, StringComparison.OrdinalIgnoreCase)) &&
+                        m.CreatedOn < match.CreatedOn);
+
+                    if (nextMatch != null &&
+                        ((lastWasWin && nextMatch.Loser.Equals(team.Name, StringComparison.OrdinalIgnoreCase)) ||
+                         (!lastWasWin && nextMatch.Winner.Equals(team.Name, StringComparison.OrdinalIgnoreCase))))
+                    {
+                        break; // streak broken
+                    }
+                }
+            }
+        }
+
+
         #endregion
     }
 }

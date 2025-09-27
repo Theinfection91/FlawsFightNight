@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -29,6 +30,11 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
+
+            if (!tournament.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal))
+            {
+                return _embedManager.ErrorEmbed(Name, $"Only Normal Round Robin tournaments support unlocking rounds at this time.");
+            }
 
             // Check if tournament is already running
             if (!tournament.IsRunning)
