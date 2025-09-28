@@ -47,6 +47,12 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Losses can only be added to teams in tournaments that are running.");
             }
 
+            // Validate number of losses
+            if (numberOfLosses < 1)
+            {
+                return _embedManager.ErrorEmbed(Name, $"The number of losses to add must be at least 1. You provided: {numberOfLosses}");
+            }
+
             // Grab team
             var team = _teamManager.GetTeamByName(teamName);
 

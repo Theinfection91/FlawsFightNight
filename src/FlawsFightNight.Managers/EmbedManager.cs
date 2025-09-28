@@ -430,6 +430,32 @@ namespace FlawsFightNight.Managers
                  .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
+
+        public Embed RemoveTeamWinSuccess(Team team, Tournament tournament, int numberOfWins)
+        {
+            var embed = new EmbedBuilder()
+                 .WithTitle("✅ Team Win(s) Removed Successfully")
+                 .WithDescription($"The team **{team.Name}** has had **{numberOfWins}** win(s) removed in the tournament **{tournament.Name}**.")
+                 .AddField("Tournament ID", tournament.Id)
+                 .AddField("Total Wins", team.Wins)
+                 .WithColor(Color.Green)
+                 .WithFooter("The team's wins have been updated.")
+                 .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveTeamLossSuccess(Team team, Tournament tournament, int numberOfLosses)
+        {
+            var embed = new EmbedBuilder()
+                 .WithTitle("✅ Team Loss(es) Removed Successfully")
+                 .WithDescription($"The team **{team.Name}** has had **{numberOfLosses}** loss(es) removed in the tournament **{tournament.Name}**.")
+                 .AddField("Tournament ID", tournament.Id)
+                 .AddField("Total Losses", team.Losses)
+                 .WithColor(Color.Green)
+                 .WithFooter("The team's losses have been updated.")
+                 .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
         #endregion
 
         #region Tournament Embeds
