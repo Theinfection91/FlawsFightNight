@@ -78,19 +78,51 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"The teams in the tournament '{tournament.Name}' are not locked. Please lock the teams before starting the tournament.");
             }
-
-            // Ensure all teams start with no wins/losses or points
-            foreach (var team in tournament.Teams)
+            switch (tournament.Type)
             {
-                team.ResetTeamToZero();
+                case TournamentType.RoundRobin:
+                    switch (tournament.RoundRobinMatchType)
+                    {
+                        case RoundRobinMatchType.Open:
+                            return RoundRobinOpenStartTournamentProcess(tournament);
+                        case RoundRobinMatchType.Normal:
+                            return RoundRobinNormalStartTournamentProcess(tournament);
+                        default:
+                            return _embedManager.ErrorEmbed(Name, "Only Normal and Open Round Robin tournaments are implemented right now. Can not start any other type at this point.");
+                    }
+                default:
+                    return _embedManager.ErrorEmbed(Name, "Only Round Robin tournaments are implemented right now. Can not start any other time at this point.");
             }
+        }
 
-            // Start the tournament
+
+        private Embed RoundRobinNormalStartTournamentProcess(Tournament tournament)
+        {
+            // Start the tournament, build normal schedule with rounds
             _matchManager.BuildMatchScheduleResolver(tournament);
-            tournament.RoundRobinStartTournamentProcess();
+            tournament.InitiateStartNormalRoundRobinTournament();
 
             // Send team match schedules to each user
-            _matchManager.SendMatchSchedulesToTeams(tournament);
+            _matchManager.SendMatchSchedulesToTeamsResolver(tournament);
+
+            // Save and reload the tournament database
+            _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
+
+            // Return Embed with tournament information
+            return _embedManager.StartTournamentSuccessResolver(tournament);
+        }
+
+        private Embed RoundRobinOpenStartTournamentProcess(Tournament tournament)
+        {
+            // Start the tournament, build schedule without rounds
+            _matchManager.BuildMatchScheduleResolver(tournament);
+            tournament.InitiateStartOpenRoundRobinTournament();
+
+            // Send out messages, no schedule since it is open
+            _matchManager.SendMatchSchedulesToTeamsResolver(tournament);
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();

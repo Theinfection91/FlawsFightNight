@@ -35,8 +35,11 @@ namespace FlawsFightNight.Core.Models
         public bool CanEndRoundRobinTournament => CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
 
         // Round Robin Specific Properties
+        public bool CanEndNormalRoundRobinTournament => CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
+        public bool CanEndOpenRoundRobinTournament => MatchLog.OpenRoundRobinMatchesToPlay.Count == 0 && IsRunning;
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
         public bool IsDoubleRoundRobin { get; set; } = true;
+        public RoundRobinMatchType RoundRobinMatchType { get; set; } = RoundRobinMatchType.Normal;
 
         // Discord Channel ID's for LiveView
         public ulong MatchesChannelId { get; set; } = 0;
@@ -83,7 +86,7 @@ namespace FlawsFightNight.Core.Models
             return Teams.FirstOrDefault(t => t.Rank == 1);
         }
 
-        public void RoundRobinStartTournamentProcess()
+        public void InitiateStartNormalRoundRobinTournament()
         {
             CurrentRound = 1;
             IsRunning = true;
@@ -91,7 +94,7 @@ namespace FlawsFightNight.Core.Models
             CanTeamsBeUnlocked = false;
         }
 
-        public void RoundRobinEndTournamentProcess()
+        public void InitiateEndNormalRoundRobinTournament()
         {
             IsRunning = false;
             IsTeamsLocked = false;
@@ -99,6 +102,21 @@ namespace FlawsFightNight.Core.Models
             CanTeamsBeLocked = true;
             IsRoundComplete = false;
             IsRoundLockedIn = false;
+        }
+
+        public void InitiateStartOpenRoundRobinTournament()
+        {
+            IsRunning = true;
+            CanTeamsBeLocked = false;
+            CanTeamsBeUnlocked = false;
+        }
+
+        public void InitiateEndOpenRoundRobinTournament()
+        {
+            IsRunning = false;
+            IsTeamsLocked = false;
+            CanTeamsBeUnlocked = false;
+            CanTeamsBeLocked = true;
         }
 
         #region Round Robin Helpers

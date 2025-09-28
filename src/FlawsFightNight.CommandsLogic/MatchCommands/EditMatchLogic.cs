@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
@@ -14,12 +15,14 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
         private EmbedManager _embedManager;
         private GitBackupManager _gitBackupManager;
         private MatchManager _matchManager;
+        private TeamManager _teamManager;
         private TournamentManager _tournamentManager;
-        public EditMatchLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TournamentManager tournamentManager) : base("Edit Match")
+        public EditMatchLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Edit Match")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
             _matchManager = matchManager;
+            _teamManager = teamManager;
             _tournamentManager = tournamentManager;
         }
 
@@ -36,7 +39,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Send through switch resolver based on tournament type
             switch (tournament.Type)
             {
-                case Core.Enums.TournamentType.RoundRobin:
+                case TournamentType.RoundRobin:
                     return RoundRobinEditMatchProcess(tournament, matchId, winningTeamName, winningTeamScore, losingTeamScore);
                 default:
                     break;
@@ -53,7 +56,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // Check if round is unlocked
-            if (tournament.IsRoundLockedIn)
+            if (tournament.RoundRobinMatchType is RoundRobinMatchType.Normal && tournament.IsRoundLockedIn)
             {
                 return _embedManager.ErrorEmbed(Name, "The current round is locked. You cannot edit previous matches unless a round is unlocked.");
             }
@@ -78,7 +81,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             var postMatch = _matchManager.GetPostMatchByIdInTournament(tournament, matchId);
 
             // Check if post match to edit is within current round being played, cannot edit matches from previous rounds that were locked in
-            if (!_matchManager.IsPostMatchInCurrentRound(tournament, postMatch.Id))
+            if (tournament.RoundRobinMatchType is RoundRobinMatchType.Normal &&  !_matchManager.IsPostMatchInCurrentRound(tournament, postMatch.Id))
             {
                 return _embedManager.ErrorEmbed(Name, $"The match with ID: {matchId} is not in the current round being played. You can only edit matches from the current round.");
             }
@@ -95,14 +98,25 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, $"The match with ID: {matchId} was a Bye week match. There is no need to edit Bye week matches.");
             }
 
-            // Update the match results
+            // Roll back old results
+            _teamManager.EditMatchRollback(tournament, postMatch);
+
+            // Update post match with new results
             postMatch.UpdateResultsProcess(winningTeamName, winningTeamScore, losingTeamScore);
 
-            // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            // Apply new results
+            _teamManager.EditMatchApply(tournament, postMatch);
 
-            // Backup to git repo
+            // Recalculate streaks for the two teams involved
+            var newWinner = _teamManager.GetTeamByName(tournament, postMatch.Winner);
+            var newLoser = _teamManager.GetTeamByName(tournament, postMatch.Loser);
+            _matchManager.RecalculateAllWinLossStreaks(tournament);
+
+            // Re-rank and save
+            tournament.SetRanksByTieBreakerLogic();
+            _tournamentManager.SaveAndReloadTournamentsDatabase();
             _gitBackupManager.CopyAndBackupFilesToGit();
+
 
             return _embedManager.RoundRobinEditMatchSuccess(tournament, postMatch);
         }

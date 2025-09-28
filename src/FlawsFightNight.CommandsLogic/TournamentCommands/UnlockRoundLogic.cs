@@ -45,6 +45,11 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         private Embed RoundRobinUnlockRoundProcess(Tournament tournament)
         {
+            if (!tournament.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal))
+            {
+                return _embedManager.ErrorEmbed(Name, $"Only Normal Round Robin tournaments support unlocking rounds at this time.");
+            }
+
             // Check if tournament is already running
             if (!tournament.IsRunning)
             {

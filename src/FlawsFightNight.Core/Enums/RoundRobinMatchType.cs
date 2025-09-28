@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Enums
 {
-    public enum RoundRobinType
+    public enum RoundRobinMatchType
     {
-        Double,
-        Single
+        Normal,
+        Open
     }
 }

@@ -7,7 +7,7 @@ Flaw's Fight Night is a comprehensive Discord bot being designed to manage tourn
 ## 🌟 Key Features
 
 ### Tournament Management
-- Create and manage multiple tournament types (Just Round Robin in `v0.1.x`)
+- Create and manage multiple tournament types (Just Normal and Open Round Robin in `v0.1.x`)
 - Start and end tournaments with full lifecycle control
 - Lock/unlock teams and rounds for competition integrity
 - Custom tournament configurations and settings
