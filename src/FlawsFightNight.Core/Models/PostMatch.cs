@@ -35,7 +35,8 @@ namespace FlawsFightNight.Core.Models
             {
                 // Swap winner and loser, update scores
                 string previousWinner = Winner;
-                Winner = winningTeamName;
+                string previousLoser = Loser;
+                Winner = previousLoser;
                 WinnerScore = winningTeamScore;
                 Loser = previousWinner;
                 LoserScore = losingTeamScore;
