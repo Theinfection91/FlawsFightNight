@@ -2,6 +2,7 @@
 using Discord.Interactions;
 using FlawsFightNight.Bot.Modals;
 using FlawsFightNight.Bot.PreconditionAttributes;
+using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Core.Enums;
 using System;
@@ -15,6 +16,7 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("tournament", "Commands related to tournaments like creating, removal, etc.")]
     public class TournamentCommands : InteractionModuleBase<SocketInteractionContext>
     {
+        
         private CreateTournamentLogic _createTournamentLogic;
         private LockInRoundLogic _lockInRoundLogic;
         private LockTeamsLogic _lockTeamsLogic;

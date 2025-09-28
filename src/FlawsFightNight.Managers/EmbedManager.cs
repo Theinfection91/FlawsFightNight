@@ -13,6 +13,23 @@ namespace FlawsFightNight.Managers
     {
         public EmbedManager() { }
 
+        public string GetFormattedTournamentType(Tournament tournament)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.Ladder:
+                    return "Ladder";
+                case TournamentType.RoundRobin:
+                    return "Round Robin";
+                case TournamentType.SingleElimination:
+                    return "Single Elimination";
+                case TournamentType.DoubleElimination:
+                    return "Double Elimination";
+                default:
+                    return "null";
+            }
+        }
+
         public Embed ToDoEmbed(string message = "This feature is not yet implemented.")
         {
             var embed = new EmbedBuilder()
@@ -365,8 +382,9 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🎉 Team Registered Successfully")
-                .WithDescription($"The team **{team.Name}** has been successfully registered in the tournament **{tournament.Name}**!")
+                .WithDescription($"The team **{team.Name}** has been successfully registered in the **{GetFormattedTournamentType(tournament)}** tournament **{tournament.Name}**!")
                 .AddField("Tournament ID", tournament.Id)
+                .AddField("Tournament Type", GetFormattedTournamentType(tournament))
                 .AddField("Members", string.Join(", ", team.Members.Select(m => m.DisplayName)))
                 .WithColor(Color.Green)
                 .WithFooter("Good luck to your team!")
@@ -384,6 +402,58 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Green)
                 .WithFooter("The team has been deleted.")
                 .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed AddTeamLossSuccess(Team team, Tournament tournament, int numberOfLosses)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("❌ Team Loss Recorded Successfully")
+                .WithDescription($"The team **{team.Name}** has been assigned **{numberOfLosses}** loss(es) in the tournament **{tournament.Name}**.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Total Losses", team.Losses)
+                .WithColor(Color.Green)
+                .WithFooter("The team's losses have been updated.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed AddTeamWinSuccess(Team team, Tournament tournament, int numberOfWins)
+        {
+            var embed = new EmbedBuilder()
+                 .WithTitle("✅ Team Win Recorded Successfully")
+                 .WithDescription($"The team **{team.Name}** has been assigned **{numberOfWins}** win(s) in the tournament **{tournament.Name}**.")
+                 .AddField("Tournament ID", tournament.Id)
+                 .AddField("Total Wins", team.Wins)
+                 .WithColor(Color.Green)
+                 .WithFooter("The team's wins have been updated.")
+                 .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveTeamWinSuccess(Team team, Tournament tournament, int numberOfWins)
+        {
+            var embed = new EmbedBuilder()
+                 .WithTitle("✅ Team Win(s) Removed Successfully")
+                 .WithDescription($"The team **{team.Name}** has had **{numberOfWins}** win(s) removed in the tournament **{tournament.Name}**.")
+                 .AddField("Tournament ID", tournament.Id)
+                 .AddField("Total Wins", team.Wins)
+                 .WithColor(Color.Green)
+                 .WithFooter("The team's wins have been updated.")
+                 .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveTeamLossSuccess(Team team, Tournament tournament, int numberOfLosses)
+        {
+            var embed = new EmbedBuilder()
+                 .WithTitle("✅ Team Loss(es) Removed Successfully")
+                 .WithDescription($"The team **{team.Name}** has had **{numberOfLosses}** loss(es) removed in the tournament **{tournament.Name}**.")
+                 .AddField("Tournament ID", tournament.Id)
+                 .AddField("Total Losses", team.Losses)
+                 .WithColor(Color.Green)
+                 .WithFooter("The team's losses have been updated.")
+                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
         #endregion

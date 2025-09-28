@@ -73,7 +73,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 if (member19 != null) members.Add(member19);
                 if (member20 != null) members.Add(member20);
 
-                var result = _registerTeamLogic.RegisterTeamProcess(Context, name, tournamentId, members);
+                var result = _registerTeamLogic.RegisterTeamProcess(name, tournamentId, members);
                 await RespondAsync(embed: result);
             }
             catch (Exception ex)
@@ -98,130 +98,142 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
         }
 
-        //[Group("add", "Commands related to addings things to a team.")]
-        //public class TeamAddCommands : InteractionModuleBase<SocketInteractionContext>
-        //{
-        //    public TeamAddCommands()
-        //    {
+        [Group("add", "Commands related to addings things to a team.")]
+        public class TeamAddCommands : InteractionModuleBase<SocketInteractionContext>
+        {
+            private AddTeamLossLogic _addTeamLossLogic;
+            private AddTeamWinLogic _addTeamWinLogic;
+            private AddTeamMemberLogic _addTeamMemberLogic;
+            public TeamAddCommands(AddTeamLossLogic addTeamLossLogic, AddTeamWinLogic addTeamWinLogic, AddTeamMemberLogic addTeamMemberLogic)
+            {
+                _addTeamLossLogic = addTeamLossLogic;
+                _addTeamWinLogic = addTeamWinLogic;
+                _addTeamMemberLogic = addTeamMemberLogic;
+            }
 
-        //    }
+            [SlashCommand("member", "Add a member to an existing team.")]
+            [RequireGuildAdmin]
+            public async Task AddMemberAsync(
+                [Summary("team_name", "The name of the team to add a member to.")] string teamName,
+                [Summary("member", "The member to add to the team.")] IUser member)
+            {
+                try
+                {
+                    //var result = ;
+                    //await RespondAsync(embed: result);
+                    await RespondAsync("Not yet implemented.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
 
-        //    [SlashCommand("member", "Add a member to an existing team.")]
-        //    public async Task AddMemberAsync(
-        //        [Summary("team_name", "The name of the team to add a member to.")] string teamName,
-        //        [Summary("member", "The member to add to the team.")] IUser member)
-        //    {
-        //        try
-        //        {
-        //            //var result = ;
-        //            //await RespondAsync(embed: result);
-        //            await RespondAsync("Not yet implemented.");
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.WriteLine($"Command Error: {ex}");
-        //            await RespondAsync("An error occurred while processing this command.", ephemeral: true);
-        //        }
-        //    }
+            [SlashCommand("win", "Admin command - Add number of wins to a team.")]
+            [RequireGuildAdmin]
+            public async Task AddWinAsync(
+                [Summary("team_name", "The name of the team to add wins.")] string teamName,
+                [Summary("number_of_wins", "The amount of wins to add.")] int number_of_wins)
+            {
+                try
+                {
+                    var result = _addTeamWinLogic.AddTeamWinProcess(teamName, number_of_wins);
+                    await RespondAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
 
-        //    [SlashCommand("win", "Admin command - Add number of wins to a team.")]
-        //    public async Task AddWinAsync(
-        //        [Summary("team_name", "The name of the team to add wins.")] string teamName,
-        //        [Summary("number_of_wins", "The amount of wins to add.")] int number_of_wins)
-        //    {
-        //        try
-        //        {
-        //            //var result = ;
-        //            //await RespondAsync(embed: result);
-        //            await RespondAsync("Not yet implemented.");
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.WriteLine($"Command Error: {ex}");
-        //            await RespondAsync("An error occurred while processing this command.", ephemeral: true);
-        //        }
-        //    }
+            [SlashCommand("loss", "Admin command - Add number of losses to a team.")]
+            [RequireGuildAdmin]
+            public async Task AddLossAsync(
+                [Summary("team_name", "The name of the team to add losses.")] string teamName,
+                [Summary("number_of_losses", "The amount of losses to add.")] int number_of_losses)
+            {
+                try
+                {
+                    var result = _addTeamLossLogic.AddLossProcess(teamName, number_of_losses);
+                    await RespondAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+        }
 
-        //    [SlashCommand("loss", "Admin command - Add number of losses to a team.")]
-        //    public async Task AddLossAsync(
-        //        [Summary("team_name", "The name of the team to add losses.")] string teamName,
-        //        [Summary("number_of_losses", "The amount of losses to add.")] int number_of_losses)
-        //    {
-        //        try
-        //        {
-        //            //var result = ;
-        //            //await RespondAsync(embed: result);
-        //            await RespondAsync("Not yet implemented.");
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.WriteLine($"Command Error: {ex}");
-        //            await RespondAsync("An error occurred while processing this command.", ephemeral: true);
-        //        }
-        //    }
-        //}
+        [Group("remove", "Commands related to removing things to a team.")]
+        public class TeamRemoveCommands : InteractionModuleBase<SocketInteractionContext>
+        {
+            private RemoveTeamLossLogic _removeTeamLossLogic;
+            private RemoveTeamWinLogic _removeTeamWinLogic;
+            private RemoveTeamMemberLogic _removeTeamMemberLogic;
+            public TeamRemoveCommands(RemoveTeamLossLogic removeTeamLossLogic, RemoveTeamWinLogic removeTeamWinLogic, RemoveTeamMemberLogic removeTeamMemberLogic)
+            {
+                _removeTeamLossLogic = removeTeamLossLogic;
+                _removeTeamWinLogic = removeTeamWinLogic;
+                _removeTeamMemberLogic = removeTeamMemberLogic;
+            }
 
-        //[Group("remove", "Commands related to removing things to a team.")]
-        //public class TeamRemoveCommands : InteractionModuleBase<SocketInteractionContext>
-        //{
-        //    public TeamRemoveCommands()
-        //    {
+            [SlashCommand("member", "Add a member to an existing team.")]
+            [RequireGuildAdmin]
+            public async Task RemoveMemberAsync(
+                [Summary("team_name", "The name of the team to add a member to.")] string teamName,
+                [Summary("member", "The member to add to the team.")] IUser member)
+            {
+                try
+                {
+                    //var result = ;
+                    //await RespondAsync(embed: result);
+                    await RespondAsync("Not yet implemented.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
 
-        //    }
+            [SlashCommand("win", "Admin command - Add number of wins to a team.")]
+            [RequireGuildAdmin]
+            public async Task RemoveWinAsync(
+                [Summary("team_name", "The name of the team to add wins.")] string teamName,
+                [Summary("number_of_wins", "The amount of wins to add.")] int number_of_wins)
+            {
+                try
+                {
+                    var result = _removeTeamWinLogic.RemoveWinProcess(teamName, number_of_wins);
+                    await RespondAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
 
-        //    [SlashCommand("member", "Add a member to an existing team.")]
-        //    public async Task AddMemberAsync(
-        //        [Summary("team_name", "The name of the team to add a member to.")] string teamName,
-        //        [Summary("member", "The member to add to the team.")] IUser member)
-        //    {
-        //        try
-        //        {
-        //            //var result = ;
-        //            //await RespondAsync(embed: result);
-        //            await RespondAsync("Not yet implemented.");
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.WriteLine($"Command Error: {ex}");
-        //            await RespondAsync("An error occurred while processing this command.", ephemeral: true);
-        //        }
-        //    }
-
-        //    [SlashCommand("win", "Admin command - Add number of wins to a team.")]
-        //    public async Task AddWinAsync(
-        //        [Summary("team_name", "The name of the team to add wins.")] string teamName,
-        //        [Summary("number_of_wins", "The amount of wins to add.")] int number_of_wins)
-        //    {
-        //        try
-        //        {
-        //            //var result = ;
-        //            //await RespondAsync(embed: result);
-        //            await RespondAsync("Not yet implemented.");
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.WriteLine($"Command Error: {ex}");
-        //            await RespondAsync("An error occurred while processing this command.", ephemeral: true);
-        //        }
-        //    }
-
-        //    [SlashCommand("loss", "Admin command - Add number of losses to a team.")]
-        //    public async Task AddLossAsync(
-        //        [Summary("team_name", "The name of the team to add losses.")] string teamName,
-        //        [Summary("number_of_losses", "The amount of losses to add.")] int number_of_losses)
-        //    {
-        //        try
-        //        {
-        //            //var result = ;
-        //            //await RespondAsync(embed: result);
-        //            await RespondAsync("Not yet implemented.");
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.WriteLine($"Command Error: {ex}");
-        //            await RespondAsync("An error occurred while processing this command.", ephemeral: true);
-        //        }
-        //    }
-        //}
+            [SlashCommand("loss", "Admin command - Add number of losses to a team.")]
+            [RequireGuildAdmin]
+            public async Task RemoveLossAsync(
+                [Summary("team_name", "The name of the team to add losses.")] string teamName,
+                [Summary("number_of_losses", "The amount of losses to add.")] int number_of_losses)
+            {
+                try
+                {
+                    var result = _removeTeamLossLogic.RemoveLossProcess(teamName, number_of_losses);
+                    await RespondAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+        }
     }
 }

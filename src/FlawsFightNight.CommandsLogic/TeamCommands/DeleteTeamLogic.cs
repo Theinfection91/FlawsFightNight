@@ -33,10 +33,34 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Send to specific logic based on tournament type
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    return LadderDeleteTeamProcess(tournament, teamName);
                 case TournamentType.RoundRobin:
                     return RoundRobinDeleteTeamProcess(tournament, teamName);
+                default:
+                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for team deletion yet.");
             }
-            return _embedManager.ToDoEmbed("Delete Team Logic Not Yet Implemented For Tournament Type");
+        }
+
+        public Embed LadderDeleteTeamProcess(Tournament tournament, string teamName)
+        {
+            /* Teams can be removed at any time in ladder tournaments, even after starting */
+
+            // Grab team object for embed
+            var team = _teamManager.GetTeamByName(teamName);
+
+            // Remove the team from the tournament
+            _teamManager.DeleteTeamFromDatabase(teamName);
+
+            // TODO Adjust ranks of remaining teams if necessary
+
+            // Save and reload the tournament database
+            _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
+
+            return _embedManager.TeamDeleteSuccess(team, tournament);
         }
 
         public Embed RoundRobinDeleteTeamProcess(Tournament tournament, string teamName)
