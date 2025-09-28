@@ -67,9 +67,9 @@ namespace FlawsFightNight.Managers
                         bool teamsDead = _teamsLiveViewTask?.IsFaulted ?? true;
 
                         // Also check if they haven't updated in >1 min
-                        bool matchesHung = (DateTime.UtcNow - _lastMatchesUpdate) > TimeSpan.FromMinutes(1);
-                        bool standingsHung = (DateTime.UtcNow - _lastStandingsUpdate) > TimeSpan.FromMinutes(1);
-                        bool teamsHung = (DateTime.UtcNow - _lastTeamsUpdate) > TimeSpan.FromMinutes(1);
+                        bool matchesHung = (DateTime.UtcNow - _lastMatchesUpdate) > TimeSpan.FromMinutes(3);
+                        bool standingsHung = (DateTime.UtcNow - _lastStandingsUpdate) > TimeSpan.FromMinutes(3);
+                        bool teamsHung = (DateTime.UtcNow - _lastTeamsUpdate) > TimeSpan.FromMinutes(3);
 
                         if (matchesDead || matchesHung)
                         {
@@ -109,7 +109,7 @@ namespace FlawsFightNight.Managers
             {
                 while (!token.IsCancellationRequested)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(13), token);
+                    await Task.Delay(TimeSpan.FromSeconds(30), token);
                     await SendMatchesToChannelAsync();
                 }
             }
@@ -167,7 +167,7 @@ namespace FlawsFightNight.Managers
                     }
 
                     // Get the embed for the matches live view
-                    var matchesEmbed = _embedManager.MatchesLiveView(tournament);
+                    var matchesEmbed = _embedManager.MatchesLiveViewResolver(tournament);
 
                     ulong messageId = tournament.MatchesMessageId;
                     if (messageId != 0)
@@ -237,7 +237,7 @@ namespace FlawsFightNight.Managers
             {
                 while (!token.IsCancellationRequested)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(11), token);
+                    await Task.Delay(TimeSpan.FromSeconds(25), token);
                     await SendStandingsToChannelAsync();
                 }
             }
@@ -363,7 +363,7 @@ namespace FlawsFightNight.Managers
                 while (!token.IsCancellationRequested)
                 {
                     //Console.WriteLine($"{DateTime.Now} [TeamsLiveViewTask] Running teams live view update...");
-                    await Task.Delay(TimeSpan.FromSeconds(15), token);
+                    await Task.Delay(TimeSpan.FromSeconds(35), token);
                     await SendTeamsToChannelAsync();
                 }
             }

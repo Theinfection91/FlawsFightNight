@@ -60,19 +60,104 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region LiveView Embeds
-        public Embed MatchesLiveView(Tournament tournament)
+        public Embed MatchesLiveViewResolver(Tournament tournament)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.RoundRobin:
+                    switch (tournament.RoundRobinMatchType)
+                    {
+                        case RoundRobinMatchType.Open:
+                            return RoundRobinOpenMatchesLiveView(tournament);
+                        case RoundRobinMatchType.Normal:
+                            return RoundRobinNormalMatchesLiveView(tournament);
+                        default:
+                            return ToDoEmbed();
+                    }
+                default:
+                    return ToDoEmbed();
+            }
+            
+        }
+
+        private Embed RoundRobinOpenMatchesLiveView(Tournament tournament)
         {
             var embed = new EmbedBuilder()
-                .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Tournament Matches")
+                .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Open Round Robin Tournament Matches")
+                .WithDescription($"*ID#: {tournament.Id}*\n**")
+                .WithColor(Color.Orange)
+                .WithCurrentTimestamp();
+
+            // --- Matches To Play ---
+            if (tournament.MatchLog.OpenRoundRobinMatchesToPlay.Count > 0)
+            {
+                var normalMatches = tournament.MatchLog.OpenRoundRobinMatchesToPlay
+                    .Where(m => !m.IsByeMatch)
+                    .Select(m => $"🔹 *Match ID#: {m.Id}* | **{m.TeamA}** vs **{m.TeamB}**");
+
+                var byeMatches = tournament.MatchLog.OpenRoundRobinMatchesToPlay
+                    .Where(m => m.IsByeMatch)
+                    .Select(m => $"💤 *Match ID#: {m.Id}* | *{m.GetCorrectNameForByeMatch()} Bye Match*");
+
+                var orderedMatches = normalMatches.Concat(byeMatches).ToList();
+
+                AddMatchesInPages(embed, "⚔️ Matches To Play", orderedMatches);
+            }
+            else
+            {
+                embed.AddField("⚔️ Matches To Play", "No matches left to play ✅", false);
+            }
+
+            // --- Previous Matches ---
+            if (tournament.MatchLog.OpenRoundRobinPostMatches.Count > 0)
+            {
+                var matches = tournament.MatchLog.OpenRoundRobinPostMatches
+                    .Select(pm => pm.WasByeMatch
+                        ? $"💤 *{pm.Winner} Bye Match*"
+                        : $"✅ *Match ID#: {pm.Id}* | " +
+                          $"**{pm.Winner}** defeated **{pm.Loser}** " +
+                          $"by **{pm.WinnerScore}** to **{pm.LoserScore}**")
+                    .ToList();
+
+                AddMatchesInPages(embed, "📜 Previous Matches", matches);
+            }
+            else
+            {
+                embed.AddField("📜 Previous Matches", "No matches completed yet.", false);
+            }
+
+            return embed.Build();
+        }
+
+        /// <summary>
+        /// Splits a list of match strings into pages of 15 per embed field.
+        /// </summary>
+        private void AddMatchesInPages(EmbedBuilder embed, string fieldName, List<string> matches)
+        {
+            const int pageSize = 15;
+
+            for (int i = 0; i < matches.Count; i += pageSize)
+            {
+                var chunk = matches.Skip(i).Take(pageSize);
+                string text = string.Join("\n", chunk);
+
+                embed.AddField(i == 0 ? fieldName : $"{fieldName} (cont.)", text, false);
+            }
+        }
+
+        private Embed RoundRobinNormalMatchesLiveView(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Normal Round Robin Tournament Matches")
                 .WithDescription($"*ID#: {tournament.Id}*\n**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
                 .WithColor(Color.Orange)
                 .WithCurrentTimestamp();
 
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEndTournament)
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEndNormalRoundRobinTournament)
             {
                 embed.AddField("🔒 Locked", "Round is locked and ready to advance.", true);
             }
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEndTournament)
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEndNormalRoundRobinTournament)
             {
                 embed.AddField("🔒 Locked - Ready to end tournament 🏅", "Round is locked and the tournament is ready to end have the results locked in.", true);
             }
@@ -86,26 +171,26 @@ namespace FlawsFightNight.Managers
                 && matchesToPlay.Count > 0)
             {
                 var sb = new StringBuilder();
-                foreach (var match in matchesToPlay)
+
+                // Normal matches first
+                foreach (var match in matchesToPlay.Where(m => !m.IsByeMatch))
                 {
-                    if (match.IsByeMatch)
-                        continue;
-                    else
-                        sb.AppendLine($"🔹 **{match.TeamA}** vs **{match.TeamB}**");
+                    sb.AppendLine($"🔹 *Match ID#: {match.Id}* | **{match.TeamA}** vs **{match.TeamB}**");
                 }
-                foreach (var match in matchesToPlay)
+
+                // Bye matches after
+                foreach (var match in matchesToPlay.Where(m => m.IsByeMatch))
                 {
-                    if (match.IsByeMatch)
-                        sb.AppendLine($"💤 *{match.GetCorrectNameForByeMatch()} Bye Match*");
-                    else
-                        continue;
+                    sb.AppendLine($"💤 *Match ID#: {match.Id}* | *{match.GetCorrectNameForByeMatch()} Bye Match*");
                 }
+
                 embed.AddField($"⚔️ Matches To Play (Round {tournament.CurrentRound})", sb.ToString(), false);
             }
             else
             {
                 embed.AddField("⚔️ Matches To Play", "No matches left to play this round ✅", false);
             }
+
 
             // --- Past Matches (grouped by round) ---
             if (tournament.MatchLog.PostMatchesByRound.Count > 0)
@@ -135,7 +220,7 @@ namespace FlawsFightNight.Managers
         public Embed RoundRobinStandingsLiveView(Tournament tournament)
         {
             var embed = new EmbedBuilder()
-                .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Tournament Standings")
+                .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} {tournament.RoundRobinMatchType} Round Robin Tournament Standings")
                 .WithDescription($"*ID#: {tournament.Id}*\n**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
                 .WithColor(Color.Gold)
                 .WithCurrentTimestamp();
@@ -244,6 +329,7 @@ namespace FlawsFightNight.Managers
                 .AddField("Winning Team (Score)", $"{winningTeam.Name} ({winningTeamScore})", true)
                 .AddField("Losing Team (Score)", $"{losingTeam.Name} ({losingTeamScore})", true)
                 .AddField("Tournament ID", tournament.Id, false)
+                .AddField("Match ID", match.Id, false)
                 .WithColor(Color.Green)
                 .WithFooter("Match result reported successfully.")
                 .WithTimestamp(DateTimeOffset.Now);
@@ -326,7 +412,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed RoundRobinMatchScheduleNotification(Tournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
+        public Embed NormalRoundRobinMatchScheduleNotification(Tournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"📅 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Schedule")
@@ -348,6 +434,37 @@ namespace FlawsFightNight.Managers
                 else
                 {
                     sb.AppendLine($"`Round {match.RoundNumber}` - **{match.TeamA}** vs. **{match.TeamB}**");
+                }
+            }
+
+            embed.WithDescription(sb.ToString())
+                .WithFooter($"Scheduled for: {userName}")
+                .WithTimestamp(DateTimeOffset.Now);
+
+            return embed.Build();
+        }
+
+        public Embed OpenRoundRobinMatchScheduleNotification(Tournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"📅 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Schedule")
+                .WithColor(Color.Gold)
+                .AddField("👥 Team", teamName, true)
+                .AddField("🏷️ Tournament ID", tournament.Id, true);
+
+            var sb = new StringBuilder();
+            sb.AppendLine("**Your Match Schedule:**");
+            sb.AppendLine("────────────────────────");
+
+            foreach (var match in matches.OrderBy(m => m.RoundNumber))
+            {
+                if (match.IsByeMatch)
+                {
+                    sb.AppendLine($"*Bye Match* 💤");
+                }
+                else
+                {
+                    sb.AppendLine($"**{match.TeamA}** vs. **{match.TeamB}**");
                 }
             }
 
@@ -416,7 +533,7 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🎉 Round Robin Tournament Created")
-                .WithDescription($"A Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember the following Tournament ID for future commands.\n\nDefault tie breaker rules are 'Traditional' and the default duration is set to 'Double Round Robin'. To change either of these settings, use /tournament setup anytime before starting the tournament.")
+                .WithDescription($"A Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nDefault **Tie Breaker Rules** are *'Traditional'* meaning it looks at each of the following steps and if its a tie it checks the next: head to head matches, then point differential between tied teams, then total points scored vs tied teams, then total points overall, then least points against. If all is tied it comes down to a random 'coinflip' to determine the winner.\n\nDefault **Length** is **'Double Round Robin'** meaning every team plays twice.\n\nDefault **Match Type** is *'Normal'*, meaning there will be the classic round structure of having every team play their match before the round can be advanced.\nThere is also the **Match Type** of *Open* where there are no rounds or bye matches, and teams can report any of their matches at any time. This allows more flexibility in scheduling matches, allowing teams to play their two required matches back to back if need be.\n\nTo change any of these settings, use **/tournament setup_round_robin** anytime before starting the tournament. \n\n**After the tournament starts you may not change any of these settings.\nApply setting changes now to be safe.**")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Match Format", tournament.TeamSizeFormat)
                 .WithColor(Color.Green)
@@ -442,8 +559,9 @@ namespace FlawsFightNight.Managers
                 .WithTitle("⚙️ Tournament Setup Success")
                 .WithDescription($"The Round Robin tournament **{tournament.Name}** has been successfully updated.")
                 .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Type", tournament.RoundRobinMatchType)
                 .AddField("Tie Breaker Rules", tournament.TieBreakerRule.Name)
-                .AddField("Round Robin Type", tournament.IsDoubleRoundRobin ? RoundRobinType.Double : RoundRobinType.Single)
+                .AddField("Round Robin Type", tournament.IsDoubleRoundRobin ? RoundRobinLengthType.Double : RoundRobinLengthType.Single)
                 .WithColor(Color.Green)
                 .WithFooter("You can change the settings again anytime before starting.")
                 .WithTimestamp(DateTimeOffset.Now);
@@ -465,8 +583,9 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🏆 Tournament Started")
-                .WithDescription($"The Round Robin tournament **{tournament.Name}** has been successfully started!")
+                .WithDescription($"The {tournament.RoundRobinMatchType} Round Robin tournament **{tournament.Name}** has been successfully started!")
                 .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Type", tournament.RoundRobinMatchType.ToString())
                 .AddField("Tie Breaker Rules", tournament.TieBreakerRule.Name)
                 .AddField("Match Format", tournament.TeamSizeFormat)
                 .AddField("Total Teams", tournament.Teams.Count)

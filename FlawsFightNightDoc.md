@@ -372,11 +372,11 @@ Attempt to end the tournament if all conditions are met. Currently for Round Rob
 ### Setup Tournament (`/tournament setup`)
 
 **Description**:
-Once a tournament is created, certain ones allow for customization. Round Robin tournaments will have different tie breaker logic you can choose from eventually. It will also allow for a Round Robin tournament to just be a single round robin and not double like default. This command must be used before starting the tournament to take effect.
+Once a tournament is created, certain ones allow for customization. There are two different match types which are Normal and Open; normal will have the classic rounds system where as open allows for teams to report any match at any time and does not have rounds. Round Robin tournaments will have different tie breaker logic you can choose from eventually. It will also allow for a Round Robin tournament to just be a single round robin and not double like default. This command must be used before starting the tournament to take effect.
 
 **Usage**
 ```csharp
-/tournament setup tournamentId:<string> tie_breaker_ruleset:<TieBreakerLogic> is_double_round_robin<bool>
+/tournament setup tournamentId:<string> match_type:<RoundRobinMatchType> tie_breaker_ruleset:<TieBreakerLogic> is_double_round_robin<bool>
 ```
 
 ---
@@ -409,14 +409,14 @@ Loads the modal confirmation box and asks for team name that is case sensitive a
 
 ## Match Commands
 
-## Report Win For Match (`/match report-win`)
+## Report Round Robin Win For Match (`/match report-win round-robin`)
 
 **Description**:
-Using the winning teams name, as well as the score for winning team and losing team this will close out a match and turn it into a post match. This command is universal for admins and regular players. A player may only report wins for their team, but an admin can use this command and report for anyone. It also will accept a winner with a score of 0 to 0 in case a team forfeits or doesnt show that way the other team can win but also not gain any points. Will not accept losing team's score being higher than winning team's score.
+Using the Match ID, winning team name, as well as the score for winning team and losing team this will close out a match and turn it into a post match. This command is universal for admins and regular players. A player may only report wins for their team, but an admin can use this command and report for anyone. It also will accept a winner with a score of 0 to 0 in case a team forfeits or doesnt show that way the other team can win but also not gain any points. Will not accept losing team's score being higher than winning team's score.
 
 **Usage**
 ```csharp
-/match report-win winning_team_name:<string> winning_team_score:<int> losing_team_score:<int>
+/match report-win matchId:<string> winning_team_name:<string> winning_team_score:<int> losing_team_score:<int>
 ```
 
 ---

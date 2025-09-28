@@ -97,6 +97,34 @@ namespace FlawsFightNight.Managers
         }
         #endregion
 
+        #region Edit Match Helpers
+        public void EditMatchRollback(Tournament tournament, PostMatch postMatch)
+        {
+            var winner = GetTeamByName(tournament, postMatch.Winner);
+            var loser = GetTeamByName(tournament, postMatch.Loser);
+
+            // Roll back stats
+            winner.Wins--;
+            winner.TotalScore -= postMatch.WinnerScore;
+
+            loser.Losses--;
+            loser.TotalScore -= postMatch.LoserScore;
+        }
+
+        public void EditMatchApply(Tournament tournament, PostMatch postMatch)
+        {
+            var winner = GetTeamByName(tournament, postMatch.Winner);
+            var loser = GetTeamByName(tournament, postMatch.Loser);
+
+            // Apply stats
+            winner.Wins++;
+            winner.TotalScore += postMatch.WinnerScore;
+
+            loser.Losses++;
+            loser.TotalScore += postMatch.LoserScore;
+        }
+        #endregion
+
         public Team CreateTeam(string teamName, List<Member> members, int rank)
         {
             return new Team()

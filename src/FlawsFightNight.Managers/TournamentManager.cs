@@ -201,6 +201,19 @@ namespace FlawsFightNight.Managers
         {
             foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
+                foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
+                {
+                    foreach (var match in round)
+                    {
+                        if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return tournament;
+                        }
+                    }
+                }
+            }
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
                 foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
                 {
                     foreach (var match in round)
@@ -209,6 +222,26 @@ namespace FlawsFightNight.Managers
                         {
                             return tournament;
                         }
+                    }
+                }
+            }
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
+                {
+                    if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return tournament;
+                    }
+                }
+            }
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                foreach (var match in tournament.MatchLog.OpenRoundRobinPostMatches)
+                {
+                    if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return tournament;
                     }
                 }
             }

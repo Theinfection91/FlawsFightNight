@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
@@ -30,6 +31,11 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
             Tournament? tournament = _tournamentManager.GetTournamentById(tournamentId);
 
+            if (!tournament.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal))
+            {
+                return _embedManager.ErrorEmbed(Name, $"Only Normal Round Robin tournaments support advancing to the next round at this time.");
+            }
+
             // Check if the round is complete
             if (!tournament.IsRoundComplete)
             {
@@ -42,7 +48,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"The round for tournament '{tournament.Name}' is not locked in.");
             }
 
-            if (tournament.CanEndTournament)
+            if (tournament.CanEndNormalRoundRobinTournament)
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is ready to end so you cannot go to the next round. Please use the appropriate command to end it.");
             }
