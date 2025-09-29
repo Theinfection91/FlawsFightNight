@@ -12,7 +12,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
         private GitBackupManager _gitBackupManager;
         public SendChallengeLogic(GitBackupManager gitBackupManager) : base("Send Challenge")
         {
-            // Initialize any necessary components or services here
             _gitBackupManager = gitBackupManager;
         }
     }

@@ -16,6 +16,10 @@ namespace FlawsFightNight.Core.Models
         public List<Match> OpenRoundRobinMatchesToPlay { get; set; } = [];
         public List<PostMatch> OpenRoundRobinPostMatches { get; set; } = [];
 
+        // Ladder Properties
+        public List<Match> LadderMatchesToPlay { get; set; } = [];
+        public List<PostMatch> LadderPostMatches { get; set; } = [];
+
         public MatchLog() { }
 
         public (int, int) GetPointsForAndPointsAgainstForTeam(string teamName)

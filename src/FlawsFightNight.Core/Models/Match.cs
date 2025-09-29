@@ -16,6 +16,9 @@ namespace FlawsFightNight.Core.Models
         public int RoundNumber { get; set; }
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 
+        // Ladder Specific Info
+        public Challenge? Challenge { get; set; } = null;
+
         public Match(string teamA, string teamB)
         {
             TeamA = teamA;
