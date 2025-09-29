@@ -85,9 +85,8 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 try
                 {
-                    //var result = ;
-                    //await RespondAsync(embed: result);
-                    await RespondAsync("Challenges and Ladder Tournaments coming soon.", ephemeral: true);
+                    var result = _sendChallengeLogic.SendChallengeProcess(Context, challengerTeamName, opponentTeamName);
+                    await RespondAsync(embed: result);
                 }
                 catch (Exception ex)
                 {

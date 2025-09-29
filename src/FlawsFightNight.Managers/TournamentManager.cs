@@ -73,7 +73,7 @@ namespace FlawsFightNight.Managers
                 case TournamentType.Ladder:
                     return true; // Ladder tournaments can always accept new teams
                 case TournamentType.RoundRobin:
-                    return tournament.IsTeamsLocked;
+                    return !tournament.IsTeamsLocked;
                 case TournamentType.SingleElimination:
                 case TournamentType.DoubleElimination:
                     return !tournament.IsRunning; // SE/DE tournaments cannot accept new teams once they start
@@ -172,6 +172,19 @@ namespace FlawsFightNight.Managers
                 return _dataManager.TournamentsDatabaseFile.Tournaments
                     .Any(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
             }
+        }
+
+        public bool IsTeamsInSameTournament(Tournament tournament, Team teamA, Team teamB)
+        {
+            var teams = new List<Team> { teamA, teamB };
+            foreach (Team team in teams)
+            {
+                if (!tournament.Teams.Contains(team))
+                {
+                    return false; // At least one team is not in the tournament
+                }
+            }
+            return true; // All teams are in the tournament
         }
 
         public List<Tournament> GetAllTournaments()

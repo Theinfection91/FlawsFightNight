@@ -35,7 +35,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is already running.");
             }
             // Check if teams are locked
-            if (!tournament.IsTeamsLocked)
+            if (!tournament.IsTeamsLocked && tournament.Type.Equals(TournamentType.RoundRobin))
             {
                 return _embedManager.ErrorEmbed(Name, $"The teams in the tournament '{tournament.Name}' are not locked. Please lock the teams before starting the tournament.");
             }
@@ -48,6 +48,8 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    return LadderStartTournamentProcess(tournament);
                 case TournamentType.RoundRobin:
                     switch (tournament.RoundRobinMatchType)
                     {
@@ -61,6 +63,21 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 default:
                     return _embedManager.ErrorEmbed(Name, "Only Round Robin tournaments are implemented right now. Can not start any other time at this point.");
             }
+        }
+        
+        private Embed LadderStartTournamentProcess(Tournament tournament)
+        {
+            // TODO Expand later if needed, all Ladder needs for most things is IsRunning
+            tournament.IsRunning = true;
+
+            // Save and reload the tournament database
+            _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
+
+            // Return Embed with tournament information
+            return _embedManager.StartTournamentSuccessResolver(tournament);
         }
 
         private Embed RoundRobinNormalStartTournamentProcess(Tournament tournament)

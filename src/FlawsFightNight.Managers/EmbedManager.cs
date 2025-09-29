@@ -339,6 +339,28 @@ namespace FlawsFightNight.Managers
 
         #endregion
 
+        #region Challenge Embeds
+        public Embed SendChallengeSuccess(Tournament tournament, Match match, bool isGuildAdminReporting)
+        {
+            string reporterText = isGuildAdminReporting
+                ? "An **admin** sent this challenge."
+                : "This challenge was sent normally.";
+
+            var embed = new EmbedBuilder()
+                .WithTitle("🏅 Challenge Sent Successfully")
+                .WithDescription($"The challenge from (#{match.Challenge.ChallengerRank})**{match.Challenge.Challenger}** to (#{match.Challenge.ChallengedRank})**{match.Challenge.Challenged}** has been successfully sent in the tournament **{tournament.Name}**!\n\n{reporterText}")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Challenging Team", match.Challenge.Challenger)
+                .AddField("Challenger Rank", $"#{match.Challenge.ChallengerRank}", true)
+                .AddField("Challenged Team", match.Challenge.Challenged)
+                .AddField("Challenged Rank", $"#{match.Challenge.ChallengedRank}", true)
+                .WithColor(Color.Green)
+                .WithFooter("Good luck to both teams!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+        #endregion
+
         #region Set LiveView Embeds
         public Embed SetMatchesChannelSuccess(IMessageChannel channel, Tournament tournament)
         {
@@ -510,6 +532,8 @@ namespace FlawsFightNight.Managers
         {
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    return LadderCreateTournamentSuccess(tournament);
                 case TournamentType.RoundRobin:
                     return RoundRobinCreateTournamentSuccess(tournament);
                 default:
@@ -529,11 +553,24 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed RoundRobinCreateTournamentSuccess(Tournament tournament)
+        private Embed RoundRobinCreateTournamentSuccess(Tournament tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🎉 Round Robin Tournament Created")
                 .WithDescription($"A Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nDefault **Tie Breaker Rules** are *'Traditional'* meaning it looks at each of the following steps and if its a tie it checks the next: head to head matches, then point differential between tied teams, then total points scored vs tied teams, then total points overall, then least points against. If all is tied it comes down to a random 'coinflip' to determine the winner.\n\nDefault **Length** is **'Double Round Robin'** meaning every team plays twice.\n\nDefault **Match Type** is *'Normal'*, meaning there will be the classic round structure of having every team play their match before the round can be advanced.\nThere is also the **Match Type** of *Open* where there are no rounds or bye matches, and teams can report any of their matches at any time. This allows more flexibility in scheduling matches, allowing teams to play their two required matches back to back if need be.\n\nTo change any of these settings, use **/tournament setup_round_robin** anytime before starting the tournament. \n\n**After the tournament starts you may not change any of these settings.\nApply setting changes now to be safe.**")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .WithColor(Color.Green)
+                .WithFooter("Let's get some teams registered to this tournament now.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        private Embed LadderCreateTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🎉 Ladder Tournament Created")
+                .WithDescription($"A Ladder tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nLadders are *'Challenged Based'*, meaning teams send out challenges but can only challenge teams ranked 2 spots above them, and may not challenge below their current rank. A team may only have one challenge sent out or be on the receiving end of a challenge meaning if a team has been challenge they cannot be challenge again or send out their own challenge until the intial one is resolved.")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Match Format", tournament.TeamSizeFormat)
                 .WithColor(Color.Green)
@@ -572,11 +609,27 @@ namespace FlawsFightNight.Managers
         {
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    return LadderStartTournamentSuccess(tournament);
                 case TournamentType.RoundRobin:
                     return RoundRobinStartTournamentSuccess(tournament);
                 default:
                     return ErrorEmbed("Unsupported tournament type.");
             }
+        }
+
+        private Embed LadderStartTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🏆 Tournament Started")
+                .WithDescription($"The Ladder tournament **{tournament.Name}** has been successfully started!")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .AddField("Total Teams", tournament.Teams.Count)
+                .WithColor(Color.Green)
+                .WithFooter("Good luck to all teams!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
         }
 
         private Embed RoundRobinStartTournamentSuccess(Tournament tournament)

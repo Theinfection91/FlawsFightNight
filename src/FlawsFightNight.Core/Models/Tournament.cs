@@ -90,6 +90,17 @@ namespace FlawsFightNight.Core.Models
             CanTeamsBeLocked = true;
         }
 
+        #region Ladder Helpers
+        public void AddLadderMatchToMatchLog(Match match)
+        {
+            MatchLog.LadderMatchesToPlay.Add(match);
+            // Sort MatchLog by Creation Date, oldest at the top
+            MatchLog.LadderMatchesToPlay = MatchLog.LadderMatchesToPlay
+                .OrderBy(m => m.CreatedOn)
+                .ToList();
+        }
+        #endregion
+
         #region Round Robin Helpers
         public void SetRanksByTieBreakerLogic()
         {
