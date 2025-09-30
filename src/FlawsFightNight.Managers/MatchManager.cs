@@ -429,10 +429,24 @@ namespace FlawsFightNight.Managers
             return null; // Match ID not found
         }
 
+        private Match GetMatchByIdInLadderTournament(Tournament tournament, string matchId)
+        {
+            foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+            {
+                if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match; // Match found
+                }
+            }
+            return null; // Match ID not found
+        }
+
         public Match GetMatchByMatchIdResolver(Tournament tournament, string matchId)
         {
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    return GetMatchByIdInLadderTournament(tournament, matchId);
                 case TournamentType.RoundRobin:
                     switch (tournament.RoundRobinMatchType)
                     {
@@ -449,17 +463,19 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public Match GetMatchByTeamNameResolver(Tournament tournament, string teamName)
+        public Match GetOpenMatchByTeamNameResolver(Tournament tournament, string teamName)
         {
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    return GetOpenMatchByTeamNameLadder(tournament, teamName);
                 case TournamentType.RoundRobin:
                     switch (tournament.RoundRobinMatchType)
                     {
                         case RoundRobinMatchType.Normal:
-                            return GetMatchByTeamNameNormalRoundRobin(tournament, teamName);
+                            return GetOpenMatchByTeamNameNormalRoundRobin(tournament, teamName);
                         case RoundRobinMatchType.Open:
-                            return GetMatchByTeamNameOpenRoundRobin(tournament, teamName);
+                            return GetOpenMatchByTeamNameOpenRoundRobin(tournament, teamName);
                         default:
                             //Console.WriteLine($"Match retrieval not implemented for round robin match type: {tournament.RoundRobinMatchType}");
                             return null;
@@ -469,7 +485,32 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private Match GetMatchByTeamNameNormalRoundRobin(Tournament tournament, string teamName)
+        private Match GetOpenMatchByTeamNameLadder(Tournament tournament, string teamName)
+        {
+            foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+            {
+                if (match == null)
+                {
+                    //Console.WriteLine("Encountered null match in list, skipping.");
+                    continue;
+                }
+                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+                if (!string.IsNullOrEmpty(match.TeamA) &&
+                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+                if (!string.IsNullOrEmpty(match.TeamB) &&
+                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+            }
+            //Console.WriteLine($"No match found for team '{teamName}' in ladder matches.");
+            return null;
+        }
+
+        private Match GetOpenMatchByTeamNameNormalRoundRobin(Tournament tournament, string teamName)
         {
             int currentRound = tournament.CurrentRound;
             //Console.WriteLine($"Looking in round: {currentRound}");
@@ -513,7 +554,7 @@ namespace FlawsFightNight.Managers
             return null;
         }
 
-        private Match GetMatchByTeamNameOpenRoundRobin(Tournament tournament, string teamName)
+        private Match GetOpenMatchByTeamNameOpenRoundRobin(Tournament tournament, string teamName)
         {
             foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
             {
@@ -672,6 +713,51 @@ namespace FlawsFightNight.Managers
 
             // Only return if there's an actual tie (2 or more teams at max)
             return topTiedTeams.Count > 1 ? topTiedTeams : new List<string>();
+        }
+
+        #endregion
+
+        #region Ladder Challenge Methods
+        public bool IsChallengePending(Tournament tournament, string challengerTeamName, string challengedTeamName)
+        {
+            return tournament.MatchLog.LadderMatchesToPlay.Any(m =>
+                m.Challenge != null &&
+                m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase) &&
+                m.Challenge.Challenged.Equals(challengedTeamName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public bool HasChallengeSent(Tournament tournament, string challengerTeamName)
+        {
+            return tournament.MatchLog.LadderMatchesToPlay.Any(m =>
+                m.Challenge != null &&
+                m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public Match? GetChallengeMatchByChallengerName(Tournament tournament, string challengerTeamName)
+        {
+            return tournament.MatchLog.LadderMatchesToPlay.FirstOrDefault(m =>
+                m.Challenge != null &&
+                m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public Match CreateLadderMatchWithChallenge(Team challengerTeam, Team challengedTeam)
+        {
+            var match = new Match(challengerTeam.Name, challengedTeam.Name)
+            {
+                Id = GenerateMatchId(),
+                IsByeMatch = false,
+                RoundNumber = 0,
+                CreatedOn = DateTime.UtcNow,
+                Challenge = CreateChallenge(challengerTeam, challengedTeam)
+            };
+            return match;
+        }
+
+        private Challenge CreateChallenge(Team challengerTeam, Team challengedTeam)
+        {
+            var challenge = new Challenge(challengerTeam.Name, challengerTeam.Rank, challengedTeam.Name, challengedTeam.Rank);
+
+            return challenge;
         }
 
         #endregion
@@ -1018,6 +1104,88 @@ namespace FlawsFightNight.Managers
             catch (Exception ex)
             {
                 //Console.WriteLine($"Error sending DM to user with Discord ID {discordId}: {ex.Message}");
+            }
+        }
+
+        public async void SendChallengeSuccessNotificationProcess(Tournament tournament, Match match, Team challengerTeam, Team challengedTeam)
+        {
+            try
+            {
+                foreach (var member in challengerTeam.Members)
+                {
+                    var user = await _client.GetUserAsync(member.DiscordId);
+                    if (user == null || user.IsBot)
+                    {
+                        continue;
+                    }
+                    var dmChannel = await user.CreateDMChannelAsync();
+                    if (dmChannel == null)
+                    {
+                        continue;
+                    }
+                    var message = _embedManager.LadderSendChallengeMatchNotification(tournament, challengerTeam, challengedTeam, true);
+                    await dmChannel.SendMessageAsync(embed: message);
+                }
+                foreach (var member in challengedTeam.Members)
+                {
+                    var user = await _client.GetUserAsync(member.DiscordId);
+                    if (user == null || user.IsBot)
+                    {
+                        continue;
+                    }
+                    var dmChannel = await user.CreateDMChannelAsync();
+                    if (dmChannel == null)
+                    {
+                        continue;
+                    }
+                    var message = _embedManager.LadderSendChallengeMatchNotification(tournament, challengerTeam, challengedTeam, false);
+                    await dmChannel.SendMessageAsync(embed: message);
+                }
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine($"Error sending ladder match challenge notifications: {ex.Message}");
+            }
+        }
+
+        public async void SendChallengeCancelNotificationProcess(Tournament tournament, Match match, Team challengerTeam, Team challengedTeam)
+        {
+            try
+            {
+                foreach (var member in challengerTeam.Members)
+                {
+                    var user = await _client.GetUserAsync(member.DiscordId);
+                    if (user == null || user.IsBot)
+                    {
+                        continue;
+                    }
+                    var dmChannel = await user.CreateDMChannelAsync();
+                    if (dmChannel == null)
+                    {
+                        continue;
+                    }
+                    var message = _embedManager.LadderCancelChallengeMatchNotification(tournament, challengerTeam, challengedTeam, true);
+                    await dmChannel.SendMessageAsync(embed: message);
+                }
+                foreach (var member in challengedTeam.Members)
+                {
+                    var user = await _client.GetUserAsync(member.DiscordId);
+                    if (user == null || user.IsBot)
+                    {
+                        continue;
+                    }
+                    var dmChannel = await user.CreateDMChannelAsync();
+                    if (dmChannel == null)
+                    {
+                        continue;
+                    }
+                    var message = _embedManager.LadderCancelChallengeMatchNotification(tournament, challengerTeam, challengedTeam, false);
+                    await dmChannel.SendMessageAsync(embed: message);
+                }
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine($"Error sending ladder match challenge cancellation notifications: {ex.Message}");
             }
         }
 

@@ -38,17 +38,20 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             switch (tournament.Type)
             {
                 case TournamentType.Ladder:
-                    return LadderDeleteTournament(tournament);
+                    return LadderDeleteTournamentProcess(tournament);
                 case TournamentType.RoundRobin:
                     return RoundRobinDeleteTournament(tournament);
                 default:
                     return _embedManager.ErrorEmbed(Name, "Tournament type not supported for deletion yet.");
             }
+            return _embedManager.ErrorEmbed(Name, "Tournament type not supported for deletion yet.");
         }
 
-        private Embed LadderDeleteTournament(Tournament tournament)
+        private Embed LadderDeleteTournamentProcess(Tournament tournament)
         {
-            // Ladder tournaments can be deleted if not running, no extra checks needed
+            // As long as the tournament is not running, we can delete it. 
+
+            // Delete the tournament, this will also save and reload the database
             _tournamentManager.DeleteTournament(tournament.Id);
 
             // Backup to git repo

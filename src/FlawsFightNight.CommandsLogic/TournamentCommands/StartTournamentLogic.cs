@@ -35,8 +35,6 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is already running.");
             }
-            
-            switch (tournament.Type)
             {
                 case TournamentType.Ladder:
                     return LadderStartTournamentProcess(tournament);
@@ -94,7 +92,21 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                     return _embedManager.ErrorEmbed(Name, "Only Round Robin tournaments are implemented right now. Can not start any other time at this point.");
             }
         }
+        
+        private Embed LadderStartTournamentProcess(Tournament tournament)
+        {
+            // TODO Expand later if needed, all Ladder needs for most things is IsRunning
+            tournament.IsRunning = true;
 
+            // Save and reload the tournament database
+            _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
+
+            // Return Embed with tournament information
+            return _embedManager.StartTournamentSuccessResolver(tournament);
+        }
 
         private Embed RoundRobinNormalStartTournamentProcess(Tournament tournament)
         {

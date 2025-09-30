@@ -32,6 +32,8 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 
         public Embed RegisterTeamProcess(string teamName, string tournamentId, List<IUser> members)
         {
+            // TODO Cannot register a team name with anything that could be a tournament ID#, or Match ID# (TXXX or MXXX)
+
             // Cannot try to report Bye as a team
             if (teamName.Equals("Bye", StringComparison.OrdinalIgnoreCase))
             {
@@ -44,6 +46,12 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
+
+            // Can register new teams if Ladder Tournament is running, but cannot register them to Round Robin Tournament or SE/DE Bracket once they have started
+            if (!_tournamentManager.CanAcceptNewTeams(tournament))
+            {
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time. Check if teams are locked.");
+            }
 
             // Check if the team name is unique within the tournament
             if (!_teamManager.IsTeamNameUnique(teamName))
@@ -120,7 +128,10 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             }
 
             // Adjust ranks of remaining teams
-            tournament.SetRanksByTieBreakerLogic();
+            if (tournament.Type.Equals(TournamentType.RoundRobin))
+            {
+                tournament.SetRanksByTieBreakerLogic();
+            }
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();

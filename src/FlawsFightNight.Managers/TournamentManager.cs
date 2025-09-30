@@ -174,6 +174,19 @@ namespace FlawsFightNight.Managers
             }
         }
 
+        public bool IsTeamsInSameTournament(Tournament tournament, Team teamA, Team teamB)
+        {
+            var teams = new List<Team> { teamA, teamB };
+            foreach (Team team in teams)
+            {
+                if (!tournament.Teams.Contains(team))
+                {
+                    return false; // At least one team is not in the tournament
+                }
+            }
+            return true; // All teams are in the tournament
+        }
+
         public List<Tournament> GetAllTournaments()
         {
             return _dataManager.TournamentsDatabaseFile.Tournaments;
