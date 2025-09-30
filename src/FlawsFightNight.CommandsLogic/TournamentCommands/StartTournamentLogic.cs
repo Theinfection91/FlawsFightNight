@@ -35,41 +35,18 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is already running.");
             }
+            switch (tournament.Type)
             {
                 case TournamentType.Ladder:
                     return LadderStartTournamentProcess(tournament);
                 case TournamentType.RoundRobin:
-                    return RoundRobinStartTournamentProcess(tournament);
+                    return RoundRobinStartTournamentResolver(tournament);
                 default:
                     return _embedManager.ErrorEmbed(Name, "Only Round Robin tournaments are implemented right now. Can not start any other time at this point.");
             }
         }
-
-        private Embed LadderStartTournamentProcess(Tournament tournament)
-        {
-            // Check if there are enough teams to start
-            if (!tournament.IsLadderTournamentReadyToStart())
-            {
-                return _embedManager.ErrorEmbed(Name, $"The Ladder tournament '{tournament.Name}' does not have enough teams to start. Please ensure there are at least 3 teams registered.");
-            }
-            // Ensure all teams start with no wins/losses or points
-            foreach (var team in tournament.Teams)
-            {
-                team.ResetTeamToZero();
-            }
-
-            tournament.LadderStartTournamentProcess();
-
-            // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-            // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
-
-            return _embedManager.StartTournamentSuccessResolver(tournament);
-        }
-
-        private Embed RoundRobinStartTournamentProcess(Tournament tournament)
+     
+        private Embed RoundRobinStartTournamentResolver(Tournament tournament)
         {
             // Check if teams are locked
             if (!tournament.IsTeamsLocked)
@@ -82,9 +59,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                     switch (tournament.RoundRobinMatchType)
                     {
                         case RoundRobinMatchType.Open:
-                            return RoundRobinOpenStartTournamentProcess(tournament);
+                            return RoundRobinOpenStartTournament(tournament);
                         case RoundRobinMatchType.Normal:
-                            return RoundRobinNormalStartTournamentProcess(tournament);
+                            return RoundRobinNormalStartTournament(tournament);
                         default:
                             return _embedManager.ErrorEmbed(Name, "Only Normal and Open Round Robin tournaments are implemented right now. Can not start any other type at this point.");
                     }
@@ -92,7 +69,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                     return _embedManager.ErrorEmbed(Name, "Only Round Robin tournaments are implemented right now. Can not start any other time at this point.");
             }
         }
-        
+
         private Embed LadderStartTournamentProcess(Tournament tournament)
         {
             // TODO Expand later if needed, all Ladder needs for most things is IsRunning
@@ -108,7 +85,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             return _embedManager.StartTournamentSuccessResolver(tournament);
         }
 
-        private Embed RoundRobinNormalStartTournamentProcess(Tournament tournament)
+        private Embed RoundRobinNormalStartTournament(Tournament tournament)
         {
             // Start the tournament, build normal schedule with rounds
             _matchManager.BuildMatchScheduleResolver(tournament);
@@ -127,7 +104,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             return _embedManager.StartTournamentSuccessResolver(tournament);
         }
 
-        private Embed RoundRobinOpenStartTournamentProcess(Tournament tournament)
+        private Embed RoundRobinOpenStartTournament(Tournament tournament)
         {
             // Start the tournament, build schedule without rounds
             _matchManager.BuildMatchScheduleResolver(tournament);
