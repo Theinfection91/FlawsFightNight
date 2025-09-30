@@ -718,6 +718,28 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Ladder Challenge Methods
+        public bool IsChallengePending(Tournament tournament, string challengerTeamName, string challengedTeamName)
+        {
+            return tournament.MatchLog.LadderMatchesToPlay.Any(m =>
+                m.Challenge != null &&
+                m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase) &&
+                m.Challenge.Challenged.Equals(challengedTeamName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public bool HasChallengeSent(Tournament tournament, string challengerTeamName)
+        {
+            return tournament.MatchLog.LadderMatchesToPlay.Any(m =>
+                m.Challenge != null &&
+                m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public Match? GetChallengeMatchByChallengerName(Tournament tournament, string challengerTeamName)
+        {
+            return tournament.MatchLog.LadderMatchesToPlay.FirstOrDefault(m =>
+                m.Challenge != null &&
+                m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase));
+        }
+
         public Match CreateLadderMatchWithChallenge(Team challengerTeam, Team challengedTeam)
         {
             var match = new Match(challengerTeam.Name, challengedTeam.Name)

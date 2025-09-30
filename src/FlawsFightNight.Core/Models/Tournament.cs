@@ -99,6 +99,11 @@ namespace FlawsFightNight.Core.Models
                 .OrderBy(m => m.CreatedOn)
                 .ToList();
         }
+
+        public void DeleteLadderMatchFromMatchLog(Match pendingMatch)
+        {
+            MatchLog.LadderMatchesToPlay.Remove(pendingMatch);
+        }
         #endregion
 
         #region Round Robin Helpers

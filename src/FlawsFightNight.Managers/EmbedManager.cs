@@ -359,6 +359,23 @@ namespace FlawsFightNight.Managers
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
+
+        public Embed CancelChallengeSuccess(Tournament tournament, Match match, bool isGuildAdminReporting)
+        {
+            string reporterText = isGuildAdminReporting
+                ? "An **admin** canceled this challenge."
+                : "This challenge was canceled normally.";
+            var embed = new EmbedBuilder()
+                .WithTitle("🗑️ Challenge Canceled Successfully")
+                .WithDescription($"The challenge from (#{match.Challenge.ChallengerRank})**{match.Challenge.Challenger}** to (#{match.Challenge.ChallengedRank})**{match.Challenge.Challenged}** has been successfully canceled in the tournament **{tournament.Name}**.\n\n{reporterText}")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Challenging Team", match.Challenge.Challenger)
+                .AddField("Challenged Team", match.Challenge.Challenged)
+                .WithColor(Color.Green)
+                .WithFooter("The challenge has been canceled.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
         #endregion
 
         #region Set LiveView Embeds

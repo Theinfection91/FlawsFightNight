@@ -100,9 +100,8 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 try
                 {
-                    //var result = ;
-                    //await RespondAsync(embed: result);
-                    await RespondAsync("Challenges and Ladder Tournaments coming soon.", ephemeral: true);
+                    var result = _cancelChallengeLogic.CancelChallengeProcess(Context, challengerTeamName);
+                    await RespondAsync(embed: result);
                 }
                 catch (Exception ex)
                 {

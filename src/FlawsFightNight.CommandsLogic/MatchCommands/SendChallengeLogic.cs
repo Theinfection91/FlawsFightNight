@@ -75,7 +75,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Challenges can only be sent in running tournaments.");
             }
 
-            // Check if invoker is on winning team (or guild admin)
+            // Check if invoker is on challenger team (or guild admin)
             if (context.User is not SocketGuildUser guildUser)
             {
                 return _embedManager.ErrorEmbed(Name, "Only members of the guild may use this command.");
