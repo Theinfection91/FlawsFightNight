@@ -1107,6 +1107,88 @@ namespace FlawsFightNight.Managers
             }
         }
 
+        public async void SendChallengeSuccessNotificationProcess(Tournament tournament, Match match, Team challengerTeam, Team challengedTeam)
+        {
+            try
+            {
+                foreach (var member in challengerTeam.Members)
+                {
+                    var user = await _client.GetUserAsync(member.DiscordId);
+                    if (user == null || user.IsBot)
+                    {
+                        continue;
+                    }
+                    var dmChannel = await user.CreateDMChannelAsync();
+                    if (dmChannel == null)
+                    {
+                        continue;
+                    }
+                    var message = _embedManager.LadderSendChallengeMatchNotification(tournament, challengerTeam, challengedTeam, true);
+                    await dmChannel.SendMessageAsync(embed: message);
+                }
+                foreach (var member in challengedTeam.Members)
+                {
+                    var user = await _client.GetUserAsync(member.DiscordId);
+                    if (user == null || user.IsBot)
+                    {
+                        continue;
+                    }
+                    var dmChannel = await user.CreateDMChannelAsync();
+                    if (dmChannel == null)
+                    {
+                        continue;
+                    }
+                    var message = _embedManager.LadderSendChallengeMatchNotification(tournament, challengerTeam, challengedTeam, false);
+                    await dmChannel.SendMessageAsync(embed: message);
+                }
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine($"Error sending ladder match challenge notifications: {ex.Message}");
+            }
+        }
+
+        public async void SendChallengeCancelNotificationProcess(Tournament tournament, Match match, Team challengerTeam, Team challengedTeam)
+        {
+            try
+            {
+                foreach (var member in challengerTeam.Members)
+                {
+                    var user = await _client.GetUserAsync(member.DiscordId);
+                    if (user == null || user.IsBot)
+                    {
+                        continue;
+                    }
+                    var dmChannel = await user.CreateDMChannelAsync();
+                    if (dmChannel == null)
+                    {
+                        continue;
+                    }
+                    var message = _embedManager.LadderCancelChallengeMatchNotification(tournament, challengerTeam, challengedTeam, true);
+                    await dmChannel.SendMessageAsync(embed: message);
+                }
+                foreach (var member in challengedTeam.Members)
+                {
+                    var user = await _client.GetUserAsync(member.DiscordId);
+                    if (user == null || user.IsBot)
+                    {
+                        continue;
+                    }
+                    var dmChannel = await user.CreateDMChannelAsync();
+                    if (dmChannel == null)
+                    {
+                        continue;
+                    }
+                    var message = _embedManager.LadderCancelChallengeMatchNotification(tournament, challengerTeam, challengedTeam, false);
+                    await dmChannel.SendMessageAsync(embed: message);
+                }
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine($"Error sending ladder match challenge cancellation notifications: {ex.Message}");
+            }
+        }
+
         public async void SendOpenRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, Tournament tournament)
         {
             // This is a fire-and-forget method. Errors are logged but not thrown.

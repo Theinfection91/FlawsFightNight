@@ -97,6 +97,9 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             challengerTeam.IsChallengeable = true;
             challengedTeam.IsChallengeable = true;
 
+            // Send direct message notifications to each member of both teams about the canceled challenge
+            _matchManager.SendChallengeCancelNotificationProcess(tournament, pendingMatch, challengerTeam, challengedTeam);
+
             // Cancel the challenge, remove match
             tournament.DeleteLadderMatchFromMatchLog(pendingMatch);
 

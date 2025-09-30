@@ -77,7 +77,7 @@ namespace FlawsFightNight.Managers
                 default:
                     return ToDoEmbed();
             }
-            
+
         }
 
         private Embed RoundRobinOpenMatchesLiveView(Tournament tournament)
@@ -450,7 +450,9 @@ namespace FlawsFightNight.Managers
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
+        #endregion
 
+        #region Direct Message Notification Embeds
         public Embed NormalRoundRobinMatchScheduleNotification(Tournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
         {
             var embed = new EmbedBuilder()
@@ -514,6 +516,71 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
+        public Embed LadderSendChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        {
+            switch (isChallenger)
+            {
+                case true:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🏅 {tournament.Name} - {tournament.TeamSizeFormat} Ladder Challenge Notification")
+                            .WithColor(Color.Gold)
+                            .WithDescription($"Your team (#{challengerTeam.Rank})**{challengerTeam.Name}** has successfully sent a challenge to (#{challengedTeam.Rank})**{challengedTeam.Name}**!\n\nGood luck!")
+                            .AddField("👥 Your Team", challengerTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenged Team", challengedTeam.Name, true)
+                            .WithFooter("Challenge Sent")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+                case false:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🏅 {tournament.Name} - {tournament.TeamSizeFormat} Ladder Challenge Notification")
+                            .WithColor(Color.Gold)
+                            .WithDescription($"Your team (#{challengedTeam.Rank})**{challengedTeam.Name}** has received a challenge from (#{challengerTeam.Rank})**{challengerTeam.Name}**!\n\nGood luck!")
+                            .AddField("👥 Your Team", challengedTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenging Team", challengerTeam.Name, true)
+                            .WithFooter("Challenge Received")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+            }
+        }
+
+        public Embed LadderCancelChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        {
+            switch (isChallenger)
+            {
+                case true:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🗑️ {tournament.Name} - {tournament.TeamSizeFormat} Ladder Challenge Canceled")
+                            .WithColor(Color.Orange)
+                            .WithDescription($"Your team (#{challengerTeam.Rank})**{challengerTeam.Name}** has canceled the challenge to (#{challengedTeam.Rank})**{challengedTeam.Name}**.")
+                            .AddField("👥 Your Team", challengerTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenged Team", challengedTeam.Name, true)
+                            .WithFooter("Challenge Canceled")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+                case false:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🗑️ {tournament.Name} - {tournament.TeamSizeFormat} Ladder Challenge Canceled")
+                            .WithColor(Color.Orange)
+                            .WithDescription($"The challenge from (#{challengerTeam.Rank})**{challengerTeam.Name}** to your team (#{challengedTeam.Rank})**{challengedTeam.Name}** has been canceled.")
+                            .AddField("👥 Your Team", challengedTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenging Team", challengerTeam.Name, true)
+                            .WithFooter("Challenge Canceled")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+            }
+        }
         #endregion
 
         #region Team Embeds

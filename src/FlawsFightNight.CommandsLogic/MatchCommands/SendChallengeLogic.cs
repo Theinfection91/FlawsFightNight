@@ -124,7 +124,8 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             challengerTeam.IsChallengeable = false;
             challengedTeam.IsChallengeable = false;
 
-            // TODO Send direct message notifications to each member of both teams about the challenge
+            // Send direct message notifications to each member of both teams about the challenge
+            _matchManager.SendChallengeSuccessNotificationProcess(tournament, newChallengeMatch, challengerTeam, challengedTeam);
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
