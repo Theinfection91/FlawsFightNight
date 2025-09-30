@@ -76,7 +76,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<RemoveMatchesChannelLogic>();
                     services.AddSingleton<RemoveStandingsChannelLogic>();
                     services.AddSingleton<RemoveTeamsChannelLogic>();
-                    services.AddSingleton<ReportRoundRobinWinLogic>();
+                    services.AddSingleton<ReportWinLogic>();
                     services.AddSingleton<SendChallengeLogic>();
                     services.AddSingleton<SetMatchesChannelLogic>();
                     services.AddSingleton<SetStandingsChannelLogic>();

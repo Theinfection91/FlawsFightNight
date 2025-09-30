@@ -49,6 +49,8 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, "A team cannot challenge itself. Please choose a different team to challenge.");
             }
 
+            // TODO Ensure challenger team is lower rank than challenged team
+
             // Grab tournament from challenger team
             Tournament? tournament = _tournamentManager.GetTournamentFromTeamName(challengerTeam.Name);
             if (tournament == null)
