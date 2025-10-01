@@ -28,6 +28,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             _tournamentManager = tournamentManager;
         }
 
+        // TODO: Going to remove the requirement of reporting bye matches. Bye matches will get automatically converted to post matches for Normal Round Robin when the round is ended. For Open Round Robin, bye matches are already not created at all.
         public Embed ReportWinProcess(SocketInteractionContext context, string matchId, string winningTeamName, int winningTeamScore, int losingTeamScore)
         {
             if (losingTeamScore > winningTeamScore)
@@ -38,13 +39,13 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Cannot try to report Bye as a team
             if (winningTeamName.Equals("Bye", StringComparison.OrdinalIgnoreCase))
             {
-                return _embedManager.ErrorEmbed(Name, $"You may not try to report a Bye team as the winner of a Bye match. \n\nUser input: {winningTeamName}");
+                return _embedManager.ErrorEmbed(Name, $"You may not try to report the team as any variation of 'Bye' since that name is forbidden as a team name. \n\nUser input: {winningTeamName}");
             }
 
             // Check if team exists across all tournaments
             if (!_teamManager.DoesTeamExist(winningTeamName))
             {
-                return _embedManager.ErrorEmbed(Name, $"The team '{winningTeamName}' does not exist or is not registered in any tournament.");
+                return _embedManager.ErrorEmbed(Name, $"The team '{winningTeamName}' does not exist across any tournament in the database.");
             }
 
             // Grab the tournament associated with the match
@@ -53,6 +54,12 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             if (!tournament.IsRunning)
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
+            }
+
+            // Check if the tournament is Normal Round Robin and the round is marked complete
+            if (tournament.IsRoundComplete && tournament.Type.Equals(TournamentType.RoundRobin) && tournament.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal))
+            {
+                return _embedManager.ErrorEmbed(Name, "The tournament is showing the round has been marked as complete.");
             }
 
             // Check if match exists in database
@@ -67,6 +74,12 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             if (match == null)
             {
                 return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' could not be found in the tournament '{tournament.Name}'. Make sure you are not trying to report a match that has already been played.");
+            }
+
+            // TODO: Check if match is bye match, in new version of bot we are not allowing reporting of bye matches as system will handle it.
+            if (match.IsByeMatch)
+            {
+                return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' is a Bye match and cannot be reported manually. Bye matches are automatically handled by the system when a round ends in a Normal Round Robin tournament.");
             }
 
             // Check if team is part of the match
@@ -99,45 +112,18 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             switch (tournament.Type)
             {
                 case TournamentType.Ladder:
-                    return LadderReportWinProcess(winningTeam, winningTeamScore, losingTeam, losingTeamScore, tournament, match, isGuildAdmin);
+                    LadderReportWinProcess(winningTeam, winningTeamScore, losingTeam, losingTeamScore, tournament, match, isGuildAdmin);
+                    break;
                 case TournamentType.RoundRobin:
-                    switch (tournament.RoundRobinMatchType)
-                    {
-                        case RoundRobinMatchType.Normal:
-                            return RoundRobinNormalReportWinProcess(winningTeam, winningTeamScore, losingTeam, losingTeamScore, tournament, match, isGuildAdmin);
-                        case RoundRobinMatchType.Open:
-                            return RoundRobinOpenReportWinProcess(winningTeam, winningTeamScore, losingTeam, losingTeamScore, tournament, match, isGuildAdmin);
-                        default:
-                            return _embedManager.ErrorEmbed(Name, "The Round Robin match type is not recognized.");
-                    }
+                    RoundRobinReportWinProcess(winningTeam, winningTeamScore, losingTeam, losingTeamScore, tournament, match, isGuildAdmin);
+                    break;
                 case TournamentType.SingleElimination:
                 case TournamentType.DoubleElimination:
                     return _embedManager.ToDoEmbed("Single/Double Elimination Report Win logic is not yet implemented.");
-                default:
-                    return _embedManager.ErrorEmbed(Name, "The tournament type is not recognized.");
-            }
-        }
-
-        private Embed RoundRobinNormalReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
-        {
-            // Check if the tournament is Normal Round Robin and the round is marked complete
-            if (tournament.IsRoundComplete)
-            {
-                return _embedManager.ErrorEmbed(Name, "The tournament is showing the round has been marked as complete.");
             }
 
-            if (!match.IsByeMatch)
-            {
-                // Convert match to post-match and record win/loss
-                _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
-            }
-            else
-            {
-                _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, 0, "BYE", 0, match.IsByeMatch);
-            }
-
-            // Adjust ranks of remaining teams
-            tournament.SetRanksByTieBreakerLogic();
+            // Convert match to post-match
+            _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
@@ -145,52 +131,19 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
-            if (match.IsByeMatch)
-            {
-                return _embedManager.ReportByeMatch(tournament, match, isGuildAdmin);
-            }
-
             return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin);
         }
 
-        private Embed RoundRobinOpenReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
+        private void RoundRobinReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
         {
-            // Check if the team has a match scheduled
-            //if (!_matchManager.IsMatchMadeForTeamResolver(tournament, winningTeamName))
-            //{
-            //    return _embedManager.ErrorEmbed(Name, $"The team '{winningTeamName}' does not have a match scheduled.");
-            //}
-
-            if (!match.IsByeMatch)
-            {
-                // Convert match to post-match and record win/loss
-                _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
-            }
-            else
-            {
-                // Convert to Open Post-Match
-                // Shouldn't be possible to have a Bye match in Open RR, but just in case
-                _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, 0, "BYE", 0, match.IsByeMatch);
-            }
+            // Convert match to post-match and record win/loss
+            _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
 
             // Adjust ranks of remaining teams
             tournament.SetRanksByTieBreakerLogic();
-
-            // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-            // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
-
-            if (match.IsByeMatch)
-            {
-                return _embedManager.ReportByeMatch(tournament, match, isGuildAdmin);
-            }
-
-            return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin);
         }
 
-        private Embed LadderReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
+        private void LadderReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
         {
             // If winning team is challenger then rank change will occur
             if (_matchManager.IsWinningTeamChallenger(match, winningTeam))
@@ -213,17 +166,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             losingTeam.IsChallengeable = true;
 
             // TODO: Add Challenge Rank comparison correction like Ladderbot4. Overtime if other teams play their challenges and report faster than older challenges are reported then there will be inconsistencies with how the LiveView will show the challenge ranks and what the team ranks actually are.
-
-            // Convert match to post-match
-            _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
-
-            // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-            // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
-
-            return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin);
         }
     }
 }
