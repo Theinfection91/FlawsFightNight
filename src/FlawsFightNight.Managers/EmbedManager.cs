@@ -234,6 +234,33 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
+        public Embed LadderStandingsLiveView(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} Ladder Tournament Standings")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Total Teams: {tournament.Teams.Count}**\n")
+                .WithColor(Color.Gold)
+                .WithCurrentTimestamp();
+            if (tournament.Teams.Count == 0)
+            {
+                embed.Description += "\n_No teams registered._";
+                return embed.Build();
+            }
+            foreach (var team in tournament.Teams.OrderBy(e => e.Rank))
+            {
+                var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(team.Name);
+                embed.Description +=
+                    $"\n#{team.Rank} **{team.Name}**\n" +
+                    $"✅ Wins: {team.Wins} | " +
+                    $"❌ Losses: {team.Losses} | " +
+                    $"{team.GetCorrectStreakEmoji()} W/L Streak: {team.GetFormattedStreakString()}\n" +
+                    $"⭐ Points For: {pointsFor} | " +
+                    $"🛡️ Points Against: {pointsAgainst}\n" +
+                    $"Challenge Status: {team.GetFormattedChallengeStatus()}\n";
+            }
+            return embed.Build();
+        }
+
         public Embed RoundRobinStandingsLiveView(Tournament tournament)
         {
             var embed = new EmbedBuilder()

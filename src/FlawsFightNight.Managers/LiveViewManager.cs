@@ -251,28 +251,20 @@ namespace FlawsFightNight.Managers
 
         private async Task SendStandingsToChannelAsync()
         {
-            //Console.WriteLine($"{DateTime.Now} - Sending standings updates to channel...");
             try
             {
                 await _semaphore.WaitAsync();
 
                 if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
                 {
-                    //Console.WriteLine("No tournaments found. No need to post to standings channels.");
                     _lastStandingsUpdate = DateTime.UtcNow;
                     return;
                 }
 
                 foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
                 {
-                    if (tournament == null)
+                    if (tournament == null || tournament.StandingsChannelId == 0)
                     {
-                        //Console.WriteLine("Tournament is null. Skipping.");
-                        continue;
-                    }
-                    if (tournament.StandingsChannelId == 0)
-                    {
-                        //Console.WriteLine($"Tournament {tournament.Name} has no Standings Channel ID set. Skipping.");
                         _lastStandingsUpdate = DateTime.UtcNow;
                         continue;
                     }
@@ -280,62 +272,42 @@ namespace FlawsFightNight.Managers
                     var channel = _client.GetChannel(tournament.StandingsChannelId) as IMessageChannel;
                     if (channel == null)
                     {
-                        //Console.WriteLine($"Channel with ID {tournament.StandingsChannelId} not found for tournament {tournament.Name}. Skipping.");
                         tournament.StandingsChannelId = 0;
                         await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
                         await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                         continue;
                     }
 
-                    switch (tournament.Type)
+                    // build the standings embed depending on type
+                    Embed standingsEmbed = tournament.Type switch
                     {
-                        case Core.Enums.TournamentType.RoundRobin:
-                            var standingsEmbed = _embedManager.RoundRobinStandingsLiveView(tournament);
-                            ulong messageId = tournament.StandingsMessageId;
+                        TournamentType.Ladder => _embedManager.LadderStandingsLiveView(tournament),
+                        TournamentType.RoundRobin => _embedManager.RoundRobinStandingsLiveView(tournament),
+                        _ => null
+                    };
 
-                            if (messageId != 0)
-                            {
-                                var message = await channel.GetMessageAsync(messageId) as IUserMessage;
-                                if (message != null)
-                                {
-                                    await message.ModifyAsync(msg => msg.Embed = standingsEmbed);
+                    if (standingsEmbed == null)
+                        continue; // unsupported type, skip
 
-                                    // Update the last update timestamp
-                                    _lastStandingsUpdate = DateTime.UtcNow;
-
-                                    //Console.WriteLine($"Updated standings message for tournament {tournament.Name} in channel {channel.Name}.");
-                                }
-                                else
-                                {
-                                    var newMessage = await channel.SendMessageAsync(embed: standingsEmbed);
-                                    tournament.StandingsMessageId = newMessage.Id;
-
-                                    // Update the last update timestamp
-                                    _lastStandingsUpdate = DateTime.UtcNow;
-
-                                    //Console.WriteLine($"Sent new standings message for tournament {tournament.Name} in channel {channel.Name}.");
-                                    await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
-                                    await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
-                                }
-                            }
-                            else
-                            {
-                                var newMessage = await channel.SendMessageAsync(embed: standingsEmbed);
-                                tournament.StandingsMessageId = newMessage.Id;
-
-                                // Update the last update timestamp
-                                _lastStandingsUpdate = DateTime.UtcNow;
-
-                                //Console.WriteLine($"{newMessage.Id} Sent new standings message for tournament {tournament.Name} in channel {channel.Name}.");
-                                await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
-                                await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
-                            }
-                            break;
-
-                        default:
-                            //Console.WriteLine($"Tournament type {tournament.Type} not supported for standings live view. Skipping.");
-                            break;
+                    // send or update standings message
+                    if (tournament.StandingsMessageId != 0)
+                    {
+                        var message = await channel.GetMessageAsync(tournament.StandingsMessageId) as IUserMessage;
+                        if (message != null)
+                        {
+                            await message.ModifyAsync(msg => msg.Embed = standingsEmbed);
+                            _lastStandingsUpdate = DateTime.UtcNow;
+                            continue;
+                        }
                     }
+
+                    // send new message if no valid one exists
+                    var newMessage = await channel.SendMessageAsync(embed: standingsEmbed);
+                    tournament.StandingsMessageId = newMessage.Id;
+                    _lastStandingsUpdate = DateTime.UtcNow;
+
+                    await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
+                    await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                 }
             }
             catch (Exception ex)
@@ -347,6 +319,7 @@ namespace FlawsFightNight.Managers
                 _semaphore.Release();
             }
         }
+
         #endregion
 
         #region Teams LiveView
