@@ -94,10 +94,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Grab the losing team
             Team? losingTeam = _teamManager.GetTeamByName(_matchManager.GetLosingTeamName(match, winningTeamName));
 
-            // Record wins and losses
-            _teamManager.RecordTeamWin(winningTeam, winningTeamScore);
-            _teamManager.RecordTeamLoss(losingTeam, losingTeamScore);
-
             // Check if invoker is on winning team (or guild admin)
             if (context.User is not SocketGuildUser guildUser)
             {
@@ -109,6 +105,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, $"You are not a member of the team '{winningTeam.Name}', or an admin on this server, and cannot report a win for them.");
             }
 
+            // Process report win based on tournament type
             switch (tournament.Type)
             {
                 case TournamentType.Ladder:
@@ -121,6 +118,10 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 case TournamentType.DoubleElimination:
                     return _embedManager.ToDoEmbed("Single/Double Elimination Report Win logic is not yet implemented.");
             }
+
+            // Record wins and losses
+            _teamManager.RecordTeamWin(winningTeam, winningTeamScore);
+            _teamManager.RecordTeamLoss(losingTeam, losingTeamScore);
 
             // Convert match to post-match
             _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
