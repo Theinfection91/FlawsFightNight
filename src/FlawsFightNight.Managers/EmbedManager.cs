@@ -367,7 +367,8 @@ namespace FlawsFightNight.Managers
                 .WithTitle("🏅 Challenge Sent Successfully")
                 .WithDescription($"The challenge from (#{match.Challenge.ChallengerRank})**{match.Challenge.Challenger}** to (#{match.Challenge.ChallengedRank})**{match.Challenge.Challenged}** has been successfully sent in the tournament **{tournament.Name}**!\n\n{reporterText}")
                 .AddField("Tournament ID", tournament.Id)
-                .AddField("Challenging Team", match.Challenge.Challenger)
+                .AddField("Match ID", match.Id)
+                .AddField("Challenger Team", match.Challenge.Challenger)
                 .AddField("Challenger Rank", $"#{match.Challenge.ChallengerRank}", true)
                 .AddField("Challenged Team", match.Challenge.Challenged)
                 .AddField("Challenged Rank", $"#{match.Challenge.ChallengedRank}", true)
@@ -386,7 +387,7 @@ namespace FlawsFightNight.Managers
                 .WithTitle("🗑️ Challenge Canceled Successfully")
                 .WithDescription($"The challenge from (#{match.Challenge.ChallengerRank})**{match.Challenge.Challenger}** to (#{match.Challenge.ChallengedRank})**{match.Challenge.Challenged}** has been successfully canceled in the tournament **{tournament.Name}**.\n\n{reporterText}")
                 .AddField("Tournament ID", tournament.Id)
-                .AddField("Challenging Team", match.Challenge.Challenger)
+                .AddField("Challenger Team", match.Challenge.Challenger)
                 .AddField("Challenged Team", match.Challenge.Challenged)
                 .WithColor(Color.Green)
                 .WithFooter("The challenge has been canceled.")
@@ -558,7 +559,7 @@ namespace FlawsFightNight.Managers
                             .WithDescription($"Your team (#{challengedTeam.Rank})**{challengedTeam.Name}** has received a challenge from (#{challengerTeam.Rank})**{challengerTeam.Name}**!\n\nGood luck!")
                             .AddField("👥 Your Team", challengedTeam.Name, true)
                             .AddField("🏷️ Tournament ID", tournament.Id, true)
-                            .AddField("🏆 Challenging Team", challengerTeam.Name, true)
+                            .AddField("🏆 Challenger Team", challengerTeam.Name, true)
                             .WithFooter("Challenge Received")
                             .WithTimestamp(DateTimeOffset.Now);
                         return embed.Build();
@@ -591,7 +592,7 @@ namespace FlawsFightNight.Managers
                             .WithDescription($"The challenge from (#{challengerTeam.Rank})**{challengerTeam.Name}** to your team (#{challengedTeam.Rank})**{challengedTeam.Name}** has been canceled.")
                             .AddField("👥 Your Team", challengedTeam.Name, true)
                             .AddField("🏷️ Tournament ID", tournament.Id, true)
-                            .AddField("🏆 Challenging Team", challengerTeam.Name, true)
+                            .AddField("🏆 Challenger Team", challengerTeam.Name, true)
                             .WithFooter("Challenge Canceled")
                             .WithTimestamp(DateTimeOffset.Now);
                         return embed.Build();

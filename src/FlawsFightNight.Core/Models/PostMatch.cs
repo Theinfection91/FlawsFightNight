@@ -18,9 +18,9 @@ namespace FlawsFightNight.Core.Models
         public DateTime CompletedOn { get; set; } = DateTime.UtcNow;
 
         // Ladder Specific Info
-        public Challenge? Challenge { get; set; } = null;
+        public Challenge? Challenge { get; set; }
 
-        public PostMatch(string matchId, string winner, int winnerScore, string loser, int loserScore, DateTime createdOn, bool wasByeMatch = false)
+        public PostMatch(string matchId, string winner, int winnerScore, string loser, int loserScore, DateTime createdOn, bool wasByeMatch = false, Challenge challenge = null)
         {
             Id = matchId;
             Winner = winner;
@@ -29,6 +29,7 @@ namespace FlawsFightNight.Core.Models
             LoserScore = loserScore;
             CreatedOn = createdOn;
             WasByeMatch = wasByeMatch;
+            Challenge = challenge;
         }
 
         public void UpdateResultsProcess(string winningTeamName, int winningTeamScore, int losingTeamScore)

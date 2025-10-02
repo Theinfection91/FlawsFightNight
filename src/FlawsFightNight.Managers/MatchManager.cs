@@ -70,7 +70,7 @@ namespace FlawsFightNight.Managers
                     {
                         if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                         {
-                            return true; // Match ID found
+                            return true;
                         }
                     }
                 }
@@ -80,7 +80,7 @@ namespace FlawsFightNight.Managers
                     {
                         if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                         {
-                            return true; // Match ID found
+                            return true;
                         }
                     }
                 }
@@ -92,14 +92,32 @@ namespace FlawsFightNight.Managers
                 {
                     if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                     {
-                        return true; // Match ID found
+                        return true;
                     }
                 }
                 foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
                 {
                     if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                     {
-                        return true; // Match ID found
+                        return true;
+                    }
+                }
+            }
+            // Check Ladder
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+                {
+                    if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+                foreach (var postMatch in tournament.MatchLog.LadderPostMatches)
+                {
+                    if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
                     }
                 }
             }
@@ -168,6 +186,8 @@ namespace FlawsFightNight.Managers
         {
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    return IsMatchMadeForTeamLadder(tournament, teamName);
                 case TournamentType.RoundRobin:
                     switch (tournament.RoundRobinMatchType)
                     {
@@ -183,6 +203,37 @@ namespace FlawsFightNight.Managers
                 default:
                     return false;
             }
+        }
+
+        private bool IsMatchMadeForTeamLadder(Tournament tournament, string teamName)
+        {
+            foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+            {
+                if (match == null)
+                {
+                    //Console.WriteLine("Encountered null match in list, skipping.");
+                    continue;
+                }
+
+                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+
+                if (!string.IsNullOrEmpty(match.TeamA) &&
+                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    //Console.WriteLine($"Match found for team '{teamName}' as TeamA in round {currentRound}.");
+                    return true;
+                }
+
+                if (!string.IsNullOrEmpty(match.TeamB) &&
+                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    //Console.WriteLine($"Match found for team '{teamName}' as TeamB in round {currentRound}.");
+                    return true;
+                }
+            }
+
+            //Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
+            return false;
         }
 
         private bool IsMatchMadeForTeamNormalRoundRobin(Tournament tournament, string teamName)
@@ -726,6 +777,12 @@ namespace FlawsFightNight.Managers
                 m.Challenge.Challenged.Equals(challengedTeamName, StringComparison.OrdinalIgnoreCase));
         }
 
+        public bool IsWinningTeamChallenger(Match match, Team winningTeam)
+        {
+            return match.Challenge != null &&
+                   match.Challenge.Challenger.Equals(winningTeam.Name, StringComparison.OrdinalIgnoreCase);
+        }
+
         public bool HasChallengeSent(Tournament tournament, string challengerTeamName)
         {
             return tournament.MatchLog.LadderMatchesToPlay.Any(m =>
@@ -760,6 +817,17 @@ namespace FlawsFightNight.Managers
             return challenge;
         }
 
+        public void ReassignRanksInLadderTournament(Tournament tournament)
+        {
+            // Sort teams by their current rank
+            tournament.Teams.Sort((a, b) => a.Rank.CompareTo(b.Rank));
+
+            // Reassign ranks sequentially starting from 1
+            for (int i = 0; i < tournament.Teams.Count; i++)
+            {
+                tournament.Teams[i].Rank = i + 1;
+            }
+        }
         #endregion
 
         #region Match/PostMatch Schedule Build/Validate/Clear
@@ -987,15 +1055,18 @@ namespace FlawsFightNight.Managers
             tournament.MatchLog.PostMatchesByRound.Clear();
         }
 
-        public PostMatch CreateNewPostMatch(string matchId, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, DateTime originalCreationDateTime, bool wasByeMatch = false)
+        public PostMatch CreateNewPostMatch(string matchId, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, DateTime originalCreationDateTime, bool wasByeMatch = false, Challenge challenge = null)
         {
-            return new PostMatch(matchId, winningTeamName, winnerScore, losingTeamName, loserScore, originalCreationDateTime, wasByeMatch);
+            return new PostMatch(matchId, winningTeamName, winnerScore, losingTeamName, loserScore, originalCreationDateTime, wasByeMatch, challenge);
         }
 
         public void ConvertMatchToPostMatchResolver(Tournament tournament, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, bool wasByeMatch = false)
         {
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    ConvertMatchToPostMatchLadder(tournament, match, winningTeamName, winnerScore, losingTeamName, loserScore, match.Challenge);
+                    break;
                 case TournamentType.RoundRobin:
                     switch (tournament.RoundRobinMatchType)
                     {
@@ -1066,6 +1137,21 @@ namespace FlawsFightNight.Managers
 
             // Remove from OpenRoundRobinMatchesToPlay
             tournament.MatchLog.OpenRoundRobinMatchesToPlay.Remove(match);
+        }
+
+        private void ConvertMatchToPostMatchLadder(Tournament tournament, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, Challenge challenge)
+        {
+            if (!tournament.MatchLog.LadderMatchesToPlay.Contains(match))
+            {
+                //Console.WriteLine("The specified match does not exist in the ladder match list.");
+                return;
+            }
+            // Create PostMatch
+            PostMatch postMatch = CreateNewPostMatch(match.Id, winningTeamName, winnerScore, losingTeamName, loserScore, match.CreatedOn, false, match.Challenge);
+            // Add to LadderPostMatches list
+            tournament.MatchLog.LadderPostMatches.Add(postMatch);
+            // Remove from LadderMatchesToPlay
+            tournament.MatchLog.LadderMatchesToPlay.Remove(match);
         }
         #endregion
 
