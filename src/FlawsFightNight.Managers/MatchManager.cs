@@ -769,7 +769,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Ladder Challenge Methods
-        public bool CanTeamRankChallengeOtherTeamRank(Team challenger, Team challenged)
+        public bool IsChallengedTeamWithinRanks(Team challenger, Team challenged)
         {
             int rankDifference = challenger.Rank - challenged.Rank;
 

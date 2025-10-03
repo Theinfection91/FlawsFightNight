@@ -81,6 +81,8 @@ namespace FlawsFightNight.Managers
         {
             switch (tournament.Type)
             {
+                case TournamentType.Ladder:
+                    return LadderMatchesLiveView(tournament);
                 case TournamentType.RoundRobin:
                     switch (tournament.RoundRobinMatchType)
                     {
@@ -94,7 +96,44 @@ namespace FlawsFightNight.Managers
                 default:
                     return ToDoEmbed();
             }
+        }
 
+        private Embed LadderMatchesLiveView(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Ladder Tournament Challenge Matches")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Total Teams: {tournament.Teams.Count}**\n")
+                .WithColor(Color.Orange)
+                .WithCurrentTimestamp();
+            // --- Pending Challenges ---
+            if (tournament.MatchLog.LadderMatchesToPlay.Count > 0)
+            {
+                var challenges = tournament.MatchLog.LadderMatchesToPlay
+                    .Select(m => $"⚔️ *Match ID#: {m.Id}* | " +
+                                  $"(#{m.Challenge.ChallengerRank}) **{m.Challenge.Challenger}** " +
+                                  $"has challenged (#{m.Challenge.ChallengedRank}) **{m.Challenge.Challenged}**")
+                    .ToList();
+                AddMatchesInPages(embed, "⚔️ Pending Challenges", challenges);
+            }
+            else
+            {
+                embed.AddField("⚔️ Pending Challenges", "No pending challenges at the moment.", false);
+            }
+            // --- Previous Matches ---
+            if (tournament.MatchLog.LadderPostMatches.Count > 0)
+            {
+                var matches = tournament.MatchLog.LadderPostMatches
+                    .Select(pm => $"✅ *Match ID#: {pm.Id}* | " +
+                                  $"**{pm.Winner}** defeated **{pm.Loser}** " +
+                                  $"by **{pm.WinnerScore}** to **{pm.LoserScore}**")
+                    .ToList();
+                AddMatchesInPages(embed, "📜 Previous Matches (Oldest to Newest)", matches);
+            }
+            else
+            {
+                embed.AddField("📜 Previous Matches", "No matches completed yet.", false);
+            }
+            return embed.Build();
         }
 
         private Embed RoundRobinOpenMatchesLiveView(Tournament tournament)
