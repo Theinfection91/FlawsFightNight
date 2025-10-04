@@ -769,6 +769,18 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Ladder Challenge Methods
+        public bool IsChallengedTeamWithinRanks(Team challenger, Team challenged)
+        {
+            int rankDifference = challenger.Rank - challenged.Rank;
+
+            // Challenger can challenge up to 2 ranks above (e.g., 6 can challenge 5 or 4, but not 3)
+            if (rankDifference >= 1 && rankDifference <= 2)
+            {
+                return true;
+            }
+            return false;
+        }
+
         public bool IsChallengePending(Tournament tournament, string challengerTeamName, string challengedTeamName)
         {
             return tournament.MatchLog.LadderMatchesToPlay.Any(m =>
