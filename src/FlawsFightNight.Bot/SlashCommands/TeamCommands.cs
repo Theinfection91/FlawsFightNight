@@ -47,6 +47,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [Summary("member19", "A member to add to the team.")] IUser? member19 = null,
             [Summary("member20", "A member to add to the team.")] IUser? member20 = null)
         {
+            // Will be the first command to get Autocomplete working
             try
             {
                 // Initialize the list of members
