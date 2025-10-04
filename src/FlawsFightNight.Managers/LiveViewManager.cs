@@ -33,7 +33,10 @@ namespace FlawsFightNight.Managers
         private DateTime _lastStandingsUpdate = DateTime.UtcNow;
         private DateTime _lastTeamsUpdate = DateTime.UtcNow;
 
-        private SemaphoreSlim _semaphore = new(1, 1);
+        // Semaphores
+        private SemaphoreSlim _standingsSemaphore = new(1, 1);
+        private SemaphoreSlim _matchesSemaphore = new(1, 1);
+        private SemaphoreSlim _teamsSemaphore = new(1, 1);
 
         //private static readonly bool _testMode = true;
 
@@ -125,7 +128,7 @@ namespace FlawsFightNight.Managers
             //Console.WriteLine($"{DateTime.Now} - Sending match updates to channel...");
             try
             {
-                await _semaphore.WaitAsync(); // Ensure only one update at a time
+                await _matchesSemaphore.WaitAsync(); // Ensure only one update at a time
 
                 //if (_testMode && Random.Shared.Next(0, 5) == 0)
                 //{
@@ -219,7 +222,7 @@ namespace FlawsFightNight.Managers
             }
             finally
             {
-                _semaphore.Release();
+                _matchesSemaphore.Release();
             }
         }
         #endregion
@@ -253,7 +256,7 @@ namespace FlawsFightNight.Managers
         {
             try
             {
-                await _semaphore.WaitAsync();
+                await _standingsSemaphore.WaitAsync();
 
                 if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
                 {
@@ -316,7 +319,7 @@ namespace FlawsFightNight.Managers
             }
             finally
             {
-                _semaphore.Release();
+                _standingsSemaphore.Release();
             }
         }
 
@@ -351,7 +354,7 @@ namespace FlawsFightNight.Managers
         {
             try
             {
-                await _semaphore.WaitAsync();
+                await _teamsSemaphore.WaitAsync();
 
                 if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
                 {
@@ -435,7 +438,7 @@ namespace FlawsFightNight.Managers
             }
             finally
             {
-                _semaphore.Release();
+                _teamsSemaphore.Release();
             }
         }
         #endregion

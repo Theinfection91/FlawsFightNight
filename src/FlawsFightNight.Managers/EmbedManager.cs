@@ -293,8 +293,8 @@ namespace FlawsFightNight.Managers
                     $"✅ Wins: {team.Wins} | " +
                     $"❌ Losses: {team.Losses} | " +
                     $"{team.GetCorrectStreakEmoji()} W/L Streak: {team.GetFormattedStreakString()}\n" +
-                    $"⭐ Points For: {pointsFor} | " +
-                    $"🛡️ Points Against: {pointsAgainst}\n" +
+                    //$"⭐ Points For: {pointsFor} | " +
+                    //$"🛡️ Points Against: {pointsAgainst}\n" +
                     $"Challenge Status: {team.GetFormattedChallengeStatus()}\n";
             }
             return embed.Build();
