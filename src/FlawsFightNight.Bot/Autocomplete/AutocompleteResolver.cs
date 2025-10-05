@@ -100,7 +100,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                     {
                         var tournament = _tournamentManager.GetTournamentFromMatchId(match.Id);
                         string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
-                        return new AutocompleteResult($"{tournamentName} - {match.Id} ({match.TeamA} vs {match.TeamB})", match.Id);
+                        return new AutocompleteResult($"#{match.Id} | {match.TeamA} vs {match.TeamB} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", match.Id);
                     })
                     .ToList();
             }
@@ -122,7 +122,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                 {
                     var tournament = _tournamentManager.GetTournamentFromMatchId(match.Id);
                     string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
-                    return new AutocompleteResult($"{tournamentName} - {match.Id} ({match.TeamA} vs {match.TeamB})", match.Id);
+                    return new AutocompleteResult($"#{match.Id} | {match.TeamA} vs {match.TeamB} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", match.Id);
                 })
                 .ToList();
 
@@ -166,7 +166,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                 // Return all tournaments, sorted alphabetically by name
                 return tournaments
                     .OrderBy(tournament => tournament.Name)
-                    .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Name))
+                    .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Id))
                     .ToList();
             }
 
@@ -174,7 +174,7 @@ namespace FlawsFightNight.Bot.Autocomplete
             var matchingTournaments = tournaments
                 .Where(tournament => tournament.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(tournament => tournament.Name)
-                .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Name))
+                .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Id))
                 .ToList();
 
             return matchingTournaments;
