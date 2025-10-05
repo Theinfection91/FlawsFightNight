@@ -87,7 +87,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             [SlashCommand("cancel", "Cancel a previously sent challenge in a ladder tournament.")]
             public async Task CancelChallengeAsync(
-            [Summary("challenger_team_name", "The name of the team that sent the challenge")] string challengerTeamName)
+            [Summary("challenger_team", "The name of the team that sent the challenge"), Autocomplete] string challengerTeamName)
             {
                 try
                 {

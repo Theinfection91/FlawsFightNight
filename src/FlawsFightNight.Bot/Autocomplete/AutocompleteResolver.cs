@@ -52,10 +52,15 @@ namespace FlawsFightNight.Bot.Autocomplete
                         List<AutocompleteResult> suggestions;
                         switch (focusedOption.Name)
                         {
+                            case "challenger_team":
+                                suggestions = string.IsNullOrWhiteSpace(input)
+                                    ? GetTeamsForCancelChallenge("")
+                                    : GetTeamsForCancelChallenge(input);
+                                break;
                             case "challenger_team_name":
                                 suggestions = string.IsNullOrWhiteSpace(input)
-                                    ? GetTeamsForChallengeCommands("")
-                                    : GetTeamsForChallengeCommands(input);
+                                    ? GetTeamsForSendChallenge("")
+                                    : GetTeamsForSendChallenge(input);
                                 break;
                             case "challenged_team":
                                 //suggestions = string.IsNullOrWhiteSpace(input)
@@ -64,11 +69,11 @@ namespace FlawsFightNight.Bot.Autocomplete
                                 // Grab the same suggestions as challenger_team_name, but filter out the team that is the challenger_team_name
                                 if (string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "challenger_team_name")?.Value is string challengerTeamName && !string.IsNullOrWhiteSpace(challengerTeamName))
                                 {
-                                    suggestions = GetTeamsForChallengeCommands("").Where(t => !Equals(t.Value, challengerTeamName)).ToList();
+                                    suggestions = GetTeamsForSendChallenge("").Where(t => !Equals(t.Value, challengerTeamName)).ToList();
                                 }
                                 else if (!string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "challenger_team_name")?.Value is string challengerTeamName2 && !string.IsNullOrWhiteSpace(challengerTeamName2))
                                 {
-                                    suggestions = GetTeamsForChallengeCommands(input).Where(t => !Equals(t.Value, challengerTeamName2)).ToList();
+                                    suggestions = GetTeamsForSendChallenge(input).Where(t => !Equals(t.Value, challengerTeamName2)).ToList();
                                 }
                                 else
                                 {
@@ -271,7 +276,7 @@ namespace FlawsFightNight.Bot.Autocomplete
             return results;
         }
 
-        private List<AutocompleteResult> GetTeamsForChallengeCommands(string input)
+        private List<AutocompleteResult> GetTeamsForSendChallenge(string input)
         {
             // Get all teams from all tournaments
             var allTeams = _teamManager.GetAllLadderTeams();
@@ -288,6 +293,31 @@ namespace FlawsFightNight.Bot.Autocomplete
             var matchingTeams = allTeams
                 .Where(team => team.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
                 .Where(team => team.IsChallengeable)
+                .OrderBy(team => team.Rank)
+                .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_tournamentManager.GetTournamentFromTeamName(team.Name).Name} ({_tournamentManager.GetTournamentFromTeamName(team.Name).TeamSizeFormat} {_tournamentManager.GetTournamentFromTeamName(team.Name).GetFormattedTournamentType()})", team.Name))
+                .ToList();
+            return matchingTeams;
+        }
+
+        private List<AutocompleteResult> GetTeamsForCancelChallenge(string input)
+        {
+            // Get all teams from all tournaments
+            var allTeams = _teamManager.GetAllLadderTeams();
+
+            // Filter to only teams that are a Challenger in a challenge
+            var challengerTeams = _matchManager.GetAllChallengerTeams(allTeams);
+
+            // If the input is empty or only whitespace, return all challenger teams sorted alphabetically
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return challengerTeams
+                    .OrderBy(team => team.Rank)
+                    .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_tournamentManager.GetTournamentFromTeamName(team.Name).Name} ({_tournamentManager.GetTournamentFromTeamName(team.Name).TeamSizeFormat} {_tournamentManager.GetTournamentFromTeamName(team.Name).GetFormattedTournamentType()})", team.Name))
+                    .ToList();
+            }
+            // Filter challenger teams based on the input (case-insensitive)
+            var matchingTeams = challengerTeams
+                .Where(team => team.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(team => team.Rank)
                 .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_tournamentManager.GetTournamentFromTeamName(team.Name).Name} ({_tournamentManager.GetTournamentFromTeamName(team.Name).TeamSizeFormat} {_tournamentManager.GetTournamentFromTeamName(team.Name).GetFormattedTournamentType()})", team.Name))
                 .ToList();

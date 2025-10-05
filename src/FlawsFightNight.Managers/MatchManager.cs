@@ -863,6 +863,29 @@ namespace FlawsFightNight.Managers
                 m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase));
         }
 
+        public List<Team> GetAllChallengerTeams(List<Team> allLadderTeams)
+        {
+            List<Team> challengerTeams = new();
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                if (tournament.Type == TournamentType.Ladder)
+                {
+                    foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+                    {
+                        if (match.Challenge != null)
+                        {
+                            var challenger = allLadderTeams.FirstOrDefault(t => t.Name.Equals(match.Challenge.Challenger, StringComparison.OrdinalIgnoreCase));
+                            if (challenger != null && !challengerTeams.Any(t => t.Name.Equals(challenger.Name, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                challengerTeams.Add(challenger);
+                            }
+                        }
+                    }
+                }
+            }
+            return challengerTeams;
+        }
+
         public Match CreateLadderMatchWithChallenge(Team challengerTeam, Team challengedTeam)
         {
             var match = new Match(challengerTeam.Name, challengedTeam.Name)
