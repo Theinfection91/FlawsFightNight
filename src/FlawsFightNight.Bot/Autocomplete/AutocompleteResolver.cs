@@ -15,14 +15,16 @@ namespace FlawsFightNight.Bot.Autocomplete
         private readonly IServiceProvider _services;
 
         // Add Managers as needed here
+        private MatchManager _matchManager;
         private TeamManager _teamManager;
         private TournamentManager _tournamentManager;
 
-        public AutocompleteResolver(IServiceProvider services, TeamManager teamManager, TournamentManager tournamentManager)
+        public AutocompleteResolver(IServiceProvider services, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager)
         {
             _services = services;
 
             // Initialize Managers here
+            _matchManager = matchManager;
             _teamManager = teamManager;
             _tournamentManager = tournamentManager;
         }
@@ -38,6 +40,7 @@ namespace FlawsFightNight.Bot.Autocomplete
         {
             try
             {
+                Console.WriteLine($"[Autocomplete] Command: {interaction.Data.CommandName}, Option: {interaction.Data.Current?.Name}, Value: {interaction.Data.Current?.Value}");
                 if (HasAutocomplete(interaction.Data.CommandName))
                 {
                     var focusedOption = interaction.Data.Current;
@@ -48,6 +51,9 @@ namespace FlawsFightNight.Bot.Autocomplete
 
                         List<AutocompleteResult> suggestions = focusedOption.Name switch
                         {
+                            "match_id" => string.IsNullOrWhiteSpace(input)
+                                ? GetMatchIdsMatchingInput("")
+                                : GetMatchIdsMatchingInput(input),
                             "tournament_id" => string.IsNullOrWhiteSpace(input)
                                 ? GetTournamentIdsMatchingInput("")
                                 : GetTournamentIdsMatchingInput(input),
@@ -55,7 +61,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                         };
                         await interaction.RespondAsync(suggestions);
                     }
-                }              
+                }
             }
             catch (Exception ex)
             {
@@ -68,11 +74,54 @@ namespace FlawsFightNight.Bot.Autocomplete
             // List of commands that have autocomplete functionality
             var commandsWithAutocomplete = new HashSet<string>
             {
+                "match",
                 "team",
                 // Add more command names as needed
             };
-            Console.WriteLine($"{commandsWithAutocomplete.Contains(commandName)}");
             return commandsWithAutocomplete.Contains(commandName);
+        }
+
+        private List<AutocompleteResult> GetMatchIdsMatchingInput(string input)
+        {
+            var allMatches = _matchManager.GetAllActiveMatches();
+
+            // If the input is empty or only whitespace, return all matches sorted by tournament name and then match ID
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return allMatches
+                    .OrderBy(match => _tournamentManager.GetTournamentFromMatchId(match.Id)?.Name)
+                    .ThenBy(match => match.Id)
+                    .Select(match =>
+                    {
+                        var tournament = _tournamentManager.GetTournamentFromMatchId(match.Id);
+                        string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
+                        return new AutocompleteResult($"{tournamentName} - {match.Id} ({match.TeamA} vs {match.TeamB})", match.Id);
+                    })
+                    .ToList();
+            }
+
+            // Filter matches based on the input (case-insensitive)
+            var matchingMatches = allMatches
+                .Where(match =>
+                {
+                    var tournament = _tournamentManager.GetTournamentFromMatchId(match.Id);
+                    string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
+                    return match.Id.Contains(input, StringComparison.OrdinalIgnoreCase) ||
+                           match.TeamA.Contains(input, StringComparison.OrdinalIgnoreCase) ||
+                           match.TeamB.Contains(input, StringComparison.OrdinalIgnoreCase) ||
+                           tournamentName.Contains(input, StringComparison.OrdinalIgnoreCase);
+                })
+                .OrderBy(match => _tournamentManager.GetTournamentFromMatchId(match.Id)?.Name)
+                .ThenBy(match => match.Id)
+                .Select(match =>
+                {
+                    var tournament = _tournamentManager.GetTournamentFromMatchId(match.Id);
+                    string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
+                    return new AutocompleteResult($"{tournamentName} - {match.Id} ({match.TeamA} vs {match.TeamB})", match.Id);
+                })
+                .ToList();
+
+            return matchingMatches;
         }
 
         private List<AutocompleteResult> GetTournamentIdsMatchingInput(string input)

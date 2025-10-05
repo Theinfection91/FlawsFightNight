@@ -453,6 +453,16 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Gets
+        public List<Match> GetAllActiveMatches()
+        {
+            List<Match> allMatches = new();
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                allMatches.AddRange(tournament.MatchLog.GetAllActiveMatches());
+            }
+            return allMatches;
+        }
+
         private Match GetMatchByIdInNormalRoundRobinTournament(Tournament tournament, string matchId)
         {
             foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)

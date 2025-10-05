@@ -61,5 +61,35 @@ namespace FlawsFightNight.Core.Models
             }
             return (pointsFor, pointsAgainst);
         }
+
+        public List<Match> GetAllActiveMatches()
+        {
+            var allMatches = new List<Match>();
+            // Normal Round Robin Matches
+            foreach (var round in MatchesToPlayByRound.Values)
+            {
+                allMatches.AddRange(round);
+            }
+            // Open Round Robin Matches
+            allMatches.AddRange(OpenRoundRobinMatchesToPlay);
+            // Ladder Matches
+            allMatches.AddRange(LadderMatchesToPlay);
+            return allMatches;
+        }
+
+        public List<PostMatch> GetAllPostMatches()
+        {
+            var allPostMatches = new List<PostMatch>();
+            // Normal Round Robin Post Matches
+            foreach (var round in PostMatchesByRound.Values)
+            {
+                allPostMatches.AddRange(round);
+            }
+            // Open Round Robin Post Matches
+            allPostMatches.AddRange(OpenRoundRobinPostMatches);
+            // Ladder Post Matches
+            allPostMatches.AddRange(LadderPostMatches);
+            return allPostMatches;
+        }
     }
 }
