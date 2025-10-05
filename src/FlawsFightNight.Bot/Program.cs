@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.CommandsLogic.MatchCommands;
 using FlawsFightNight.CommandsLogic.SetCommands;
 using FlawsFightNight.CommandsLogic.SettingsCommands;
@@ -51,8 +52,11 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<CommandService>();
                     services.AddSingleton<InteractionService>();
 
-                      ////////////////////////////////
-                     //    ==-Command Logic-==     //
+                    // Autocomplete Handler
+                    services.AddSingleton<AutocompleteResolver>();
+
+                    ////////////////////////////////
+                    //    ==-Command Logic-==     //
                     ////////////////////////////////
 
                     services.AddSingleton<AddTeamLossLogic>();
@@ -152,6 +156,8 @@ namespace FlawsFightNight.Bot
             await _client.LoginAsync(TokenType.Bot, configManager.GetDiscordToken());
             await _client.StartAsync();
 
+            
+
             // Wait for Ready event
             var readyTask = new TaskCompletionSource<bool>();
             _client.Ready += () =>
@@ -161,6 +167,10 @@ namespace FlawsFightNight.Bot
             };
 
             await readyTask.Task;
+
+            // Initialize Autocomplete Handler
+            var autoCompleteHandler = _services.GetRequiredService<AutocompleteResolver>();
+            await autoCompleteHandler.InitializeAsync();
 
             Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");
 

@@ -187,5 +187,29 @@ namespace FlawsFightNight.Core.Models
             Teams = resolvedTeamsList;
         }
         #endregion
+
+        public string GetFormattedTournamentType()
+        {
+            switch (this.Type)
+            {
+                case TournamentType.Ladder:
+                    return "Ladder";
+                case TournamentType.RoundRobin:
+                    switch (RoundRobinMatchType)
+                    {
+                        case RoundRobinMatchType.Open:
+                            return "Open Round Robin";
+                        case RoundRobinMatchType.Normal:
+                            return "Normal Round Robin";
+                    }
+                    return "Round Robin";
+                case TournamentType.SingleElimination:
+                    return "Single Elimination";
+                case TournamentType.DoubleElimination:
+                    return "Double Elimination";
+                default:
+                    return "null";
+            }
+        }
     }
 }
