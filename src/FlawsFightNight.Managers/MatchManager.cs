@@ -463,6 +463,16 @@ namespace FlawsFightNight.Managers
             return allMatches;
         }
 
+        public List<PostMatch> GetAllPostMatches()
+        {
+            List<PostMatch> allPostMatches = new();
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                allPostMatches.AddRange(tournament.MatchLog.GetAllPostMatches());
+            }
+            return allPostMatches;
+        }
+
         public Match GetMatchFromDatabase(string matchId)
         {
             foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
@@ -717,6 +727,19 @@ namespace FlawsFightNight.Managers
             return tiedTeams; // Return number of teams involved in ties
         }
 
+        public PostMatch GetPostMatchById(string matchId)
+        {
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                var postMatch = GetPostMatchByIdInTournament(tournament, matchId);
+                if (postMatch != null)
+                {
+                    return postMatch;
+                }
+            }
+            return null;
+        }
+
         public PostMatch GetPostMatchByIdInTournament(Tournament tournament, string matchId)
         {
             foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
@@ -730,6 +753,14 @@ namespace FlawsFightNight.Managers
                 }
             }
             foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
+            {
+                if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return postMatch; // PostMatch found
+                }
+            }
+            // Ladder PostMatches
+            foreach (var postMatch in tournament.MatchLog.LadderPostMatches)
             {
                 if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                 {
