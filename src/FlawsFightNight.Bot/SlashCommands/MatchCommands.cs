@@ -71,8 +71,8 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             [SlashCommand("send", "Send a challenge to another team in a ladder tournament.")]
             public async Task SendChallengeAsync(
-            [Summary("challenger_team_name", "The name of the team sending the challenge")] string challengerTeamName,
-            [Summary("challenged_team", "The name of the team being challenged")] string opponentTeamName)
+            [Summary("challenger_team_name", "The name of the team sending the challenge"), Autocomplete] string challengerTeamName,
+            [Summary("challenged_team", "The name of the team being challenged"), Autocomplete] string opponentTeamName)
             {
                 try
                 {

@@ -52,6 +52,29 @@ namespace FlawsFightNight.Bot.Autocomplete
                         List<AutocompleteResult> suggestions;
                         switch (focusedOption.Name)
                         {
+                            case "challenger_team_name":
+                                suggestions = string.IsNullOrWhiteSpace(input)
+                                    ? GetTeamsForChallengeCommands("")
+                                    : GetTeamsForChallengeCommands(input);
+                                break;
+                            case "challenged_team":
+                                //suggestions = string.IsNullOrWhiteSpace(input)
+                                //    ? GetTeamsForChallengeCommands("")
+                                //    : GetTeamsForChallengeCommands(input);
+                                // Grab the same suggestions as challenger_team_name, but filter out the team that is the challenger_team_name
+                                if (string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "challenger_team_name")?.Value is string challengerTeamName && !string.IsNullOrWhiteSpace(challengerTeamName))
+                                {
+                                    suggestions = GetTeamsForChallengeCommands("").Where(t => !Equals(t.Value, challengerTeamName)).ToList();
+                                }
+                                else if (!string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "challenger_team_name")?.Value is string challengerTeamName2 && !string.IsNullOrWhiteSpace(challengerTeamName2))
+                                {
+                                    suggestions = GetTeamsForChallengeCommands(input).Where(t => !Equals(t.Value, challengerTeamName2)).ToList();
+                                }
+                                else
+                                {
+                                    suggestions = new List<AutocompleteResult>();
+                                }
+                                break;
                             case "match_id":
                                 suggestions = string.IsNullOrWhiteSpace(input)
                                     ? GetMatchIdsMatchingInput("")
@@ -246,6 +269,29 @@ namespace FlawsFightNight.Bot.Autocomplete
                 results.Add(new AutocompleteResult($"{originalLoser.Name} - ({tournament.Name} {tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", originalLoser.Name));
             }
             return results;
+        }
+
+        private List<AutocompleteResult> GetTeamsForChallengeCommands(string input)
+        {
+            // Get all teams from all tournaments
+            var allTeams = _teamManager.GetAllLadderTeams();
+            // If the input is empty or only whitespace, return all teams sorted alphabetically
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return allTeams
+                    .Where(team => team.IsChallengeable)
+                    .OrderBy(team => team.Rank)
+                    .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_tournamentManager.GetTournamentFromTeamName(team.Name).Name} ({_tournamentManager.GetTournamentFromTeamName(team.Name).TeamSizeFormat} {_tournamentManager.GetTournamentFromTeamName(team.Name).GetFormattedTournamentType()})", team.Name))
+                    .ToList();
+            }
+            // Filter teams based on the input (case-insensitive)
+            var matchingTeams = allTeams
+                .Where(team => team.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
+                .Where(team => team.IsChallengeable)
+                .OrderBy(team => team.Rank)
+                .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_tournamentManager.GetTournamentFromTeamName(team.Name).Name} ({_tournamentManager.GetTournamentFromTeamName(team.Name).TeamSizeFormat} {_tournamentManager.GetTournamentFromTeamName(team.Name).GetFormattedTournamentType()})", team.Name))
+                .ToList();
+            return matchingTeams;
         }
 
         private List<AutocompleteResult> GetTournamentIdsMatchingInput(string input)
