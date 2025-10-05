@@ -57,6 +57,11 @@ namespace FlawsFightNight.Bot.Autocomplete
                             "tournament_id" => string.IsNullOrWhiteSpace(input)
                                 ? GetTournamentIdsMatchingInput("")
                                 : GetTournamentIdsMatchingInput(input),
+                            "winning_team_name" => string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "match_id")?.Value is string matchId && !string.IsNullOrWhiteSpace(matchId)
+                                ? GetTeamsFromMatchId(matchId) 
+                                : !string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "match_id")?.Value is string matchId2 && !string.IsNullOrWhiteSpace(matchId2)
+                                ? GetTeamsFromMatchId(matchId2).Where(t => t.Name.Contains(input, StringComparison.OrdinalIgnoreCase)).ToList()
+                                : new List<AutocompleteResult>(),
                             _ => new List<AutocompleteResult>()
                         };
                         await interaction.RespondAsync(suggestions);
@@ -122,6 +127,32 @@ namespace FlawsFightNight.Bot.Autocomplete
                 .ToList();
 
             return matchingMatches;
+        }
+
+        private List<AutocompleteResult> GetTeamsFromMatchId(string matchId)
+        {
+            var match = _matchManager.GetMatchFromDatabase(matchId);
+            if (match == null)
+            {
+                return new List<AutocompleteResult>();
+            }
+            // Grab teams
+            var teamA = _teamManager.GetTeamByName(match.TeamA);
+            var teamB = _teamManager.GetTeamByName(match.TeamB);
+
+            // Grab tournament
+            var tournament = _tournamentManager.GetTournamentFromMatchId(matchId);
+
+            var results = new List<AutocompleteResult>();
+            if (teamA != null)
+            {
+                results.Add(new AutocompleteResult($"{teamA.Name} - ({tournament.Name} {tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", teamA.Name));
+            }
+            if (teamB != null)
+            {
+                results.Add(new AutocompleteResult($"{teamB.Name} - ({tournament.Name} {tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", teamB.Name));
+            }
+            return results;
         }
 
         private List<AutocompleteResult> GetTournamentIdsMatchingInput(string input)

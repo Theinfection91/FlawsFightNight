@@ -24,7 +24,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("report-win", "Report a win of any kind of tournament.")]
         public async Task ReportWinAsync(
             [Summary("match_id", "The ID of the match to target."), Autocomplete] string matchId,
-            [Summary("winning_team_name", "The name of the winning team.")] string winningTeamName,
+            [Summary("winning_team_name", "The name of the winning team."), Autocomplete] string winningTeamName,
             [Summary("winning_team_score", "The score of the winning team")] int winningTeamScore,
             [Summary("losing_team_score", "The score of the losing team")] int losingTeamScore)
         {

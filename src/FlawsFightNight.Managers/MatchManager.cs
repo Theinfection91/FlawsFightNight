@@ -463,6 +463,19 @@ namespace FlawsFightNight.Managers
             return allMatches;
         }
 
+        public Match GetMatchFromDatabase(string matchId)
+        {
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                var match = GetMatchByMatchIdResolver(tournament, matchId);
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+            return null;
+        }
+
         private Match GetMatchByIdInNormalRoundRobinTournament(Tournament tournament, string matchId)
         {
             foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
