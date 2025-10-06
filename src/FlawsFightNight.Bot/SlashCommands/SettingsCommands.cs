@@ -73,7 +73,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("set", "Set the channel ID for matches of a specified tournament")]
             [RequireGuildAdmin]
             public async Task SetMatchesChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the matches channel for")] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to set the matches channel for"), Autocomplete] string tournamentId,
             [Summary("channel_id", "The ID of the channel where matches will be posted")] IMessageChannel channel)
             {
 
@@ -92,7 +92,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("remove", "Remove the channel ID for matches of a specified tournament")]
             [RequireGuildAdmin]
             public async Task RemoveMatchesChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to stop the matches LiveView.")] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to stop the matches LiveView."), Autocomplete] string tournamentId)
             {
                 try
                 {
@@ -122,7 +122,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("set", "Set the channel ID for standings of a specified tournament")]
             [RequireGuildAdmin]
             public async Task SetStandingsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the standings channel for")] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to set the standings channel for"), Autocomplete] string tournamentId,
             [Summary("channel_id", "The ID of the channel where standings will be posted")] IMessageChannel channel)
             {
 
@@ -141,7 +141,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("remove", "Remove the channel ID for standings of a specified tournament")]
             [RequireGuildAdmin]
             public async Task RemoveStandingsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to stop the standings LiveView.")] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to stop the standings LiveView."), Autocomplete] string tournamentId)
             {
                 try
                 {
@@ -170,7 +170,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("set", "Set the channel ID for teams of a specified tournament")]
             [RequireGuildAdmin]
             public async Task SetTeamsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the teams channel for")] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to set the teams channel for"), Autocomplete] string tournamentId,
             [Summary("channel_id", "The ID of the channel where teams will be posted")] IMessageChannel channel)
             {
                 try
@@ -187,7 +187,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("remove", "Remove the channel ID for teams of a specified tournament")]
             [RequireGuildAdmin]
             public async Task RemoveTeamsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to stop the teams LiveView.")] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to stop the teams LiveView."), Autocomplete] string tournamentId)
             {
                 try
                 {

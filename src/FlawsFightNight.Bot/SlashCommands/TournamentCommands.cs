@@ -125,7 +125,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("setup_round_robin", "Setup a RR tournaments rules and habits before starting it.")]
         [RequireGuildAdmin]
         public async Task SetupTournamentAsync(
-            [Summary("tournament_id", "The ID of the tournament to setup")] string tournamentId,
+            [Summary("r_tournament_id", "The ID of the tournament to setup")] string tournamentId,
             [Summary("match_type", "")] RoundRobinMatchType matchType,
             [Summary("tie_breaker_ruleset", "The ruleset to use for tie breakers")] TieBreakerType tieBreakerType,
             [Summary("length", "Whether the tournament is a double or single round robin")] RoundRobinLengthType roundRobinType)

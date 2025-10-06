@@ -134,7 +134,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("win", "Admin command - Add number of wins to a team.")]
             [RequireGuildAdmin]
             public async Task AddWinAsync(
-                [Summary("team_name", "The name of the team to add wins.")] string teamName,
+                [Summary("ladder_team_name", "The name of the team to add wins."), Autocomplete] string teamName,
                 [Summary("number_of_wins", "The amount of wins to add.")] int number_of_wins)
             {
                 try
@@ -152,7 +152,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("loss", "Admin command - Add number of losses to a team.")]
             [RequireGuildAdmin]
             public async Task AddLossAsync(
-                [Summary("team_name", "The name of the team to add losses.")] string teamName,
+                [Summary("ladder_team_name", "The name of the team to add losses."), Autocomplete] string teamName,
                 [Summary("number_of_losses", "The amount of losses to add.")] int number_of_losses)
             {
                 try
@@ -203,7 +203,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("win", "Admin command - Add number of wins to a team.")]
             [RequireGuildAdmin]
             public async Task RemoveWinAsync(
-                [Summary("team_name", "The name of the team to add wins.")] string teamName,
+                [Summary("ladder_team_name", "The name of the team to add wins."), Autocomplete] string teamName,
                 [Summary("number_of_wins", "The amount of wins to add.")] int number_of_wins)
             {
                 try
@@ -221,7 +221,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("loss", "Admin command - Add number of losses to a team.")]
             [RequireGuildAdmin]
             public async Task RemoveLossAsync(
-                [Summary("team_name", "The name of the team to add losses.")] string teamName,
+                [Summary("ladder_team_name", "The name of the team to add losses."), Autocomplete] string teamName,
                 [Summary("number_of_losses", "The amount of losses to add.")] int number_of_losses)
             {
                 try
