@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Managers;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -41,8 +42,10 @@ namespace FlawsFightNight.Bot.Autocomplete
             try
             {
                 Console.WriteLine($"[Autocomplete] Command: {interaction.Data.CommandName}, Option: {interaction.Data.Current?.Name}, Value: {interaction.Data.Current?.Value}");
+                Console.WriteLine($"{interaction.Data.CommandId}");
                 if (HasAutocomplete(interaction.Data.CommandName))
                 {
+
                     var focusedOption = interaction.Data.Current;
                     if (focusedOption != null)
                     {
@@ -100,6 +103,16 @@ namespace FlawsFightNight.Bot.Autocomplete
                                     ? GetPostMatchIdsMatchingInput("")
                                     : GetPostMatchIdsMatchingInput(input);
                                 break;
+                            case "r_tournament_id":
+                                suggestions = string.IsNullOrWhiteSpace(input)
+                                    ? GetRoundBasedTournamentIdsMatchingInput("")
+                                    : GetRoundBasedTournamentIdsMatchingInput(input);
+                                break;
+                            case "rr_tournament_id":
+                                suggestions = string.IsNullOrWhiteSpace(input)
+                                    ? GetRoundRobinTournamentIdsMatchingInput("")
+                                    : GetRoundRobinTournamentIdsMatchingInput(input);
+                                break;
                             case "winning_team_name":
                                 if (string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "match_id")?.Value is string matchId && !string.IsNullOrWhiteSpace(matchId))
                                 {
@@ -144,6 +157,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                 "match",
                 "settings",
                 "team",
+                "tournament"
                 // Add more command names as needed
             };
             return commandsWithAutocomplete.Contains(commandName);
@@ -375,6 +389,50 @@ namespace FlawsFightNight.Bot.Autocomplete
                 .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Id))
                 .ToList();
 
+            return matchingTournaments;
+        }
+
+        private List<AutocompleteResult> GetRoundRobinTournamentIdsMatchingInput(string input)
+        {
+            // Get all RR tournaments
+            var tournaments = _tournamentManager.GetAllTournaments().Where(t => t.Type.Equals(TournamentType.RoundRobin));
+            // If the input is empty or only whitespace, return all RR tournaments sorted alphabetically
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                // Return all RR tournaments, sorted alphabetically by name
+                return tournaments
+                    .OrderBy(tournament => tournament.Name)
+                    .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Id))
+                    .ToList();
+            }
+            // Filter RR tournaments based on the input (case-insensitive)
+            var matchingTournaments = tournaments
+                .Where(tournament => tournament.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(tournament => tournament.Name)
+                .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Id))
+                .ToList();
+            return matchingTournaments;
+        }
+
+        private List<AutocompleteResult> GetRoundBasedTournamentIdsMatchingInput(string input)
+        {
+            // Get all normal RR tournaments
+            var tournaments = _tournamentManager.GetAllTournaments().Where(t => t.Type.Equals(TournamentType.RoundRobin) && t.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal));
+            // If the input is empty or only whitespace, return all round-based tournaments sorted alphabetically
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                // Return all round-based tournaments, sorted alphabetically by name
+                return tournaments
+                    .OrderBy(tournament => tournament.Name)
+                    .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Id))
+                    .ToList();
+            }
+            // Filter round-based tournaments based on the input (case-insensitive)
+            var matchingTournaments = tournaments
+                .Where(tournament => tournament.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(tournament => tournament.Name)
+                .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Id))
+                .ToList();
             return matchingTournaments;
         }
     }
