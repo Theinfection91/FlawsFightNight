@@ -41,8 +41,8 @@ namespace FlawsFightNight.Bot.Autocomplete
         {
             try
             {
-                Console.WriteLine($"[Autocomplete] Command: {interaction.Data.CommandName}, Option: {interaction.Data.Current?.Name}, Value: {interaction.Data.Current?.Value}");
-                Console.WriteLine($"{interaction.Data.CommandId}");
+                //Console.WriteLine($"[Autocomplete] Command: {interaction.Data.CommandName}, Option: {interaction.Data.Current?.Name}, Value: {interaction.Data.Current?.Value}");
+                //Console.WriteLine($"{interaction.Data.CommandId}");
                 if (HasAutocomplete(interaction.Data.CommandName))
                 {
 
