@@ -153,7 +153,7 @@ namespace FlawsFightNight.Managers
 
                 var byeMatches = tournament.MatchLog.OpenRoundRobinMatchesToPlay
                     .Where(m => m.IsByeMatch)
-                    .Select(m => $"💤 *Match ID#: {m.Id}* | *{m.GetCorrectNameForByeMatch()} Bye Match*");
+                    .Select(m => $"💤 *Match ID#: {m.Id}* | *{m.GetCorrectByeNameForByeMatch()} Bye Match*");
 
                 var orderedMatches = normalMatches.Concat(byeMatches).ToList();
 
@@ -219,7 +219,7 @@ namespace FlawsFightNight.Managers
             }
             if (tournament.IsRoundComplete && !tournament.IsRoundLockedIn)
             {
-                embed.AddField("🔓 Unlocked", "Round is finished but unlocked. Lock to finalize results then advance.", true);
+                embed.AddField("🔓 Unlocked", "Round is finished but unlocked. Lock to finalize results then advance.\n\nBye matches will be automatically reported on a successful use of the `/tournament next-round` command.", true);
             }
 
             // --- Matches To Play ---
@@ -237,7 +237,7 @@ namespace FlawsFightNight.Managers
                 // Bye matches after
                 foreach (var match in matchesToPlay.Where(m => m.IsByeMatch))
                 {
-                    sb.AppendLine($"💤 *Match ID#: {match.Id}* | *{match.GetCorrectNameForByeMatch()} Bye Match*");
+                    sb.AppendLine($"💤 *{match.GetCorrectByeNameForByeMatch()} Bye Match*");
                 }
 
                 embed.AddField($"⚔️ Matches To Play (Round {tournament.CurrentRound})", sb.ToString(), false);
@@ -387,7 +387,7 @@ namespace FlawsFightNight.Managers
             var embed = new EmbedBuilder()
                 .WithTitle("☑️ Bye Match Completion Reported")
                 .WithDescription(
-                    $"The bye match for '**{match.GetCorrectNameForByeMatch()}'** has been recorded as complete in **{tournament.Name}**.\n\n{reporterText}"
+                    $"The bye match for '**{match.GetCorrectByeNameForByeMatch()}'** has been recorded as complete in **{tournament.Name}**.\n\n{reporterText}"
                 )
                 .AddField("Tournament ID", tournament.Id)
                 .WithColor(Color.Green)

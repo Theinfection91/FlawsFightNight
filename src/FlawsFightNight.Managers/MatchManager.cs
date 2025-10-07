@@ -1207,6 +1207,13 @@ namespace FlawsFightNight.Managers
                 tournament.MatchLog.MatchesToPlayByRound.Remove(match.RoundNumber);
 
                 //Console.WriteLine($"All matches for round {match.RoundNumber} have been completed. Admins now need to double check scores and then lock in the round before advancing.");
+                
+                tournament.IsRoundComplete = true;
+            }
+
+            // If one match is left and bool returns true then it must be bye match and round is complete. Next round command will handle converting to post match and adding to correct dictionary.
+            if (matchesInRound.Count == 1 && tournament.DoesRoundContainByeMatch())
+            {
                 tournament.IsRoundComplete = true;
             }
         }

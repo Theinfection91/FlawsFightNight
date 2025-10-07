@@ -186,6 +186,30 @@ namespace FlawsFightNight.Core.Models
             // Update the tournament's team list
             Teams = resolvedTeamsList;
         }
+
+        public bool DoesRoundContainByeMatch()
+        {
+            foreach (var match in MatchLog.MatchesToPlayByRound[CurrentRound])
+            { 
+                if (match.TeamA.Equals("Bye", StringComparison.OrdinalIgnoreCase) || match.TeamB.Equals("Bye", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public Match GetByeMatchInCurrentRound()
+        {
+            foreach (var match in MatchLog.MatchesToPlayByRound[CurrentRound])
+            {
+                if (match.TeamA.Equals("Bye", StringComparison.OrdinalIgnoreCase) || match.TeamB.Equals("Bye", StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+            }
+            return null;
+        }
         #endregion
 
         public string GetFormattedTournamentType()
