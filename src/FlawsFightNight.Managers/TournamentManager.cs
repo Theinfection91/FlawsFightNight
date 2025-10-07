@@ -258,6 +258,27 @@ namespace FlawsFightNight.Managers
                     }
                 }
             }
+            // Ladder Matches
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+                {
+                    if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return tournament;
+                    }
+                }
+            }
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                foreach (var match in tournament.MatchLog.LadderPostMatches)
+                {
+                    if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return tournament;
+                    }
+                }
+            }
             return null;
         }
 

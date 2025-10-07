@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Models;
+﻿using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,6 +59,20 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Gets
+        public List<Team> GetAllLadderTeams()
+        {
+            List<Team> ladderTeams = new List<Team>();
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (Tournament tournament in tournaments)
+            {
+                if (tournament.Type.Equals(TournamentType.Ladder))
+                {
+                    ladderTeams.AddRange(tournament.Teams);
+                }
+            }
+            return ladderTeams;
+        }
+
         public Team GetTeamByName(string teamName)
         {
             List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;

@@ -23,8 +23,8 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         [SlashCommand("report-win", "Report a win of any kind of tournament.")]
         public async Task ReportWinAsync(
-            [Summary("match_id", "The ID of the match to target.")] string matchId,
-            [Summary("winning_team_name", "The name of the winning team.")] string winningTeamName,
+            [Summary("match_id", "The ID of the match to target."), Autocomplete] string matchId,
+            [Summary("winning_team_name", "The name of the winning team."), Autocomplete] string winningTeamName,
             [Summary("winning_team_score", "The score of the winning team")] int winningTeamScore,
             [Summary("losing_team_score", "The score of the losing team")] int losingTeamScore)
         {
@@ -42,10 +42,10 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         [SlashCommand("edit", "Edit a post-match's details in RR and Elimination.")]
         public async Task EditMatchAsync(
-            [Summary("match_id", "The ID of the match to target.")] string matchId,
-            [Summary("winningTeamName", "The winner of the match, can be the same as before edit.")] string winningTeamName,
-            [Summary("winningTeamScore", "The score of the winning team.")] int winningTeamScore,
-            [Summary("losingTeamScore", "The score of the losing team")] int losingTeamScore)
+            [Summary("post_match_id", "The ID of the match to target."), Autocomplete] string matchId,
+            [Summary("winning_team_name", "The winner of the match, can be the same as before edit."), Autocomplete] string winningTeamName,
+            [Summary("winning_team_score", "The score of the winning team.")] int winningTeamScore,
+            [Summary("losing_team_score", "The score of the losing team")] int losingTeamScore)
         {
             try
             {
@@ -71,8 +71,8 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             [SlashCommand("send", "Send a challenge to another team in a ladder tournament.")]
             public async Task SendChallengeAsync(
-            [Summary("challenger_team_name", "The name of the team sending the challenge")] string challengerTeamName,
-            [Summary("challenged_team", "The name of the team being challenged")] string opponentTeamName)
+            [Summary("challenger_team_name", "The name of the team sending the challenge"), Autocomplete] string challengerTeamName,
+            [Summary("challenged_team", "The name of the team being challenged"), Autocomplete] string opponentTeamName)
             {
                 try
                 {
@@ -87,7 +87,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             [SlashCommand("cancel", "Cancel a previously sent challenge in a ladder tournament.")]
             public async Task CancelChallengeAsync(
-            [Summary("challenger_team_name", "The name of the team that sent the challenge")] string challengerTeamName)
+            [Summary("challenger_team", "The name of the team that sent the challenge"), Autocomplete] string challengerTeamName)
             {
                 try
                 {

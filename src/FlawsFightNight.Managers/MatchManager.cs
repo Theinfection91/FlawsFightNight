@@ -453,6 +453,39 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Gets
+        public List<Match> GetAllActiveMatches()
+        {
+            List<Match> allMatches = new();
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                allMatches.AddRange(tournament.MatchLog.GetAllActiveMatches());
+            }
+            return allMatches;
+        }
+
+        public List<PostMatch> GetAllPostMatches()
+        {
+            List<PostMatch> allPostMatches = new();
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                allPostMatches.AddRange(tournament.MatchLog.GetAllPostMatches());
+            }
+            return allPostMatches;
+        }
+
+        public Match GetMatchFromDatabase(string matchId)
+        {
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                var match = GetMatchByMatchIdResolver(tournament, matchId);
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+            return null;
+        }
+
         private Match GetMatchByIdInNormalRoundRobinTournament(Tournament tournament, string matchId)
         {
             foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
@@ -694,6 +727,19 @@ namespace FlawsFightNight.Managers
             return tiedTeams; // Return number of teams involved in ties
         }
 
+        public PostMatch GetPostMatchById(string matchId)
+        {
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                var postMatch = GetPostMatchByIdInTournament(tournament, matchId);
+                if (postMatch != null)
+                {
+                    return postMatch;
+                }
+            }
+            return null;
+        }
+
         public PostMatch GetPostMatchByIdInTournament(Tournament tournament, string matchId)
         {
             foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
@@ -707,6 +753,14 @@ namespace FlawsFightNight.Managers
                 }
             }
             foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
+            {
+                if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return postMatch; // PostMatch found
+                }
+            }
+            // Ladder PostMatches
+            foreach (var postMatch in tournament.MatchLog.LadderPostMatches)
             {
                 if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                 {
@@ -807,6 +861,29 @@ namespace FlawsFightNight.Managers
             return tournament.MatchLog.LadderMatchesToPlay.FirstOrDefault(m =>
                 m.Challenge != null &&
                 m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public List<Team> GetAllChallengerTeams(List<Team> allLadderTeams)
+        {
+            List<Team> challengerTeams = new();
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                if (tournament.Type == TournamentType.Ladder)
+                {
+                    foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+                    {
+                        if (match.Challenge != null)
+                        {
+                            var challenger = allLadderTeams.FirstOrDefault(t => t.Name.Equals(match.Challenge.Challenger, StringComparison.OrdinalIgnoreCase));
+                            if (challenger != null && !challengerTeams.Any(t => t.Name.Equals(challenger.Name, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                challengerTeams.Add(challenger);
+                            }
+                        }
+                    }
+                }
+            }
+            return challengerTeams;
         }
 
         public Match CreateLadderMatchWithChallenge(Team challengerTeam, Team challengedTeam)
