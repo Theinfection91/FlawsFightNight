@@ -14,11 +14,13 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
     {
         private EmbedManager _embedManager;
         private GitBackupManager _gitBackupManager;
+        private MatchManager _matchManager;
         private TournamentManager _tournamentManager;
-        public NextRoundLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager) : base("Next Round")
+        public NextRoundLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TournamentManager tournamentManager) : base("Next Round")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
+            _matchManager = matchManager;
             _tournamentManager = tournamentManager;
         }
 
@@ -65,6 +67,16 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             if (tournament.CanEndNormalRoundRobinTournament)
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is ready to end so you cannot go to the next round. Please use the appropriate command to end it.");
+            }
+
+            // Report bye matches if any exist
+            if (tournament.DoesRoundContainByeMatch())
+            {
+                // Grab the bye match
+                var byeMatch = tournament.GetByeMatchInCurrentRound();
+
+                // Report the bye match as completed
+                _matchManager.ConvertMatchToPostMatchResolver(tournament, byeMatch, byeMatch.GetCorrectPlayerNameForByeMatch(), 0, byeMatch.GetCorrectByeNameForByeMatch(), 0, byeMatch.IsByeMatch);
             }
 
             // Advance to the next round

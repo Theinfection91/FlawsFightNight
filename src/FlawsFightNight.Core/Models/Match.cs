@@ -25,7 +25,20 @@ namespace FlawsFightNight.Core.Models
             TeamB = teamB;
         }
 
-        public string GetCorrectNameForByeMatch()
+        public string GetCorrectByeNameForByeMatch()
+        {
+            if (TeamA.Equals("BYE", StringComparison.OrdinalIgnoreCase))
+            {
+                return TeamB;
+            }
+            if (TeamB.Equals("BYE", StringComparison.OrdinalIgnoreCase))
+            {
+                return TeamA;
+            }
+            return "Error";
+        }
+
+        public string GetCorrectPlayerNameForByeMatch()
         {
             if (TeamA.Equals("BYE", StringComparison.OrdinalIgnoreCase))
             {
