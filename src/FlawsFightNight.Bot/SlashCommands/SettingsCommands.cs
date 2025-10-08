@@ -31,13 +31,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _addDebugAdminLogic.AddDebugAdminProcess(user.Id);
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Command Error: {ex}");
-                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
 
@@ -48,13 +49,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _removeDebugAdminLogic.RemoveDebugAdminProcess(user.Id);
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Command Error: {ex}");
-                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
         #endregion
@@ -79,13 +81,14 @@ namespace FlawsFightNight.Bot.SlashCommands
 
                 try
                 {
+                    await DeferAsync();
                     var result = _setMatchesChannelLogic.SetMatchesChannelProcess(tournamentId, channel);
-                    await RespondAsync(embed: result);
+                    await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
 
@@ -96,13 +99,14 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 try
                 {
+                    await DeferAsync();
                     var result = _removeMatchesChannelLogic.RemoveMatchesChannelProcess(tournamentId);
-                    await RespondAsync(embed: result);
+                    await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
         }
@@ -128,13 +132,14 @@ namespace FlawsFightNight.Bot.SlashCommands
 
                 try
                 {
+                    await DeferAsync();
                     var result = _setStandingsChannelLogic.SetStandingsChannelProcess(tournamentId, channel);
-                    await RespondAsync(embed: result);
+                    await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
 
@@ -145,14 +150,14 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 try
                 {
-
+                    await DeferAsync();
                     var result = _removeStandingsChannelLogic.RemoveStandingsChannelProcess(tournamentId);
-                    await RespondAsync(embed: result);
+                    await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
         }
@@ -175,13 +180,14 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 try
                 {
+                    await DeferAsync();
                     var result = _setTeamsChannelLogic.SetTeamsChannelProcess(tournamentId, channel);
-                    await RespondAsync(embed: result);
+                    await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
             [SlashCommand("remove", "Remove the channel ID for teams of a specified tournament")]
@@ -191,13 +197,14 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 try
                 {
+                    await DeferAsync();
                     var result = _removeTeamsChannelLogic.RemoveTeamsChannelProcess(tournamentId);
-                    await RespondAsync(embed: result);
+                    await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
         }

@@ -105,6 +105,8 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, $"You are not a member of the team '{winningTeam.Name}', or an admin on this server, and cannot report a win for them.");
             }
 
+            // TODO: Needs Normal RR checks like making sure match is in current round being played
+
             // Process report win based on tournament type
             switch (tournament.Type)
             {

@@ -48,13 +48,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _createTournamentLogic.CreateTournamentProcess(Context, name, tournamentType, teamSize, description);
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Command Error: {ex}");
-                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
 
@@ -80,13 +81,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _lockTeamsLogic.LockTeamsProcess(tournamentId);
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Command Error: {ex}");
-                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
 
@@ -97,13 +99,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _unlockTeamsLogic.UnlockTeamsProcess(tournamentId);
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Command Error: {ex}");
-                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
 
@@ -132,8 +135,9 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _setupTournamentLogic.SetupRoundRobinTournamentProcess(tournamentId, matchType, tieBreakerType, roundRobinType);
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
@@ -164,13 +168,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _lockInRoundLogic.LockInRoundProcess(tournamentId);
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Command Error: {ex}");
-                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
 
@@ -181,13 +186,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _unlockRoundLogic.UnlockRoundProcess(tournamentId);
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Command Error: {ex}");
-                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
 
@@ -198,13 +204,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _nextRoundLogic.NextRoundProcess(tournamentId);
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Command Error: {ex}");
-                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
 
@@ -213,13 +220,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _showAllTournamentsLogic.ShowAllTournamentsProcess();
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Command Error: {ex}");
-                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
     }
