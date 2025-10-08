@@ -30,8 +30,9 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _reportWinLogic.ReportWinProcess(Context, matchId, winningTeamName, winningTeamScore, losingTeamScore);
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
