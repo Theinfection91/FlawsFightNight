@@ -473,7 +473,7 @@ namespace FlawsFightNight.Managers
             List<Match> allMatches = new();
             foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
-                allMatches.AddRange(tournament.MatchLog.GetAllActiveMatches());
+                allMatches.AddRange(tournament.MatchLog.GetAllActiveMatches(tournament.CurrentRound));
             }
             return allMatches;
         }
