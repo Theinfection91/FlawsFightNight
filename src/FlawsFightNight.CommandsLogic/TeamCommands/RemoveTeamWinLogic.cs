@@ -62,7 +62,6 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             }
 
             // Remove win(s)
-            // TODO Expand this later on for logging purposes
             team.Wins -= numberOfWins;
             team.WinStreak = 0;
 

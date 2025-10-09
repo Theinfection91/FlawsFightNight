@@ -57,7 +57,6 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             var team = _teamManager.GetTeamByName(teamName);
 
             // Add loss(es)
-            // TODO Expand this later on for logging purposes
             team.Losses += numberOfLosses;
             team.LoseStreak += numberOfLosses;
             // Reset win streak

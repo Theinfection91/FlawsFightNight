@@ -28,7 +28,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             _tournamentManager = tournamentManager;
         }
 
-        // TODO: Going to remove the requirement of reporting bye matches. Bye matches will get automatically converted to post matches for Normal Round Robin when the round is ended. For Open Round Robin, bye matches are already not created at all.
         public Embed ReportWinProcess(SocketInteractionContext context, string matchId, string winningTeamName, int winningTeamScore, int losingTeamScore)
         {
             if (losingTeamScore > winningTeamScore)
@@ -105,7 +104,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, $"You are not a member of the team '{winningTeam.Name}', or an admin on this server, and cannot report a win for them.");
             }
 
-            // TODO: Needs Normal RR checks like making sure match is in current round being played
+            // Needs Normal RR checks like making sure match is in current round being played
             if (tournament.Type.Equals(TournamentType.RoundRobin) && tournament.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal) && !_matchManager.IsMatchInCurrentRound(tournament, match.Id))
             {
                 return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' is not part of the current round '{tournament.CurrentRound}' being played in the tournament '{tournament.Name}'. You may only report matches that are part of the current round.");
@@ -172,7 +171,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             winningTeam.IsChallengeable = true;
             losingTeam.IsChallengeable = true;
 
-            // TODO: Add Challenge Rank comparison correction like Ladderbot4. Overtime if other teams play their challenges and report faster than older challenges are reported then there will be inconsistencies with how the LiveView will show the challenge ranks and what the team ranks actually are.
+            // TODO: Add Challenge Rank comparison correction like Ladderbot4. Over time if other teams play their challenges and report faster than older challenges are reported then there will be inconsistencies with how the LiveView will show the challenge ranks and what the team ranks actually are.
         }
     }
 }
