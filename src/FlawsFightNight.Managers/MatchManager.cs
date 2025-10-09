@@ -182,6 +182,21 @@ namespace FlawsFightNight.Managers
                    (!string.IsNullOrEmpty(postMatch.Loser) && postMatch.Loser.Equals(teamName, StringComparison.OrdinalIgnoreCase));
         }
 
+        public bool IsMatchInCurrentRound(Tournament tournament, string matchId)
+        {
+            if (tournament.MatchLog.MatchesToPlayByRound.TryGetValue(tournament.CurrentRound, out var matches))
+            {
+                foreach (var match in matches)
+                {
+                    if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true; // Match found in current round
+                    }
+                }
+            }
+            return false; // Match not found in current round
+        }
+
         public bool IsMatchMadeForTeamResolver(Tournament tournament, string teamName)
         {
             switch (tournament.Type)

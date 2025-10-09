@@ -76,7 +76,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' could not be found in the tournament '{tournament.Name}'. Make sure you are not trying to report a match that has already been played.");
             }
 
-            // TODO: Check if match is bye match, in new version of bot we are not allowing reporting of bye matches as system will handle it.
+            // Check if match is bye match, in new version of bot we are not allowing reporting of bye matches as system will handle it.
             if (match.IsByeMatch)
             {
                 return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' is a Bye match and cannot be reported manually. Bye matches are automatically handled by the system when a round ends in a Normal Round Robin tournament.");
@@ -106,6 +106,10 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // TODO: Needs Normal RR checks like making sure match is in current round being played
+            if (tournament.Type.Equals(TournamentType.RoundRobin) && tournament.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal) && !_matchManager.IsMatchInCurrentRound(tournament, match.Id))
+            {
+                return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' is not part of the current round '{tournament.CurrentRound}' being played in the tournament '{tournament.Name}'. You may only report matches that are part of the current round.");
+            }
 
             // Process report win based on tournament type
             switch (tournament.Type)
