@@ -62,7 +62,6 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             }
 
             // Remove loss(es)
-            // TODO Expand this later on for logging purposes
             team.Losses -= numberOfLosses;
             team.LoseStreak = 0;
 
