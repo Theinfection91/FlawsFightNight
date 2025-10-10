@@ -66,10 +66,6 @@ namespace FlawsFightNight.Bot.Autocomplete
                                     : GetTeamsForSendChallenge(input);
                                 break;
                             case "challenged_team":
-                                //suggestions = string.IsNullOrWhiteSpace(input)
-                                //    ? GetTeamsForChallengeCommands("")
-                                //    : GetTeamsForChallengeCommands(input);
-                                // Grab the same suggestions as challenger_team_name, but filter out the team that is the challenger_team_name
                                 if (string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "challenger_team_name")?.Value is string challengerTeamName && !string.IsNullOrWhiteSpace(challengerTeamName))
                                 {
                                     suggestions = GetTeamsForSendChallenge("").Where(t => !Equals(t.Value, challengerTeamName)).ToList();
