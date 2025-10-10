@@ -62,13 +62,14 @@ namespace FlawsFightNight.Core.Models
             return (pointsFor, pointsAgainst);
         }
 
-        public List<Match> GetAllActiveMatches()
+        public List<Match> GetAllActiveMatches(int currentRound)
         {
             var allMatches = new List<Match>();
-            // Normal Round Robin Matches
-            foreach (var round in MatchesToPlayByRound.Values)
+            // Normal Round Robin Matches (Only grab matches in current round)
+            if (currentRound > 0 && MatchesToPlayByRound.ContainsKey(currentRound))
             {
-                allMatches.AddRange(round);
+                // Do not add bye matches
+                allMatches.AddRange(MatchesToPlayByRound[currentRound].Where(m => !m.IsByeMatch));
             }
             // Open Round Robin Matches
             allMatches.AddRange(OpenRoundRobinMatchesToPlay);
