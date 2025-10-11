@@ -901,6 +901,43 @@ namespace FlawsFightNight.Managers
             return challengerTeams;
         }
 
+        public List<Team> GetAllChallengeTeams(Tournament tournament)
+        {
+            List<Team> challengeTeams = new();
+            foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+            {
+                if (match.Challenge != null)
+                {
+                    // Get challenger and challenged teams
+                    var challenger = tournament.Teams.FirstOrDefault(t => t.Name.Equals(match.Challenge.Challenger, StringComparison.OrdinalIgnoreCase));
+                    var challenged = tournament.Teams.FirstOrDefault(t => t.Name.Equals(match.Challenge.Challenged, StringComparison.OrdinalIgnoreCase));
+                    if (challenger != null && !challengeTeams.Any(t => t.Name.Equals(challenger.Name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        challengeTeams.Add(challenger);
+                    }
+                    if (challenged != null && !challengeTeams.Any(t => t.Name.Equals(challenged.Name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        challengeTeams.Add(challenged);
+                    }
+                }
+            }
+            return challengeTeams;
+        }
+
+        public Match GetLadderMatchForTeam(Tournament tournament, string teamName)
+        {
+            foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+            {
+                if ((match.Challenge != null) &&
+                    (match.Challenge.Challenger.Equals(teamName, StringComparison.OrdinalIgnoreCase) ||
+                     match.Challenge.Challenged.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return match;
+                }
+            }
+            return null;
+        }
+
         public Match CreateLadderMatchWithChallenge(Team challengerTeam, Team challengedTeam)
         {
             var match = new Match(challengerTeam.Name, challengedTeam.Name)
@@ -931,6 +968,41 @@ namespace FlawsFightNight.Managers
             {
                 tournament.Teams[i].Rank = i + 1;
             }
+        }
+
+        public void ChallengeRankComparisonProcess(Tournament tournament)
+        {
+            var challengeTeams = GetAllChallengeTeams(tournament);
+            foreach (var team in challengeTeams)
+            {
+                if (!IsChallengeRankCorrect(tournament, team))
+                {
+                    var challengeToEdit = GetLadderMatchForTeam(tournament, team.Name);
+                    if (team.Name.Equals(challengeToEdit.Challenge.Challenger, StringComparison.OrdinalIgnoreCase))
+                    {
+                        challengeToEdit.Challenge.ChallengerRank = team.Rank;
+                    }
+                    else if (team.Name.Equals(challengeToEdit.Challenge.Challenged, StringComparison.OrdinalIgnoreCase))
+                    {
+                        challengeToEdit.Challenge.ChallengedRank = team.Rank;
+                    }
+                }
+            }
+        }
+
+        public bool IsChallengeRankCorrect(Tournament tournament, Team team)
+        {
+            foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+            {
+                if (match.Challenge.Challenger.Equals(team.Name, StringComparison.OrdinalIgnoreCase) || match.Challenge.Challenged.Equals(team.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (match.Challenge.ChallengerRank == team.Rank || match.Challenge.ChallengedRank == team.Rank)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
         #endregion
 

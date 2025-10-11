@@ -172,6 +172,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             losingTeam.IsChallengeable = true;
 
             // TODO: Add Challenge Rank comparison correction like Ladderbot4. Over time if other teams play their challenges and report faster than older challenges are reported then there will be inconsistencies with how the LiveView will show the challenge ranks and what the team ranks actually are.
+            _matchManager.ChallengeRankComparisonProcess(tournament);
         }
     }
 }

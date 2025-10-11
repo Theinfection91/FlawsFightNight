@@ -14,13 +14,15 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
     {
         private EmbedManager _embedManager;
         private GitBackupManager _gitBackupManager;
+        private MatchManager _matchManager;
         private TeamManager _teamManager;
         private TournamentManager _tournamentManager;
 
-        public DeleteTeamLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Remove Team")
+        public DeleteTeamLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Remove Team")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
+            _matchManager = matchManager;
             _teamManager = teamManager;
             _tournamentManager = tournamentManager;
         }
@@ -49,10 +51,37 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Grab team object for embed
             var team = _teamManager.GetTeamByName(teamName);
 
+            // Check if team was involved in a challenge, delete if so and reset challenge status of other team
+            if (_matchManager.IsMatchMadeForTeamResolver(tournament, teamName))
+            {
+                // Open variable to use, grab the match
+                Team teamToEdit;
+                var match = _matchManager.GetLadderMatchForTeam(tournament, teamName);
+
+                // If team to delete is challenger, grab challenged team and edit
+                if (match.Challenge.Challenger.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    teamToEdit = _teamManager.GetTeamByName(match.Challenge.Challenged);
+                    teamToEdit.IsChallengeable = true;
+                }
+                // If team to delete is challenged, grab challenger team and edit
+                else if (match.Challenge.Challenged.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    teamToEdit = _teamManager.GetTeamByName(match.Challenge.Challenger);
+                    teamToEdit.IsChallengeable = true;
+                }
+                // Delete the match
+                tournament.DeleteLadderMatchFromMatchLog(match);
+            }
+
             // Remove the team from the tournament
             _teamManager.DeleteTeamFromDatabase(teamName);
+            
+            // Adjust ranks of remaining teams if necessary
+            _matchManager.ReassignRanksInLadderTournament(tournament);
 
-            // TODO Adjust ranks of remaining teams if necessary
+            // Run challenge rank comparison
+            _matchManager.ChallengeRankComparisonProcess(tournament);
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
