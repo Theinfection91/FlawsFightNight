@@ -126,7 +126,8 @@ namespace FlawsFightNight.Managers
                 var matches = tournament.MatchLog.LadderPostMatches
                     .Select(pm => $"✅ *Match ID#: {pm.Id}* | " +
                                   $"**{pm.Winner}** defeated **{pm.Loser}** " +
-                                  $"by **{pm.WinnerScore}** to **{pm.LoserScore}**")
+                                  $"by **{pm.WinnerScore}** to **{pm.LoserScore}** " +
+                                  $"\n{pm.GetRankTransitionText()}\n")
                     .ToList();
                 AddMatchesInPages(embed, "📜 Previous Matches (Oldest to Newest)", matches);
             }
