@@ -120,6 +120,7 @@ namespace FlawsFightNight.Managers
                 embed.AddField("⚔️ Pending Challenges", "No pending challenges at the moment.", false);
             }
             // --- Previous Matches ---
+            // TODO: Need to have a way of showing what rank change happened
             if (tournament.MatchLog.LadderPostMatches.Count > 0)
             {
                 var matches = tournament.MatchLog.LadderPostMatches

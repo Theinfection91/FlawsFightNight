@@ -72,7 +72,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         private Embed LadderStartTournamentProcess(Tournament tournament)
         {
-            // TODO Expand later if needed, all Ladder needs for most things is IsRunning
+            // Expand later if needed, all Ladder needs for most things is IsRunning
             tournament.IsRunning = true;
 
             // Save and reload the tournament database
