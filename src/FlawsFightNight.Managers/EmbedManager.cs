@@ -120,7 +120,6 @@ namespace FlawsFightNight.Managers
                 embed.AddField("⚔️ Pending Challenges", "No pending challenges at the moment.", false);
             }
             // --- Previous Matches ---
-            // TODO: Need to have a way of showing what rank change happened
             if (tournament.MatchLog.LadderPostMatches.Count > 0)
             {
                 var matches = tournament.MatchLog.LadderPostMatches
@@ -887,16 +886,58 @@ namespace FlawsFightNight.Managers
 
         private Embed LadderEndTournamentSuccess(Tournament tournament, string winner)
         {
-            var embed = new EmbedBuilder()
-                .WithTitle("🏁 Tournament Ended")
-                .WithDescription($"The Ladder tournament **{tournament.Name}** has ended and a winner has been declared!")
-                .AddField("Winner", $"{winner}")
-                .AddField("Tournament ID", tournament.Id)
-                .AddField("Total Teams", tournament.Teams.Count)
-                .WithColor(Color.Green)
-                .WithFooter("Thank you for participating!")
-                .WithTimestamp(DateTimeOffset.Now);
-            return embed.Build();
+            // Grab top 3 teams
+            Team? firstPlace = tournament.Teams.Count > 0 ? tournament.Teams.OrderBy(t => t.Rank).First() : null;
+            Team? secondPlace = tournament.Teams.Count > 1 ? tournament.Teams.OrderBy(t => t.Rank).Skip(1).First() : null;
+            Team? thirdPlace = tournament.Teams.Count > 2 ? tournament.Teams.OrderBy(t => t.Rank).Skip(2).First() : null;
+
+            // Grab member names for each team
+            string firstPlaceMembers = firstPlace.GetMembersAsString();
+            string secondPlaceMembers = secondPlace.GetMembersAsString();
+            string thirdPlaceMembers = thirdPlace.GetMembersAsString();
+
+            var embedBuilder = new EmbedBuilder()
+                .WithTitle("🏁 Ladder Ended")
+                .WithColor(Color.Gold)
+                .WithDescription($"The tournament **{tournament.Name}** ({tournament.TeamSizeFormat} {tournament.Type}) has officially ended.");
+
+            if (firstPlace != null)
+            {
+                embedBuilder.AddField("🏆 1st Place - Winner", $"{firstPlace.Name}\n" +
+                                                                   $"**Wins**: {firstPlace.Wins} | **Losses**: {firstPlace.Losses}\n" +
+                                                                   $"**Members**: {firstPlaceMembers}", inline: false);
+            }
+
+            if (secondPlace != null)
+            {
+                embedBuilder.AddField("🥈 2nd Place", $"{secondPlace.Name}\n" +
+                                                     $"**Wins**: {secondPlace.Wins} | **Losses**: {secondPlace.Losses}\n" +
+                                                     $"**Members**: {secondPlaceMembers}", inline: false);
+            }
+
+            if (thirdPlace != null)
+            {
+                embedBuilder.AddField("🥉 3rd Place", $"{thirdPlace.Name}\n" +
+                                                     $"**Wins**: {thirdPlace.Wins} | **Losses**: {thirdPlace.Losses}\n" +
+                                                     $"**Members**: {thirdPlaceMembers}", inline: false);
+            }
+
+            var remainingTeams = tournament.Teams.Except(new[] { firstPlace, secondPlace, thirdPlace }).OrderBy(t => t.Rank).ToList();
+            if (remainingTeams.Any())
+            {
+                var remainingTeamsInfo = new StringBuilder();
+                foreach (var team in remainingTeams)
+                {
+                    string members = team.GetMembersAsString();
+                    remainingTeamsInfo.AppendLine($"{team.Rank}. {team.Name} - **Wins**: {team.Wins} | **Losses**: {team.Losses} | **Members**: {members}");
+                }
+                embedBuilder.AddField("🔹 Other Teams", remainingTeamsInfo.ToString(), inline: false);
+            }
+
+            // Footer and timestamp
+            embedBuilder.WithFooter("Thank you for participating!")
+                        .WithTimestamp(DateTimeOffset.Now);
+            return embedBuilder.Build();
         }
 
         private Embed RoundRobinEndTournamentSuccess(Tournament tournament, string winner)
