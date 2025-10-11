@@ -52,5 +52,27 @@ namespace FlawsFightNight.Core.Models
                 LoserScore = losingTeamScore;
             }
         }
+
+        #region Normal Ladder Specific
+        public bool IsChallengerWinner()
+        {
+            if (Challenge != null)
+                return Winner.Equals(Challenge.Challenger, StringComparison.OrdinalIgnoreCase);
+
+            return false;
+        }
+
+        public string GetRankTransitionText()
+        {
+            if (IsChallengerWinner())
+            {
+                return $"⬆️ {Winner} becomes (#{Challenge.ChallengedRank}) - {Loser} drops down one.";
+            }
+            else
+            {
+                return $"⏸️ {Winner} remains (#{Challenge.ChallengedRank}) - No rank change for {Loser}";
+            }
+        }
+        #endregion
     }
 }
