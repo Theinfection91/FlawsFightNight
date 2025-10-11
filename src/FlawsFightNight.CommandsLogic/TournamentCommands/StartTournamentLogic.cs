@@ -72,6 +72,12 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         private Embed LadderStartTournamentProcess(Tournament tournament)
         {
+            // Reset team stats to 0
+            foreach (var team in tournament.Teams)
+            {
+                team.ResetTeamToZero();
+            }
+
             // Expand later if needed, all Ladder needs for most things is IsRunning
             tournament.IsRunning = true;
 

@@ -876,7 +876,7 @@ namespace FlawsFightNight.Managers
             switch (tournament.Type)
             {
                 case TournamentType.Ladder:
-                    return LadderEndTournamentSuccess(tournament, winner);
+                    return LadderEndTournamentSuccess(tournament);
                 case TournamentType.RoundRobin:
                     return RoundRobinEndTournamentSuccess(tournament, winner);
                 default:
@@ -884,7 +884,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private Embed LadderEndTournamentSuccess(Tournament tournament, string winner)
+        private Embed LadderEndTournamentSuccess(Tournament tournament)
         {
             // Grab top 3 teams
             Team? firstPlace = tournament.Teams.Count > 0 ? tournament.Teams.OrderBy(t => t.Rank).First() : null;
