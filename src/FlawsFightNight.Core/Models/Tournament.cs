@@ -72,6 +72,9 @@ namespace FlawsFightNight.Core.Models
         public void LadderEndTournamentProcess()
         {
             IsRunning = false;
+
+            // Clear any unplayed challenges
+            MatchLog.LadderMatchesToPlay.Clear();
         }
 
         public Team LadderGetRankOneTeam()
@@ -138,54 +141,53 @@ namespace FlawsFightNight.Core.Models
         #region Round Robin Helpers
         public void SetRanksByTieBreakerLogic()
         {
-            // Sort teams
+            // 1️⃣ Sort base order by W-L and total score for initial grouping
             Teams = Teams
-            .OrderBy(e => e.Rank)
-            .ThenByDescending(e => e.Wins)
-            .ThenBy(e => e.Losses)
-            .ThenByDescending(e => e.TotalScore)
-            //.ThenBy(e => e.TeamName)
-            .ToList();
+                .OrderByDescending(t => t.Wins)
+                .ThenBy(t => t.Losses)
+                .ThenByDescending(t => t.TotalScore)
+                .ThenBy(t => t.Name)
+                .ToList();
 
-            // Group teams by record
-            var groupedTeamsByRecord = Teams
-                .GroupBy(e => new { e.Wins, e.Losses })
-                .OrderByDescending(g => g.Key.Wins)   // more wins first
-                .ThenBy(g => g.Key.Losses);           // fewer losses first
+            // 2️⃣ Group teams by exact W-L
+            var groupedByRecord = Teams
+                .GroupBy(t => new { t.Wins, t.Losses })
+                .OrderByDescending(g => g.Key.Wins)
+                .ThenBy(g => g.Key.Losses);
 
             var resolvedTeamsList = new List<Team>();
 
-            foreach (var group in groupedTeamsByRecord)
+            // 3️⃣ Resolve ties only within exact W-L groups
+            foreach (var group in groupedByRecord)
             {
-                var tiedTeams = group.Select(e => e.Name).ToList();
+                var groupTeams = group.OrderByDescending(t => t.TotalScore)
+                                      .ThenBy(t => t.Name)
+                                      .ToList();
 
-                if (tiedTeams.Count > 1)
+                if (groupTeams.Count == 1)
                 {
-                    // Work only with tiedTeams
-                    while (tiedTeams.Count > 0)
-                    {
-                        // Resolve tie and get a winner
-                        var (loser, winner) = TieBreakerRule.ResolveTie(tiedTeams, MatchLog);
-                        var winnerTeam = group.First(e => e.Name == winner);
-
-                        resolvedTeamsList.Add(winnerTeam);
-
-                        // Remove the winner so it's not picked again
-                        tiedTeams.Remove(winner);
-                    }
+                    resolvedTeamsList.Add(groupTeams[0]);
+                    continue;
                 }
-                else
+
+                // Multiple teams with same W-L → resolve ties
+                var tiedNames = groupTeams.Select(t => t.Name).ToList();
+                while (tiedNames.Count > 0)
                 {
-                    resolvedTeamsList.AddRange(group);
+                    var (_, winnerName) = TieBreakerRule.ResolveTie(tiedNames, MatchLog);
+                    var winnerTeam = groupTeams.First(t => t.Name == winnerName);
+                    resolvedTeamsList.Add(winnerTeam);
+                    tiedNames.Remove(winnerName);
                 }
             }
-            // Assign ranks after resolution
+
+            // 4️⃣ Assign ranks in order after tie-resolution
             for (int i = 0; i < resolvedTeamsList.Count; i++)
                 resolvedTeamsList[i].Rank = i + 1;
 
-            // Update the tournament's team list
             Teams = resolvedTeamsList;
         }
+
 
         public bool DoesRoundContainByeMatch()
         {

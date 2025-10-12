@@ -142,6 +142,10 @@ namespace FlawsFightNight.Core.Models.TieBreakers
             // Step 6: Coin flip fallback
             var chosen = leadersByPointsOverall.OrderBy(_ => Guid.NewGuid()).First();
             tieBreakerLog.AppendLine($"Tie-breaker unresolved by all criteria → Randomly selected 'coin flip': {chosen}");
+
+            // TODO Remove later DEBUG
+            Console.WriteLine($"{chosen}");
+
             return (tieBreakerLog.ToString(), chosen);
         }
     }
