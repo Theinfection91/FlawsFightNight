@@ -141,7 +141,7 @@ namespace FlawsFightNight.Core.Models
         #region Round Robin Helpers
         public void SetRanksByTieBreakerLogic()
         {
-            // 1️⃣ Sort base order by W-L and total score for initial grouping
+            // Sort base order by W-L and total score for initial grouping
             Teams = Teams
                 .OrderByDescending(t => t.Wins)
                 .ThenBy(t => t.Losses)
@@ -149,7 +149,7 @@ namespace FlawsFightNight.Core.Models
                 .ThenBy(t => t.Name)
                 .ToList();
 
-            // 2️⃣ Group teams by exact W-L
+            // 2Group teams by exact W-L
             var groupedByRecord = Teams
                 .GroupBy(t => new { t.Wins, t.Losses })
                 .OrderByDescending(g => g.Key.Wins)
@@ -157,7 +157,7 @@ namespace FlawsFightNight.Core.Models
 
             var resolvedTeamsList = new List<Team>();
 
-            // 3️⃣ Resolve ties only within exact W-L groups
+            // Resolve ties only within exact W-L groups
             foreach (var group in groupedByRecord)
             {
                 var groupTeams = group.OrderByDescending(t => t.TotalScore)
@@ -181,7 +181,7 @@ namespace FlawsFightNight.Core.Models
                 }
             }
 
-            // 4️⃣ Assign ranks in order after tie-resolution
+            // Assign ranks in order after tie-resolution
             for (int i = 0; i < resolvedTeamsList.Count; i++)
                 resolvedTeamsList[i].Rank = i + 1;
 

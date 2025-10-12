@@ -144,7 +144,7 @@ namespace FlawsFightNight.Core.Models.TieBreakers
             tieBreakerLog.AppendLine($"Tie-breaker unresolved by all criteria → Randomly selected 'coin flip': {chosen}");
 
             // TODO Remove later DEBUG
-            Console.WriteLine($"{chosen}");
+            Console.WriteLine($"{leadersByDiff.First()}");
 
             return (tieBreakerLog.ToString(), chosen);
         }

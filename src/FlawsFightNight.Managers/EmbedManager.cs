@@ -978,7 +978,7 @@ namespace FlawsFightNight.Managers
             {
                 embedBuilder.AddField("🏆 1st Place - Winner", $"{firstPlace.Name}\n" +
                                                                    $"**Wins**: {firstPlace.Wins} | **Losses**: {firstPlace.Losses}\n" +
-                                                                   $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(firstPlace.Name)} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(firstPlace.Name)}\n" +
+                                                                   $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(firstPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(firstPlace.Name).Item2}\n" +
                                                                    $"**Members**: {firstPlaceMembers}", inline: false);
             }
 
@@ -986,7 +986,7 @@ namespace FlawsFightNight.Managers
             {
                 embedBuilder.AddField("🥈 2nd Place", $"{secondPlace.Name}\n" +
                                                      $"**Wins**: {secondPlace.Wins} | **Losses**: {secondPlace.Losses}\n" +
-                                                        $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(secondPlace.Name)} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(secondPlace.Name)}\n" +
+                                                        $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(secondPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(secondPlace.Name).Item2}\n" +
                                                      $"**Members**: {secondPlaceMembers}", inline: false);
             }
 
@@ -994,7 +994,7 @@ namespace FlawsFightNight.Managers
             {
                 embedBuilder.AddField("🥉 3rd Place", $"{thirdPlace.Name}\n" +
                                                      $"**Wins**: {thirdPlace.Wins} | **Losses**: {thirdPlace.Losses}\n" +
-                                                        $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(thirdPlace.Name)} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(thirdPlace.Name)}\n" +
+                                                        $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(thirdPlace.Name).Item1}  | **Points Against**:  {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(thirdPlace.Name).Item2}\n" +
                                                      $"**Members**: {thirdPlaceMembers}", inline: false);
             }
 
