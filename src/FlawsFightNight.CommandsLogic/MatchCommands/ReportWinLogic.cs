@@ -110,6 +110,10 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' is not part of the current round '{tournament.CurrentRound}' being played in the tournament '{tournament.Name}'. You may only report matches that are part of the current round.");
             }
 
+            // Record wins and losses
+            _teamManager.RecordTeamWin(winningTeam, winningTeamScore);
+            _teamManager.RecordTeamLoss(losingTeam, losingTeamScore);
+
             // Process report win based on tournament type
             switch (tournament.Type)
             {
@@ -123,10 +127,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 case TournamentType.DoubleElimination:
                     return _embedManager.ToDoEmbed("Single/Double Elimination Report Win logic is not yet implemented.");
             }
-
-            // Record wins and losses
-            _teamManager.RecordTeamWin(winningTeam, winningTeamScore);
-            _teamManager.RecordTeamLoss(losingTeam, losingTeamScore);
 
             // Convert match to post-match
             _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
