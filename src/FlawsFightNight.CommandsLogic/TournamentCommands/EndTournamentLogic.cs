@@ -61,17 +61,13 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Ladder tournaments can be ended anytime
             tournament.LadderEndTournamentProcess();
 
-            // Replace with better system of grabbing Ladder winner if needed
-            // Grab winner (top ranked team)
-            string winnerName = tournament.LadderGetRankOneTeam().Name;
-
             // Save the updated tournament state
             _tournamentManager.SaveAndReloadTournamentsDatabase();
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
-            return _embedManager.EndTournamentSuccessResolver(tournament, winnerName);
+            return _embedManager.EndTournamentSuccessResolver(tournament);
         }
 
         private Embed EndNormalRoundRobinTournamentProcess(Tournament tournament)
@@ -86,7 +82,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Check if a tie breaker is needed for first place
             if (_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog))
             {
-                (string, string) tieBreakerResult = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog);
+                string tieBreakerInfo = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog).Item1;
 
                 tournament.InitiateEndNormalRoundRobinTournament();
 
@@ -96,13 +92,10 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 // Backup to git repo
                 _gitBackupManager.CopyAndBackupFilesToGit();
 
-                return _embedManager.RoundRobinEndTournamentWithTieBreakerSuccess(tournament, tieBreakerResult);
+                return _embedManager.EndTournamentSuccessResolver(tournament, true, tieBreakerInfo);
             }
             else
             {
-                // No tie breaker needed, grab winner rank at #1
-                string winner = tournament.Teams.OrderBy(t => t.Rank).First().Name;
-
                 tournament.InitiateEndNormalRoundRobinTournament();
 
                 // Save the updated tournament state
@@ -111,7 +104,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 // Backup to git repo
                 _gitBackupManager.CopyAndBackupFilesToGit();
 
-                return _embedManager.EndTournamentSuccessResolver(tournament, winner);
+                return _embedManager.EndTournamentSuccessResolver(tournament);
             }
         }
 
@@ -135,7 +128,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 // Backup to git repo
                 _gitBackupManager.CopyAndBackupFilesToGit();
 
-                return _embedManager.RoundRobinEndTournamentWithTieBreakerSuccess(tournament, tieBreakerResult);
+                return _embedManager.EndTournamentSuccessResolver(tournament, true, tieBreakerResult.Item1);
             }
             else
             {
@@ -150,7 +143,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 // Backup to git repo
                 _gitBackupManager.CopyAndBackupFilesToGit();
 
-                return _embedManager.EndTournamentSuccessResolver(tournament, winner);
+                return _embedManager.EndTournamentSuccessResolver(tournament);
             }
         }
     }
