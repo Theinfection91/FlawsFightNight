@@ -120,6 +120,8 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 (string, string) tieBreakerResult = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog);
 
+                tournament.SetRanksByWinnerFirst(tieBreakerResult.Item2);
+
                 tournament.InitiateEndNormalRoundRobinTournament();
 
                 // Save the updated tournament state

@@ -141,20 +141,20 @@ namespace FlawsFightNight.Core.Models
         #region Round Robin Helpers
         public void SetRanksByTieBreakerLogic()
         {
-            Console.WriteLine("SetRanksByTieBreakerLogic: Starting method.");
+            //Console.WriteLine("SetRanksByTieBreakerLogic: Starting method.");
 
             // Sort base order by W-L and total score for initial grouping
-            Console.WriteLine("SetRanksByTieBreakerLogic: Sorting teams by Wins, Losses, and TotalScore.");
+            //Console.WriteLine("SetRanksByTieBreakerLogic: Sorting teams by Wins, Losses, and TotalScore.");
             Teams = Teams
                 .OrderByDescending(t => t.Wins)
                 .ThenBy(t => t.Losses)
                 .ThenByDescending(t => t.TotalScore)
                 .ToList();
 
-            Console.WriteLine($"SetRanksByTieBreakerLogic: Teams sorted. Team order: {string.Join(", ", Teams.Select(t => t.Name))}");
+            //Console.WriteLine($"SetRanksByTieBreakerLogic: Teams sorted. Team order: {string.Join(", ", Teams.Select(t => t.Name))}");
 
             // 2Group teams by exact W-L
-            Console.WriteLine("SetRanksByTieBreakerLogic: Grouping teams by exact W-L record.");
+            //Console.WriteLine("SetRanksByTieBreakerLogic: Grouping teams by exact W-L record.");
             var groupedByRecord = Teams
                 .GroupBy(t => new { t.Wins, t.Losses })
                 .OrderByDescending(g => g.Key.Wins)
@@ -166,49 +166,63 @@ namespace FlawsFightNight.Core.Models
             foreach (var group in groupedByRecord)
             {
                 var tiedTeams = group.Select(e => e.Name).ToList();
-                Console.WriteLine($"SetRanksByTieBreakerLogic: Processing group with W-L ({group.Key.Wins}-{group.Key.Losses}). Teams: {string.Join(", ", tiedTeams)}");
+                //Console.WriteLine($"SetRanksByTieBreakerLogic: Processing group with W-L ({group.Key.Wins}-{group.Key.Losses}). Teams: {string.Join(", ", tiedTeams)}");
 
                 if (tiedTeams.Count > 1)
                 {
                     // Work only with tiedTeams
                     while (tiedTeams.Count > 0)
                     {
-                        Console.WriteLine($"SetRanksByTieBreakerLogic: Resolving tie among: {string.Join(", ", tiedTeams)}");
+                        //Console.WriteLine($"SetRanksByTieBreakerLogic: Resolving tie among: {string.Join(", ", tiedTeams)}");
                         // Resolve tie and get a winner
                         var (_, winner) = TieBreakerRule.ResolveTie(tiedTeams, MatchLog);
-                        Console.WriteLine($"SetRanksByTieBreakerLogic: TieBreakerRule selected winner: {winner}");
+                        //Console.WriteLine($"SetRanksByTieBreakerLogic: TieBreakerRule selected winner: {winner}");
                         var winnerTeam = group.First(e => e.Name == winner);
 
                         resolvedTeamsList.Add(winnerTeam);
 
                         // Remove the winner so it's not picked again
                         tiedTeams.Remove(winner);
-                        Console.WriteLine($"SetRanksByTieBreakerLogic: Removed winner '{winner}' from tiedTeams. Remaining: {string.Join(", ", tiedTeams)}");
+                        //Console.WriteLine($"SetRanksByTieBreakerLogic: Removed winner '{winner}' from tiedTeams. Remaining: {string.Join(", ", tiedTeams)}");
                     }
                 }
                 else
                 {
                     // No tie, just add the single team
-                    Console.WriteLine($"SetRanksByTieBreakerLogic: No tie in group. Adding team: {tiedTeams[0]}");
+                    //Console.WriteLine($"SetRanksByTieBreakerLogic: No tie in group. Adding team: {tiedTeams[0]}");
                     resolvedTeamsList.AddRange(group);
                 }
             }
             // Assign ranks in order after tie-resolution
-            Console.WriteLine("SetRanksByTieBreakerLogic: Assigning ranks to resolved teams.");
+            //Console.WriteLine("SetRanksByTieBreakerLogic: Assigning ranks to resolved teams.");
             for (int i = 0; i < resolvedTeamsList.Count; i++)
             {
                 resolvedTeamsList[i].Rank = i + 1;
-                Console.WriteLine($"SetRanksByTieBreakerLogic: Assigned Rank {i + 1} to team {resolvedTeamsList[i].Name}");
+                //Console.WriteLine($"SetRanksByTieBreakerLogic: Assigned Rank {i + 1} to team {resolvedTeamsList[i].Name}");
             }
 
             Teams = resolvedTeamsList;
-            Console.WriteLine("SetRanksByTieBreakerLogic: Method complete. Final team order: " + string.Join(", ", Teams.Select(t => $"{t.Name}(Rank:{t.Rank})")));
+            //Console.WriteLine("SetRanksByTieBreakerLogic: Method complete. Final team order: " + string.Join(", ", Teams.Select(t => $"{t.Name}(Rank:{t.Rank})")));
+        }
+
+        public void SetRanksByWinnerFirst(string tournamentWinner)
+        {
+            // Set winner as Rank 1 and sort the rest by current rank
+            Teams = Teams
+                .OrderBy(t => t.Name.Equals(tournamentWinner, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .ThenBy(t => t.Rank)
+                .ToList();
+
+            for (int i = 0; i < Teams.Count; i++)
+            {
+                Teams[i].Rank = i + 1;
+            }
         }
 
         public bool DoesRoundContainByeMatch()
         {
             foreach (var match in MatchLog.MatchesToPlayByRound[CurrentRound])
-            { 
+            {
                 if (match.TeamA.Equals("Bye", StringComparison.OrdinalIgnoreCase) || match.TeamB.Equals("Bye", StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
