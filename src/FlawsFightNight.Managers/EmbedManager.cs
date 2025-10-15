@@ -956,7 +956,6 @@ namespace FlawsFightNight.Managers
 
         private Embed RoundRobinEndTournamentSuccess(Tournament tournament, bool isTieBreakerNeeded = false, string tieBreakerInfo = null)
         {
-            Console.WriteLine($"{tieBreakerInfo}");
             // Grab top 3 teams
             Team? firstPlace = tournament.Teams.Count > 0 ? tournament.Teams.OrderBy(t => t.Rank).First() : null;
             Team? secondPlace = tournament.Teams.Count > 1 ? tournament.Teams.OrderBy(t => t.Rank).Skip(1).First() : null;
