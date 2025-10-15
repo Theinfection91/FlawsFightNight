@@ -1,10 +1,12 @@
 ﻿using Discord;
+using Discord.Interactions;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace FlawsFightNight.Managers
@@ -954,51 +956,67 @@ namespace FlawsFightNight.Managers
 
         private Embed RoundRobinEndTournamentSuccess(Tournament tournament, bool isTieBreakerNeeded = false, string tieBreakerInfo = null)
         {
+            Console.WriteLine($"{tieBreakerInfo}");
             // Grab top 3 teams
             Team? firstPlace = tournament.Teams.Count > 0 ? tournament.Teams.OrderBy(t => t.Rank).First() : null;
             Team? secondPlace = tournament.Teams.Count > 1 ? tournament.Teams.OrderBy(t => t.Rank).Skip(1).First() : null;
             Team? thirdPlace = tournament.Teams.Count > 2 ? tournament.Teams.OrderBy(t => t.Rank).Skip(2).First() : null;
 
-            // Grab member names for each team
-            string firstPlaceMembers = firstPlace.GetMembersAsString();
-            string secondPlaceMembers = secondPlace.GetMembersAsString();
-            string thirdPlaceMembers = thirdPlace.GetMembersAsString();
+            // Grab member names
+            string firstPlaceMembers = firstPlace?.GetMembersAsString() ?? "";
+            string secondPlaceMembers = secondPlace?.GetMembersAsString() ?? "";
+            string thirdPlaceMembers = thirdPlace?.GetMembersAsString() ?? "";
+
+            var description = $"The tournament **{tournament.Name}** ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()}) has officially ended.";
+
+            if (isTieBreakerNeeded)
+            {
+                if (!string.IsNullOrWhiteSpace(tieBreakerInfo) && tieBreakerInfo.Length < 1000)
+                {
+                    // Safe to display directly in embed
+                    description += $"\n\n**⚠️ Tie-Breaker Details:**\n{tieBreakerInfo}";
+                }
+                else
+                {
+                    // Too long — mention that it’s attached
+                    description += "\n\n**⚠️ Tie-Breaker details are too long to display and have been attached as a file below.**";
+                }
+            }
 
             var embedBuilder = new EmbedBuilder()
                 .WithTitle("🏁 Ladder Ended")
                 .WithColor(Color.Gold)
-                .WithDescription($"The tournament **{tournament.Name}** ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()}) has officially ended.");
-
-            if (isTieBreakerNeeded && tieBreakerInfo != null)
-            {
-                embedBuilder.AddField("⚠️ Tiebreaker Info", tieBreakerInfo, inline: false);
-            }
+                .WithDescription(description);
 
             if (firstPlace != null)
             {
                 embedBuilder.AddField("🏆 1st Place - Winner", $"{firstPlace.Name}\n" +
-                                                                   $"**Wins**: {firstPlace.Wins} | **Losses**: {firstPlace.Losses}\n" +
-                                                                   $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(firstPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(firstPlace.Name).Item2}\n" +
-                                                                   $"**Members**: {firstPlaceMembers}", inline: false);
+                    $"**Wins**: {firstPlace.Wins} | **Losses**: {firstPlace.Losses}\n" +
+                    $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(firstPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(firstPlace.Name).Item2}\n" +
+                    $"**Members**: {firstPlaceMembers}", inline: false);
             }
 
             if (secondPlace != null)
             {
                 embedBuilder.AddField("🥈 2nd Place", $"{secondPlace.Name}\n" +
-                                                     $"**Wins**: {secondPlace.Wins} | **Losses**: {secondPlace.Losses}\n" +
-                                                        $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(secondPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(secondPlace.Name).Item2}\n" +
-                                                     $"**Members**: {secondPlaceMembers}", inline: false);
+                    $"**Wins**: {secondPlace.Wins} | **Losses**: {secondPlace.Losses}\n" +
+                    $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(secondPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(secondPlace.Name).Item2}\n" +
+                    $"**Members**: {secondPlaceMembers}", inline: false);
             }
 
             if (thirdPlace != null)
             {
                 embedBuilder.AddField("🥉 3rd Place", $"{thirdPlace.Name}\n" +
-                                                     $"**Wins**: {thirdPlace.Wins} | **Losses**: {thirdPlace.Losses}\n" +
-                                                        $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(thirdPlace.Name).Item1}  | **Points Against**:  {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(thirdPlace.Name).Item2}\n" +
-                                                     $"**Members**: {thirdPlaceMembers}", inline: false);
+                    $"**Wins**: {thirdPlace.Wins} | **Losses**: {thirdPlace.Losses}\n" +
+                    $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(thirdPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(thirdPlace.Name).Item2}\n" +
+                    $"**Members**: {thirdPlaceMembers}", inline: false);
             }
 
-            var remainingTeams = tournament.Teams.Except(new[] { firstPlace, secondPlace, thirdPlace }).OrderBy(t => t.Rank).ToList();
+            var remainingTeams = tournament.Teams
+                .Except(new[] { firstPlace, secondPlace, thirdPlace })
+                .OrderBy(t => t.Rank)
+                .ToList();
+
             if (remainingTeams.Any())
             {
                 var remainingTeamsInfo = new StringBuilder();
@@ -1011,11 +1029,12 @@ namespace FlawsFightNight.Managers
                 embedBuilder.AddField("🔹 Other Teams", remainingTeamsInfo.ToString(), inline: false);
             }
 
-            // Footer and timestamp
             embedBuilder.WithFooter("Thank you for participating!")
                         .WithTimestamp(DateTimeOffset.Now);
+
             return embedBuilder.Build();
         }
+
 
         public Embed LockTeamsSuccess(Tournament tournament)
         {

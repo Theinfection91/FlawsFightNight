@@ -10,6 +10,7 @@ namespace FlawsFightNight.Core.Models.TieBreakers
     public class TraditionalTieBreaker : ITieBreakerRule
     {
         public string Name => "Traditional";
+
         public (string, string) ResolveTie(List<string> tiedTeams, MatchLog log)
         {
             StringBuilder tieBreakerLog = new();
@@ -18,8 +19,6 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 tieBreakerLog.AppendLine("No tied teams provided.");
                 return (tieBreakerLog.ToString(), "null");
             }
-
-            Console.WriteLine($"Starting tie-breaker for: {string.Join(", ", tiedTeams)}");
 
             // Step 1: Head-to-head wins among tied teams
             var wins = tiedTeams.ToDictionary(t => t, t => 0);
@@ -50,10 +49,10 @@ namespace FlawsFightNight.Core.Models.TieBreakers
 
             int maxWins = wins.Values.Max();
             var leaders = wins.Where(w => w.Value == maxWins).Select(w => w.Key).ToList();
-            Console.WriteLine($"Step 1 → Leaders ({maxWins} wins): {string.Join(", ", leaders)}");
+            tieBreakerLog.AppendLine($"  Step 1 leaders ({maxWins} wins): {string.Join(", ", leaders)}");
             if (leaders.Count == 1)
             {
-                Console.WriteLine($"Step 1 winner: {leaders.First()}");
+                tieBreakerLog.AppendLine($"✅ Step 1 winner: {leaders.First()}");
                 return (tieBreakerLog.ToString(), leaders.First());
             }
 
@@ -65,12 +64,16 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 if (pointDiff.ContainsKey(pm.Loser)) pointDiff[pm.Loser] += pm.LoserScore - pm.WinnerScore;
             }
 
+            tieBreakerLog.AppendLine("\nStep 2: Point differentials among remaining tied teams:");
+            foreach (var kvp in pointDiff)
+                tieBreakerLog.AppendLine($"  {kvp.Key}: {kvp.Value}");
+
             int maxDiff = pointDiff.Values.Max();
             var leadersByDiff = pointDiff.Where(p => p.Value == maxDiff).Select(p => p.Key).ToList();
-            Console.WriteLine($"Step 2 → Leaders (diff {maxDiff}): {string.Join(", ", leadersByDiff)}");
+            tieBreakerLog.AppendLine($"  Step 2 leaders ({maxDiff} diff): {string.Join(", ", leadersByDiff)}");
             if (leadersByDiff.Count == 1)
             {
-                Console.WriteLine($"Step 2 winner: {leadersByDiff.First()}");
+                tieBreakerLog.AppendLine($"✅ Step 2 winner: {leadersByDiff.First()}");
                 return (tieBreakerLog.ToString(), leadersByDiff.First());
             }
 
@@ -82,12 +85,16 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 if (totalPointsVsTied.ContainsKey(pm.Loser)) totalPointsVsTied[pm.Loser] += pm.LoserScore;
             }
 
+            tieBreakerLog.AppendLine("\nStep 3: Total points scored vs tied teams:");
+            foreach (var kvp in totalPointsVsTied)
+                tieBreakerLog.AppendLine($"  {kvp.Key}: {kvp.Value}");
+
             int maxPointsVsTied = totalPointsVsTied.Values.Max();
             var leadersByPointsVsTied = totalPointsVsTied.Where(p => p.Value == maxPointsVsTied).Select(p => p.Key).ToList();
-            Console.WriteLine($"Step 3 → Leaders (pts vs tied {maxPointsVsTied}): {string.Join(", ", leadersByPointsVsTied)}");
+            tieBreakerLog.AppendLine($"  Step 3 leaders ({maxPointsVsTied} pts): {string.Join(", ", leadersByPointsVsTied)}");
             if (leadersByPointsVsTied.Count == 1)
             {
-                Console.WriteLine($"Step 3 winner: {leadersByPointsVsTied.First()}");
+                tieBreakerLog.AppendLine($"✅ Step 3 winner: {leadersByPointsVsTied.First()}");
                 return (tieBreakerLog.ToString(), leadersByPointsVsTied.First());
             }
 
@@ -104,12 +111,16 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 if (totalPointsOverall.ContainsKey(pm.Loser)) totalPointsOverall[pm.Loser] += pm.LoserScore;
             }
 
+            tieBreakerLog.AppendLine("\nStep 4: Total points overall:");
+            foreach (var kvp in totalPointsOverall)
+                tieBreakerLog.AppendLine($"  {kvp.Key}: {kvp.Value}");
+
             int maxPointsOverall = totalPointsOverall.Values.Max();
             var leadersByPointsOverall = totalPointsOverall.Where(p => p.Value == maxPointsOverall).Select(p => p.Key).ToList();
-            Console.WriteLine($"Step 4 → Leaders (overall pts {maxPointsOverall}): {string.Join(", ", leadersByPointsOverall)}");
+            tieBreakerLog.AppendLine($"  Step 4 leaders ({maxPointsOverall} pts overall): {string.Join(", ", leadersByPointsOverall)}");
             if (leadersByPointsOverall.Count == 1)
             {
-                Console.WriteLine($"Step 4 winner: {leadersByPointsOverall.First()}");
+                tieBreakerLog.AppendLine($"✅ Step 4 winner: {leadersByPointsOverall.First()}");
                 return (tieBreakerLog.ToString(), leadersByPointsOverall.First());
             }
 
@@ -121,20 +132,25 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 pointsAgainst[p] = againstPoints;
             }
 
+            tieBreakerLog.AppendLine("\nStep 5: Least points against:");
+            foreach (var kvp in pointsAgainst)
+                tieBreakerLog.AppendLine($"  {kvp.Key}: {kvp.Value}");
+
             int minPointsAgainst = pointsAgainst.Values.Min();
             var leadersByLeastPointsAgainst = pointsAgainst.Where(p => p.Value == minPointsAgainst).Select(p => p.Key).ToList();
-            Console.WriteLine($"Step 5 → Leaders (least pts against {minPointsAgainst}): {string.Join(", ", leadersByLeastPointsAgainst)}");
+            tieBreakerLog.AppendLine($"  Step 5 leaders ({minPointsAgainst} pts against): {string.Join(", ", leadersByLeastPointsAgainst)}");
             if (leadersByLeastPointsAgainst.Count == 1)
             {
-                Console.WriteLine($"Step 5 winner: {leadersByLeastPointsAgainst.First()}");
+                tieBreakerLog.AppendLine($"✅ Step 5 winner: {leadersByLeastPointsAgainst.First()}");
                 return (tieBreakerLog.ToString(), leadersByLeastPointsAgainst.First());
             }
 
             // Step 6: Random coin flip fallback
             var chosen = leadersByLeastPointsAgainst.OrderBy(_ => Guid.NewGuid()).First();
-            Console.WriteLine($"Step 6 → Coin flip chose: {chosen}");
+            tieBreakerLog.AppendLine($"\nStep 6: Random coin flip → {chosen} selected as winner.");
 
             return (tieBreakerLog.ToString(), chosen);
         }
     }
+
 }
