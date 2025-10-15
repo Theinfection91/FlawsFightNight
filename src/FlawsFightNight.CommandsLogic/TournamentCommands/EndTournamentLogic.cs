@@ -2,13 +2,11 @@
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
-using FlawsFightNight.Core.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FlawsFightNight.Core.Models;
 
 namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
