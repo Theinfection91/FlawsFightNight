@@ -2,7 +2,7 @@
 
 🏆 **The Ultimate Discord Tournament Management Bot** 🏆
 
-Flaw's Fight Night is a comprehensive Discord bot being designed to manage tournaments of various types including Ladder, Round Robin, Single Elimination, and Double Elimination formats. Currently, `v0.1` is being developed and it's main focus is Round Robin tournaments. `v0.2` is planned to bring Ladder's over from my Ladderbot4 Discord Bot, and `v0.3` will bring Elimination Bracket tournaments. Once all tournaments have extensive logic worked out then I will implement a bunch of fun side features and release a `v1.0` one day.
+Flaw's Fight Night is a comprehensive Discord bot being designed to manage tournaments of various types including Ladder, Round Robin, and Elimination.
 
 ## 🌟 Key Features
 
