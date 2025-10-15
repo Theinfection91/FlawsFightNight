@@ -70,39 +70,47 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         private Embed EndNormalRoundRobinTournamentProcess(Tournament tournament)
         {
-
-            // Check if the tournament can be ended
-            if (!tournament.CanEndNormalRoundRobinTournament)
+            try
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be ended at this time. Ensure that all rounds are complete and locked in.");
+
+                // Check if the tournament can be ended
+                if (!tournament.CanEndNormalRoundRobinTournament)
+                {
+                    return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be ended at this time. Ensure that all rounds are complete and locked in.");
+                }
+                //Console.WriteLine($"{_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog)}");
+                // Check if a tie breaker is needed for first place
+                if (_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog))
+                {
+                    string tieBreakerInfo = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog).Item1;
+
+                    tournament.InitiateEndNormalRoundRobinTournament();
+
+                    // Save the updated tournament state
+                    _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+                    // Backup to git repo
+                    _gitBackupManager.CopyAndBackupFilesToGit();
+
+                    return _embedManager.EndTournamentSuccessResolver(tournament, true, tieBreakerInfo);
+                }
+                else
+                {
+                    tournament.InitiateEndNormalRoundRobinTournament();
+
+                    // Save the updated tournament state
+                    _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+                    // Backup to git repo
+                    _gitBackupManager.CopyAndBackupFilesToGit();
+
+                    return _embedManager.EndTournamentSuccessResolver(tournament);
+                }
             }
-            //Console.WriteLine($"{_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog)}");
-            // Check if a tie breaker is needed for first place
-            if (_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog))
+            catch (Exception ex)
             {
-                string tieBreakerInfo = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog).Item1;
-
-                tournament.InitiateEndNormalRoundRobinTournament();
-
-                // Save the updated tournament state
-                _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-                // Backup to git repo
-                _gitBackupManager.CopyAndBackupFilesToGit();
-
-                return _embedManager.EndTournamentSuccessResolver(tournament, true, tieBreakerInfo);
-            }
-            else
-            {
-                tournament.InitiateEndNormalRoundRobinTournament();
-
-                // Save the updated tournament state
-                _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-                // Backup to git repo
-                _gitBackupManager.CopyAndBackupFilesToGit();
-
-                return _embedManager.EndTournamentSuccessResolver(tournament);
+                Console.WriteLine($"{DateTime.Now} - Error ending Normal Round Robin tournament: {ex.Message}");
+                return _embedManager.ErrorEmbed(Name, "An error occurred while trying to end the tournament. Please try again later.");
             }
         }
 
