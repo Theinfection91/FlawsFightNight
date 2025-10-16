@@ -1,68 +1,115 @@
-# Flaw's Fight Night v0.2.0
+# Flaw's Fight Night (v0.2.0)
 
-🏆 **The Ultimate Discord Tournament Management Bot** 🏆
+**Flaw's Fight Night** is a powerful Discord bot designed to manage and automate competitive tournaments of multiple types — including **Round Robin**, **Open Round Robin**, **Ladder**, and more. Built for flexibility, speed, and reliability, it provides a complete tournament lifecycle experience from registration to victory.
 
-Flaw's Fight Night is a comprehensive Discord bot being designed to manage tournaments of various types including Ladder, Round Robin, and Elimination.
+---
 
-## 🌟 Key Features
+## 🌟 Features Overview
 
-### Tournament Management
-- Create and manage multiple tournament types (Just Normal and Open Round Robin in `v0.1.x`)
-- Start and end tournaments with full lifecycle control
-- Lock/unlock teams and rounds for competition integrity
-- Custom tournament configurations and settings
+### 🏆 Tournament Management
+- Create, start, and end tournaments with full lifecycle control  
+- Support for multiple tournament types and formats  
+- Lock/unlock teams and rounds for competition integrity  
+- Configure tournament-specific settings (match type, length, tie-breaker rules)
 
-### Team Management
-- Track comprehensive team statistics
-- Manage team standings and rankings
+### 👥 Team Management
+- Register, edit, and remove teams dynamically  
+- Track team stats, standings, and rankings 
+- Supports 1v1 up to 20-player teams  
 
-### Match Management
-- Report match results and scores
-- Edit post-match details for accuracy
-- Complete match history tracking
+### ⚔️ Match Management
+- Report wins, edit post-match results, and track full match history  
+- Supports Round Robin and Ladder match rules  
+- Includes score validation and automatic leaderboard updates
+- Send and cancel challenges between teams in Ladder tournaments
 
-### Live Tournament Views
-- Real-time match updates in dedicated channels (LiveView)
-- Live standings with automatic rankings
-- Team displays with current status
-- Auto-updating tournament progress
+### 📺 Live Tournament Views
+- Auto-updating **LiveView** messages for:
+  - Match logs
+  - Team standings
+  - Registered teams
+- Real-time display inside designated Discord channels
 
-### Advanced Features
-- Git backup integration for data safety
-- Admin controls with permission management
-- Multiple tournament types with different rules
-- Comprehensive statistics and analytics
+### 🧠 Admin & Advanced Tools
+- Fine-grained admin permissions and debug controls  
+- Full GitHub backup integration for data redundancy  
+- Quick restore support for offline recovery  
+
+---
 
 ## 🚀 Quick Start
 
-### Key Commands
-- `/tournament create` - Create a new tournament
-- `/team register` - Register a team for a tournament
-- `/tournament lock-teams` - After having at least three teams registered, lock teams in.
-- `/tournament unlock-teams` - If you need to add/delete teams before starting, unlock the teams.
-- `/tournament start` - If teams are locked, start the tournament and build the match schedule.
-- `/match report-win` - Report a match result.
-- `/match edit` - Edit a post match if any user input error occurs.
-- `/tournament lock-in-round` - Lock in a round after all matches, including if there was a bye match, has been reported.
-- `/tournament unlock-round` - Unlock to make any changes to post matches again.
-- `/tournament next-round` - Once a round is locked in, move to the next round.
-- `/tournament end` - Once all matches for every round is reported, use this to end the tournament and crown the winner.
-- `/settings` - Configure bot settings and tournament channel settings for the LiveView auto updating messages for Standings, Matches, and Teams.
+### 🔧 Setup Requirements
+Before launching the bot, you’ll need:
+- A **Discord Bot Token** from the [Discord Developer Portal](https://discord.com/developers)
+- A **GitHub Personal Access Token (Fine-Grained)** with:
+  - Repository Access → Selected Repository
+  - Permissions → `Contents: Read & Write` (auto-enables Metadata)
+- A **Git Repository HTTPS URL** for backup storage
+- The **Guild ID** of your Discord server
 
-## 📋 Available Commands
+### ⚙️ Running the Bot
+1. Download the latest release from the [Releases Page](https://github.com/Theinfection91/FlawsFightNight/releases)
+2. Extract the `.zip` contents and run `FlawsFightNight.exe`
+3. Follow the on-screen prompts to:
+   - Enter your Discord Token  
+   - Enter GitHub Token & HTTPS Repo URL (optional but recommended)  
+   - Select your Guild ID for slash commands  
+4. Once setup completes, your bot will appear online and ready to use!
 
-The bot includes 20+ slash commands organized into categories, with a lot more planned for the future:
-- **Tournament Commands** - Create, manage, and control tournaments
-- **Team Commands** - Register and manage teams
-- **Match Commands** - Handle match reporting and challenges
-- **Settings Commands** - Configure bot behavior and tournament LiveView channels
+---
 
-## 🔧 Installation
-- Check the Releases page.
+## 💬 Core Slash Commands
 
-## 📊 Current Status
+| Category | Example Commands | Description |
+|-----------|------------------|-------------|
+| **Tournament** | `/tournament create`, `/tournament start`, `/tournament end` | Manage tournaments and progress rounds |
+| **Team** | `/team register`, `/team delete`, `/team set_rank` | Handle team creation, removal, and ranking |
+| **Match** | `/match report-win`, `/match edit` | Report and adjust match outcomes |
+| **Settings** | `/settings standings_channel_id set`, `/settings add_debug_admin` | Configure LiveViews and admin settings |
 
-- ✅ Round Robin tournaments working
-- ✅ 20+ slash commands
-- ✅ Real-time live views
-- ✅ Git backup integration
+> For a full list of commands and detailed usage examples, see the [📖 Documentation](./Documentation.md).
+
+---
+
+## 🗂️ Git Backup Integration
+
+All tournament data (excluding sensitive credentials) can automatically sync to your GitHub repository.  
+This ensures long-term data persistence and seamless migration between systems.
+
+- Auto-sync after data changes  
+- Manual push & pull available  
+- Offline protection for tournament state
+
+---
+
+## 🧩 Tournament Types
+
+| Type | Description |
+|------|--------------|
+| **Normal Round Robin** | Everyone plays everyone, twice by default |
+| **Open Round Robin** | Flexible scheduling and open-ended matches |
+| **Ladder** | Teams challenge up the ladder for rank changes |
+| *(Elimination planned)* | Classic knockout format (coming soon) |
+
+---
+
+## 🧰 Development Info
+
+- **Language:** C# (.NET 8.0)
+- **Platform:** Discord.NET API
+- **Backup:** Git Integration (via `GitBackupManager`)
+- **Status:** Active development — next update adds Ladder and Elimination tournaments
+
+---
+
+## 📈 Current Progress
+
+✅ Round Robin tournaments fully functional  
+✅ 20+ Slash Commands implemented  
+✅ Real-time LiveViews working  
+✅ Git backup stable 
+🔄 Individual player stats coming soon
+🔄 Elimination support coming soon  
+
+---
