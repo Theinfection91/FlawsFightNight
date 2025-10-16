@@ -99,17 +99,6 @@ This ensures long-term data persistence and seamless migration between systems.
 - **Language:** C# (.NET 8.0)
 - **Platform:** Discord.NET API
 - **Backup:** Git Integration (via `GitBackupManager`)
-- **Status:** Active development — next update adds Ladder and Elimination tournaments
-
----
-
-## 📈 Current Progress
-
-✅ Round Robin tournaments fully functional  
-✅ 20+ Slash Commands implemented  
-✅ Real-time LiveViews working  
-✅ Git backup stable 
-🔄 Individual player stats coming soon
-🔄 Elimination support coming soon  
+- **Status:** Active development - New Ladder mode planned for next update
 
 ---
