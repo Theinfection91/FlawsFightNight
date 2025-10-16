@@ -101,6 +101,24 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
         }
 
+        [SlashCommand("set_rank", "Set the rank of a team in a Ladder tournament.")]
+        [RequireGuildAdmin]
+        public async Task SetTeamRankAsync(
+            [Summary("ladder_team_name", "The name of the team to set the rank for."), Autocomplete] string teamName,
+            [Summary("rank", "The rank to set the team to.")] int rank)
+        {
+            try
+            {
+                await DeferAsync();
+                await FollowupAsync("Not yet implemented.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
         [Group("add", "Commands related to addings things to a team.")]
         public class TeamAddCommands : InteractionModuleBase<SocketInteractionContext>
         {
