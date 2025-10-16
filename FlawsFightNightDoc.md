@@ -413,6 +413,19 @@ For a Ladder tournament, a team may be removed at any time.
 
 ---
 
+###  Set Team Rank(`/team set_rank`)
+
+**Description**:
+**This command will only be used for Ladder tournaments.**
+Admin command to manually set a teams rank, and have all other ranks adjust accordingly
+
+**Usage**
+```csharp
+ /team set_rank team_name:<str> new_rank:<int>
+```
+
+---
+
 ###  Add Win(s) To Team's Win Count(`/team add win`)
 
 **Description**:
@@ -434,7 +447,7 @@ An admin can manually add losses to a team in case errors occur.
 
 **Usage**
 ```csharp
- /team add loss team_name:<string> number_of_losses
+ /team add loss team_name:<string> number_of_losses:<int>
 ```
 
 ---
@@ -443,11 +456,11 @@ An admin can manually add losses to a team in case errors occur.
 
 **Description**:
 **This command will only be used for Ladder tournaments.**
-
+An admin can manually remove wins from a team, but only enough to bring them to 0.
 
 **Usage**
 ```csharp
- 
+ /team remove win team_name:<string> number_of_wins:<int>
 ```
 
 ---
@@ -456,11 +469,11 @@ An admin can manually add losses to a team in case errors occur.
 
 **Description**:
 **This command will only be used for Ladder tournaments.**
-
+An admin can manually remove losses from a team, but only enough to bring them to 0.
 
 **Usage**
 ```csharp
- 
+ /team remove loss team_name:<string> number_of_losses:<int>
 ```
 
 ---
