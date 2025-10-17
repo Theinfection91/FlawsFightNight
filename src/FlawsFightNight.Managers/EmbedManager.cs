@@ -761,6 +761,19 @@ namespace FlawsFightNight.Managers
                  .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
+
+        public Embed SetTeamRankSuccess(Team team, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🏅 Team Rank Updated Successfully")
+                .WithDescription($"The team **{team.Name}** has been assigned a new rank of **#{team.Rank}** in the tournament **{tournament.Name}**. All other ranks have been adjusted accordingly.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("New Rank", $"#{team.Rank}")
+                .WithColor(Color.Green)
+                .WithFooter("The team's rank has been updated.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
         #endregion
 
         #region Tournament Embeds

@@ -15,10 +15,12 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class TeamCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private RegisterTeamLogic _registerTeamLogic;
+        private SetTeamRankLogic _setTeamRankLogic;
 
-        public TeamCommands(RegisterTeamLogic registerTeamLogic)
+        public TeamCommands(RegisterTeamLogic registerTeamLogic, SetTeamRankLogic setTeamRankLogic)
         {
             _registerTeamLogic = registerTeamLogic;
+            _setTeamRankLogic = setTeamRankLogic;
         }
 
         [SlashCommand("register", "Register a new team for a chosen Tournament")]
@@ -98,6 +100,25 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 Console.WriteLine($"Command Error: {ex}");
                 await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [SlashCommand("set_rank", "Set the rank of a team in a Ladder tournament.")]
+        [RequireGuildAdmin]
+        public async Task SetTeamRankAsync(
+            [Summary("ladder_team_name", "The name of the team to set the rank for."), Autocomplete] string teamName,
+            [Summary("rank", "The rank to set the team to.")] int rank)
+        {
+            try
+            {
+                await DeferAsync();
+                var result = _setTeamRankLogic.SetTeamRankProcess(teamName, rank);
+                await FollowupAsync(embed: result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
 
