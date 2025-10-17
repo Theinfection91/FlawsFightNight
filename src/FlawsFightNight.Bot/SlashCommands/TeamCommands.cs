@@ -15,10 +15,12 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class TeamCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private RegisterTeamLogic _registerTeamLogic;
+        private SetTeamRankLogic _setTeamRankLogic;
 
-        public TeamCommands(RegisterTeamLogic registerTeamLogic)
+        public TeamCommands(RegisterTeamLogic registerTeamLogic, SetTeamRankLogic setTeamRankLogic)
         {
             _registerTeamLogic = registerTeamLogic;
+            _setTeamRankLogic = setTeamRankLogic;
         }
 
         [SlashCommand("register", "Register a new team for a chosen Tournament")]
@@ -110,7 +112,8 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                await FollowupAsync("Not yet implemented.");
+                var result = _setTeamRankLogic.SetTeamRankProcess(teamName, rank);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {

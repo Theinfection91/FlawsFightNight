@@ -136,6 +136,22 @@ namespace FlawsFightNight.Core.Models
         {
             MatchLog.LadderMatchesToPlay.Remove(pendingMatch);
         }
+
+        public void ReassignRanksInTournament()
+        {
+            if (Teams == null || Teams.Count == 0)
+            {
+                return;
+            }
+
+            Teams.Sort((a, b) => a.Rank.CompareTo(b.Rank));
+
+            // Reassign ranks sequentially from 1 to N
+            for (int i = 0; i < Teams.Count; i++)
+            {
+                Teams[i].Rank = i + 1;
+            }
+        }
         #endregion
 
         #region Round Robin Helpers
