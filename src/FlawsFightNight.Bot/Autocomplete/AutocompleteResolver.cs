@@ -165,6 +165,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                 "match",
                 "settings",
                 "team",
+                "team register tournament_id",
                 "tournament"
                 // Add more command names as needed
             };

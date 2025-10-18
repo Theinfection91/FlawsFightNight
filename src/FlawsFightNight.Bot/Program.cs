@@ -28,7 +28,6 @@ namespace FlawsFightNight.Bot
 
         public static async Task Main(string[] args)
         {
-            // Global exception hooks
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
                 Console.WriteLine($"[Unhandled Exception] {e.ExceptionObject}");
 
@@ -132,26 +131,15 @@ namespace FlawsFightNight.Bot
             _commands = _services.GetRequiredService<CommandService>();
             _interactionService = new InteractionService(_client);
             _commands.Log += Log;
+            _client.Log += Log;
 
-            _client.Log += msg =>
-            {
-                if (msg.Exception is GatewayReconnectException)
-                    Console.WriteLine($"{DateTime.Now} - Gateway requested a reconnect.");
-                else
-                    Console.WriteLine(msg.ToString());
-                return Task.CompletedTask;
-            };
-
-            _client.Ready += ClientReady;
-            _client.InteractionCreated += HandleInteractionAsync;
-            _client.MessageReceived += HandleCommandAsync;
             _client.Disconnected += ex =>
             {
                 Console.WriteLine($"{DateTime.Now} - Bot disconnected: {ex?.Message ?? "Unknown reason"}");
                 return Task.CompletedTask;
             };
 
-            // Attach Ready handler BEFORE starting the client
+            // Ready handling
             var readyTask = new TaskCompletionSource<bool>();
             _client.Ready += () =>
             {
@@ -159,36 +147,47 @@ namespace FlawsFightNight.Bot
                 return Task.CompletedTask;
             };
 
+            _client.InteractionCreated += HandleInteractionAsync;
+            _client.MessageReceived += HandleCommandAsync;
+
             await _client.LoginAsync(TokenType.Bot, configManager.GetDiscordToken());
             await _client.StartAsync();
 
-            await readyTask.Task;
+            await readyTask.Task; // Wait until Discord signals Ready
 
-            // Initialize autocomplete after Ready
+            // Fire-and-forget module registration and guild commands
+            _ = Task.Run(async () =>
+            {
+                await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+                configManager.SetGuildIdProcess();
+                await _interactionService.RegisterCommandsToGuildAsync(configManager.GetGuildId());
+                Console.WriteLine($"{DateTime.Now} - Commands registered to guild {configManager.GetGuildId()}");
+            });
+
+            // Initialize autocomplete AFTER Ready
             var autoCompleteHandler = _services.GetRequiredService<AutocompleteResolver>();
             await autoCompleteHandler.InitializeAsync();
 
             Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");
 
             liveViewManager = _services.GetRequiredService<LiveViewManager>();
-            await Task.Delay(-1);
-        }
 
-        private async Task ClientReady()
-        {
-            await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
-
-            configManager.SetGuildIdProcess();
-            await _interactionService.RegisterCommandsToGuildAsync(configManager.GetGuildId());
-            Console.WriteLine($"{DateTime.Now} - Commands registered to guild {configManager.GetGuildId()}");
+            await Task.Delay(Timeout.InfiniteTimeSpan); // keep bot running
         }
 
         private async Task HandleInteractionAsync(SocketInteraction interaction)
         {
-            var context = new SocketInteractionContext(_client, interaction);
-            var result = await _interactionService.ExecuteCommandAsync(context, _services);
-            if (!result.IsSuccess)
-                Console.WriteLine($"{DateTime.Now} - Interaction Error: {result.ErrorReason}");
+            try
+            {
+                var context = new SocketInteractionContext(_client, interaction);
+                var result = await _interactionService.ExecuteCommandAsync(context, _services);
+                if (!result.IsSuccess)
+                    Console.WriteLine($"{DateTime.Now} - Interaction Error: {result.ErrorReason}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Interaction Exception] {ex}");
+            }
         }
 
         private async Task HandleCommandAsync(SocketMessage socketMessage)
