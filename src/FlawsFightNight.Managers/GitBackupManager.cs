@@ -249,14 +249,21 @@ namespace FlawsFightNight.Managers
 
         public void CopyAndBackupFilesToGit()
         {
-            if (_configManager.IsGitPatTokenSet())
+            try
             {
-                CopyJsonFilesToBackupRepo();
-                BackupFiles();
+                if (_configManager.IsGitPatTokenSet())
+                {
+                    CopyJsonFilesToBackupRepo();
+                    BackupFiles();
+                }
+                else
+                {
+                    Console.WriteLine($"{DateTime.Now} GitBackupManager - Git PAT Token not set. Git Backup Storage not enabled.");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} GitBackupManager - Git PAT Token not set. Git Backup Storage not enabled.");
+                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during CopyAndBackupFilesToGit process: {ex.Message}");
             }
         }
 
