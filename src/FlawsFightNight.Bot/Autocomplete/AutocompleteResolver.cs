@@ -41,109 +41,121 @@ namespace FlawsFightNight.Bot.Autocomplete
         {
             try
             {
-                //Console.WriteLine($"[Autocomplete] Command: {interaction.Data.CommandName}, Option: {interaction.Data.Current?.Name}, Value: {interaction.Data.Current?.Value}");
-                //Console.WriteLine($"{interaction.Data.CommandId}");
-                if (HasAutocomplete(interaction.Data.CommandName))
+                // quick sanity check — don’t even start heavy logic if no matching autocomplete
+                if (!HasAutocomplete(interaction.Data.CommandName))
+                    return;
+
+                var focusedOption = interaction.Data.Current;
+                if (focusedOption == null)
+                    return;
+
+                string input = focusedOption.Value?.ToString()?.Trim() ?? string.Empty;
+                List<AutocompleteResult> suggestions = new();
+
+                // run heavy logic in a background task to avoid blocking the gateway
+                var task = Task.Run(() =>
                 {
-
-                    var focusedOption = interaction.Data.Current;
-                    if (focusedOption != null)
+                    switch (focusedOption.Name)
                     {
-                        // Get the current input value
-                        string input = focusedOption.Value?.ToString()?.Trim() ?? string.Empty;
+                        case "challenger_team":
+                            return string.IsNullOrWhiteSpace(input)
+                                ? GetTeamsForCancelChallenge("")
+                                : GetTeamsForCancelChallenge(input);
 
-                        List<AutocompleteResult> suggestions;
-                        switch (focusedOption.Name)
-                        {
-                            case "challenger_team":
-                                suggestions = string.IsNullOrWhiteSpace(input)
-                                    ? GetTeamsForCancelChallenge("")
-                                    : GetTeamsForCancelChallenge(input);
-                                break;
-                            case "challenger_team_name":
-                                suggestions = string.IsNullOrWhiteSpace(input)
-                                    ? GetTeamsForSendChallenge("")
-                                    : GetTeamsForSendChallenge(input);
-                                break;
-                            case "challenged_team":
-                                if (string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "challenger_team_name")?.Value is string challengerTeamName && !string.IsNullOrWhiteSpace(challengerTeamName))
-                                {
-                                    suggestions = GetTeamsForSendChallenge("").Where(t => !Equals(t.Value, challengerTeamName)).ToList();
-                                }
-                                else if (!string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "challenger_team_name")?.Value is string challengerTeamName2 && !string.IsNullOrWhiteSpace(challengerTeamName2))
-                                {
-                                    suggestions = GetTeamsForSendChallenge(input).Where(t => !Equals(t.Value, challengerTeamName2)).ToList();
-                                }
-                                else
-                                {
-                                    suggestions = new List<AutocompleteResult>();
-                                }
-                                break;
-                            case "ladder_team_name":
-                                suggestions = string.IsNullOrWhiteSpace(input)
-                                    ? GetLadderTeamsFromName("")
-                                    : GetLadderTeamsFromName(input);
-                                break;
-                            case "match_id":
-                                suggestions = string.IsNullOrWhiteSpace(input)
-                                    ? GetMatchIdsMatchingInput("")
-                                    : GetMatchIdsMatchingInput(input);
-                                break;
-                            case "tournament_id":
-                                suggestions = string.IsNullOrWhiteSpace(input)
-                                    ? GetTournamentIdsMatchingInput("")
-                                    : GetTournamentIdsMatchingInput(input);
-                                break;
-                            case "post_match_id":
-                                suggestions = string.IsNullOrWhiteSpace(input)
-                                    ? GetPostMatchIdsMatchingInput("")
-                                    : GetPostMatchIdsMatchingInput(input);
-                                break;
-                            case "r_tournament_id":
-                                suggestions = string.IsNullOrWhiteSpace(input)
-                                    ? GetRoundBasedTournamentIdsMatchingInput("")
-                                    : GetRoundBasedTournamentIdsMatchingInput(input);
-                                break;
-                            case "rr_tournament_id":
-                                suggestions = string.IsNullOrWhiteSpace(input)
-                                    ? GetRoundRobinTournamentIdsMatchingInput("")
-                                    : GetRoundRobinTournamentIdsMatchingInput(input);
-                                break;
-                            case "winning_team_name":
-                                if (string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "match_id")?.Value is string matchId && !string.IsNullOrWhiteSpace(matchId))
-                                {
-                                    suggestions = GetTeamsFromMatchId(matchId);
-                                }
-                                else if (!string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "match_id")?.Value is string matchId2 && !string.IsNullOrWhiteSpace(matchId2))
-                                {
-                                    suggestions = GetTeamsFromMatchId(matchId2).Where(t => t.Name.Contains(input, StringComparison.OrdinalIgnoreCase)).ToList();
-                                }
-                                else if (string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "post_match_id")?.Value is string postMatchId && !string.IsNullOrWhiteSpace(postMatchId))
-                                {
-                                    suggestions = GetTeamsFromPostMatchId(postMatchId);
-                                }
-                                else if (!string.IsNullOrWhiteSpace(input) && interaction.Data.Options.FirstOrDefault(o => o.Name == "post_match_id")?.Value is string postMatchId2 && !string.IsNullOrWhiteSpace(postMatchId2))
-                                {
-                                    suggestions = GetTeamsFromPostMatchId(postMatchId2).Where(t => t.Name.Contains(input, StringComparison.OrdinalIgnoreCase)).ToList();
-                                }
-                                else
-                                {
-                                    suggestions = new List<AutocompleteResult>();
-                                }
-                                break;
-                            default:
-                                suggestions = new List<AutocompleteResult>();
-                                break;
-                        }
-                        await interaction.RespondAsync(suggestions);
+                        case "challenger_team_name":
+                            return string.IsNullOrWhiteSpace(input)
+                                ? GetTeamsForSendChallenge("")
+                                : GetTeamsForSendChallenge(input);
+
+                        case "challenged_team":
+                            var challengerTeamName =
+                                interaction.Data.Options.FirstOrDefault(o => o.Name == "challenger_team_name")?.Value as string;
+                            if (string.IsNullOrWhiteSpace(challengerTeamName))
+                                return new List<AutocompleteResult>();
+
+                            return string.IsNullOrWhiteSpace(input)
+                                ? GetTeamsForSendChallenge("").Where(t => !Equals(t.Value, challengerTeamName)).ToList()
+                                : GetTeamsForSendChallenge(input).Where(t => !Equals(t.Value, challengerTeamName)).ToList();
+
+                        case "ladder_team_name":
+                            return string.IsNullOrWhiteSpace(input)
+                                ? GetLadderTeamsFromName("")
+                                : GetLadderTeamsFromName(input);
+
+                        case "match_id":
+                            return string.IsNullOrWhiteSpace(input)
+                                ? GetMatchIdsMatchingInput("")
+                                : GetMatchIdsMatchingInput(input);
+
+                        case "tournament_id":
+                            return string.IsNullOrWhiteSpace(input)
+                                ? GetTournamentIdsMatchingInput("")
+                                : GetTournamentIdsMatchingInput(input);
+
+                        case "post_match_id":
+                            return string.IsNullOrWhiteSpace(input)
+                                ? GetPostMatchIdsMatchingInput("")
+                                : GetPostMatchIdsMatchingInput(input);
+
+                        case "r_tournament_id":
+                            return string.IsNullOrWhiteSpace(input)
+                                ? GetRoundBasedTournamentIdsMatchingInput("")
+                                : GetRoundBasedTournamentIdsMatchingInput(input);
+
+                        case "rr_tournament_id":
+                            return string.IsNullOrWhiteSpace(input)
+                                ? GetRoundRobinTournamentIdsMatchingInput("")
+                                : GetRoundRobinTournamentIdsMatchingInput(input);
+
+                        case "winning_team_name":
+                            var matchId = interaction.Data.Options.FirstOrDefault(o => o.Name == "match_id")?.Value as string;
+                            var postMatchId = interaction.Data.Options.FirstOrDefault(o => o.Name == "post_match_id")?.Value as string;
+
+                            if (!string.IsNullOrWhiteSpace(matchId))
+                                return GetTeamsFromMatchId(matchId)
+                                    .Where(t => string.IsNullOrWhiteSpace(input) ||
+                                                t.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
+                                    .ToList();
+
+                            if (!string.IsNullOrWhiteSpace(postMatchId))
+                                return GetTeamsFromPostMatchId(postMatchId)
+                                    .Where(t => string.IsNullOrWhiteSpace(input) ||
+                                                t.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
+                                    .ToList();
+
+                            return new List<AutocompleteResult>();
+
+                        default:
+                            return new List<AutocompleteResult>();
                     }
+                });
+
+                // timeout guard — only wait up to 2.5 seconds
+                if (await Task.WhenAny(task, Task.Delay(2500)) == task)
+                {
+                    suggestions = task.Result ?? new();
                 }
+                else
+                {
+                    Console.WriteLine("[Autocomplete] Timeout - defaulting to empty suggestions");
+                    suggestions = new();
+                }
+
+                // respond safely — only once
+                await interaction.RespondAsync(suggestions);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[Autocomplete] Exception: {ex}");
+                try
+                {
+                    // ensure Discord receives *something* so it doesn’t hang
+                    await interaction.RespondAsync(new List<AutocompleteResult>());
+                }
+                catch { /* ignore double response */ }
             }
         }
+
 
         private bool HasAutocomplete(string commandName)
         {

@@ -170,7 +170,7 @@ namespace FlawsFightNight.Bot
 
             Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");
 
-            // liveViewManager = _services.GetRequiredService<LiveViewManager>();
+            liveViewManager = _services.GetRequiredService<LiveViewManager>();
             await Task.Delay(-1);
         }
 
