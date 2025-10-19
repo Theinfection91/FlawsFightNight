@@ -73,6 +73,20 @@ namespace FlawsFightNight.Managers
             return ladderTeams;
         }
 
+        public List<Team> GetAllRoundBasedTeams()
+        {
+            List<Team> roundBasedTeams = new();
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (Tournament tournament in tournaments)
+            {
+                if (tournament.Type.Equals(TournamentType.RoundRobin)) // Will add elimination later
+                {
+                    roundBasedTeams.AddRange(tournament.Teams);
+                }
+            }
+            return roundBasedTeams;
+        }
+
         public Team GetTeamByName(string teamName)
         {
             List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
