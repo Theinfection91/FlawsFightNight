@@ -46,7 +46,6 @@ Before launching the bot, you’ll need:
   - Repository Access → Selected Repository
   - Permissions → `Contents: Read & Write` (auto-enables Metadata)
 - A **Git Repository HTTPS URL** for backup storage
-- The **Guild ID** of your Discord server
 
 ### ⚙️ Running the Bot
 1. Download the latest release from the [Releases Page](https://github.com/Theinfection91/FlawsFightNight/releases)

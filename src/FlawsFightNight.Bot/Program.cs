@@ -23,12 +23,21 @@ namespace FlawsFightNight.Bot
         private CommandService? _commands;
         private InteractionService? _interactionService;
 
-        public ConfigManager configManager;
-        public LiveViewManager liveViewManager;
+        private ConfigManager _configManager;
+        private LiveViewManager _liveViewManager;
 
         public static async Task Main(string[] args)
         {
-            Program program = new();
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                Console.WriteLine($"[Unhandled Exception] {e.ExceptionObject}");
+
+            TaskScheduler.UnobservedTaskException += (s, e) =>
+            {
+                Console.WriteLine($"[Unobserved Task Exception] {e.Exception}");
+                e.SetObserved();
+            };
+
+            var program = new Program();
             await program.RunAsync();
         }
 
@@ -47,18 +56,15 @@ namespace FlawsFightNight.Bot
             var host = Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) =>
                 {
-                    // Discord Services
+                    // Discord services
                     services.AddSingleton(_client);
                     services.AddSingleton<CommandService>();
                     services.AddSingleton<InteractionService>();
 
-                    // Autocomplete Handler
+                    // Autocomplete
                     services.AddSingleton<AutocompleteResolver>();
 
-                    ////////////////////////////////
-                    //    ==-Command Logic-==     //
-                    ////////////////////////////////
-
+                    // == Command Logic ==
                     services.AddSingleton<AddTeamLossLogic>();
                     services.AddSingleton<AddTeamWinLogic>();
                     services.AddSingleton<AddTeamMemberLogic>();
@@ -92,8 +98,6 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<UnlockRoundLogic>();
                     services.AddSingleton<UnlockTeamsLogic>();
 
-                    ////////////////////////////////
-
                     // Managers
                     services.AddSingleton<ConfigManager>();
                     services.AddSingleton<DataManager>();
@@ -105,7 +109,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<TeamManager>();
                     services.AddSingleton<TournamentManager>();
 
-                    // Data Handlers
+                    // Data handlers
                     services.AddSingleton<DiscordCredentialHandler>();
                     services.AddSingleton<GitHubCredentialHandler>();
                     services.AddSingleton<PermissionsConfigHandler>();
@@ -114,13 +118,10 @@ namespace FlawsFightNight.Bot
                 .Build();
 
             _services = host.Services;
-            configManager = _services.GetRequiredService<ConfigManager>();
+            _configManager = _services.GetRequiredService<ConfigManager>();
 
-            // Check discord token
-            configManager.SetDiscordTokenProcess();
-
-            // Git Backup Setup
-            configManager.SetGitBackupProcess();
+            _configManager.SetDiscordTokenProcess();
+            _configManager.SetGitBackupProcess();
 
             await RunBotAsync();
         }
@@ -128,77 +129,65 @@ namespace FlawsFightNight.Bot
         public async Task RunBotAsync()
         {
             _commands = _services.GetRequiredService<CommandService>();
-            _interactionService = new InteractionService(_client.Rest);
+            _interactionService = new InteractionService(_client);
             _commands.Log += Log;
-            // Set up event handlers
-            _client.Log += log =>
+            _client.Log += Log;
+
+            _client.Disconnected += ex =>
             {
-                // Log if Discord requests a reconnect
-                if (log.Exception is GatewayReconnectException)
-                {
-                    Console.WriteLine($"{DateTime.Now} - Gateway requested a reconnect.");
-                }
-                else
-                {
-                    Console.WriteLine(log.ToString());
-                }
-                return Task.CompletedTask;
-            };
-            _client.Ready += ClientReady;
-            _client.InteractionCreated += HandleInteractionAsync;
-            _client.MessageReceived += HandleCommandAsync;
-            _client.Disconnected += exception =>
-            {
-                Console.WriteLine($"{DateTime.Now} - Bot disconnected: {exception?.Message ?? "Unknown reason"}");
+                Console.WriteLine($"{DateTime.Now} - Bot disconnected: {ex?.Message ?? "Unknown reason"}");
                 return Task.CompletedTask;
             };
 
-            // Login and start the bot
-            await _client.LoginAsync(TokenType.Bot, configManager.GetDiscordToken());
-            await _client.StartAsync();
-
-            
-
-            // Wait for Ready event
+            // Ready handling
             var readyTask = new TaskCompletionSource<bool>();
             _client.Ready += () =>
             {
-                readyTask.SetResult(true);
+                readyTask.TrySetResult(true);
                 return Task.CompletedTask;
             };
 
-            await readyTask.Task;
+            _client.InteractionCreated += HandleInteractionAsync;
+            _client.MessageReceived += HandleCommandAsync;
 
-            // Initialize Autocomplete Handler
+            await _client.LoginAsync(TokenType.Bot, _configManager.GetDiscordToken());
+            await _client.StartAsync();
+
+            await readyTask.Task; // Wait until Discord signals Ready
+
+            // Fire-and-forget module registration and guild commands
+            _ = Task.Run(async () =>
+            {
+                await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+                _configManager.SetGuildIdProcess();
+                await _interactionService.RegisterCommandsToGuildAsync(_configManager.GetGuildId());
+                Console.WriteLine($"{DateTime.Now} - Commands registered to guild {_configManager.GetGuildId()}");
+            });
+
+            // Initialize autocomplete AFTER Ready
             var autoCompleteHandler = _services.GetRequiredService<AutocompleteResolver>();
             await autoCompleteHandler.InitializeAsync();
 
             Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");
 
-            // Initialize LiveViewManager for automated, updating channel messages
-            liveViewManager = _services.GetRequiredService<LiveViewManager>();
+            _liveViewManager = _services.GetRequiredService<LiveViewManager>();
 
-            // Keep the bot running
-            await Task.Delay(-1);
-        }
-
-        private async Task ClientReady()
-        {
-            // Register SlashCommand modules
-            await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
-
-            // Check guild ID
-            configManager.SetGuildIdProcess();
-
-            // Register commands to guild
-            await _interactionService.RegisterCommandsToGuildAsync(configManager.GetGuildId());
-            Console.WriteLine($"{DateTime.Now} - Commands registered to guild {configManager.GetGuildId()}");
+            await Task.Delay(Timeout.InfiniteTimeSpan); // keep bot running
         }
 
         private async Task HandleInteractionAsync(SocketInteraction interaction)
         {
-            var context = new SocketInteractionContext(_client, interaction);
-            var result = await _interactionService.ExecuteCommandAsync(context, _services);
+            try
+            {
+                var context = new SocketInteractionContext(_client, interaction);
+                var result = await _interactionService.ExecuteCommandAsync(context, _services);
+                if (!result.IsSuccess)
+                    Console.WriteLine($"{DateTime.Now} - Interaction Error: {result.ErrorReason}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Interaction Exception] {ex}");
+            }
         }
 
         private async Task HandleCommandAsync(SocketMessage socketMessage)
@@ -206,13 +195,11 @@ namespace FlawsFightNight.Bot
             if (socketMessage is not SocketUserMessage message || message.Author.IsBot) return;
 
             int argPos = 0;
-            // Get Command Prefix
-            if (message.HasStringPrefix(configManager.GetCommandPrefix(), ref argPos) ||
+            if (message.HasStringPrefix(_configManager.GetCommandPrefix(), ref argPos) ||
                 message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
                 var context = new SocketCommandContext(_client, message);
                 var result = await _commands.ExecuteAsync(context, argPos, _services);
-
                 if (!result.IsSuccess)
                     Console.WriteLine($"{DateTime.Now} - Command Error: {result.ErrorReason}");
             }
