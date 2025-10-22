@@ -62,7 +62,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<InteractionService>();
 
                     // Autocomplete
-                    services.AddSingleton<AutocompleteResolver>();
+                    services.AddSingleton<AutocompleteCache>();
 
                     // == Command Logic ==
                     services.AddSingleton<AddTeamLossLogic>();
@@ -165,7 +165,7 @@ namespace FlawsFightNight.Bot
             });
 
             // Initialize autocomplete AFTER Ready
-            var autoCompleteHandler = _services.GetRequiredService<AutocompleteResolver>();
+            var autoCompleteHandler = _services.GetRequiredService<AutocompleteCache>();
             await autoCompleteHandler.InitializeAsync();
 
             Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");

@@ -192,6 +192,27 @@ namespace FlawsFightNight.Managers
             return _dataManager.TournamentsDatabaseFile.Tournaments;
         }
 
+        public List<Tournament> GetAllLadderTournaments()
+        {
+            return _dataManager.TournamentsDatabaseFile.Tournaments
+                .Where(t => t.Type == TournamentType.Ladder)
+                .ToList();
+        }
+
+        public List<Tournament> GetAllRoundRobinTournaments()
+        {
+            return _dataManager.TournamentsDatabaseFile.Tournaments
+                .Where(t => t.Type == TournamentType.RoundRobin)
+                .ToList();
+        }
+
+        public List<Tournament> GetAllEliminationTournaments()
+        {
+            // TODO
+
+            return null;
+        }
+
         public Tournament? GetTournamentById(string tournamentId)
         {
             return _dataManager.TournamentsDatabaseFile.Tournaments

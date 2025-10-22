@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Bot.Autocomplete
 {
-    public class AutocompleteResolver
+    public class AutocompleteCache
     {
         private readonly IServiceProvider _services;
 
@@ -22,14 +22,17 @@ namespace FlawsFightNight.Bot.Autocomplete
         private TournamentManager _tournamentManager;
 
         // Autocomplete Data
-        private List<Match> _matches = new();
-        private List<PostMatch> _postMatches = new();
-        private List<Tournament> _tournaments = new();
-        private List<Team> _ladderTeams = new();
-        private List<Team> _roundBasedTeams = new();
+        public List<Match> allMatches = new();
+        public List<PostMatch> allPostMatches = new();
+        public List<Tournament> allTournaments = new();
+        public List<Tournament> ladderTournaments = new();
+        public List<Tournament> roundRobinTournaments = new();
+        public List<Tournament> eliminationTournaments = new();
+        public List<Team> ladderTeams = new();
+        public List<Team> roundRobinTeams = new();
 
 
-        public AutocompleteResolver(IServiceProvider services, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager)
+        public AutocompleteCache(IServiceProvider services, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager)
         {
             _services = services;
 
@@ -45,58 +48,54 @@ namespace FlawsFightNight.Bot.Autocomplete
         public Task InitializeAsync()
         {
             var client = _services.GetRequiredService<DiscordSocketClient>();
-            client.AutocompleteExecuted += HandleAutoCompleteAsync;
+            //client.AutocompleteExecuted += HandleAutoCompleteAsync;
             return Task.CompletedTask;
         }
 
         public void UpdateAutocompleteData()
         {
             // Refresh autocomplete data from managers
-            _matches = _matchManager.GetAllActiveMatches();
-            _postMatches = _matchManager.GetAllPostMatches();
-            _tournaments = _tournamentManager.GetAllTournaments();
-            _ladderTeams = _teamManager.GetAllLadderTeams();
-            _roundBasedTeams = _teamManager.GetAllRoundBasedTeams();
+            allMatches = _matchManager.GetAllActiveMatches();
+            allPostMatches = _matchManager.GetAllPostMatches();
+            allTournaments = _tournamentManager.GetAllTournaments();
+            ladderTournaments = _tournamentManager.GetAllLadderTournaments();
+            roundRobinTournaments = _tournamentManager.GetAllRoundRobinTournaments();
+            //_eliminationTournaments = _tournamentManager.GetAllEliminationTournaments();
+            ladderTeams = _teamManager.GetAllLadderTeams();
+            roundRobinTeams = _teamManager.GetAllRoundBasedTeams();
         }
 
-        private async Task HandleAutoCompleteAsync(SocketAutocompleteInteraction interaction)
-        {
-            try
-            {
-                // Grab focused option and its value, set to lowercase for comparison
-                var focusedOption = interaction.Data.Current;
-                var value = (focusedOption.Value as string ?? string.Empty).ToLower();
+        //private async Task HandleAutoCompleteAsync(SocketAutocompleteInteraction interaction)
+        //{
+        //    try
+        //    {
+        //        // Grab focused option and its value, set to lowercase for comparison
+        //        var focusedOption = interaction.Data.Current;
+        //        var value = (focusedOption.Value as string ?? string.Empty).ToLower();
 
-                // Create IEnumerable to hold suggestion results
-                IEnumerable<AutocompleteResult> results = Enumerable.Empty<AutocompleteResult>();
+        //        // Create IEnumerable to hold suggestion results
+        //        IEnumerable<AutocompleteResult> results = Enumerable.Empty<AutocompleteResult>();
 
-                switch (focusedOption.Name)
-                {
-                    case "tournament_id":
-                        if (!results.Any())
-                        {                           
-                            // Return all tournaments, sorted alphabetically by name
-                            results = _tournaments
-                                .OrderBy(tournament => tournament.Name)
-                                .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Id))
-                                .ToList();
-                        }
-                        else
-                        {
-                            // Return all tournaments, sorted alphabetically by name that match input
-                            results = _tournaments
-                                .OrderBy(tournament => tournament.Name)
-                                .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Id))
-                                .ToList();
-                        }
-                        break;
-                }
+        //        switch (focusedOption.Name)
+        //        {
+        //            case "tournament_id":
+        //                results = string.IsNullOrWhiteSpace(value)
+        //                    ? GetTournamentIdsMatchingInput("")
+        //                    : GetTournamentIdsMatchingInput(value);
+        //                break;
 
-                // Limit to maximum of 25 results
-                results = results.Take(25);
+        //            case "match_id":
+        //                results = string.IsNullOrWhiteSpace(value)
+        //                    ? GetMatchIdsMatchingInput("")
+        //                    : GetMatchIdsMatchingInput(value);
+        //                break;
+        //        }
 
-                // Respond with suggestions
-                await interaction.RespondAsync(results);
+        //        // Limit to maximum of 25 results
+        //        results = results.Take(25);
+
+        //        // Respond with suggestions
+        //        await interaction.RespondAsync(results);
                 //        switch (focusedOption.Name)
                 //        {
                 //            case "challenger_team":
@@ -195,32 +194,15 @@ namespace FlawsFightNight.Bot.Autocomplete
                 //        catch { /* ignore double response */ }
                 //    }
                 //}
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-        }
-
-        private bool HasAutocomplete(string commandName)
-        {
-            // List of commands that have autocomplete functionality
-            var commandsWithAutocomplete = new HashSet<string>
-            {
-                "match",
-                "settings",
-                "team",
-                "team register tournament_id",
-                "tournament"
-                // Add more command names as needed
-            };
-            return commandsWithAutocomplete.Contains(commandName);
-        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine(ex.Message);
+        //    }
+        //}
 
         private List<AutocompleteResult> GetMatchIdsMatchingInput(string input)
         {
-            var allMatches = _matchManager.GetAllActiveMatches();
-
             // If the input is empty or only whitespace, return all matches sorted by tournament name and then match ID
             if (string.IsNullOrWhiteSpace(input))
             {
@@ -421,25 +403,24 @@ namespace FlawsFightNight.Bot.Autocomplete
             return matchingTeams;
         }
 
-        private List<AutocompleteResult> GetTournamentIdsMatchingInput(string input)
+        public List<AutocompleteResult> GetTournamentIdsMatchingInput(string input)
         {
-            // Get all tournaments
-            var tournaments = _tournamentManager.GetAllTournaments();
-
             // If the input is empty or only whitespace, return all tournaments sorted alphabetically
             if (string.IsNullOrWhiteSpace(input))
             {
                 // Return all tournaments, sorted alphabetically by name
-                return tournaments
+                return allTournaments
                     .OrderBy(tournament => tournament.Name)
+                    .Take(25)
                     .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Id))
                     .ToList();
             }
 
             // Filter tournaments based on the input (case-insensitive)
-            var matchingTournaments = tournaments
+            var matchingTournaments = allTournaments
                 .Where(tournament => tournament.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(tournament => tournament.Name)
+                .Take(25)
                 .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Id))
                 .ToList();
 

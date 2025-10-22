@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Modals;
 using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.TeamCommands;
@@ -27,7 +28,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [RequireGuildAdmin]
         public async Task RegisterTeamAsync(
             [Summary("name", "The name of the team")] string name,
-            [Summary("tournament_id", "The ID of the tournament to register for"), Autocomplete] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to register for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
             [Summary("member1", "A member to add to the team.")] IUser member1,
             [Summary("member2", "A member to add to the team.")] IUser? member2 = null,
             [Summary("member3", "A member to add to the team.")] IUser? member3 = null,
