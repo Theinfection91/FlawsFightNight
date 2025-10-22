@@ -201,7 +201,7 @@ namespace FlawsFightNight.Bot.Autocomplete
         //    }
         //}
 
-        private List<AutocompleteResult> GetMatchIdsMatchingInput(string input)
+        public List<AutocompleteResult> GetMatchIdsMatchingInput(string input)
         {
             // If the input is empty or only whitespace, return all matches sorted by tournament name and then match ID
             if (string.IsNullOrWhiteSpace(input))
