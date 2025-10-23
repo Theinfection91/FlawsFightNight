@@ -207,11 +207,11 @@ namespace FlawsFightNight.Bot.Autocomplete
             if (string.IsNullOrWhiteSpace(input))
             {
                 return allMatches
-                    .OrderBy(match => _tournamentManager.GetTournamentFromMatchId(match.Id)?.Name)
+                    .OrderBy(match => allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id)))
                     .ThenBy(match => match.Id)
                     .Select(match =>
                     {
-                        var tournament = _tournamentManager.GetTournamentFromMatchId(match.Id);
+                        var tournament = allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id));
                         string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                         return new AutocompleteResult($"#{match.Id} | {match.TeamA} vs {match.TeamB} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", match.Id);
                     })
@@ -222,7 +222,8 @@ namespace FlawsFightNight.Bot.Autocomplete
             var matchingMatches = allMatches
                 .Where(match =>
                 {
-                    var tournament = _tournamentManager.GetTournamentFromMatchId(match.Id);
+                    var tournament = allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id));
+                    //var tournament = _tournamentManager.GetTournamentFromMatchId(match.Id);
                     string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                     return match.Id.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            match.TeamA.Contains(input, StringComparison.OrdinalIgnoreCase) ||
@@ -233,7 +234,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                 .ThenBy(match => match.Id)
                 .Select(match =>
                 {
-                    var tournament = _tournamentManager.GetTournamentFromMatchId(match.Id);
+                    var tournament = allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id));
                     string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                     return new AutocompleteResult($"#{match.Id} | {match.TeamA} vs {match.TeamB} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", match.Id);
                 })

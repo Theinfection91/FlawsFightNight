@@ -25,7 +25,7 @@ namespace FlawsFightNight.Bot.Autocomplete
             var matches = string.IsNullOrWhiteSpace(value)
                             ? _cache.GetMatchIdsMatchingInput("")
                             : _cache.GetMatchIdsMatchingInput(value);
-            Console.WriteLine("Yup");
+
             return AutocompletionResult.FromSuccess(matches);
         }
     }
