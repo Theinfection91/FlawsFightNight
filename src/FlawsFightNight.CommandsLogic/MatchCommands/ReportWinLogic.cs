@@ -137,6 +137,8 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
+            // Update Autcomplete Cache
+
             return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin);
         }
 

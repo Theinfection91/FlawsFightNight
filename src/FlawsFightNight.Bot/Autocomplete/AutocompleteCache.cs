@@ -22,14 +22,14 @@ namespace FlawsFightNight.Bot.Autocomplete
         private TournamentManager _tournamentManager;
 
         // Autocomplete Data
-        public List<Match> allMatches = new();
-        public List<PostMatch> allPostMatches = new();
-        public List<Tournament> allTournaments = new();
-        public List<Tournament> ladderTournaments = new();
-        public List<Tournament> roundRobinTournaments = new();
-        public List<Tournament> eliminationTournaments = new();
-        public List<Team> ladderTeams = new();
-        public List<Team> roundRobinTeams = new();
+        private List<Match> _allMatches = new();
+        private List<PostMatch> _allPostMatches = new();
+        private List<Tournament> _allTournaments = new();
+        private List<Tournament> _ladderTournaments = new();
+        private List<Tournament> _roundRobinTournaments = new();
+        private List<Tournament> _eliminationTournaments = new();
+        private List<Team> _ladderTeams = new();
+        private List<Team> _roundRobinTeams = new();
 
 
         public AutocompleteCache(IServiceProvider services, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager)
@@ -54,15 +54,16 @@ namespace FlawsFightNight.Bot.Autocomplete
 
         public void UpdateAutocompleteData()
         {
+            Console.WriteLine("[AutocompleteCache] Updating autocomplete data...");
             // Refresh autocomplete data from managers
-            allMatches = _matchManager.GetAllActiveMatches();
-            allPostMatches = _matchManager.GetAllPostMatches();
-            allTournaments = _tournamentManager.GetAllTournaments();
-            ladderTournaments = _tournamentManager.GetAllLadderTournaments();
-            roundRobinTournaments = _tournamentManager.GetAllRoundRobinTournaments();
+            _allMatches = _matchManager.GetAllActiveMatches();
+            _allPostMatches = _matchManager.GetAllPostMatches();
+            _allTournaments = _tournamentManager.GetAllTournaments();
+            _ladderTournaments = _tournamentManager.GetAllLadderTournaments();
+            _roundRobinTournaments = _tournamentManager.GetAllRoundRobinTournaments();
             //_eliminationTournaments = _tournamentManager.GetAllEliminationTournaments();
-            ladderTeams = _teamManager.GetAllLadderTeams();
-            roundRobinTeams = _teamManager.GetAllRoundBasedTeams();
+            _ladderTeams = _teamManager.GetAllLadderTeams();
+            _roundRobinTeams = _teamManager.GetAllRoundBasedTeams();
         }
 
         //private async Task HandleAutoCompleteAsync(SocketAutocompleteInteraction interaction)
@@ -206,12 +207,12 @@ namespace FlawsFightNight.Bot.Autocomplete
             // If the input is empty or only whitespace, return all matches sorted by tournament name and then match ID
             if (string.IsNullOrWhiteSpace(input))
             {
-                return allMatches
-                    .OrderBy(match => allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id)))
+                return _allMatches
+                    .OrderBy(match => _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id)))
                     .ThenBy(match => match.Id)
                     .Select(match =>
                     {
-                        var tournament = allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id));
+                        var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id));
                         string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                         return new AutocompleteResult($"#{match.Id} | {match.TeamA} vs {match.TeamB} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", match.Id);
                     })
@@ -219,10 +220,10 @@ namespace FlawsFightNight.Bot.Autocomplete
             }
 
             // Filter matches based on the input (case-insensitive)
-            var matchingMatches = allMatches
+            var matchingMatches = _allMatches
                 .Where(match =>
                 {
-                    var tournament = allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id));
+                    var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id));
                     //var tournament = _tournamentManager.GetTournamentFromMatchId(match.Id);
                     string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                     return match.Id.Contains(input, StringComparison.OrdinalIgnoreCase) ||
@@ -234,7 +235,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                 .ThenBy(match => match.Id)
                 .Select(match =>
                 {
-                    var tournament = allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id));
+                    var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id));
                     string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                     return new AutocompleteResult($"#{match.Id} | {match.TeamA} vs {match.TeamB} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", match.Id);
                 })
@@ -410,7 +411,7 @@ namespace FlawsFightNight.Bot.Autocomplete
             if (string.IsNullOrWhiteSpace(input))
             {
                 // Return all tournaments, sorted alphabetically by name
-                return allTournaments
+                return _allTournaments
                     .OrderBy(tournament => tournament.Name)
                     .Take(25)
                     .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", tournament.Id))
@@ -418,7 +419,7 @@ namespace FlawsFightNight.Bot.Autocomplete
             }
 
             // Filter tournaments based on the input (case-insensitive)
-            var matchingTournaments = allTournaments
+            var matchingTournaments = _allTournaments
                 .Where(tournament => tournament.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(tournament => tournament.Name)
                 .Take(25)

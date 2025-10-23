@@ -13,11 +13,13 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("match", "Commands related to matches like reporting who won, admin editing, challenges for ladders, etc.")]
     public class MatchCommands : InteractionModuleBase<SocketInteractionContext>
     {
+        private AutocompleteCache _autocompleteCache;
         private EditMatchLogic _editMatchLogic;
         private ReportWinLogic _reportWinLogic;
 
-        public MatchCommands(EditMatchLogic editMatchLogic, ReportWinLogic reportWinLogic)
+        public MatchCommands(AutocompleteCache autocompleteCache, EditMatchLogic editMatchLogic, ReportWinLogic reportWinLogic)
         {
+            _autocompleteCache = autocompleteCache;
             _editMatchLogic = editMatchLogic;
             _reportWinLogic = reportWinLogic;
         }
@@ -34,6 +36,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = _reportWinLogic.ReportWinProcess(Context, matchId, winningTeamName, winningTeamScore, losingTeamScore);
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateAutocompleteData();
             }
             catch (Exception ex)
             {
