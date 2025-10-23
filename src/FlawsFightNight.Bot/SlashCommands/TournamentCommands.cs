@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Modals;
 using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.TeamCommands;
@@ -16,7 +17,7 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("tournament", "Commands related to tournaments like creating, removal, etc.")]
     public class TournamentCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        
+        private AutocompleteCache _autocompleteCache;
         private CreateTournamentLogic _createTournamentLogic;
         private LockInRoundLogic _lockInRoundLogic;
         private LockTeamsLogic _lockTeamsLogic;
@@ -26,8 +27,9 @@ namespace FlawsFightNight.Bot.SlashCommands
         private UnlockRoundLogic _unlockRoundLogic;
         private UnlockTeamsLogic _unlockTeamsLogic;
 
-        public TournamentCommands(CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupRoundRobinTournamentLogic setupTournamentLogic, ShowAllTournamentsLogic showAllTournamentsLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
+        public TournamentCommands(AutocompleteCache autocompleteCache, CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupRoundRobinTournamentLogic setupTournamentLogic, ShowAllTournamentsLogic showAllTournamentsLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
         {
+            _autocompleteCache = autocompleteCache;
             _createTournamentLogic = createTournamentLogic;
             _lockInRoundLogic = lockInRoundLogic;
             _lockTeamsLogic = lockTeamsLogic;
@@ -51,6 +53,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = _createTournamentLogic.CreateTournamentProcess(Context, name, tournamentType, teamSize, description);
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {
@@ -77,13 +80,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("lock-teams", "Lock teams in a tournament")]
         [RequireGuildAdmin]
         public async Task LockTeamsAsync(
-            [Summary("rr_tournament_id", "The ID of the tournament to lock teams in"), Autocomplete] string tournamentId)
+            [Summary("rr_tournament_id", "The ID of the tournament to lock teams in"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
                 await DeferAsync();
                 var result = _lockTeamsLogic.LockTeamsProcess(tournamentId);
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {
@@ -95,13 +99,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("unlock-teams", "Unlock teams in a tournament")]
         [RequireGuildAdmin]
         public async Task UnlockTeamsAsync(
-            [Summary("rr_tournament_id", "The ID of the tournament to unlock teams in"), Autocomplete] string tournamentId)
+            [Summary("rr_tournament_id", "The ID of the tournament to unlock teams in"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
                 await DeferAsync();
                 var result = _unlockTeamsLogic.UnlockTeamsProcess(tournamentId);
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {
@@ -128,8 +133,8 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("setup_round_robin", "Setup a RR tournaments rules and habits before starting it.")]
         [RequireGuildAdmin]
         public async Task SetupTournamentAsync(
-            [Summary("rr_tournament_id", "The ID of the tournament to setup"), Autocomplete] string tournamentId,
-            [Summary("match_type", "")] RoundRobinMatchType matchType,
+            [Summary("rr_tournament_id", "The ID of the tournament to setup"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))] string tournamentId,
+            [Summary("match_type", "Normal for round based, open for any time matches")] RoundRobinMatchType matchType,
             [Summary("tie_breaker_ruleset", "The ruleset to use for tie breakers")] TieBreakerType tieBreakerType,
             [Summary("length", "Whether the tournament is a double or single round robin")] RoundRobinLengthType roundRobinType)
         {
@@ -138,6 +143,8 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = _setupTournamentLogic.SetupRoundRobinTournamentProcess(tournamentId, matchType, tieBreakerType, roundRobinType);
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
+
             }
             catch (Exception ex)
             {
@@ -164,13 +171,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("lock-in-round", "Lock in round results after all matches for round have been played")]
         [RequireGuildAdmin]
         public async Task LockInRoundAsync(
-            [Summary("r_tournament_id", "The ID of the tournament to round lock"), Autocomplete] string tournamentId)
+            [Summary("rb_tournament_id", "The ID of the tournament to round lock"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
                 await DeferAsync();
                 var result = _lockInRoundLogic.LockInRoundProcess(tournamentId);
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {
@@ -182,13 +190,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("unlock-round", "Unlock the current round to make changes if needed")]
         [RequireGuildAdmin]
         public async Task UnlockRoundAsync(
-            [Summary("r_tournament_id", "The ID of the tournament to unlock the round"), Autocomplete] string tournamentId)
+            [Summary("rb_tournament_id", "The ID of the tournament to unlock the round"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
                 await DeferAsync();
                 var result = _unlockRoundLogic.UnlockRoundProcess(tournamentId);
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {
@@ -200,13 +209,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("next-round", "Advance to the next round of certain tournaments if conditions are met.")]
         [RequireGuildAdmin]
         public async Task NextRoundAsync(
-            [Summary("r_tournament_id", "The ID of the tournament to advance the round"), Autocomplete] string tournamentId)
+            [Summary("rb_tournament_id", "The ID of the tournament to advance the round"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
                 await DeferAsync();
                 var result = _nextRoundLogic.NextRoundProcess(tournamentId);
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {

@@ -1,4 +1,5 @@
 ﻿using Discord.Interactions;
+using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Core.Models;
@@ -10,6 +11,7 @@ namespace FlawsFightNight.Bot.Modals
 {
     public class ModalHandler : InteractionModuleBase<SocketInteractionContext>
     {
+        private readonly AutocompleteCache _autocompleteCache;
         private readonly DeleteTeamLogic _deleteTeamLogic;
         private readonly DeleteTournamentLogic _deleteTournamentLogic;
         private readonly EmbedManager _embedManager;
@@ -19,6 +21,7 @@ namespace FlawsFightNight.Bot.Modals
         private readonly TournamentManager _tournamentManager;
 
         public ModalHandler(
+            AutocompleteCache autocompleteCache,
             DeleteTeamLogic deleteTeamLogic,
             DeleteTournamentLogic deleteTournamentLogic,
             EmbedManager embedManager,
@@ -27,6 +30,7 @@ namespace FlawsFightNight.Bot.Modals
             TeamManager teamManager,
             TournamentManager tournamentManager)
         {
+            _autocompleteCache = autocompleteCache;
             _deleteTeamLogic = deleteTeamLogic;
             _deleteTournamentLogic = deleteTournamentLogic;
             _embedManager = embedManager;
@@ -60,6 +64,7 @@ namespace FlawsFightNight.Bot.Modals
 
                 var result = await Task.Run(() => _deleteTeamLogic.DeleteTeamProcess(modal.TeamNameOne));
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {
@@ -93,6 +98,7 @@ namespace FlawsFightNight.Bot.Modals
 
                 var result = await Task.Run(() => _deleteTournamentLogic.DeleteTournamentProcess(modal.TournamentIdOne));
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {
@@ -124,6 +130,7 @@ namespace FlawsFightNight.Bot.Modals
 
                 var result = await Task.Run(() => _endTournamentLogic.EndTournamentProcess(modal.TournamentIdOne));
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {
@@ -155,6 +162,7 @@ namespace FlawsFightNight.Bot.Modals
 
                 var result = await Task.Run(() => _startTournamentLogic.StartTournamentProcess(modal.TournamentIdOne));
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {

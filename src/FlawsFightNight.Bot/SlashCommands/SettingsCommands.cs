@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.SetCommands;
 using FlawsFightNight.CommandsLogic.SettingsCommands;
@@ -75,7 +76,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("set", "Set the channel ID for matches of a specified tournament")]
             [RequireGuildAdmin]
             public async Task SetMatchesChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the matches channel for"), Autocomplete] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to set the matches channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
             [Summary("channel_id", "The ID of the channel where matches will be posted")] IMessageChannel channel)
             {
 
@@ -95,7 +96,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("remove", "Remove the channel ID for matches of a specified tournament")]
             [RequireGuildAdmin]
             public async Task RemoveMatchesChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to stop the matches LiveView."), Autocomplete] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to stop the matches LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
             {
                 try
                 {
@@ -126,7 +127,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("set", "Set the channel ID for standings of a specified tournament")]
             [RequireGuildAdmin]
             public async Task SetStandingsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the standings channel for"), Autocomplete] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to set the standings channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
             [Summary("channel_id", "The ID of the channel where standings will be posted")] IMessageChannel channel)
             {
 
@@ -146,7 +147,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("remove", "Remove the channel ID for standings of a specified tournament")]
             [RequireGuildAdmin]
             public async Task RemoveStandingsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to stop the standings LiveView."), Autocomplete] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to stop the standings LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
             {
                 try
                 {
@@ -175,7 +176,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("set", "Set the channel ID for teams of a specified tournament")]
             [RequireGuildAdmin]
             public async Task SetTeamsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the teams channel for"), Autocomplete] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to set the teams channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
             [Summary("channel_id", "The ID of the channel where teams will be posted")] IMessageChannel channel)
             {
                 try
@@ -193,7 +194,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("remove", "Remove the channel ID for teams of a specified tournament")]
             [RequireGuildAdmin]
             public async Task RemoveTeamsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to stop the teams LiveView."), Autocomplete] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to stop the teams LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
             {
                 try
                 {

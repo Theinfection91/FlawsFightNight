@@ -36,7 +36,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = _reportWinLogic.ReportWinProcess(Context, matchId, winningTeamName, winningTeamScore, losingTeamScore);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateAutocompleteData();
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {
@@ -57,7 +57,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = _editMatchLogic.EditMatchProcess(postMatchId, winningTeamName, winningTeamScore, losingTeamScore);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateAutocompleteData();
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {
@@ -88,7 +88,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await DeferAsync();
                     var result = _sendChallengeLogic.SendChallengeProcess(Context, challengerTeamName, opponentTeamName);
                     await FollowupAsync(embed: result);
-                    _autocompleteCache.UpdateAutocompleteData();
+                    _autocompleteCache.UpdateCache();
                 }
                 catch (Exception ex)
                 {
@@ -105,7 +105,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await DeferAsync();
                     var result = _cancelChallengeLogic.CancelChallengeProcess(Context, challengerTeamName);
                     await FollowupAsync(embed: result);
-                    _autocompleteCache.UpdateAutocompleteData();
+                    _autocompleteCache.UpdateCache();
                 }
                 catch (Exception ex)
                 {
