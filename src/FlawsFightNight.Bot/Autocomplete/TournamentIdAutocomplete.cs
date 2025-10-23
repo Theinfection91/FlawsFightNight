@@ -27,7 +27,6 @@ namespace FlawsFightNight.Bot.Autocomplete
             var tournaments = string.IsNullOrWhiteSpace(value)
                             ? _cache.GetTournamentIdsMatchingInput("")
                             : _cache.GetTournamentIdsMatchingInput(value);
-            Console.WriteLine("Yup");
             return AutocompletionResult.FromSuccess(tournaments);
         }
     }

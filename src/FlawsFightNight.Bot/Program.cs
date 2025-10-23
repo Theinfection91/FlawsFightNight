@@ -165,8 +165,8 @@ namespace FlawsFightNight.Bot
             });
 
             // Initialize autocomplete AFTER Ready
-            var autoCompleteHandler = _services.GetRequiredService<AutocompleteCache>();
-            await autoCompleteHandler.InitializeAsync();
+            //var autoCompleteHandler = _services.GetRequiredService<AutocompleteCache>();
+            //await autoCompleteHandler.InitializeAsync();
 
             Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");
 

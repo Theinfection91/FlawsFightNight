@@ -27,7 +27,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("report-win", "Report a win of any kind of tournament.")]
         public async Task ReportWinAsync(
             [Summary("match_id", "The ID of the match to target."), Autocomplete(typeof(MatchIdAutocomplete))] string matchId,
-            [Summary("winning_team_name", "The name of the winning team."), Autocomplete] string winningTeamName,
+            [Summary("winning_team_name", "The name of the winning team."), Autocomplete(typeof(WinningTeamNameAutocomplete))] string winningTeamName,
             [Summary("winning_team_score", "The score of the winning team")] int winningTeamScore,
             [Summary("losing_team_score", "The score of the losing team")] int losingTeamScore)
         {
@@ -47,16 +47,17 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         [SlashCommand("edit", "Edit a post-match's details in RR and Elimination.")]
         public async Task EditMatchAsync(
-            [Summary("post_match_id", "The ID of the match to target."), Autocomplete] string matchId,
-            [Summary("winning_team_name", "The winner of the match, can be the same as before edit."), Autocomplete] string winningTeamName,
+            [Summary("post_match_id", "The ID of the match to target."), Autocomplete] string postMatchId,
+            [Summary("winning_team_name", "The winner of the match, can be the same as before edit."), Autocomplete(typeof(WinningTeamNameAutocomplete))] string winningTeamName,
             [Summary("winning_team_score", "The score of the winning team.")] int winningTeamScore,
             [Summary("losing_team_score", "The score of the losing team")] int losingTeamScore)
         {
             try
             {
                 await DeferAsync();
-                var result = _editMatchLogic.EditMatchProcess(matchId, winningTeamName, winningTeamScore, losingTeamScore);
+                var result = _editMatchLogic.EditMatchProcess(postMatchId, winningTeamName, winningTeamScore, losingTeamScore);
                 await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateAutocompleteData();
             }
             catch (Exception ex)
             {
@@ -68,10 +69,12 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("challenge", "Challenge related match commands for ladder tournaments.")]
         public class MatchesChannelCommands : InteractionModuleBase<SocketInteractionContext>
         {
+            private AutocompleteCache _autocompleteCache;
             private SendChallengeLogic _sendChallengeLogic;
             private CancelChallengeLogic _cancelChallengeLogic;
-            public MatchesChannelCommands(SendChallengeLogic sendChallengeLogic, CancelChallengeLogic cancelChallengeLogic)
+            public MatchesChannelCommands(AutocompleteCache autocompleteCache, SendChallengeLogic sendChallengeLogic, CancelChallengeLogic cancelChallengeLogic)
             {
+                _autocompleteCache = autocompleteCache;
                 _sendChallengeLogic = sendChallengeLogic;
                 _cancelChallengeLogic = cancelChallengeLogic;
             }
@@ -85,6 +88,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await DeferAsync();
                     var result = _sendChallengeLogic.SendChallengeProcess(Context, challengerTeamName, opponentTeamName);
                     await FollowupAsync(embed: result);
+                    _autocompleteCache.UpdateAutocompleteData();
                 }
                 catch (Exception ex)
                 {
@@ -101,6 +105,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await DeferAsync();
                     var result = _cancelChallengeLogic.CancelChallengeProcess(Context, challengerTeamName);
                     await FollowupAsync(embed: result);
+                    _autocompleteCache.UpdateAutocompleteData();
                 }
                 catch (Exception ex)
                 {

@@ -14,8 +14,6 @@ namespace FlawsFightNight.Bot.Autocomplete
 {
     public class AutocompleteCache
     {
-        private readonly IServiceProvider _services;
-
         // Add Managers as needed here
         private MatchManager _matchManager;
         private TeamManager _teamManager;
@@ -32,10 +30,8 @@ namespace FlawsFightNight.Bot.Autocomplete
         private List<Team> _roundRobinTeams = new();
 
 
-        public AutocompleteCache(IServiceProvider services, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager)
+        public AutocompleteCache(MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager)
         {
-            _services = services;
-
             // Initialize Managers here
             _matchManager = matchManager;
             _teamManager = teamManager;
@@ -45,12 +41,12 @@ namespace FlawsFightNight.Bot.Autocomplete
             UpdateAutocompleteData();
         }
 
-        public Task InitializeAsync()
-        {
-            var client = _services.GetRequiredService<DiscordSocketClient>();
-            //client.AutocompleteExecuted += HandleAutoCompleteAsync;
-            return Task.CompletedTask;
-        }
+        //public Task InitializeAsync()
+        //{
+        //    var client = _services.GetRequiredService<DiscordSocketClient>();
+        //    //client.AutocompleteExecuted += HandleAutoCompleteAsync;
+        //    return Task.CompletedTask;
+        //}
 
         public void UpdateAutocompleteData()
         {
@@ -76,21 +72,6 @@ namespace FlawsFightNight.Bot.Autocomplete
 
         //        // Create IEnumerable to hold suggestion results
         //        IEnumerable<AutocompleteResult> results = Enumerable.Empty<AutocompleteResult>();
-
-        //        switch (focusedOption.Name)
-        //        {
-        //            case "tournament_id":
-        //                results = string.IsNullOrWhiteSpace(value)
-        //                    ? GetTournamentIdsMatchingInput("")
-        //                    : GetTournamentIdsMatchingInput(value);
-        //                break;
-
-        //            case "match_id":
-        //                results = string.IsNullOrWhiteSpace(value)
-        //                    ? GetMatchIdsMatchingInput("")
-        //                    : GetMatchIdsMatchingInput(value);
-        //                break;
-        //        }
 
         //        // Limit to maximum of 25 results
         //        results = results.Take(25);
@@ -149,23 +130,6 @@ namespace FlawsFightNight.Bot.Autocomplete
                 //                    ? GetRoundRobinTournamentIdsMatchingInput("")
                 //                    : GetRoundRobinTournamentIdsMatchingInput(input);
 
-                //            case "winning_team_name":
-                //                var matchId = interaction.Data.Options.FirstOrDefault(o => o.Name == "match_id")?.Value as string;
-                //                var postMatchId = interaction.Data.Options.FirstOrDefault(o => o.Name == "post_match_id")?.Value as string;
-
-                //                if (!string.IsNullOrWhiteSpace(matchId))
-                //                    return GetTeamsFromMatchId(matchId)
-                //                        .Where(t => string.IsNullOrWhiteSpace(input) ||
-                //                                    t.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
-                //                        .ToList();
-
-                //                if (!string.IsNullOrWhiteSpace(postMatchId))
-                //                    return GetTeamsFromPostMatchId(postMatchId)
-                //                        .Where(t => string.IsNullOrWhiteSpace(input) ||
-                //                                    t.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
-                //                        .ToList();
-
-                //                return new List<AutocompleteResult>();
 
                 //            default:
                 //                return new List<AutocompleteResult>();
@@ -284,19 +248,19 @@ namespace FlawsFightNight.Bot.Autocomplete
             return matchingPostMatches;
         }
 
-        private List<AutocompleteResult> GetTeamsFromMatchId(string matchId)
+        public List<AutocompleteResult> GetTeamsFromMatchId(string matchId)
         {
-            var match = _matchManager.GetMatchFromDatabase(matchId);
+            var match = _allMatches.FirstOrDefault(m => m.Id == matchId);
             if (match == null)
             {
                 return new List<AutocompleteResult>();
             }
             // Grab teams
-            var teamA = _teamManager.GetTeamByName(match.TeamA);
-            var teamB = _teamManager.GetTeamByName(match.TeamB);
+            var teamA = _ladderTeams.Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == match.TeamA);
+            var teamB = _ladderTeams.Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == match.TeamB);
 
             // Grab tournament
-            var tournament = _tournamentManager.GetTournamentFromMatchId(matchId);
+            var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id));
 
             var results = new List<AutocompleteResult>();
             if (teamA != null)
@@ -310,18 +274,20 @@ namespace FlawsFightNight.Bot.Autocomplete
             return results;
         }
 
-        private List<AutocompleteResult> GetTeamsFromPostMatchId(string postMatchId)
+        public List<AutocompleteResult> GetTeamsFromPostMatchId(string postMatchId)
         {
-            var match = _matchManager.GetPostMatchById(postMatchId);
-            if (match == null)
+            var postMatch = _allPostMatches.FirstOrDefault(pm => pm.Id == postMatchId);
+            if (postMatch == null)
             {
                 return new List<AutocompleteResult>();
             }
             // Grab teams
-            var originalWinner = _teamManager.GetTeamByName(match.Winner);
-            var originalLoser = _teamManager.GetTeamByName(match.Loser);
+            var originalWinner = _ladderTeams.Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == postMatch.Winner);
+            var originalLoser = _ladderTeams.Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == postMatch.Loser);
+
             // Grab tournament
-            var tournament = _tournamentManager.GetTournamentFromMatchId(postMatchId);
+            var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllPostMatches().Any(pm => pm.Id == postMatch.Id));
+
             var results = new List<AutocompleteResult>();
             if (originalWinner != null)
             {
