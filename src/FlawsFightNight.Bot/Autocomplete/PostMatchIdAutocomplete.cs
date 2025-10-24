@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Bot.Autocomplete
 {
-    public class SendChallengeAutocomplete : AutocompleteHandler
+    public class PostMatchIdAutocomplete : AutocompleteHandler
     {
         private readonly AutocompleteCache _cache;
-        public SendChallengeAutocomplete(AutocompleteCache cache)
+        public PostMatchIdAutocomplete(AutocompleteCache cache)
         {
             _cache = cache;
         }
@@ -21,11 +21,11 @@ namespace FlawsFightNight.Bot.Autocomplete
             IParameterInfo parameter,
             IServiceProvider services)
         {
-            var currentInput = autocompleteInteraction.Data.Current.Value as string ?? "";
-            var suggestions = string.IsNullOrWhiteSpace(currentInput)
-                                ? _cache.GetTeamsForSendChallenge("")
-                                : _cache.GetTeamsForSendChallenge(currentInput);
-            return AutocompletionResult.FromSuccess(suggestions);
+            var value = (autocompleteInteraction.Data.Current.Value as string ?? string.Empty).ToLower();
+            var matches = string.IsNullOrWhiteSpace(value)
+                            ? _cache.GetPostMatchIdsMatchingInput("")
+                            : _cache.GetPostMatchIdsMatchingInput(value);
+            return AutocompletionResult.FromSuccess(matches);
         }
     }
 }

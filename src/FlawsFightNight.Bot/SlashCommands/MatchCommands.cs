@@ -47,7 +47,7 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         [SlashCommand("edit", "Edit a post-match's details in RR and Elimination.")]
         public async Task EditMatchAsync(
-            [Summary("post_match_id", "The ID of the match to target."), Autocomplete] string postMatchId,
+            [Summary("post_match_id", "The ID of the match to target."), Autocomplete(typeof(PostMatchIdAutocomplete))] string postMatchId,
             [Summary("winning_team_name", "The winner of the match, can be the same as before edit."), Autocomplete(typeof(WinningTeamNameAutocomplete))] string winningTeamName,
             [Summary("winning_team_score", "The score of the winning team.")] int winningTeamScore,
             [Summary("losing_team_score", "The score of the losing team")] int losingTeamScore)
@@ -80,8 +80,8 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             [SlashCommand("send", "Send a challenge to another team in a ladder tournament.")]
             public async Task SendChallengeAsync(
-            [Summary("challenger_team_name", "The name of the team sending the challenge"), Autocomplete] string challengerTeamName,
-            [Summary("challenged_team", "The name of the team being challenged"), Autocomplete] string opponentTeamName)
+            [Summary("challenger_team_name", "The name of the team sending the challenge"), Autocomplete(typeof(SendChallengerTeamAutocomplete))] string challengerTeamName,
+            [Summary("challenged_team", "The name of the team being challenged"), Autocomplete(typeof(SendChallengedTeamAutocomplete))] string opponentTeamName)
             {
                 try
                 {
@@ -98,7 +98,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             [SlashCommand("cancel", "Cancel a previously sent challenge in a ladder tournament.")]
             public async Task CancelChallengeAsync(
-            [Summary("challenger_team", "The name of the team that sent the challenge"), Autocomplete] string challengerTeamName)
+            [Summary("challenger_team", "The name of the team that sent the challenge"), Autocomplete(typeof(CancelChallengeAutocomplete))] string challengerTeamName)
             {
                 try
                 {

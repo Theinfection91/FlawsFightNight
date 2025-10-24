@@ -41,13 +41,6 @@ namespace FlawsFightNight.Bot.Autocomplete
             UpdateCache();
         }
 
-        //public Task InitializeAsync()
-        //{
-        //    var client = _services.GetRequiredService<DiscordSocketClient>();
-        //    //client.AutocompleteExecuted += HandleAutoCompleteAsync;
-        //    return Task.CompletedTask;
-        //}
-
         public void UpdateCache()
         {
             Console.WriteLine("[AutocompleteCache] Updating autocomplete data...");
@@ -62,111 +55,13 @@ namespace FlawsFightNight.Bot.Autocomplete
             _roundRobinTeams = _teamManager.GetAllRoundBasedTeams();
         }
 
-        //private async Task HandleAutoCompleteAsync(SocketAutocompleteInteraction interaction)
-        //{
-        //    try
-        //    {
-        //        // Grab focused option and its value, set to lowercase for comparison
-        //        var focusedOption = interaction.Data.Current;
-        //        var value = (focusedOption.Value as string ?? string.Empty).ToLower();
-
-        //        // Create IEnumerable to hold suggestion results
-        //        IEnumerable<AutocompleteResult> results = Enumerable.Empty<AutocompleteResult>();
-
-        //        // Limit to maximum of 25 results
-        //        results = results.Take(25);
-
-        //        // Respond with suggestions
-        //        await interaction.RespondAsync(results);
-                //        switch (focusedOption.Name)
-                //        {
-                //            case "challenger_team":
-                //                return string.IsNullOrWhiteSpace(input)
-                //                    ? GetTeamsForCancelChallenge("")
-                //                    : GetTeamsForCancelChallenge(input);
-
-                //            case "challenger_team_name":
-                //                return string.IsNullOrWhiteSpace(input)
-                //                    ? GetTeamsForSendChallenge("")
-                //                    : GetTeamsForSendChallenge(input);
-
-                //            case "challenged_team":
-                //                var challengerTeamName =
-                //                    interaction.Data.Options.FirstOrDefault(o => o.Name == "challenger_team_name")?.Value as string;
-                //                if (string.IsNullOrWhiteSpace(challengerTeamName))
-                //                    return new List<AutocompleteResult>();
-
-                //                return string.IsNullOrWhiteSpace(input)
-                //                    ? GetTeamsForSendChallenge("").Where(t => !Equals(t.Value, challengerTeamName)).ToList()
-                //                    : GetTeamsForSendChallenge(input).Where(t => !Equals(t.Value, challengerTeamName)).ToList();
-
-                //            case "ladder_team_name":
-                //                return string.IsNullOrWhiteSpace(input)
-                //                    ? GetLadderTeamsFromName("")
-                //                    : GetLadderTeamsFromName(input);
-
-                //            case "match_id":
-                //                return string.IsNullOrWhiteSpace(input)
-                //                    ? GetMatchIdsMatchingInput("")
-                //                    : GetMatchIdsMatchingInput(input);
-
-                //            case "tournament_id":
-                //                return string.IsNullOrWhiteSpace(input)
-                //                    ? GetTournamentIdsMatchingInput("")
-                //                    : GetTournamentIdsMatchingInput(input);
-
-                //            case "post_match_id":
-                //                return string.IsNullOrWhiteSpace(input)
-                //                    ? GetPostMatchIdsMatchingInput("")
-                //                    : GetPostMatchIdsMatchingInput(input);
-
-                //            case "r_tournament_id":
-                //                return string.IsNullOrWhiteSpace(input)
-                //                    ? GetRoundBasedTournamentIdsMatchingInput("")
-                //                    : GetRoundBasedTournamentIdsMatchingInput(input);
-
-                //            default:
-                //                return new List<AutocompleteResult>();
-                //        }
-
-                //    // timeout guard — only wait up to 2.5 seconds
-                //    if (await Task.WhenAny(task, Task.Delay(2500)) == task)
-                //    {
-                //        suggestions = task.Result ?? new();
-                //    }
-                //    else
-                //    {
-                //        Console.WriteLine("[Autocomplete] Timeout - defaulting to empty suggestions");
-                //        suggestions = new();
-                //    }
-
-                //    // respond safely — only once
-                //    await interaction.RespondAsync(suggestions);
-                //catch (Exception ex)
-                //    {
-                //        Console.WriteLine($"[Autocomplete] Exception: {ex}");
-                //        try
-                //        {
-                //            // ensure Discord receives *something* so it doesn’t hang
-                //            await interaction.RespondAsync(new List<AutocompleteResult>());
-                //        }
-                //        catch { /* ignore double response */ }
-                //    }
-                //}
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine(ex.Message);
-        //    }
-        //}
-
         public List<AutocompleteResult> GetMatchIdsMatchingInput(string input)
         {
             // If the input is empty or only whitespace, return all matches sorted by tournament name and then match ID
             if (string.IsNullOrWhiteSpace(input))
             {
                 return _allMatches
-                    .OrderBy(match => _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id)))
+                    .OrderBy(match => _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id)).Name)
                     .ThenBy(match => match.Id)
                     .Select(match =>
                     {
@@ -182,14 +77,13 @@ namespace FlawsFightNight.Bot.Autocomplete
                 .Where(match =>
                 {
                     var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id));
-                    //var tournament = _tournamentManager.GetTournamentFromMatchId(match.Id);
                     string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                     return match.Id.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            match.TeamA.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            match.TeamB.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            tournamentName.Contains(input, StringComparison.OrdinalIgnoreCase);
                 })
-                .OrderBy(match => _tournamentManager.GetTournamentFromMatchId(match.Id)?.Name)
+                .OrderBy(match => _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id)).Name)
                 .ThenBy(match => match.Id)
                 .Select(match =>
                 {
@@ -202,39 +96,38 @@ namespace FlawsFightNight.Bot.Autocomplete
             return matchingMatches;
         }
 
-        private List<AutocompleteResult> GetPostMatchIdsMatchingInput(string input)
+        public List<AutocompleteResult> GetPostMatchIdsMatchingInput(string input)
         {
-            var allPostMatches = _matchManager.GetAllPostMatches();
             // If the input is empty or only whitespace, return all post-matches sorted by tournament name and then match ID
             if (string.IsNullOrWhiteSpace(input))
             {
-                return allPostMatches
-                    .OrderBy(postMatch => _tournamentManager.GetTournamentFromMatchId(postMatch.Id)?.Name)
+                return _allPostMatches
+                    .OrderBy(postMatch => _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == postMatch.Id)).Name)
                     .ThenBy(postMatch => postMatch.Id)
                     .Select(postMatch =>
                     {
-                        var tournament = _tournamentManager.GetTournamentFromMatchId(postMatch.Id);
+                        var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == postMatch.Id));
                         string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                         return new AutocompleteResult($"#{postMatch.Id} | {postMatch.Winner} vs {postMatch.Loser} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", postMatch.Id);
                     })
                     .ToList();
             }
             // Filter post-matches based on the input (case-insensitive)
-            var matchingPostMatches = allPostMatches
+            var matchingPostMatches = _allPostMatches
                 .Where(postMatch =>
                 {
-                    var tournament = _tournamentManager.GetTournamentFromMatchId(postMatch.Id);
+                    var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == postMatch.Id));
                     string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                     return postMatch.Id.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            postMatch.Winner.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            postMatch.Loser.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            tournamentName.Contains(input, StringComparison.OrdinalIgnoreCase);
                 })
-                .OrderBy(postMatch => _tournamentManager.GetTournamentFromMatchId(postMatch.Id)?.Name)
+                .OrderBy(postMatch => _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == postMatch.Id)).Name)
                 .ThenBy(postMatch => postMatch.Id)
                 .Select(postMatch =>
                 {
-                    var tournament = _tournamentManager.GetTournamentFromMatchId(postMatch.Id);
+                    var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == postMatch.Id));
                     string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                     return new AutocompleteResult($"#{postMatch.Id} | {postMatch.Winner} vs {postMatch.Loser} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", postMatch.Id);
                 })
@@ -326,7 +219,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                 return _ladderTeams
                     .Where(team => team.IsChallengeable)
                     .OrderBy(team => team.Rank)
-                    .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_tournamentManager.GetTournamentFromTeamName(team.Name).Name} ({_tournamentManager.GetTournamentFromTeamName(team.Name).TeamSizeFormat} {_tournamentManager.GetTournamentFromTeamName(team.Name).GetFormattedTournamentType()})", team.Name))
+                    .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.Name} ({_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.TeamSizeFormat} {_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.GetFormattedTournamentType()})", team.Name))
                     .ToList();
             }
             // Filter teams based on the input (case-insensitive)
@@ -334,7 +227,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                 .Where(team => team.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
                 .Where(team => team.IsChallengeable)
                 .OrderBy(team => team.Rank)
-                .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_tournamentManager.GetTournamentFromTeamName(team.Name).Name} ({_tournamentManager.GetTournamentFromTeamName(team.Name).TeamSizeFormat} {_tournamentManager.GetTournamentFromTeamName(team.Name).GetFormattedTournamentType()})", team.Name))
+                .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.Name} ({_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.TeamSizeFormat} {_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.GetFormattedTournamentType()})", team.Name))
                 .ToList();
             return matchingTeams;
         }
@@ -342,21 +235,24 @@ namespace FlawsFightNight.Bot.Autocomplete
         public List<AutocompleteResult> GetTeamsForCancelChallenge(string input)
         {
             // Filter to only teams that are a Challenger in a challenge
-            var challengerTeams = _ladderTeams;
+            var challengerTeams = _ladderTournaments.Where(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Challenge != null))
+                .SelectMany(t => t.Teams.Where(team => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Challenge != null && m.Challenge.Challenger == team.Name)))
+                .Distinct()
+                .ToList();
 
             // If the input is empty or only whitespace, return all challenger teams sorted alphabetically
             if (string.IsNullOrWhiteSpace(input))
             {
                 return challengerTeams
                     .OrderBy(team => team.Rank)
-                    .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_tournamentManager.GetTournamentFromTeamName(team.Name).Name} ({_tournamentManager.GetTournamentFromTeamName(team.Name).TeamSizeFormat} {_tournamentManager.GetTournamentFromTeamName(team.Name).GetFormattedTournamentType()})", team.Name))
+                    .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.Name} ({_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.TeamSizeFormat} {_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.GetFormattedTournamentType()})", team.Name))
                     .ToList();
             }
             // Filter challenger teams based on the input (case-insensitive)
             var matchingTeams = challengerTeams
                 .Where(team => team.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(team => team.Rank)
-                .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_tournamentManager.GetTournamentFromTeamName(team.Name).Name} ({_tournamentManager.GetTournamentFromTeamName(team.Name).TeamSizeFormat} {_tournamentManager.GetTournamentFromTeamName(team.Name).GetFormattedTournamentType()})", team.Name))
+                .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.Name} ({_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.TeamSizeFormat} {_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.GetFormattedTournamentType()})", team.Name))
                 .ToList();
             return matchingTeams;
         }
