@@ -80,7 +80,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("lock-teams", "Lock teams in a tournament")]
         [RequireGuildAdmin]
         public async Task LockTeamsAsync(
-            [Summary("rr_tournament_id", "The ID of the tournament to lock teams in"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to lock teams in"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
@@ -99,7 +99,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("unlock-teams", "Unlock teams in a tournament")]
         [RequireGuildAdmin]
         public async Task UnlockTeamsAsync(
-            [Summary("rr_tournament_id", "The ID of the tournament to unlock teams in"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to unlock teams in"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
@@ -133,7 +133,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("setup_round_robin", "Setup a RR tournaments rules and habits before starting it.")]
         [RequireGuildAdmin]
         public async Task SetupTournamentAsync(
-            [Summary("rr_tournament_id", "The ID of the tournament to setup"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to setup"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))] string tournamentId,
             [Summary("match_type", "Normal for round based, open for any time matches")] RoundRobinMatchType matchType,
             [Summary("tie_breaker_ruleset", "The ruleset to use for tie breakers")] TieBreakerType tieBreakerType,
             [Summary("length", "Whether the tournament is a double or single round robin")] RoundRobinLengthType roundRobinType)
@@ -168,10 +168,10 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
         }
 
-        [SlashCommand("lock-in-round", "Lock in round results after all matches for round have been played")]
+        [SlashCommand("lock-in-round", "Lock in round results after all matches played (Normal RR & Elim)")]
         [RequireGuildAdmin]
         public async Task LockInRoundAsync(
-            [Summary("rb_tournament_id", "The ID of the tournament to round lock"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to round lock"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
@@ -190,7 +190,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("unlock-round", "Unlock the current round to make changes if needed")]
         [RequireGuildAdmin]
         public async Task UnlockRoundAsync(
-            [Summary("rb_tournament_id", "The ID of the tournament to unlock the round"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to unlock the round"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
@@ -209,7 +209,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("next-round", "Advance to the next round of certain tournaments if conditions are met.")]
         [RequireGuildAdmin]
         public async Task NextRoundAsync(
-            [Summary("rb_tournament_id", "The ID of the tournament to advance the round"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to advance the round"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {

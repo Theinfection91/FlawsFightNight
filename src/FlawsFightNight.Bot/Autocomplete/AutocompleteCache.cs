@@ -44,7 +44,7 @@ namespace FlawsFightNight.Bot.Autocomplete
 
         public void UpdateCache()
         {
-            Console.WriteLine("[AutocompleteCache] Updating autocomplete data...");
+            //Console.WriteLine("[AutocompleteCache] Updating autocomplete data...");
             // Refresh autocomplete data from managers
             _allMatches = _matchManager.GetAllActiveMatches();
             _allPostMatches = _matchManager.GetAllPostMatches();
