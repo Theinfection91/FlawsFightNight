@@ -22,6 +22,7 @@ namespace FlawsFightNight.Bot.Autocomplete
         // Autocomplete Data
         private List<Match> _allMatches = new();
         private List<PostMatch> _allPostMatches = new();
+        private List<PostMatch> _roundRobinPostMatches = new();
         private List<Tournament> _allTournaments = new();
         private List<Tournament> _ladderTournaments = new();
         private List<Tournament> _roundRobinTournaments = new();
@@ -47,6 +48,7 @@ namespace FlawsFightNight.Bot.Autocomplete
             // Refresh autocomplete data from managers
             _allMatches = _matchManager.GetAllActiveMatches();
             _allPostMatches = _matchManager.GetAllPostMatches();
+            _roundRobinPostMatches = _matchManager.GetAllRoundRobinPostMatches();
             _allTournaments = _tournamentManager.GetAllTournaments();
             _ladderTournaments = _tournamentManager.GetAllLadderTournaments();
             _roundRobinTournaments = _tournamentManager.GetAllRoundRobinTournaments();
@@ -101,35 +103,49 @@ namespace FlawsFightNight.Bot.Autocomplete
             // If the input is empty or only whitespace, return all post-matches sorted by tournament name and then match ID
             if (string.IsNullOrWhiteSpace(input))
             {
-                return _allPostMatches
-                    .OrderBy(postMatch => _allTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(m => m.Id == postMatch.Id))?.Name)
+                return _roundRobinPostMatches
+                    .OrderBy(postMatch => _roundRobinTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(m => m.Id == postMatch.Id))?.Name)
                     .ThenBy(postMatch => postMatch.Id)
                     .Select(postMatch =>
                     {
-                        var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(pm => pm.Id == postMatch.Id));
-                        string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
-                        return new AutocompleteResult($"#{postMatch.Id} | {postMatch.Winner} vs {postMatch.Loser} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", postMatch.Id);
+                        var tournament = null as Tournament;
+                        foreach (var t in _roundRobinTournaments)
+                        {
+                            var editablePostMatches = t.MatchLog.GetEditablePostMatches();
+                            foreach (var pm in editablePostMatches)
+                            {
+                                if (pm.Id == postMatch.Id)
+                                {
+                                    tournament = t;
+                                    break;
+                                }
+                            }
+                            if (tournament != null)
+                                break;
+                        }
+                        //string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
+                        return new AutocompleteResult($"#{postMatch.Id} | {postMatch.Winner} vs {postMatch.Loser} - {tournament?.Name} ({tournament?.TeamSizeFormat} {tournament?.GetFormattedTournamentType()})", postMatch.Id);
                     })
                     .ToList();
             }
             // Filter post-matches based on the input (case-insensitive)
-            var matchingPostMatches = _allPostMatches
+            var matchingPostMatches = _roundRobinPostMatches
                 .Where(postMatch =>
                 {
-                    var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(m => m.Id == postMatch.Id));
+                    var tournament = _roundRobinTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(m => m.Id == postMatch.Id));
                     string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                     return postMatch.Id.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            postMatch.Winner.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            postMatch.Loser.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            tournamentName.Contains(input, StringComparison.OrdinalIgnoreCase);
                 })
-                .OrderBy(postMatch => _allTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(m => m.Id == postMatch.Id))?.Name)
+                .OrderBy(postMatch => _roundRobinTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(m => m.Id == postMatch.Id))?.Name)
                 .ThenBy(postMatch => postMatch.Id)
                 .Select(postMatch =>
                 {
-                    var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(m => m.Id == postMatch.Id));
+                    var tournament = _roundRobinTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(m => m.Id == postMatch.Id));
                     string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
-                    return new AutocompleteResult($"#{postMatch.Id} | {postMatch.Winner} vs {postMatch.Loser} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", postMatch.Id);
+                    return new AutocompleteResult($"#{postMatch.Id} | {postMatch.Winner} vs {postMatch.Loser} - {tournamentName} ({tournament?.TeamSizeFormat} {tournament?.GetFormattedTournamentType()})", postMatch.Id);
                 })
                 .ToList();
             return matchingPostMatches;
