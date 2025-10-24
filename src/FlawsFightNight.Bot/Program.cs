@@ -164,10 +164,6 @@ namespace FlawsFightNight.Bot
                 Console.WriteLine($"{DateTime.Now} - Commands registered to guild {_configManager.GetGuildId()}");
             });
 
-            // Initialize autocomplete AFTER Ready
-            //var autoCompleteHandler = _services.GetRequiredService<AutocompleteCache>();
-            //await autoCompleteHandler.InitializeAsync();
-
             Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");
 
             _liveViewManager = _services.GetRequiredService<LiveViewManager>();
