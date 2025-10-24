@@ -488,6 +488,16 @@ namespace FlawsFightNight.Managers
             return allPostMatches;
         }
 
+        public List<PostMatch> GetAllRoundRobinPostMatches()
+        {
+            List<PostMatch> allPostMatches = new();
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                allPostMatches.AddRange(tournament.MatchLog.GetEditablePostMatches());
+            }
+            return allPostMatches;
+        }
+
         public Match GetMatchFromDatabase(string matchId)
         {
             foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)

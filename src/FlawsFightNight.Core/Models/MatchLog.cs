@@ -62,7 +62,7 @@ namespace FlawsFightNight.Core.Models
             return (pointsFor, pointsAgainst);
         }
 
-        public List<Match> GetAllActiveMatches(int currentRound)
+        public List<Match> GetAllActiveMatches(int currentRound = 0)
         {
             var allMatches = new List<Match>();
             // Normal Round Robin Matches (Only grab matches in current round)
@@ -73,8 +73,11 @@ namespace FlawsFightNight.Core.Models
             }
             // Open Round Robin Matches
             allMatches.AddRange(OpenRoundRobinMatchesToPlay);
+
             // Ladder Matches
             allMatches.AddRange(LadderMatchesToPlay);
+
+            // TODO Add Elimination Matches when that is implemented
             return allMatches;
         }
 
@@ -90,6 +93,19 @@ namespace FlawsFightNight.Core.Models
             allPostMatches.AddRange(OpenRoundRobinPostMatches);
             // Ladder Post Matches
             allPostMatches.AddRange(LadderPostMatches);
+            return allPostMatches;
+        }
+
+        public List<PostMatch> GetEditablePostMatches()
+        {
+            var allPostMatches = new List<PostMatch>();
+            // Normal Round Robin Post Matches
+            foreach (var round in PostMatchesByRound.Values)
+            {
+                allPostMatches.AddRange(round);
+            }
+            // Open Round Robin Post Matches
+            allPostMatches.AddRange(OpenRoundRobinPostMatches);
             return allPostMatches;
         }
     }
