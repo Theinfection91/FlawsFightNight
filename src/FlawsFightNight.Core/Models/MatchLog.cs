@@ -95,5 +95,18 @@ namespace FlawsFightNight.Core.Models
             allPostMatches.AddRange(LadderPostMatches);
             return allPostMatches;
         }
+
+        public List<PostMatch> GetEditablePostMatches()
+        {
+            var allPostMatches = new List<PostMatch>();
+            // Normal Round Robin Post Matches
+            foreach (var round in PostMatchesByRound.Values)
+            {
+                allPostMatches.AddRange(round);
+            }
+            // Open Round Robin Post Matches
+            allPostMatches.AddRange(OpenRoundRobinPostMatches);
+            return allPostMatches;
+        }
     }
 }

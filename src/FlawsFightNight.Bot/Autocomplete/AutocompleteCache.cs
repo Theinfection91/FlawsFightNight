@@ -61,7 +61,7 @@ namespace FlawsFightNight.Bot.Autocomplete
             if (string.IsNullOrWhiteSpace(input))
             {
                 return _allMatches
-                    .OrderBy(match => _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id)).Name)
+                    .OrderBy(match => _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id))?.Name)
                     .ThenBy(match => match.Id)
                     .Select(match =>
                     {
@@ -83,7 +83,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                            match.TeamB.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            tournamentName.Contains(input, StringComparison.OrdinalIgnoreCase);
                 })
-                .OrderBy(match => _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id)).Name)
+                .OrderBy(match => _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == match.Id))?.Name)
                 .ThenBy(match => match.Id)
                 .Select(match =>
                 {
@@ -102,11 +102,11 @@ namespace FlawsFightNight.Bot.Autocomplete
             if (string.IsNullOrWhiteSpace(input))
             {
                 return _allPostMatches
-                    .OrderBy(postMatch => _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == postMatch.Id)).Name)
+                    .OrderBy(postMatch => _allTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(m => m.Id == postMatch.Id))?.Name)
                     .ThenBy(postMatch => postMatch.Id)
                     .Select(postMatch =>
                     {
-                        var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == postMatch.Id));
+                        var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(pm => pm.Id == postMatch.Id));
                         string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                         return new AutocompleteResult($"#{postMatch.Id} | {postMatch.Winner} vs {postMatch.Loser} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", postMatch.Id);
                     })
@@ -116,18 +116,18 @@ namespace FlawsFightNight.Bot.Autocomplete
             var matchingPostMatches = _allPostMatches
                 .Where(postMatch =>
                 {
-                    var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == postMatch.Id));
+                    var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(m => m.Id == postMatch.Id));
                     string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                     return postMatch.Id.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            postMatch.Winner.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            postMatch.Loser.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            tournamentName.Contains(input, StringComparison.OrdinalIgnoreCase);
                 })
-                .OrderBy(postMatch => _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == postMatch.Id)).Name)
+                .OrderBy(postMatch => _allTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(m => m.Id == postMatch.Id))?.Name)
                 .ThenBy(postMatch => postMatch.Id)
                 .Select(postMatch =>
                 {
-                    var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches(t.CurrentRound).Any(m => m.Id == postMatch.Id));
+                    var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetEditablePostMatches().Any(m => m.Id == postMatch.Id));
                     string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
                     return new AutocompleteResult($"#{postMatch.Id} | {postMatch.Winner} vs {postMatch.Loser} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()})", postMatch.Id);
                 })
