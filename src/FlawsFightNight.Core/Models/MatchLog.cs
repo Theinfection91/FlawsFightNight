@@ -16,6 +16,10 @@ namespace FlawsFightNight.Core.Models
         public List<Match> OpenRoundRobinMatchesToPlay { get; set; } = [];
         public List<PostMatch> OpenRoundRobinPostMatches { get; set; } = [];
 
+        // Ladder Properties
+        public List<Match> LadderMatchesToPlay { get; set; } = [];
+        public List<PostMatch> LadderPostMatches { get; set; } = [];
+
         public MatchLog() { }
 
         public (int, int) GetPointsForAndPointsAgainstForTeam(string teamName)
@@ -56,6 +60,53 @@ namespace FlawsFightNight.Core.Models
                 }
             }
             return (pointsFor, pointsAgainst);
+        }
+
+        public List<Match> GetAllActiveMatches(int currentRound = 0)
+        {
+            var allMatches = new List<Match>();
+            // Normal Round Robin Matches (Only grab matches in current round)
+            if (currentRound > 0 && MatchesToPlayByRound.ContainsKey(currentRound))
+            {
+                // Do not add bye matches
+                allMatches.AddRange(MatchesToPlayByRound[currentRound].Where(m => !m.IsByeMatch));
+            }
+            // Open Round Robin Matches
+            allMatches.AddRange(OpenRoundRobinMatchesToPlay);
+
+            // Ladder Matches
+            allMatches.AddRange(LadderMatchesToPlay);
+
+            // TODO Add Elimination Matches when that is implemented
+            return allMatches;
+        }
+
+        public List<PostMatch> GetAllPostMatches()
+        {
+            var allPostMatches = new List<PostMatch>();
+            // Normal Round Robin Post Matches
+            foreach (var round in PostMatchesByRound.Values)
+            {
+                allPostMatches.AddRange(round);
+            }
+            // Open Round Robin Post Matches
+            allPostMatches.AddRange(OpenRoundRobinPostMatches);
+            // Ladder Post Matches
+            allPostMatches.AddRange(LadderPostMatches);
+            return allPostMatches;
+        }
+
+        public List<PostMatch> GetEditablePostMatches()
+        {
+            var allPostMatches = new List<PostMatch>();
+            // Normal Round Robin Post Matches
+            foreach (var round in PostMatchesByRound.Values)
+            {
+                allPostMatches.AddRange(round);
+            }
+            // Open Round Robin Post Matches
+            allPostMatches.AddRange(OpenRoundRobinPostMatches);
+            return allPostMatches;
         }
     }
 }

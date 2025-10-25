@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.CommandsLogic.MatchCommands;
 using System;
 using System.Collections.Generic;
@@ -12,107 +13,106 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("match", "Commands related to matches like reporting who won, admin editing, challenges for ladders, etc.")]
     public class MatchCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        private CancelChallengeLogic _cancelChallengeLogic;
+        private AutocompleteCache _autocompleteCache;
         private EditMatchLogic _editMatchLogic;
-        private SendChallengeLogic _sendChallengeLogic;
+        private ReportWinLogic _reportWinLogic;
 
-        public MatchCommands(CancelChallengeLogic cancelChallengeLogic, EditMatchLogic editMatchLogic, SendChallengeLogic sendChallengeLogic)
+        public MatchCommands(AutocompleteCache autocompleteCache, EditMatchLogic editMatchLogic, ReportWinLogic reportWinLogic)
         {
-            _cancelChallengeLogic = cancelChallengeLogic;
+            _autocompleteCache = autocompleteCache;
             _editMatchLogic = editMatchLogic;
-            _sendChallengeLogic = sendChallengeLogic;
+            _reportWinLogic = reportWinLogic;
         }
 
-        [Group("report-win", "Report a win for a team in a match")]
-        public class ReportWinCommands : InteractionModuleBase<SocketInteractionContext>
-        {
-            private ReportRoundRobinWinLogic _reportWinLogic;
-            public ReportWinCommands(ReportRoundRobinWinLogic reportWinLogic)
-            {
-                _reportWinLogic = reportWinLogic;
-            }
-            [SlashCommand("round-robin", "Report a round robin win")]
-            public async Task ReportRoundRobinWinAsync(
-            [Summary("match_id", "The ID of the match to target.")] string matchId,
-            [Summary("winning_team_name", "The name of the winning team.")] string winningTeamName,
+        [SlashCommand("report-win", "Report a win of any kind of tournament.")]
+        public async Task ReportWinAsync(
+            [Summary("match_id", "The ID of the match to target."), Autocomplete(typeof(MatchIdAutocomplete))] string matchId,
+            [Summary("winning_team_name", "The name of the winning team."), Autocomplete(typeof(WinningTeamNameAutocomplete))] string winningTeamName,
             [Summary("winning_team_score", "The score of the winning team")] int winningTeamScore,
             [Summary("losing_team_score", "The score of the losing team")] int losingTeamScore)
-            {
-                try
-                {
-                    var result = _reportWinLogic.ReportRoundRobinWinProcess(Context, matchId, winningTeamName, winningTeamScore, losingTeamScore);
-                    await RespondAsync(embed: result);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
-                }
-            }
-        }
-        
-        [SlashCommand("edit", "Edit a post-match's details in RR and Elimination.")]
-        public async Task EditMatchAsync(
-            [Summary("match_id", "The ID of the match to target.")] string matchId,
-            [Summary("winningTeamName", "The winner of the match, can be the same as before edit.")] string winningTeamName,
-            [Summary("winningTeamScore", "The score of the winning team.")] int winningTeamScore,
-            [Summary("losingTeamScore", "The score of the losing team")] int losingTeamScore)
         {
             try
             {
-                var result = _editMatchLogic.EditMatchProcess(matchId, winningTeamName, winningTeamScore, losingTeamScore);
-                await RespondAsync(embed: result);
+                await DeferAsync();
+                var result = _reportWinLogic.ReportWinProcess(Context, matchId, winningTeamName, winningTeamScore, losingTeamScore);
+                await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Command Error: {ex}");
-                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
 
-        //[Group("challenge", "Challenge related match commands for ladder tournaments.")]
-        //public class MatchesChannelCommands : InteractionModuleBase<SocketInteractionContext>
-        //{
-        //    private SendChallengeLogic _sendChallengeLogic;
-        //    private CancelChallengeLogic _cancelChallengeLogic;
-        //    public MatchesChannelCommands(SendChallengeLogic sendChallengeLogic, CancelChallengeLogic cancelChallengeLogic)
-        //    {
-        //        _sendChallengeLogic = sendChallengeLogic;
-        //        _cancelChallengeLogic = cancelChallengeLogic;
-        //    }
-        //    [SlashCommand("send", "Send a challenge to another team in a ladder tournament.")]
-        //    public async Task SendChallengeAsync(
-        //    [Summary("challenger_team_name", "The name of the team sending the challenge")] string challengerTeamName,
-        //    [Summary("challenged_team", "The name of the team being challenged")] string opponentTeamName)
-        //    {
-        //        try
-        //        {
-        //            //var result = ;
-        //            //await RespondAsync(embed: result);
-        //            await RespondAsync("Challenges and Ladder Tournaments coming soon.", ephemeral: true);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.WriteLine($"Command Error: {ex}");
-        //            await RespondAsync("An error occurred while processing this command.", ephemeral: true);
-        //        }
-        //    }
-        //    [SlashCommand("cancel", "Cancel a previously sent challenge in a ladder tournament.")]
-        //    public async Task CancelChallengeAsync(
-        //    [Summary("challenger_team_name", "The name of the team that sent the challenge")] string challengerTeamName)
-        //    {
-        //        try
-        //        {
-        //            //var result = ;
-        //            //await RespondAsync(embed: result);
-        //            await RespondAsync("Challenges and Ladder Tournaments coming soon.", ephemeral: true);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.WriteLine($"Command Error: {ex}");
-        //            await RespondAsync("An error occurred while processing this command.", ephemeral: true);
-        //        }
-        //    }
-        //}
+        [SlashCommand("edit", "Edit a post-match's details in RR and Elimination.")]
+        public async Task EditMatchAsync(
+            [Summary("post_match_id", "The ID of the match to target."), Autocomplete(typeof(PostMatchIdAutocomplete))] string postMatchId,
+            [Summary("winning_team_name", "The winner of the match, can be the same as before edit."), Autocomplete(typeof(WinningTeamNameAutocomplete))] string winningTeamName,
+            [Summary("winning_team_score", "The score of the winning team.")] int winningTeamScore,
+            [Summary("losing_team_score", "The score of the losing team")] int losingTeamScore)
+        {
+            try
+            {
+                await DeferAsync();
+                var result = _editMatchLogic.EditMatchProcess(postMatchId, winningTeamName, winningTeamScore, losingTeamScore);
+                await FollowupAsync(embed: result);
+                _autocompleteCache.UpdateCache();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Command Error: {ex}");
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+            }
+        }
+
+        [Group("challenge", "Challenge related match commands for ladder tournaments.")]
+        public class MatchesChannelCommands : InteractionModuleBase<SocketInteractionContext>
+        {
+            private AutocompleteCache _autocompleteCache;
+            private SendChallengeLogic _sendChallengeLogic;
+            private CancelChallengeLogic _cancelChallengeLogic;
+            public MatchesChannelCommands(AutocompleteCache autocompleteCache, SendChallengeLogic sendChallengeLogic, CancelChallengeLogic cancelChallengeLogic)
+            {
+                _autocompleteCache = autocompleteCache;
+                _sendChallengeLogic = sendChallengeLogic;
+                _cancelChallengeLogic = cancelChallengeLogic;
+            }
+            [SlashCommand("send", "Send a challenge to another team in a ladder tournament.")]
+            public async Task SendChallengeAsync(
+            [Summary("challenger_team_name", "The name of the team sending the challenge"), Autocomplete(typeof(SendChallengerTeamAutocomplete))] string challengerTeamName,
+            [Summary("challenged_team", "The name of the team being challenged"), Autocomplete(typeof(SendChallengedTeamAutocomplete))] string opponentTeamName)
+            {
+                try
+                {
+                    await DeferAsync();
+                    var result = _sendChallengeLogic.SendChallengeProcess(Context, challengerTeamName, opponentTeamName);
+                    await FollowupAsync(embed: result);
+                    _autocompleteCache.UpdateCache();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+            [SlashCommand("cancel", "Cancel a previously sent challenge in a ladder tournament.")]
+            public async Task CancelChallengeAsync(
+            [Summary("challenger_team", "The name of the team that sent the challenge"), Autocomplete(typeof(CancelChallengeAutocomplete))] string challengerTeamName)
+            {
+                try
+                {
+                    await DeferAsync();
+                    var result = _cancelChallengeLogic.CancelChallengeProcess(Context, challengerTeamName);
+                    await FollowupAsync(embed: result);
+                    _autocompleteCache.UpdateCache();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+        }
     }
 }

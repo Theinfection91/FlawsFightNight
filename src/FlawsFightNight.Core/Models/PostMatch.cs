@@ -17,7 +17,10 @@ namespace FlawsFightNight.Core.Models
         public DateTime CreatedOn { get; set; }
         public DateTime CompletedOn { get; set; } = DateTime.UtcNow;
 
-        public PostMatch(string matchId, string winner, int winnerScore, string loser, int loserScore, DateTime createdOn, bool wasByeMatch = false)
+        // Ladder Specific Info
+        public Challenge? Challenge { get; set; }
+
+        public PostMatch(string matchId, string winner, int winnerScore, string loser, int loserScore, DateTime createdOn, bool wasByeMatch = false, Challenge challenge = null)
         {
             Id = matchId;
             Winner = winner;
@@ -26,6 +29,7 @@ namespace FlawsFightNight.Core.Models
             LoserScore = loserScore;
             CreatedOn = createdOn;
             WasByeMatch = wasByeMatch;
+            Challenge = challenge;
         }
 
         public void UpdateResultsProcess(string winningTeamName, int winningTeamScore, int losingTeamScore)
@@ -48,5 +52,27 @@ namespace FlawsFightNight.Core.Models
                 LoserScore = losingTeamScore;
             }
         }
+
+        #region Normal Ladder Specific
+        public bool IsChallengerWinner()
+        {
+            if (Challenge != null)
+                return Winner.Equals(Challenge.Challenger, StringComparison.OrdinalIgnoreCase);
+
+            return false;
+        }
+
+        public string GetRankTransitionText()
+        {
+            if (IsChallengerWinner())
+            {
+                return $"⬆️ {Winner} becomes (#{Challenge.ChallengedRank}) - {Loser} drops down one.";
+            }
+            else
+            {
+                return $"⏸️ {Winner} remains (#{Challenge.ChallengedRank}) - No rank change for {Loser}";
+            }
+        }
+        #endregion
     }
 }

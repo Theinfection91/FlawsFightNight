@@ -26,6 +26,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         public Embed SetupRoundRobinTournamentProcess(string tournamentId, RoundRobinMatchType roundRobinMatchType, TieBreakerType tieBreakerType, RoundRobinLengthType roundRobinType)
         {
+            // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");

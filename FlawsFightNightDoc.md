@@ -258,7 +258,8 @@ Extensive information and how to use the various commands in FlawsFightNight:
 
 ### Create Tournament (`/tournament create`)
 
-**Description**
+**Description**:
+
 Create a new tournament of the given tournament type and given team size format. Upon success, it will give back a Tournament ID# that is used in commands to target it. Tournament names are unique, can not have two tournaments with the same name.
 
 **Usage**
@@ -271,6 +272,7 @@ Create a new tournament of the given tournament type and given team size format.
 ### Delete Tournament (`/tournament delete`)
 
 **Description**:
+
 Upon invoking command, will load a modal box to receive input from user. This is same as Ladderbot but takes the Tournament ID#. Must enter with an uppercase 'T' as this input is case sensitive like Ladderbot4 was. Tournaments can only be deleted before they start or after they end for safety. Will patch in overrides later.
 
 **Usage**
@@ -283,7 +285,9 @@ Upon invoking command, will load a modal box to receive input from user. This is
 ### Lock Teams In Tournament (`/tournament lock-teams`)
 
 **Description**:
+
 **This command will only be used for Round Robin and Elimination tournaments, no need in Ladders.**
+
 In Round Robin, once at least three teams are registered to a tournament then an admin can lock the teams. This prevents any new teams from being added and also any exisiting from being deleted from it. This lock must be done before starting the tournament.
 
 **Usage**
@@ -296,7 +300,9 @@ In Round Robin, once at least three teams are registered to a tournament then an
 ### Unlock Teams In Tournament (`/tournament unlock-teams`)
 
 **Description**:
+
 **This command will only be used for Round Robin and Elimination tournaments, no need in Ladders.** 
+
 Using this will unlock the teams before starting a tournament, allowing adding or removal of them. Lock again to be able to start.
 
 **Usage**
@@ -311,6 +317,8 @@ Using this will unlock the teams before starting a tournament, allowing adding o
 **Description**:
 For a Round Robin tournament, once teams are locked you may use this command to load a modal confirmation box that will ask for you to input the tournament ID twice, with your input being case sensitive meaning the T must be uppercase. On success, it will initiate the starting procedures of the tournament like sending each player their teams match schedule by round.
 
+For a Ladder tournament, a tournament may just be started with no requirements.
+
 **Usage**
 ```csharp
 /tournament start
@@ -321,7 +329,9 @@ For a Round Robin tournament, once teams are locked you may use this command to 
 ### Lock In Round Of Tournament (`/tournament lock-in-round`)
 
 **Description**:
+
 **This command will only be used for Round Robin and Elimination tournaments, no need in Ladders.**
+
 Once all matches of a round have been played, an admin must lock in the round before being able to advance to the next round. Once locked, admins may not use `/match edit` to make any changes to a post match within the current round.
 
 **Usage**
@@ -334,7 +344,9 @@ Once all matches of a round have been played, an admin must lock in the round be
 ### Unlock Round In Tournament (`/tournament unlock-round`)
 
 **Description**:
+
 **This command will only be used for Round Robin and Elimination tournaments, no need in Ladders.**
+
 If a round has been locked and an admin needs to make a change then use this. Once unlocked, admins may use `/match edit` to make any changes to a post match within the current round.
 
 **Usage**
@@ -347,6 +359,7 @@ If a round has been locked and an admin needs to make a change then use this. On
 ### Next Round In Tournament (`/tournament next-round`)
 
 **Description**:
+
 **This command will only be used for Round Robin and Elimination tournaments, no need in Ladders.**
 Once the round is locked in, an admin will use this to advance to the next round.
 
@@ -360,7 +373,10 @@ Once the round is locked in, an admin will use this to advance to the next round
 ### End Tournament (`/tournament end`)
 
 **Description**:
-Attempt to end the tournament if all conditions are met. Currently for Round Robin a tournament will only be able to end once the last match of the last round has been reported. Only then will this command work correctly. This too will load the modal confirmation system I designed and ask for the case sensitive input of the tournament ID to end.
+
+Attempt to end the tournament if all conditions are met. Currently for Normal Round Robin a tournament will only be able to end once the last match of the last round has been reported, for Open Round Robin all matches must be reported before attemping to end. Only then will this command work correctly. This too will load the modal confirmation system I designed and ask for the case sensitive input of the tournament ID to end.
+
+For a Ladder tournament, it may be ended at anytime.
 
 **Usage**
 ```csharp
@@ -369,14 +385,15 @@ Attempt to end the tournament if all conditions are met. Currently for Round Rob
 
 ---
 
-### Setup Tournament (`/tournament setup`)
+### Setup Tournament (`/tournament setup_round_robin`)
 
 **Description**:
-Once a tournament is created, certain ones allow for customization. There are two different match types which are Normal and Open; normal will have the classic rounds system where as open allows for teams to report any match at any time and does not have rounds. Round Robin tournaments will have different tie breaker logic you can choose from eventually. It will also allow for a Round Robin tournament to just be a single round robin and not double like default. This command must be used before starting the tournament to take effect.
+
+All Round Robin Tournaments are created as default with Normal match type, Traditional tie breaker logic and is a Double round robin in length. To change any of these settings use this command any time before starting the tournament.
 
 **Usage**
 ```csharp
-/tournament setup tournamentId:<string> match_type:<RoundRobinMatchType> tie_breaker_ruleset:<TieBreakerLogic> is_double_round_robin<bool>
+/tournament setup tournamentId:<string> match_type:<RoundRobinMatchType> tie_breaker_ruleset:<TieBreakerLogic> length<RoundRobinLengthType>
 ```
 
 ---
@@ -386,6 +403,7 @@ Once a tournament is created, certain ones allow for customization. There are tw
 ### Register Team To Tournament (`/team register`)
 
 **Description**:
+
 Using the tournament's ID#, create and register a new team to it. Team names are unique across all tournaments, so even if in different tournaments you may not have two team Alpha's. Can only register teams to tournaments where teams are unlocked where required like Round Robin. Up to 20 members may be added to a team currently. If a tournament is a 3v3, a team must be created with 3 members when giving the command. If any member is already on a team in the same tournament, the command will not proceed. Members can only be on one team per tournament, but be in as many tournaments as theyd like.
 
 **Usage**
@@ -398,7 +416,10 @@ Using the tournament's ID#, create and register a new team to it. Team names are
 ### Delete Team From Tournament (`/team delete`)
 
 **Description**:
+
 Loads the modal confirmation box and asks for team name that is case sensitive and will delete a desired team from a tournament if conditions are right. Teams may only be removed from Round Robin tournaments before it starts and teams are unlocked, or after it ends and teams are unlocked. If a team can not finish the tournament, an admin should just use report win and declare the other team the winner and give both teams 0 points.
+
+For a Ladder tournament, a team may be removed at any time.
 
 **Usage**
 ```csharp
@@ -407,11 +428,87 @@ Loads the modal confirmation box and asks for team name that is case sensitive a
 
 ---
 
-## Match Commands
-
-## Report Round Robin Win For Match (`/match report-win round-robin`)
+###  Set Team Rank(`/team set_rank`)
 
 **Description**:
+
+**This command will only be used for Ladder tournaments.**
+
+Admin command to manually set a teams rank, and have all other ranks adjust accordingly
+
+**Usage**
+```csharp
+ /team set_rank team_name:<str> new_rank:<int>
+```
+
+---
+
+###  Add Win(s) To Team's Win Count(`/team add win`)
+
+**Description**:
+
+**This command will only be used for Ladder tournaments.**
+
+An admin can manually add a number of wins to a team in case errors occur.
+
+**Usage**
+```csharp
+ /team add win team_name:<string> number_of_wins:<int>
+```
+
+---
+
+###  Add Loss(es) To Team's Loss Count(`/team add loss`)
+
+**Description**:
+
+**This command will only be used for Ladder tournaments.**
+
+An admin can manually add losses to a team in case errors occur.
+
+**Usage**
+```csharp
+ /team add loss team_name:<string> number_of_losses:<int>
+```
+
+---
+
+###  Remove Win(s) From Team's Win Count(`/team add win`)
+
+**Description**:
+
+**This command will only be used for Ladder tournaments.**
+
+An admin can manually remove wins from a team, but only enough to bring them to 0.
+
+**Usage**
+```csharp
+ /team remove win team_name:<string> number_of_wins:<int>
+```
+
+---
+
+###  Remove Loss(es) From Team's Win Count(`/team add win`)
+
+**Description**:
+
+**This command will only be used for Ladder tournaments.**
+
+An admin can manually remove losses from a team, but only enough to bring them to 0.
+
+**Usage**
+```csharp
+ /team remove loss team_name:<string> number_of_losses:<int>
+```
+
+---
+
+## Match Commands
+
+## Report Round Robin Win For Match (`/match report-win`)
+
+**Description**:
+
 Using the Match ID, winning team name, as well as the score for winning team and losing team this will close out a match and turn it into a post match. This command is universal for admins and regular players. A player may only report wins for their team, but an admin can use this command and report for anyone. It also will accept a winner with a score of 0 to 0 in case a team forfeits or doesnt show that way the other team can win but also not gain any points. Will not accept losing team's score being higher than winning team's score.
 
 **Usage**
@@ -424,11 +521,45 @@ Using the Match ID, winning team name, as well as the score for winning team and
 ## Edit Post Match (`/match edit`)
 
 **Description**:
-If a round is unlocked and a match has been played, using the Match ID# that it is assigned an admin can edit the winner and scores of a post match. Once a round is locked or if the round has passed then a match may not be changed.
+
+In a Normal Round Robin, allows you to edit a post match that is within the current round being played within tournament.
+
+In Open Round Robin, allows you to edit any post match within tournament.
+
+Currently not used for Ladder post matches, may change in the future.
 
 **Usage**
 ```csharp
 /match edit match_id:<string> winning_team_name:<string> winning_team_score:<int> losing_team_score:<int>
+```
+
+---
+
+## Send Challenge (`/match challenge send`)
+
+**Description**:
+
+**This command will only be used for Ladder tournaments.**
+Sends a challenge from the challenger team to the challenged team. Can not send a challenge if already have one sent out or are being challenged by another team.
+
+**Usage**
+```csharp
+/match challenge send challenger_team_name:<string> challenged_team:<string>
+```
+
+---
+
+## Cancel Challenge (`/match challenge cancel`)
+
+**Description**:
+
+**This command will only be used for Ladder tournaments.**
+
+Cancel a challenge that the challenger team has sent out. Only works if team is the challenger, not a challenged team.
+
+**Usage**
+```csharp
+/match challenge cancel challenger_team_name:<string>
 ```
 
 ---
@@ -438,6 +569,7 @@ If a round is unlocked and a match has been played, using the Match ID# that it 
 ## Set Matches Channel LiveView (`/settings matches_channel_id set`)
 
 **Description**:
+
 This command will take look for the given tournament ID and if found set the given discord channel to be the auto updating Match Log for that tournament. Once the tournament starts for Round Robin it will display all matches to be played for this round and then all previous matchs that have already been played with the result and match ID#.
 
 **Usage**
@@ -450,6 +582,7 @@ This command will take look for the given tournament ID and if found set the giv
 ## Remove Matches Channel LiveView (`/settings matches_channel_id remove`)
 
 **Description**:
+
 Stops the given tournament's task of sending the Matches LiveView to a channel
 
 **Usage**
@@ -462,6 +595,7 @@ Stops the given tournament's task of sending the Matches LiveView to a channel
 ## Set Standings Channel LiveView (`/settings standings_channel_id set`)
 
 **Description**:
+
 This command will take look for the given tournament ID and if found set the given discord channel to be the auto updating Standings for that tournament. Currently teams jump around when all at 0-0 because of tie breaker logic but will sort out when games are played. If two teams keep swapping ranks its cause they are equally tied and the logic is falling back to a coin flip of who would win. This will be patched out before I move on to Ladder tournaments.
 
 **Usage**
@@ -474,6 +608,7 @@ This command will take look for the given tournament ID and if found set the giv
 ## Remove Standings Channel LiveView (`/settings standings_channel_id remove`)
 
 **Description**:
+
 Stops the given tournament's task of sending the Standings LiveView to a channel
 
 **Usage**
@@ -486,6 +621,7 @@ Stops the given tournament's task of sending the Standings LiveView to a channel
 ## Set Teams Channel LiveView (`/settings teams_channel_id set`)
 
 **Description**:
+
 This command will take look for the given tournament ID and if found set the given discord channel to be the auto updating Teams information for that tournament like all it's members and rank. Currently you'll see rank jumping when teams are equally tied like I mentioned in Standings LiveView. This will be patched out eventually.
 
 **Usage**
@@ -498,6 +634,7 @@ This command will take look for the given tournament ID and if found set the giv
 ## Remove Teams Channel LiveView (`/settings teams_channel_id remove`)
 
 **Description**:
+
 Stops the given tournament's task of sending the Teams LiveView to a channel
 
 **Usage**
@@ -510,6 +647,7 @@ Stops the given tournament's task of sending the Teams LiveView to a channel
 ## Add Debug Admin (`/settings add_debug_admin`)
 
 **Description**:
+
 This is a nifty test command I use to bypass a player being on multiple teams within the same tournament. It could be useful for some people if they dont have enough people to fill a tournament and have someone play as two teams, or if admins just want to be nice and help me test sometime and give feedback.
 
 **Usage**
@@ -522,6 +660,7 @@ This is a nifty test command I use to bypass a player being on multiple teams wi
 ## Remove Debug Admin (`/settings remove_debug_admin`)
 
 **Description**:
+
 This just removes the given user from the debug admin list if they are on it.
 
 **Usage**

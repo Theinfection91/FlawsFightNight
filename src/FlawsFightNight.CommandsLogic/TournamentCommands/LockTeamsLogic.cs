@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
@@ -22,19 +23,33 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed LockTeamsProcess(SocketInteractionContext context, string tournamentId)
+        public Embed LockTeamsProcess(string tournamentId)
         {
             // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            Tournament? tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
-            // Check type of tournament, ladder tournaments do not lock teams, so return an error message
-            if (tournament.Type == Core.Enums.TournamentType.Ladder)
+            // Handle different tournament types
+            switch (tournament.Type)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is a Ladder tournament and does not require locking teams.");
+                case TournamentType.Ladder:
+                    return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is a Ladder tournament and does not require locking teams.");
+                case TournamentType.RoundRobin:
+                    return RoundRobinLockTeamsProcess(tournament);
+                default:
+                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for locking teams yet.");
+            }
+        }
+
+        public Embed RoundRobinLockTeamsProcess(Tournament tournament)
+        {
+            // Check if tournament is running
+            if (tournament.IsRunning)
+            {
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is currently running. Teams must be locked before starting the tournament.");
             }
 
             // Check if the tournament is already locked

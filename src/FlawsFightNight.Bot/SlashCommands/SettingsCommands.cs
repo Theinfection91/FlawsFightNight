@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.SetCommands;
 using FlawsFightNight.CommandsLogic.SettingsCommands;
@@ -31,13 +32,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _addDebugAdminLogic.AddDebugAdminProcess(user.Id);
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Command Error: {ex}");
-                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
 
@@ -48,13 +50,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             try
             {
+                await DeferAsync();
                 var result = _removeDebugAdminLogic.RemoveDebugAdminProcess(user.Id);
-                await RespondAsync(embed: result);
+                await FollowupAsync(embed: result);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Command Error: {ex}");
-                await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
         #endregion
@@ -73,36 +76,38 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("set", "Set the channel ID for matches of a specified tournament")]
             [RequireGuildAdmin]
             public async Task SetMatchesChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the matches channel for")] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to set the matches channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
             [Summary("channel_id", "The ID of the channel where matches will be posted")] IMessageChannel channel)
             {
 
                 try
                 {
+                    await DeferAsync();
                     var result = _setMatchesChannelLogic.SetMatchesChannelProcess(tournamentId, channel);
-                    await RespondAsync(embed: result);
+                    await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
 
             [SlashCommand("remove", "Remove the channel ID for matches of a specified tournament")]
             [RequireGuildAdmin]
             public async Task RemoveMatchesChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to stop the matches LiveView.")] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to stop the matches LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
             {
                 try
                 {
+                    await DeferAsync();
                     var result = _removeMatchesChannelLogic.RemoveMatchesChannelProcess(tournamentId);
-                    await RespondAsync(embed: result);
+                    await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
         }
@@ -122,37 +127,38 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("set", "Set the channel ID for standings of a specified tournament")]
             [RequireGuildAdmin]
             public async Task SetStandingsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the standings channel for")] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to set the standings channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
             [Summary("channel_id", "The ID of the channel where standings will be posted")] IMessageChannel channel)
             {
 
                 try
                 {
+                    await DeferAsync();
                     var result = _setStandingsChannelLogic.SetStandingsChannelProcess(tournamentId, channel);
-                    await RespondAsync(embed: result);
+                    await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
 
             [SlashCommand("remove", "Remove the channel ID for standings of a specified tournament")]
             [RequireGuildAdmin]
             public async Task RemoveStandingsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to stop the standings LiveView.")] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to stop the standings LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
             {
                 try
                 {
-
+                    await DeferAsync();
                     var result = _removeStandingsChannelLogic.RemoveStandingsChannelProcess(tournamentId);
-                    await RespondAsync(embed: result);
+                    await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
         }
@@ -170,34 +176,36 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("set", "Set the channel ID for teams of a specified tournament")]
             [RequireGuildAdmin]
             public async Task SetTeamsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the teams channel for")] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to set the teams channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
             [Summary("channel_id", "The ID of the channel where teams will be posted")] IMessageChannel channel)
             {
                 try
                 {
+                    await DeferAsync();
                     var result = _setTeamsChannelLogic.SetTeamsChannelProcess(tournamentId, channel);
-                    await RespondAsync(embed: result);
+                    await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
             [SlashCommand("remove", "Remove the channel ID for teams of a specified tournament")]
             [RequireGuildAdmin]
             public async Task RemoveTeamsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to stop the teams LiveView.")] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to stop the teams LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
             {
                 try
                 {
+                    await DeferAsync();
                     var result = _removeTeamsChannelLogic.RemoveTeamsChannelProcess(tournamentId);
-                    await RespondAsync(embed: result);
+                    await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Command Error: {ex}");
-                    await RespondAsync("An error occurred while processing this command.", ephemeral: true);
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
         }

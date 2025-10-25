@@ -14,11 +14,13 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
     {
         private EmbedManager _embedManager;
         private GitBackupManager _gitBackupManager;
+        private MatchManager _matchManager;
         private TournamentManager _tournamentManager;
-        public NextRoundLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager) : base("Next Round")
+        public NextRoundLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TournamentManager tournamentManager) : base("Next Round")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
+            _matchManager = matchManager;
             _tournamentManager = tournamentManager;
         }
 
@@ -29,8 +31,22 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            Tournament? tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
+            // Handle different tournament types
+            switch (tournament.Type)
+            {
+                case TournamentType.Ladder:
+                    return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is a Ladder tournament and does not have rounds.");
+                case TournamentType.RoundRobin:
+                    return RoundRobinNextRoundProcess(tournament);
+                default:
+                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for advancing rounds yet.");
+            }
+        }
+
+        private Embed RoundRobinNextRoundProcess(Tournament tournament)
+        {
             if (!tournament.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal))
             {
                 return _embedManager.ErrorEmbed(Name, $"Only Normal Round Robin tournaments support advancing to the next round at this time.");
@@ -51,6 +67,16 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             if (tournament.CanEndNormalRoundRobinTournament)
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is ready to end so you cannot go to the next round. Please use the appropriate command to end it.");
+            }
+
+            // Report bye matches if any exist
+            if (tournament.DoesRoundContainByeMatch())
+            {
+                // Grab the bye match
+                var byeMatch = tournament.GetByeMatchInCurrentRound();
+
+                // Report the bye match as completed
+                _matchManager.ConvertMatchToPostMatchResolver(tournament, byeMatch, byeMatch.GetCorrectPlayerNameForByeMatch(), 0, byeMatch.GetCorrectByeNameForByeMatch(), 0, byeMatch.IsByeMatch);
             }
 
             // Advance to the next round

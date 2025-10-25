@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Models;
+﻿using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,7 +46,7 @@ namespace FlawsFightNight.Managers
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
                 {
-                    return false; // Team name already exists in the tournament
+                    return false; // Team name already exists in the database somewhere
                 }
             }
             return true; // Team name is unique across all tournaments
@@ -58,6 +59,34 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Gets
+        public List<Team> GetAllLadderTeams()
+        {
+            List<Team> ladderTeams = new List<Team>();
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (Tournament tournament in tournaments)
+            {
+                if (tournament.Type.Equals(TournamentType.Ladder))
+                {
+                    ladderTeams.AddRange(tournament.Teams);
+                }
+            }
+            return ladderTeams;
+        }
+
+        public List<Team> GetAllRoundBasedTeams()
+        {
+            List<Team> roundBasedTeams = new();
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (Tournament tournament in tournaments)
+            {
+                if (tournament.Type.Equals(TournamentType.RoundRobin)) // Will add elimination later
+                {
+                    roundBasedTeams.AddRange(tournament.Teams);
+                }
+            }
+            return roundBasedTeams;
+        }
+
         public Team GetTeamByName(string teamName)
         {
             List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;

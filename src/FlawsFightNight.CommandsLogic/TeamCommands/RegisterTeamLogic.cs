@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
@@ -29,8 +30,10 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             _teamManager = teamManager;
         }
 
-        public Embed RegisterTeamProcess(SocketInteractionContext context, string teamName, string tournamentId, List<IUser> members)
+        public Embed RegisterTeamProcess(string teamName, string tournamentId, List<IUser> members)
         {
+            // TODO Cannot register a team name with anything that could be a tournament ID#, or Match ID# (TXXX or MXXX)
+
             // Cannot try to report Bye as a team
             if (teamName.Equals("Bye", StringComparison.OrdinalIgnoreCase))
             {
@@ -42,10 +45,10 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            Tournament? tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
             // Can register new teams if Ladder Tournament is running, but cannot register them to Round Robin Tournament or SE/DE Bracket once they have started
-            if (_tournamentManager.CanAcceptNewTeams(tournament))
+            if (!_tournamentManager.CanAcceptNewTeams(tournament))
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time. Check if teams are locked.");
             }
@@ -53,7 +56,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Check if the team name is unique within the tournament
             if (!_teamManager.IsTeamNameUnique(teamName))
             {
-                return _embedManager.ErrorEmbed(Name, $"The team name '{teamName}' is already taken in the tournament '{tournament.Name}'. Please choose a different name.");
+                return _embedManager.ErrorEmbed(Name, $"The team name '{teamName}' is already taken in this tournament or another. Team names must be unique across the entire bot. Please choose a different name.");
             }
 
             // Check if member count is valid based on the tournament's team size
@@ -77,6 +80,40 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Create Team object
             Team newTeam = _teamManager.CreateTeam(teamName, convertedMembersList, tournament.Teams.Count + 1);
 
+            // Handle different tournament types
+            switch (tournament.Type)
+            {
+                case TournamentType.Ladder:
+                    return LadderRegisterTeamProcess(newTeam, tournament, convertedMembersList);
+                case TournamentType.RoundRobin:
+                    return RoundRobinRegisterTeamProcess(newTeam, tournament, convertedMembersList);
+                default:
+                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for team registration yet.");
+            }
+        }
+
+        public Embed LadderRegisterTeamProcess(Team newTeam, Tournament tournament, List<Member> convertedMembersList)
+        {
+            // Add the new team to the tournament
+            _tournamentManager.AddTeamToTournament(newTeam, tournament.Id);
+
+            // Save and reload the tournament database
+            _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
+
+            return _embedManager.TeamRegistrationSuccess(newTeam, tournament);
+        }
+
+        public Embed RoundRobinRegisterTeamProcess(Team newTeam, Tournament tournament, List<Member> convertedMembersList)
+        {
+            // Check if the tournament is accepting new teams
+            if (!_tournamentManager.CanAcceptNewTeams(tournament))
+            {
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time. Check if teams are locked or if the tournament has already started.");
+            }                           
+
             // Add the new team to the tournament
             _tournamentManager.AddTeamToTournament(newTeam, tournament.Id);
 
@@ -91,13 +128,13 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             }
 
             // Adjust ranks of remaining teams
-            tournament.SetRanksByTieBreakerLogic();
+            if (tournament.Type.Equals(TournamentType.RoundRobin))
+            {
+                tournament.SetRanksByTieBreakerLogic();
+            }
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-            // Save and reload the tournament database
-            //_tournamentManager.SaveTournamentsDatabase();
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

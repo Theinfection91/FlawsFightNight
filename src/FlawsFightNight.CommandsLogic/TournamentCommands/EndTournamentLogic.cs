@@ -26,6 +26,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         public Embed EndTournamentProcess(string tournamentId)
         {
+            // Grab tournament, modal should have ensured it exists
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
             // Check if tournament is already running
@@ -46,49 +47,70 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                         default:
                             return _embedManager.ErrorEmbed(Name, "Only Normal and Open Round Robin tournaments are implemented right now. Can not end any other type at this point.");
                     }
+                case TournamentType.Ladder:
+                    return LadderEndTournament(tournament);
                 default:
                     return _embedManager.ErrorEmbed(Name, "Only Round Robin tournaments are supported at this time for ending tournaments.");
             }
         }
 
+        private Embed LadderEndTournament(Tournament tournament)
+        {
+            // Ladder tournaments can be ended anytime
+            tournament.LadderEndTournamentProcess();
+
+            // Save the updated tournament state
+            _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+            // Backup to git repo
+            _gitBackupManager.CopyAndBackupFilesToGit();
+
+            return _embedManager.EndTournamentSuccessResolver(tournament);
+        }
+
         private Embed EndNormalRoundRobinTournamentProcess(Tournament tournament)
         {
-
-            // Check if the tournament can be ended
-            if (!tournament.CanEndNormalRoundRobinTournament)
+            try
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be ended at this time. Ensure that all rounds are complete and locked in.");
+
+                // Check if the tournament can be ended
+                if (!tournament.CanEndNormalRoundRobinTournament)
+                {
+                    return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be ended at this time. Ensure that all rounds are complete and locked in.");
+                }
+                //Console.WriteLine($"{_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog)}");
+                // Check if a tie breaker is needed for first place
+                if (_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog))
+                {
+                    string tieBreakerInfo = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog).Item1;
+
+                    tournament.InitiateEndNormalRoundRobinTournament();
+
+                    // Save the updated tournament state
+                    _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+                    // Backup to git repo
+                    _gitBackupManager.CopyAndBackupFilesToGit();
+
+                    return _embedManager.EndTournamentSuccessResolver(tournament, true, tieBreakerInfo);
+                }
+                else
+                {
+                    tournament.InitiateEndNormalRoundRobinTournament();
+
+                    // Save the updated tournament state
+                    _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+                    // Backup to git repo
+                    _gitBackupManager.CopyAndBackupFilesToGit();
+
+                    return _embedManager.EndTournamentSuccessResolver(tournament);
+                }
             }
-            //Console.WriteLine($"{_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog)}");
-            // Check if a tie breaker is needed for first place
-            if (_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog))
+            catch (Exception ex)
             {
-                (string, string) tieBreakerResult = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog);
-
-                tournament.InitiateEndNormalRoundRobinTournament();
-
-                // Save the updated tournament state
-                _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-                // Backup to git repo
-                _gitBackupManager.CopyAndBackupFilesToGit();
-
-                return _embedManager.RoundRobinEndTournamentWithTieBreakerSuccess(tournament, tieBreakerResult);
-            }
-            else
-            {
-                // No tie breaker needed, grab winner rank at #1
-                string winner = tournament.Teams.OrderBy(t => t.Rank).First().Name;
-
-                tournament.InitiateEndNormalRoundRobinTournament();
-
-                // Save the updated tournament state
-                _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-                // Backup to git repo
-                _gitBackupManager.CopyAndBackupFilesToGit();
-
-                return _embedManager.EndTournamentSuccessResolver(tournament, winner);
+                Console.WriteLine($"{DateTime.Now} - Error ending Normal Round Robin tournament: {ex.Message}");
+                return _embedManager.ErrorEmbed(Name, "An error occurred while trying to end the tournament. Please try again later.");
             }
         }
 
@@ -104,6 +126,8 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 (string, string) tieBreakerResult = tournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog, tournament.IsDoubleRoundRobin), tournament.MatchLog);
 
+                tournament.SetRanksByWinnerFirst(tieBreakerResult.Item2);
+
                 tournament.InitiateEndNormalRoundRobinTournament();
 
                 // Save the updated tournament state
@@ -112,7 +136,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 // Backup to git repo
                 _gitBackupManager.CopyAndBackupFilesToGit();
 
-                return _embedManager.RoundRobinEndTournamentWithTieBreakerSuccess(tournament, tieBreakerResult);
+                return _embedManager.EndTournamentSuccessResolver(tournament, true, tieBreakerResult.Item1);
             }
             else
             {
@@ -127,7 +151,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 // Backup to git repo
                 _gitBackupManager.CopyAndBackupFilesToGit();
 
-                return _embedManager.EndTournamentSuccessResolver(tournament, winner);
+                return _embedManager.EndTournamentSuccessResolver(tournament);
             }
         }
     }

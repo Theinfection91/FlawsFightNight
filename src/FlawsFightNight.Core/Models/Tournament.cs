@@ -32,6 +32,7 @@ namespace FlawsFightNight.Core.Models
         public int? TotalRounds { get; set; } = null;
         public bool IsRoundComplete { get; set; } = false;
         public bool IsRoundLockedIn { get; set; } = false;
+        public bool CanEndRoundRobinTournament => CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
 
         // Round Robin Specific Properties
         public bool CanEndNormalRoundRobinTournament => CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
@@ -55,6 +56,37 @@ namespace FlawsFightNight.Core.Models
         {
             Name = name;
             Description = description;
+        }
+
+        public bool IsLadderTournamentReadyToStart()
+        {
+            // Need at least 3 teams to start a ladder tournament
+            return Teams.Count >= 3;
+        }
+
+        public void LadderStartTournamentProcess()
+        {
+            IsRunning = true;
+        }
+
+        public void LadderEndTournamentProcess()
+        {
+            IsRunning = false;
+
+            // Clear any unplayed challenges
+            MatchLog.LadderMatchesToPlay.Clear();
+        }
+
+        public Team LadderGetRankOneTeam()
+        {
+            // Return null if no teams exist
+            if (Teams == null || Teams.Count == 0)
+            {
+                return null;
+            }
+
+            // Return the team with Rank 1
+            return Teams.FirstOrDefault(t => t.Rank == 1);
         }
 
         public void InitiateStartNormalRoundRobinTournament()
@@ -90,57 +122,166 @@ namespace FlawsFightNight.Core.Models
             CanTeamsBeLocked = true;
         }
 
+        #region Ladder Helpers
+        public void AddLadderMatchToMatchLog(Match match)
+        {
+            MatchLog.LadderMatchesToPlay.Add(match);
+            // Sort MatchLog by Creation Date, oldest at the top
+            MatchLog.LadderMatchesToPlay = MatchLog.LadderMatchesToPlay
+                .OrderBy(m => m.CreatedOn)
+                .ToList();
+        }
+
+        public void DeleteLadderMatchFromMatchLog(Match pendingMatch)
+        {
+            MatchLog.LadderMatchesToPlay.Remove(pendingMatch);
+        }
+
+        public void ReassignRanksInTournament()
+        {
+            if (Teams == null || Teams.Count == 0)
+            {
+                return;
+            }
+
+            Teams.Sort((a, b) => a.Rank.CompareTo(b.Rank));
+
+            // Reassign ranks sequentially from 1 to N
+            for (int i = 0; i < Teams.Count; i++)
+            {
+                Teams[i].Rank = i + 1;
+            }
+        }
+        #endregion
+
         #region Round Robin Helpers
         public void SetRanksByTieBreakerLogic()
         {
-            // Sort teams
-            Teams = Teams
-            .OrderBy(e => e.Rank)
-            .ThenByDescending(e => e.Wins)
-            .ThenBy(e => e.Losses)
-            .ThenByDescending(e => e.TotalScore)
-            //.ThenBy(e => e.TeamName)
-            .ToList();
+            //Console.WriteLine("SetRanksByTieBreakerLogic: Starting method.");
 
-            // Group teams by record
-            var groupedTeamsByRecord = Teams
-                .GroupBy(e => new { e.Wins, e.Losses })
-                .OrderByDescending(g => g.Key.Wins)   // more wins first
-                .ThenBy(g => g.Key.Losses);           // fewer losses first
+            // Sort base order by W-L and total score for initial grouping
+            //Console.WriteLine("SetRanksByTieBreakerLogic: Sorting teams by Wins, Losses, and TotalScore.");
+            Teams = Teams
+                .OrderByDescending(t => t.Wins)
+                .ThenBy(t => t.Losses)
+                .ThenByDescending(t => t.TotalScore)
+                .ToList();
+
+            //Console.WriteLine($"SetRanksByTieBreakerLogic: Teams sorted. Team order: {string.Join(", ", Teams.Select(t => t.Name))}");
+
+            // 2Group teams by exact W-L
+            //Console.WriteLine("SetRanksByTieBreakerLogic: Grouping teams by exact W-L record.");
+            var groupedByRecord = Teams
+                .GroupBy(t => new { t.Wins, t.Losses })
+                .OrderByDescending(g => g.Key.Wins)
+                .ThenBy(g => g.Key.Losses);
 
             var resolvedTeamsList = new List<Team>();
 
-            foreach (var group in groupedTeamsByRecord)
+            // Resolve ties only within exact W-L groups
+            foreach (var group in groupedByRecord)
             {
                 var tiedTeams = group.Select(e => e.Name).ToList();
+                //Console.WriteLine($"SetRanksByTieBreakerLogic: Processing group with W-L ({group.Key.Wins}-{group.Key.Losses}). Teams: {string.Join(", ", tiedTeams)}");
 
                 if (tiedTeams.Count > 1)
                 {
                     // Work only with tiedTeams
                     while (tiedTeams.Count > 0)
                     {
+                        //Console.WriteLine($"SetRanksByTieBreakerLogic: Resolving tie among: {string.Join(", ", tiedTeams)}");
                         // Resolve tie and get a winner
-                        var (loser, winner) = TieBreakerRule.ResolveTie(tiedTeams, MatchLog);
+                        var (_, winner) = TieBreakerRule.ResolveTie(tiedTeams, MatchLog);
+                        //Console.WriteLine($"SetRanksByTieBreakerLogic: TieBreakerRule selected winner: {winner}");
                         var winnerTeam = group.First(e => e.Name == winner);
 
                         resolvedTeamsList.Add(winnerTeam);
 
                         // Remove the winner so it's not picked again
                         tiedTeams.Remove(winner);
+                        //Console.WriteLine($"SetRanksByTieBreakerLogic: Removed winner '{winner}' from tiedTeams. Remaining: {string.Join(", ", tiedTeams)}");
                     }
                 }
                 else
                 {
+                    // No tie, just add the single team
+                    //Console.WriteLine($"SetRanksByTieBreakerLogic: No tie in group. Adding team: {tiedTeams[0]}");
                     resolvedTeamsList.AddRange(group);
                 }
             }
-            // Assign ranks after resolution
+            // Assign ranks in order after tie-resolution
+            //Console.WriteLine("SetRanksByTieBreakerLogic: Assigning ranks to resolved teams.");
             for (int i = 0; i < resolvedTeamsList.Count; i++)
+            {
                 resolvedTeamsList[i].Rank = i + 1;
+                //Console.WriteLine($"SetRanksByTieBreakerLogic: Assigned Rank {i + 1} to team {resolvedTeamsList[i].Name}");
+            }
 
-            // Update the tournament's team list
             Teams = resolvedTeamsList;
+            //Console.WriteLine("SetRanksByTieBreakerLogic: Method complete. Final team order: " + string.Join(", ", Teams.Select(t => $"{t.Name}(Rank:{t.Rank})")));
+        }
+
+        public void SetRanksByWinnerFirst(string tournamentWinner)
+        {
+            // Set winner as Rank 1 and sort the rest by current rank
+            Teams = Teams
+                .OrderBy(t => t.Name.Equals(tournamentWinner, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .ThenBy(t => t.Rank)
+                .ToList();
+
+            for (int i = 0; i < Teams.Count; i++)
+            {
+                Teams[i].Rank = i + 1;
+            }
+        }
+
+        public bool DoesRoundContainByeMatch()
+        {
+            foreach (var match in MatchLog.MatchesToPlayByRound[CurrentRound])
+            {
+                if (match.TeamA.Equals("Bye", StringComparison.OrdinalIgnoreCase) || match.TeamB.Equals("Bye", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public Match GetByeMatchInCurrentRound()
+        {
+            foreach (var match in MatchLog.MatchesToPlayByRound[CurrentRound])
+            {
+                if (match.TeamA.Equals("Bye", StringComparison.OrdinalIgnoreCase) || match.TeamB.Equals("Bye", StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+            }
+            return null;
         }
         #endregion
+
+        public string GetFormattedTournamentType()
+        {
+            switch (this.Type)
+            {
+                case TournamentType.Ladder:
+                    return "Ladder";
+                case TournamentType.RoundRobin:
+                    switch (RoundRobinMatchType)
+                    {
+                        case RoundRobinMatchType.Open:
+                            return "Open Round Robin";
+                        case RoundRobinMatchType.Normal:
+                            return "Normal Round Robin";
+                    }
+                    return "Round Robin";
+                case TournamentType.SingleElimination:
+                    return "Single Elimination";
+                case TournamentType.DoubleElimination:
+                    return "Double Elimination";
+                default:
+                    return "null";
+            }
+        }
     }
 }

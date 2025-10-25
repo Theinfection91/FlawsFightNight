@@ -73,7 +73,7 @@ namespace FlawsFightNight.Managers
                 case TournamentType.Ladder:
                     return true; // Ladder tournaments can always accept new teams
                 case TournamentType.RoundRobin:
-                    return tournament.IsTeamsLocked;
+                    return !tournament.IsTeamsLocked;
                 case TournamentType.SingleElimination:
                 case TournamentType.DoubleElimination:
                     return !tournament.IsRunning; // SE/DE tournaments cannot accept new teams once they start
@@ -174,9 +174,43 @@ namespace FlawsFightNight.Managers
             }
         }
 
+        public bool IsTeamsInSameTournament(Tournament tournament, Team teamA, Team teamB)
+        {
+            var teams = new List<Team> { teamA, teamB };
+            foreach (Team team in teams)
+            {
+                if (!tournament.Teams.Contains(team))
+                {
+                    return false; // At least one team is not in the tournament
+                }
+            }
+            return true; // All teams are in the tournament
+        }
+
         public List<Tournament> GetAllTournaments()
         {
             return _dataManager.TournamentsDatabaseFile.Tournaments;
+        }
+
+        public List<Tournament> GetAllLadderTournaments()
+        {
+            return _dataManager.TournamentsDatabaseFile.Tournaments
+                .Where(t => t.Type == TournamentType.Ladder)
+                .ToList();
+        }
+
+        public List<Tournament> GetAllRoundRobinTournaments()
+        {
+            return _dataManager.TournamentsDatabaseFile.Tournaments
+                .Where(t => t.Type == TournamentType.RoundRobin)
+                .ToList();
+        }
+
+        public List<Tournament> GetAllEliminationTournaments()
+        {
+            // TODO
+
+            return null;
         }
 
         public Tournament? GetTournamentById(string tournamentId)
@@ -238,6 +272,27 @@ namespace FlawsFightNight.Managers
             foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 foreach (var match in tournament.MatchLog.OpenRoundRobinPostMatches)
+                {
+                    if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return tournament;
+                    }
+                }
+            }
+            // Ladder Matches
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+                {
+                    if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return tournament;
+                    }
+                }
+            }
+            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            {
+                foreach (var match in tournament.MatchLog.LadderPostMatches)
                 {
                     if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                     {

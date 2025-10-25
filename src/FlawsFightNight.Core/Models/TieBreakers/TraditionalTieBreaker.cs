@@ -10,6 +10,7 @@ namespace FlawsFightNight.Core.Models.TieBreakers
     public class TraditionalTieBreaker : ITieBreakerRule
     {
         public string Name => "Traditional";
+
         public (string, string) ResolveTie(List<string> tiedTeams, MatchLog log)
         {
             StringBuilder tieBreakerLog = new();
@@ -21,8 +22,8 @@ namespace FlawsFightNight.Core.Models.TieBreakers
 
             // Step 1: Head-to-head wins among tied teams
             var wins = tiedTeams.ToDictionary(t => t, t => 0);
-
             var headToHead = new List<PostMatch>();
+
             if (log.PostMatchesByRound.Count > 0)
             {
                 headToHead.AddRange(log.PostMatchesByRound
@@ -46,19 +47,16 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 tieBreakerLog.AppendLine($"  {pm.Winner} beat {pm.Loser} ({pm.WinnerScore}-{pm.LoserScore})");
             }
 
-            if (!wins.Any())
-            {
-                tieBreakerLog.AppendLine("No wins recorded → returning unresolved tie");
-                return (tieBreakerLog.ToString(), tiedTeams.First());
-            }
-
             int maxWins = wins.Values.Max();
             var leaders = wins.Where(w => w.Value == maxWins).Select(w => w.Key).ToList();
-            tieBreakerLog.AppendLine($"  Leaders after Step 1 (max wins = {maxWins}): {string.Join(", ", leaders)}");
+            tieBreakerLog.AppendLine($"  Step 1 leaders ({maxWins} wins): {string.Join(", ", leaders)}");
+            if (leaders.Count == 1)
+            {
+                tieBreakerLog.AppendLine($"✅ Step 1 winner: {leaders.First()}");
+                return (tieBreakerLog.ToString(), leaders.First());
+            }
 
-            if (leaders.Count == 1) return (tieBreakerLog.ToString(), leaders.First());
-
-            // Step 2: Point differential among tied teams
+            // Step 2: Point differential
             var pointDiff = leaders.ToDictionary(t => t, t => 0);
             foreach (var pm in headToHead)
             {
@@ -66,16 +64,18 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 if (pointDiff.ContainsKey(pm.Loser)) pointDiff[pm.Loser] += pm.LoserScore - pm.WinnerScore;
             }
 
-            if (!pointDiff.Any())
-            {
-                tieBreakerLog.AppendLine("No point differential data → unresolved tie");
-                return (tieBreakerLog.ToString(), leaders.First());
-            }
+            tieBreakerLog.AppendLine("\nStep 2: Point differentials among remaining tied teams:");
+            foreach (var kvp in pointDiff)
+                tieBreakerLog.AppendLine($"  {kvp.Key}: {kvp.Value}");
 
             int maxDiff = pointDiff.Values.Max();
             var leadersByDiff = pointDiff.Where(p => p.Value == maxDiff).Select(p => p.Key).ToList();
-            tieBreakerLog.AppendLine($"  Leaders after Step 2 (max point diff = {maxDiff}): {string.Join(", ", leadersByDiff)}");
-            if (leadersByDiff.Count == 1) return (tieBreakerLog.ToString(), leadersByDiff.First());
+            tieBreakerLog.AppendLine($"  Step 2 leaders ({maxDiff} diff): {string.Join(", ", leadersByDiff)}");
+            if (leadersByDiff.Count == 1)
+            {
+                tieBreakerLog.AppendLine($"✅ Step 2 winner: {leadersByDiff.First()}");
+                return (tieBreakerLog.ToString(), leadersByDiff.First());
+            }
 
             // Step 3: Total points scored vs tied teams
             var totalPointsVsTied = leadersByDiff.ToDictionary(t => t, t => 0);
@@ -85,16 +85,18 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 if (totalPointsVsTied.ContainsKey(pm.Loser)) totalPointsVsTied[pm.Loser] += pm.LoserScore;
             }
 
-            if (!totalPointsVsTied.Any())
-            {
-                tieBreakerLog.AppendLine("No points vs tied teams → unresolved tie");
-                return (tieBreakerLog.ToString(), leadersByDiff.First());
-            }
+            tieBreakerLog.AppendLine("\nStep 3: Total points scored vs tied teams:");
+            foreach (var kvp in totalPointsVsTied)
+                tieBreakerLog.AppendLine($"  {kvp.Key}: {kvp.Value}");
 
             int maxPointsVsTied = totalPointsVsTied.Values.Max();
             var leadersByPointsVsTied = totalPointsVsTied.Where(p => p.Value == maxPointsVsTied).Select(p => p.Key).ToList();
-            tieBreakerLog.AppendLine($"  Leaders after Step 3 (max points vs tied = {maxPointsVsTied}): {string.Join(", ", leadersByPointsVsTied)}");
-            if (leadersByPointsVsTied.Count == 1) return (tieBreakerLog.ToString(), leadersByPointsVsTied.First());
+            tieBreakerLog.AppendLine($"  Step 3 leaders ({maxPointsVsTied} pts): {string.Join(", ", leadersByPointsVsTied)}");
+            if (leadersByPointsVsTied.Count == 1)
+            {
+                tieBreakerLog.AppendLine($"✅ Step 3 winner: {leadersByPointsVsTied.First()}");
+                return (tieBreakerLog.ToString(), leadersByPointsVsTied.First());
+            }
 
             // Step 4: Total points overall
             var allMatches = log.PostMatchesByRound.Values.SelectMany(v => v)
@@ -109,16 +111,18 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 if (totalPointsOverall.ContainsKey(pm.Loser)) totalPointsOverall[pm.Loser] += pm.LoserScore;
             }
 
-            if (!totalPointsOverall.Any())
-            {
-                tieBreakerLog.AppendLine("No overall points → unresolved tie");
-                return (tieBreakerLog.ToString(), leadersByPointsVsTied.First());
-            }
+            tieBreakerLog.AppendLine("\nStep 4: Total points overall:");
+            foreach (var kvp in totalPointsOverall)
+                tieBreakerLog.AppendLine($"  {kvp.Key}: {kvp.Value}");
 
             int maxPointsOverall = totalPointsOverall.Values.Max();
             var leadersByPointsOverall = totalPointsOverall.Where(p => p.Value == maxPointsOverall).Select(p => p.Key).ToList();
-            tieBreakerLog.AppendLine($"  Leaders after Step 4 (max points overall = {maxPointsOverall}): {string.Join(", ", leadersByPointsOverall)}");
-            if (leadersByPointsOverall.Count == 1) return (tieBreakerLog.ToString(), leadersByPointsOverall.First());
+            tieBreakerLog.AppendLine($"  Step 4 leaders ({maxPointsOverall} pts overall): {string.Join(", ", leadersByPointsOverall)}");
+            if (leadersByPointsOverall.Count == 1)
+            {
+                tieBreakerLog.AppendLine($"✅ Step 4 winner: {leadersByPointsOverall.First()}");
+                return (tieBreakerLog.ToString(), leadersByPointsOverall.First());
+            }
 
             // Step 5: Least points against
             var pointsAgainst = leadersByPointsOverall.ToDictionary(t => t, t => 0);
@@ -128,21 +132,25 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 pointsAgainst[p] = againstPoints;
             }
 
-            if (!pointsAgainst.Any())
-            {
-                tieBreakerLog.AppendLine("No points against → unresolved tie");
-                return (tieBreakerLog.ToString(), leadersByPointsOverall.First());
-            }
+            tieBreakerLog.AppendLine("\nStep 5: Least points against:");
+            foreach (var kvp in pointsAgainst)
+                tieBreakerLog.AppendLine($"  {kvp.Key}: {kvp.Value}");
 
             int minPointsAgainst = pointsAgainst.Values.Min();
             var leadersByLeastPointsAgainst = pointsAgainst.Where(p => p.Value == minPointsAgainst).Select(p => p.Key).ToList();
-            tieBreakerLog.AppendLine($"  Leaders after Step 5 (min points against = {minPointsAgainst}): {string.Join(", ", leadersByLeastPointsAgainst)}");
-            if (leadersByLeastPointsAgainst.Count == 1) return (tieBreakerLog.ToString(), leadersByLeastPointsAgainst.First());
+            tieBreakerLog.AppendLine($"  Step 5 leaders ({minPointsAgainst} pts against): {string.Join(", ", leadersByLeastPointsAgainst)}");
+            if (leadersByLeastPointsAgainst.Count == 1)
+            {
+                tieBreakerLog.AppendLine($"✅ Step 5 winner: {leadersByLeastPointsAgainst.First()}");
+                return (tieBreakerLog.ToString(), leadersByLeastPointsAgainst.First());
+            }
 
-            // Step 6: Coin flip fallback
-            var chosen = leadersByPointsOverall.OrderBy(_ => Guid.NewGuid()).First();
-            tieBreakerLog.AppendLine($"Tie-breaker unresolved by all criteria → Randomly selected 'coin flip': {chosen}");
+            // Step 6: Random coin flip fallback
+            var chosen = leadersByLeastPointsAgainst.OrderBy(_ => Guid.NewGuid()).First();
+            tieBreakerLog.AppendLine($"\nStep 6: Random coin flip → {chosen} selected as winner.");
+
             return (tieBreakerLog.ToString(), chosen);
         }
     }
+
 }

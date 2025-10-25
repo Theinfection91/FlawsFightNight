@@ -65,14 +65,16 @@ namespace FlawsFightNight.Managers
 
         private void InitializeRepository()
         {
-            if (!Repository.IsValid(_repoPath))
+            try
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - No local repo found. Cloning repository...");
-                try
+                if (!Repository.IsValid(_repoPath))
                 {
-                    var options = new CloneOptions
+                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - No local repo found. Cloning repository...");
+                    try
                     {
-                        FetchOptions =
+                        var options = new CloneOptions
+                        {
+                            FetchOptions =
                         {
                             CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials
                             {
@@ -80,46 +82,51 @@ namespace FlawsFightNight.Managers
                                 Password = _token
                             }
                         }
-                    };
-                    Repository.Clone(_remoteUrl, _repoPath, options);
-                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Repository cloned successfully.");
+                        };
+                        Repository.Clone(_remoteUrl, _repoPath, options);
+                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Repository cloned successfully.");
 
-                    // Ask if user wants to use this data copied to database
-                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Do you want to use the newly cloned backup data from the repository as your Database? Yes is typically the answer here. NOTE - This will overwrite data currently present in your JSON files in 'Databases'. This can not be reversed. \n\nHINT: If the files in your backup repo online is more up to date than your local files in the 'Database' folder then input Y, if your JSON files in the 'Database' folder is more up to date than the files in your backup repo online, then input N");
-                    bool isQuestionProcessComplete = false;
-                    while (!isQuestionProcessComplete)
-                    {
-                        Console.WriteLine($"Enter Y or N\n");
-                        string? userInput = Console.ReadLine();
-                        switch (userInput.ToLower().Trim())
+                        // Ask if user wants to use this data copied to database
+                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Do you want to use the newly cloned backup data from the repository as your Database? Yes is typically the answer here. NOTE - This will overwrite data currently present in your JSON files in 'Databases'. This can not be reversed. \n\nHINT: If the files in your backup repo online is more up to date than your local files in the 'Database' folder then input Y, if your JSON files in the 'Database' folder is more up to date than the files in your backup repo online, then input N");
+                        bool isQuestionProcessComplete = false;
+                        while (!isQuestionProcessComplete)
                         {
-                            case "y":
-                                // Copy newly cloned files from BackupRepo to Databases
-                                Console.WriteLine($"{DateTime.Now} GitBackupManager - Copying files from 'BackupRepo' folder to 'Databases' folder.");
-                                CopyFilesFromBackupRepoToDatabases();
+                            Console.WriteLine($"Enter Y or N\n");
+                            string? userInput = Console.ReadLine();
+                            switch (userInput.ToLower().Trim())
+                            {
+                                case "y":
+                                    // Copy newly cloned files from BackupRepo to Databases
+                                    Console.WriteLine($"{DateTime.Now} GitBackupManager - Copying files from 'BackupRepo' folder to 'Databases' folder.");
+                                    CopyFilesFromBackupRepoToDatabases();
 
-                                // Reload the newly cloned databases
-                                _dataManager.LoadTournamentsDatabase();
-                                _dataManager.LoadPermissionsConfigFile();
+                                    // Reload the newly cloned databases
+                                    _dataManager.LoadTournamentsDatabase();
+                                    _dataManager.LoadPermissionsConfigFile();
 
-                                isQuestionProcessComplete = true;
-                                break;
+                                    isQuestionProcessComplete = true;
+                                    break;
 
-                            case "n":
-                                Console.WriteLine($"{DateTime.Now} GitBackupManager - Files were not copied from 'BackupRepo' to 'Databases' folder. The next event driven data change may cause unwanted data changes and loss. Use this not copying the cloned repo option at your own expense and only if you know what you are doing.");
-                                isQuestionProcessComplete = true;
-                                break;
+                                case "n":
+                                    Console.WriteLine($"{DateTime.Now} GitBackupManager - Files were not copied from 'BackupRepo' to 'Databases' folder. The next event driven data change may cause unwanted data changes and loss. Use this not copying the cloned repo option at your own expense and only if you know what you are doing.");
+                                    isQuestionProcessComplete = true;
+                                    break;
 
-                            default:
-                                Console.WriteLine($"{DateTime.Now} GitBackupManager - Invalid input was given. Please reply with Y or N. You entered: {userInput}");
-                                break;
+                                default:
+                                    Console.WriteLine($"{DateTime.Now} GitBackupManager - Invalid input was given. Please reply with Y or N. You entered: {userInput}");
+                                    break;
+                            }
                         }
                     }
+                    catch (LibGit2SharpException ex)
+                    {
+                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error cloning repository: {ex.Message}");
+                    }
                 }
-                catch (LibGit2SharpException ex)
-                {
-                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error cloning repository: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during repository initialization: {ex.Message}");
             }
         }
 
@@ -249,14 +256,21 @@ namespace FlawsFightNight.Managers
 
         public void CopyAndBackupFilesToGit()
         {
-            if (_configManager.IsGitPatTokenSet())
+            try
             {
-                CopyJsonFilesToBackupRepo();
-                BackupFiles();
+                if (_configManager.IsGitPatTokenSet())
+                {
+                    CopyJsonFilesToBackupRepo();
+                    BackupFiles();
+                }
+                else
+                {
+                    Console.WriteLine($"{DateTime.Now} GitBackupManager - Git PAT Token not set. Git Backup Storage not enabled.");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} GitBackupManager - Git PAT Token not set. Git Backup Storage not enabled.");
+                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during CopyAndBackupFilesToGit process: {ex.Message}");
             }
         }
 

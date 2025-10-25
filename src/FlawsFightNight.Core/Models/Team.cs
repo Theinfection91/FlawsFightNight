@@ -76,5 +76,10 @@ namespace FlawsFightNight.Core.Models
             LoseStreak = 0;
             TotalScore = 0;
         }
+
+        public string GetMembersAsString()
+        {
+            return string.Join(", ", Members.Select(m => m.DisplayName));
+        }
     }
 }
