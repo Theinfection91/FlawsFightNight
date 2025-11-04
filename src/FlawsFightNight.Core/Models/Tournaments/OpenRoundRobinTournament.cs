@@ -7,7 +7,7 @@ using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models.MatchLogs;
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class OpenRoundRobinTournament : TournamentBase // TODO ITieBreaker
+    public class OpenRoundRobinTournament : TournamentBase // TODO ITieBreaker and ITeamLocking
     {
         public OpenRoundRobinTournament()
         {

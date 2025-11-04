@@ -8,7 +8,7 @@ using FlawsFightNight.Core.Models.MatchLogs;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class NormalRoundRobinTournament : TournamentBase // TODO IRoundBased and ITieBreaker
+    public class NormalRoundRobinTournament : TournamentBase // TODO IRoundBased, ITieBreaker and ITeamLocking
     {
         public NormalRoundRobinTournament()
         {
