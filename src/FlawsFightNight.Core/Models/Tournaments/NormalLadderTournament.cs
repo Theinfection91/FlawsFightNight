@@ -12,7 +12,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
     {
         public NormalLadderTournament()
         {
-            Type = TournamentType.Ladder;
+            Type = TournamentType.NormalLadder;
             MatchLog = new NormalLadderMatchLog();
         }
 

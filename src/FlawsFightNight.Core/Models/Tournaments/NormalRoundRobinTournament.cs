@@ -12,7 +12,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
     {
         public NormalRoundRobinTournament()
         {
-            Type = TournamentType.RoundRobin;
+            Type = TournamentType.NormalRoundRobin;
             MatchLog = new NormalRoundRobinMatchLog();
         }
 
