@@ -8,8 +8,8 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 {
     public class NormalLadderMatchLog : MatchLogBase
     {
-        public List<Match> MatchesToPlay { get; set; } = new();
-        public List<PostMatch> PostMatches { get; set; } = new();
+        public List<Match> MatchesToPlay { get; set; } = [];
+        public List<PostMatch> PostMatches { get; set; } = [];
 
         public NormalLadderMatchLog() { }
 
