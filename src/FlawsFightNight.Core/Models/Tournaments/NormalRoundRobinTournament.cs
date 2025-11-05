@@ -4,12 +4,28 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.MatchLogs;
+using FlawsFightNight.Core.Models.TieBreakers;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class NormalRoundRobinTournament : TournamentBase // TODO IRoundBased, ITieBreaker and ITeamLocking
+    public class NormalRoundRobinTournament : TournamentBase, IRoundBased, ITeamLocking, ITieBreaker
     {
+        public int CurrentRound { get; set; } = 0;
+        public int? TotalRounds { get; set; } = null;
+        public bool IsRoundComplete { get; set; } = false;
+        public bool IsRoundLockedIn { get; set; } = false;
+
+        public bool IsTeamsLocked { get; set; } = false;
+        public bool CanTeamsBeLocked { get; set; } = false;
+        public bool CanTeamsBeUnlocked { get; set; } = false;
+
+        public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
+
+        public bool IsDoubleRoundRobin { get; set; } = true;
+
+
         public NormalRoundRobinTournament()
         {
             Type = TournamentType.NormalRoundRobin;
@@ -27,5 +43,15 @@ namespace FlawsFightNight.Core.Models.Tournaments
         }
 
         public override string GetFormattedType() => "Normal Round Robin";
+
+        public void AdvanceRound()
+        {
+            // TODO Transfer Normal RR AdvanceRound logic here
+        }
+
+        public void ApplyTieBreaker()
+        {
+            // TODO Transfer Tie Breaker application logic here
+        }
     }
 }
