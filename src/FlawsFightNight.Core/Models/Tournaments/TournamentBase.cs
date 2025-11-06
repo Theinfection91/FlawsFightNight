@@ -22,7 +22,9 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public IMatchLog MatchLog { get; protected set; }
 
+        public abstract bool IsReadyToStart();
         public abstract void Start();
+        public abstract bool IsReadyToEnd();
         public abstract void End();
         public abstract string GetFormattedType();
     }
