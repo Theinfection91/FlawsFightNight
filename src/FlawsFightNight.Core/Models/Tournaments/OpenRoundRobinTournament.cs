@@ -7,6 +7,7 @@ using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.MatchLogs;
 using FlawsFightNight.Core.Models.TieBreakers;
+
 namespace FlawsFightNight.Core.Models.Tournaments
 {
     public class OpenRoundRobinTournament : TournamentBase, ITeamLocking, ITieBreaker

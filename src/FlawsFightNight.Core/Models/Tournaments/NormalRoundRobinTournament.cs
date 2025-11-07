@@ -39,7 +39,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override void Start()
         {
-            // TODO Transfer Normal Round Robin specific Start logic here
+            // TODO Test Normal Round Robin specific Start logic
+            CurrentRound = 1;
+            IsRunning = true;
+            CanTeamsBeLocked = false;
+            CanTeamsBeUnlocked = false;
         }
 
         public override bool IsReadyToEnd()
@@ -50,14 +54,34 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override void End()
         {
-            // TODO Transfer Normal Round Robin specific End logic here
+            // TODO Test Normal Round Robin specific End logic here
+            IsRunning = false;
+            IsTeamsLocked = false;
+            CanTeamsBeUnlocked = false;
+            CanTeamsBeLocked = true;
+            IsRoundComplete = false;
+            IsRoundLockedIn = false;
         }
 
         public override string GetFormattedType() => "Normal Round Robin";
 
+        public bool DoesRoundContainByeMatch()
+        {
+            // TODO Test Normal RR DoesRoundContainByeMatch logic here
+            if (MatchLog is NormalRoundRobinMatchLog rrLog)
+            {
+                var matchesThisRound = rrLog.GetAllActiveMatches().Where(m => m.RoundNumber == CurrentRound);
+                return matchesThisRound.Any(m => m.IsByeMatch);
+            }
+            return false;
+        }
+
         public void AdvanceRound()
         {
-            // TODO Transfer Normal RR AdvanceRound logic here
+            // TODO Test Normal RR AdvanceRound logic here
+            CurrentRound++;
+            IsRoundComplete = false;
+            IsRoundLockedIn = false;
         }
 
         public void ApplyTieBreaker()
