@@ -1719,7 +1719,7 @@ namespace FlawsFightNight.Managers
             var pointsAgainst = leadersByPointsOverall.ToDictionary(t => t, t => 0);
             foreach (var p in pointsAgainst)
             {
-                var (forPoints, againstPoints) = log.GetPointsForAndPointsAgainstForTeam(p.Key);
+                var (forPoints, againstPoints) = log.GetPointsForAndAgainst(p.Key);
                 pointsAgainst[p.Key] = againstPoints;
                 //Console.Write.WriteLine($"  Points against for {p.Key}: {againstPoints}");
             }

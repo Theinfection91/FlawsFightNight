@@ -128,7 +128,7 @@ namespace FlawsFightNight.Core.Models.TieBreakers
             var pointsAgainst = leadersByPointsOverall.ToDictionary(t => t, t => 0);
             foreach (var p in pointsAgainst.Keys.ToList())
             {
-                var (_, againstPoints) = log.GetPointsForAndPointsAgainstForTeam(p);
+                var (_, againstPoints) = log.GetPointsForAndAgainst(p);
                 pointsAgainst[p] = againstPoints;
             }
 

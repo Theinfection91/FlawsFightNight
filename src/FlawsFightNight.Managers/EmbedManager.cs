@@ -331,7 +331,7 @@ namespace FlawsFightNight.Managers
 
             foreach (var team in tournament.Teams.OrderBy(e => e.Rank))
             {
-                var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(team.Name);
+                var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndAgainst(team.Name);
 
                 embed.Description +=
                     $"\n#{team.Rank} **{team.Name}**\n" +
@@ -1004,7 +1004,7 @@ namespace FlawsFightNight.Managers
             {
                 embedBuilder.AddField("🏆 1st Place - Winner", $"{firstPlace.Name}\n" +
                     $"**Wins**: {firstPlace.Wins} | **Losses**: {firstPlace.Losses}\n" +
-                    $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(firstPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(firstPlace.Name).Item2}\n" +
+                    $"**Points For**: {tournament.MatchLog.GetPointsForAndAgainst(firstPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndAgainst(firstPlace.Name).Item2}\n" +
                     $"**Members**: {firstPlaceMembers}", inline: false);
             }
 
@@ -1012,7 +1012,7 @@ namespace FlawsFightNight.Managers
             {
                 embedBuilder.AddField("🥈 2nd Place", $"{secondPlace.Name}\n" +
                     $"**Wins**: {secondPlace.Wins} | **Losses**: {secondPlace.Losses}\n" +
-                    $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(secondPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(secondPlace.Name).Item2}\n" +
+                    $"**Points For**: {tournament.MatchLog.GetPointsForAndAgainst(secondPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndAgainst(secondPlace.Name).Item2}\n" +
                     $"**Members**: {secondPlaceMembers}", inline: false);
             }
 
@@ -1020,7 +1020,7 @@ namespace FlawsFightNight.Managers
             {
                 embedBuilder.AddField("🥉 3rd Place", $"{thirdPlace.Name}\n" +
                     $"**Wins**: {thirdPlace.Wins} | **Losses**: {thirdPlace.Losses}\n" +
-                    $"**Points For**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(thirdPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(thirdPlace.Name).Item2}\n" +
+                    $"**Points For**: {tournament.MatchLog.GetPointsForAndAgainst(thirdPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndAgainst(thirdPlace.Name).Item2}\n" +
                     $"**Members**: {thirdPlaceMembers}", inline: false);
             }
 
@@ -1034,7 +1034,7 @@ namespace FlawsFightNight.Managers
                 var remainingTeamsInfo = new StringBuilder();
                 foreach (var team in remainingTeams)
                 {
-                    var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(team.Name);
+                    var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndAgainst(team.Name);
                     string members = team.GetMembersAsString();
                     remainingTeamsInfo.AppendLine($"{team.Rank}. {team.Name} - **Wins**: {team.Wins} | **Losses**: {team.Losses} | **Points For**: {pointsFor} | **Points Against**: {pointsAgainst} | **Members**: {members}");
                 }

@@ -45,7 +45,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override string GetFormattedType() => "Open Round Robin";
 
-        public void ApplyTieBreaker()
+        public void SetRanksByTieBreakerLogic()
         {
             // TODO Transfer Tie Breaker application logic here
         }

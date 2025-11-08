@@ -9,6 +9,6 @@ namespace FlawsFightNight.Core.Interfaces
     public interface ITieBreaker
     {
         ITieBreakerRule TieBreakerRule { get; set; }
-        void ApplyTieBreaker();
+        void SetRanksByTieBreakerLogic();
     }
 }

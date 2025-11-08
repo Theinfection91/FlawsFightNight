@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FlawsFightNight.Core.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models
 {
-    public class MatchLog
+    public class MatchLog : IMatchLog
     {
         // Normal Round Robin Properties
         public Dictionary<int, List<Match>> MatchesToPlayByRound { get; set; } = [];
@@ -22,7 +23,7 @@ namespace FlawsFightNight.Core.Models
 
         public MatchLog() { }
 
-        public (int, int) GetPointsForAndPointsAgainstForTeam(string teamName)
+        public (int, int) GetPointsForAndAgainst(string teamName)
         {
             // Normal Round Robin
             int pointsFor = 0;
