@@ -60,6 +60,7 @@ namespace FlawsFightNight.Core.Models
                     pointsAgainst += pm.WinnerScore;
                 }
             }
+
             return (pointsFor, pointsAgainst);
         }
 
