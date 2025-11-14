@@ -11,7 +11,7 @@ namespace FlawsFightNight.Core.Models.TieBreakers
     {
         public string Name => "Traditional";
 
-        public (string, string) ResolveTie(List<string> tiedTeams, MatchLog log)
+        public (string, string) ResolveTie(List<string> tiedTeams, IMatchLog log)
         {
             StringBuilder tieBreakerLog = new();
             if (tiedTeams == null || tiedTeams.Count == 0)
@@ -24,21 +24,20 @@ namespace FlawsFightNight.Core.Models.TieBreakers
             var wins = tiedTeams.ToDictionary(t => t, t => 0);
             var headToHead = new List<PostMatch>();
 
-            if (log.PostMatchesByRound.Count > 0)
+            if (log.GetAllPostMatches().Count > 0)
             {
-                headToHead.AddRange(log.PostMatchesByRound
-                    .SelectMany(kvp => kvp.Value)
+                headToHead.AddRange(log.GetAllPostMatches()
                     .Where(pm => !pm.WasByeMatch &&
                                  tiedTeams.Contains(pm.Winner) &&
                                  tiedTeams.Contains(pm.Loser)));
             }
-            if (log.OpenRoundRobinPostMatches.Count > 0)
-            {
-                headToHead.AddRange(log.OpenRoundRobinPostMatches
-                    .Where(pm => !pm.WasByeMatch &&
-                                 tiedTeams.Contains(pm.Winner) &&
-                                 tiedTeams.Contains(pm.Loser)));
-            }
+            //if (log.OpenRoundRobinPostMatches.Count > 0)
+            //{
+            //    headToHead.AddRange(log.OpenRoundRobinPostMatches
+            //        .Where(pm => !pm.WasByeMatch &&
+            //                     tiedTeams.Contains(pm.Winner) &&
+            //                     tiedTeams.Contains(pm.Loser)));
+            //}
 
             tieBreakerLog.AppendLine($"Step 1: Head-to-head matches found: {headToHead.Count}");
             foreach (var pm in headToHead)
@@ -99,8 +98,7 @@ namespace FlawsFightNight.Core.Models.TieBreakers
             }
 
             // Step 4: Total points overall
-            var allMatches = log.PostMatchesByRound.Values.SelectMany(v => v)
-                                .Concat(log.OpenRoundRobinPostMatches)
+            var allMatches = log.GetAllPostMatches()
                                 .Where(pm => !pm.WasByeMatch)
                                 .ToList();
 

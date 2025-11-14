@@ -30,7 +30,10 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override void Start()
         {
-            // TODO Add Open Round Robin specific start logic here
+            // TODO Test Open Round Robin specific start logic here
+            IsRunning = true;
+            CanTeamsBeLocked = false;
+            CanTeamsBeUnlocked = false;
         }
 
         public override bool IsReadyToEnd()
@@ -40,7 +43,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override void End()
         {
-            // TODO Add Open Round Robin specific end logic here
+            // TODO Test Open Round Robin specific end logic here
+            IsRunning = false;
+            IsTeamsLocked = false;
+            CanTeamsBeUnlocked = false;
+            CanTeamsBeLocked = true;
         }
 
         public override string GetFormattedType() => "Open Round Robin";
