@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.MatchLogs;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class NormalLadderTournament : TournamentBase // TODO IRankSystem
+    public class NormalLadderTournament : TournamentBase, IRankSystem
     {
         public NormalLadderTournament()
         {
@@ -41,5 +42,21 @@ namespace FlawsFightNight.Core.Models.Tournaments
         }
 
         public override string GetFormattedType() => "Normal Ladder";
+
+        public void ReassignRanks()
+        {
+            if (Teams == null || Teams.Count == 0)
+            {
+                return;
+            }
+
+            Teams.Sort((a, b) => a.Rank.CompareTo(b.Rank));
+
+            // Reassign ranks sequentially from 1 to N
+            for (int i = 0; i < Teams.Count; i++)
+            {
+                Teams[i].Rank = i + 1;
+            }
+        }
     }
 }
