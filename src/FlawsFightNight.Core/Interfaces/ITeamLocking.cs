@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Interfaces
 {
-    public interface ITieBreakerRule
+    public interface ITeamLocking
     {
-        (string, string) ResolveTie(List<string> tiedTeams, IMatchLog matchLog);
-        string Name { get; }
-        }
+        bool IsTeamsLocked { get; set; }
+        bool CanTeamsBeLocked { get; set; }
+        bool CanTeamsBeUnlocked { get; set; }
+    }
 }

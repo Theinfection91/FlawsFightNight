@@ -12,5 +12,8 @@ namespace FlawsFightNight.Core.Enums
         RoundRobin,
         SingleElimination,
         DoubleElimination,
+        NormalLadder,
+        NormalRoundRobin,
+        OpenRoundRobin,
     }
 }

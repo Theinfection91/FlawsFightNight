@@ -1,0 +1,36 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace FlawsFightNight.Core.Models.MatchLogs
+{
+    public class NormalRoundRobinMatchLog : MatchLogBase
+    {
+        public Dictionary<int, List<Match>> MatchesToPlayByRound { get; set; } = [];
+        public Dictionary<int, List<PostMatch>> PostMatchesByRound { get; set; } = [];
+
+        public NormalRoundRobinMatchLog() { }
+
+        public override List<Match> GetAllActiveMatches(int currentRound = 0)
+        {
+            if (currentRound > 0 && MatchesToPlayByRound.ContainsKey(currentRound))
+            {
+                return MatchesToPlayByRound[currentRound].Where(m => !m.IsByeMatch).ToList();
+            }
+
+            return new List<Match>();
+        }
+
+        public override List<PostMatch> GetAllPostMatches()
+        {
+            List<PostMatch> allPostMatches = new();
+            foreach (var round in PostMatchesByRound.Values)
+            {
+                allPostMatches.AddRange(round);
+            }
+            return allPostMatches;
+        }
+    }
+}

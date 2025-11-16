@@ -72,11 +72,16 @@ namespace FlawsFightNight.Managers
             {
                 case TournamentType.Ladder:
                     return true; // Ladder tournaments can always accept new teams
+
                 case TournamentType.RoundRobin:
+                case TournamentType.NormalRoundRobin:
+                case TournamentType.OpenRoundRobin:
                     return !tournament.IsTeamsLocked;
+
                 case TournamentType.SingleElimination:
                 case TournamentType.DoubleElimination:
                     return !tournament.IsRunning; // SE/DE tournaments cannot accept new teams once they start
+
                 default:
                     return false; // Unknown tournament type
             }
@@ -86,15 +91,16 @@ namespace FlawsFightNight.Managers
         {
             switch (tournament.Type)
             {
-                case TournamentType.Ladder:
-                    return false; // Ladder tournaments do not lock teams
-
                 case TournamentType.RoundRobin:
                     return CanRoundRobinTeamsBeLocked(tournament);
 
                 case TournamentType.SingleElimination:
                 case TournamentType.DoubleElimination:
                     return !tournament.IsRunning && tournament.CanTeamsBeLocked; // SE/DE can lock teams if not running
+
+                case TournamentType.NormalRoundRobin:
+                case TournamentType.OpenRoundRobin:
+                    return CanRoundRobinTeamsBeLocked(tournament);
 
                 default:
                     return false; // Unknown tournament type

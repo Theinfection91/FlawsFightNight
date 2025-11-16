@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Interfaces
 {
-    public interface ITieBreakerRule
+    public interface ITieBreaker
     {
-        (string, string) ResolveTie(List<string> tiedTeams, IMatchLog matchLog);
-        string Name { get; }
-        }
+        ITieBreakerRule TieBreakerRule { get; set; }
+        void SetRanksByTieBreakerLogic();
+    }
 }
