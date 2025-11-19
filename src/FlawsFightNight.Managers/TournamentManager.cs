@@ -1,6 +1,7 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,15 +33,34 @@ namespace FlawsFightNight.Managers
             LoadTournamentsDatabase();
         }
 
+        // TODO Old Version, remove later
         public void AddTournament(Tournament tournament)
+        {
+            _dataManager.AddTournament(tournament);
+        }
+
+        // New Version
+        public void AddTournament(TournamentBase tournament)
         {
             _dataManager.AddTournament(tournament);
         }
 
         public bool IsTournamentNameUnique(string tournamentName)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            // TODO Old Version, remove later
+            //List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            //foreach (Tournament tournament in tournaments)
+            //{
+            //    if (tournament.Name.Equals(tournamentName, StringComparison.OrdinalIgnoreCase))
+            //    {
+            //        return false;
+            //    }
+            //}
+            //return true; // Team name is unique across all tournaments
+
+            // New Version
+            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            foreach (TournamentBase tournament in tournaments)
             {
                 if (tournament.Name.Equals(tournamentName, StringComparison.OrdinalIgnoreCase))
                 {
@@ -59,6 +79,30 @@ namespace FlawsFightNight.Managers
                 Type = tournamentType,
                 TeamSize = teamSize
             };
+        }
+
+        public TournamentBase CreateNewTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
+        {
+            string? id = GenerateTournamentId();
+            if (id == null)
+            {
+                return null;
+            }
+
+            switch (tournamentType)
+            {
+                case TournamentType.NormalLadder:
+                    return new NormalLadderTournament(id, name, teamSize);
+
+                case TournamentType.NormalRoundRobin:
+                    return new NormalRoundRobinTournament(id, name, teamSize);
+
+                case TournamentType.OpenRoundRobin:
+                    return new OpenRoundRobinTournament(id, name, teamSize);
+
+                default:
+                    return null;
+            }
         }
 
         public void DeleteTournament(string tournamentId)
@@ -168,14 +212,27 @@ namespace FlawsFightNight.Managers
 
         public bool IsTournamentIdInDatabase(string tournamentId, bool isCaseSensitive = false)
         {
+            // TODO Old version, remove later
+            //if (isCaseSensitive)
+            //{
+            //    return _dataManager.TournamentsDatabaseFile.Tournaments
+            //        .Any(t => t.Id.Equals(tournamentId));
+            //}
+            //else
+            //{
+            //    return _dataManager.TournamentsDatabaseFile.Tournaments
+            //        .Any(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
+            //}
+
+            // New version
             if (isCaseSensitive)
             {
-                return _dataManager.TournamentsDatabaseFile.Tournaments
+                return _dataManager.TournamentsDatabaseFile.NewTournaments
                     .Any(t => t.Id.Equals(tournamentId));
             }
             else
             {
-                return _dataManager.TournamentsDatabaseFile.Tournaments
+                return _dataManager.TournamentsDatabaseFile.NewTournaments
                     .Any(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
             }
         }

@@ -26,7 +26,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public bool IsDoubleRoundRobin { get; set; } = true;
 
 
-        public NormalRoundRobinTournament()
+        public NormalRoundRobinTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
             Type = TournamentType.NormalRoundRobin;
             MatchLog = new NormalRoundRobinMatchLog();

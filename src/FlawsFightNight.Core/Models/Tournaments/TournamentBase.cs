@@ -22,6 +22,13 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public IMatchLog MatchLog { get; protected set; }
 
+        public TournamentBase(string id, string name, int teamSize)
+        {
+            Id = id;
+            Name = name;
+            TeamSize = teamSize;
+        }
+
         public abstract bool IsReadyToStart();
         public abstract void Start();
         public abstract bool IsReadyToEnd();

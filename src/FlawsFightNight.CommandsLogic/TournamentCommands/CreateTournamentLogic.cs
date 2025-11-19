@@ -2,6 +2,7 @@
 using Discord.Interactions;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -32,17 +33,21 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"A tournament with the name '{name}' already exists. Please choose a different name.");
             }
 
-            Tournament tournament = _tournamentManager.CreateTournament(name, tournamentType, teamSize, description);
+            // TODO Old version, remove later
+            //Tournament tournament = _tournamentManager.CreateTournament(name, tournamentType, teamSize, description);
+
+            // New version
+            TournamentBase tournament = _tournamentManager.CreateNewTournament(name, tournamentType, teamSize, description);
 
             // Prevent any tournament types that are not Round Robin or Ladder for now
-            if (!tournament.Type.Equals(TournamentType.RoundRobin) && !tournament.Type.Equals(TournamentType.Ladder))
+            if (!tournament.Type.Equals(TournamentType.NormalLadder) && !tournament.Type.Equals(TournamentType.NormalRoundRobin) && !tournament.Equals(TournamentType.OpenRoundRobin))
             {
-                return _embedManager.ToDoEmbed("Sorry, but for now only Ladder and Round Robin tournaments may be created and played. Please try again.");
+                return _embedManager.ToDoEmbed("Sorry, but for now only Normal Ladder and either Normal or Open Round Robin tournaments may be created and played. Please try again.");
             }
 
             if (tournament == null)
             {
-                return _embedManager.ErrorEmbed(Name, "Null tournament returned. Canceling command.");
+                return _embedManager.ErrorEmbed(Name, "Null tournament returned. Canceling command. Contact an admin for support.");
             }
 
             // Add the tournament, this will also save and reload the database

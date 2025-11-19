@@ -17,7 +17,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public bool CanTeamsBeUnlocked { get; set; } = false;
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
 
-        public OpenRoundRobinTournament()
+        public OpenRoundRobinTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
             Type = TournamentType.OpenRoundRobin;
             MatchLog = new OpenRoundRobinMatchLog();

@@ -2,6 +2,7 @@
 using Discord.Interactions;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -782,9 +783,21 @@ namespace FlawsFightNight.Managers
             switch (tournament.Type)
             {
                 case TournamentType.Ladder:
+                case TournamentType.NormalLadder:
                     return LadderCreateTournamentSuccess(tournament);
                 case TournamentType.RoundRobin:
                     return RoundRobinCreateTournamentSuccess(tournament);
+                default:
+                    return ToDoEmbed();
+            }
+        }
+
+        public Embed CreateTournamentSuccessResolver(TournamentBase tournament)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.NormalLadder:
+                    return NormalLadderCreateTournamentSuccess((NormalLadderTournament)tournament);
                 default:
                     return ToDoEmbed();
             }
@@ -821,6 +834,19 @@ namespace FlawsFightNight.Managers
             var embed = new EmbedBuilder()
                 .WithTitle("🎉 Ladder Tournament Created")
                 .WithDescription($"A Ladder tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nLadders are *'Challenged Based'*, meaning teams send out challenges but can only challenge teams ranked 2 spots above them, and may not challenge below their current rank. A team may only have one challenge sent out or be on the receiving end of a challenge meaning if a team has been challenge they cannot be challenge again or send out their own challenge until the intial one is resolved.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .WithColor(Color.Green)
+                .WithFooter("Let's get some teams registered to this tournament now.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        private Embed NormalLadderCreateTournamentSuccess(NormalLadderTournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🎉 Normal Ladder Tournament Created")
+                .WithDescription($"A Normal Ladder tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nLadders are *'Challenged Based'*, meaning teams send out challenges but can only challenge teams ranked 2 spots above them, and may not challenge below their current rank. A team may only have one challenge sent out or be on the receiving end of a challenge meaning if a team has been challenge they cannot be challenge again or send out their own challenge until the intial one is resolved.")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Match Format", tournament.TeamSizeFormat)
                 .WithColor(Color.Green)

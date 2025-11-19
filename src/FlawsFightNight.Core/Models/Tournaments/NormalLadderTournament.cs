@@ -11,7 +11,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
 {
     public class NormalLadderTournament : TournamentBase, IRankSystem
     {
-        public NormalLadderTournament()
+        public NormalLadderTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
             Type = TournamentType.NormalLadder;
             MatchLog = new NormalLadderMatchLog();
