@@ -65,6 +65,16 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override string GetFormattedType() => "Normal Round Robin";
 
+        public override bool CanDelete()
+        {
+            if (!IsRunning && !IsTeamsLocked)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         public bool DoesRoundContainByeMatch()
         {
             // TODO Test Normal RR DoesRoundContainByeMatch logic here
