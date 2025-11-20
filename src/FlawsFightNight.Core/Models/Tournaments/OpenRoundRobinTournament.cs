@@ -10,7 +10,7 @@ using FlawsFightNight.Core.Models.TieBreakers;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class OpenRoundRobinTournament : TournamentBase, ITeamLocking, ITieBreaker
+    public class OpenRoundRobinTournament : TournamentBase, ITeamLocking, ITieBreakerRankSystem
     {
         public bool IsTeamsLocked { get; set; } = false;
         public bool CanTeamsBeLocked { get; set; } = false;

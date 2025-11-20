@@ -1,5 +1,6 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
 using System;
@@ -160,7 +161,7 @@ namespace FlawsFightNight.Managers
             return true;
         }
 
-        public void SetCanTeamsBeLocked(Tournament tournament, bool canTeamsBeLocked)
+        public void SetCanTeamsBeLocked(ITeamLocking tournament, bool canTeamsBeLocked)
         {
             tournament.CanTeamsBeLocked = canTeamsBeLocked;
         }
@@ -397,7 +398,7 @@ namespace FlawsFightNight.Managers
 
         public void AddTeamToTournament(Team team, string tournamentId)
         {
-            Tournament? tournament = GetTournamentById(tournamentId);
+            TournamentBase? tournament = GetNewTournamentById(tournamentId);
             if (tournament != null)
             {
                 tournament.Teams.Add(team);

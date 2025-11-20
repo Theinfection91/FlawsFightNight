@@ -1,7 +1,9 @@
 ﻿using Discord;
 using Discord.Interactions;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -80,57 +82,29 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Create Team object
             Team newTeam = _teamManager.CreateTeam(teamName, convertedMembersList, tournament.Teams.Count + 1);
 
-            // Handle different tournament types
-            switch (tournament.Type)
-            {
-                //case TournamentType.Ladder:
-                //    return LadderRegisterTeamProcess(newTeam, tournament, convertedMembersList);
-                //case TournamentType.RoundRobin:
-                //    return RoundRobinRegisterTeamProcess(newTeam, tournament, convertedMembersList);
-                default:
-                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for team registration yet.");
-            }
-        }
-
-        public Embed LadderRegisterTeamProcess(Team newTeam, Tournament tournament, List<Member> convertedMembersList)
-        {
-            // Add the new team to the tournament
+            // Add new team to the tournament
             _tournamentManager.AddTeamToTournament(newTeam, tournament.Id);
 
-            // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-            // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
-
-            return _embedManager.TeamRegistrationSuccess(newTeam, tournament);
-        }
-
-        public Embed RoundRobinRegisterTeamProcess(Team newTeam, Tournament tournament, List<Member> convertedMembersList)
-        {
-            // Check if the tournament is accepting new teams
-            if (!_tournamentManager.CanAcceptNewTeams(tournament))
+            // Check if tournament is of type ITeamLocking to handle locking logic
+            if (tournament is ITeamLocking lockableTournament)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time. Check if teams are locked or if the tournament has already started.");
-            }                           
+                // Check if tournament can be locked after adding the team
+                // For now, only enable locking if tournament is running and has at least 3 teams
+                if (tournament.IsRunning && tournament.Teams.Count >= 3)
+                {
+                    _tournamentManager.SetCanTeamsBeLocked(lockableTournament, true);
+                }
+                else
+                {
+                    _tournamentManager.SetCanTeamsBeLocked(lockableTournament, false);
+                }
 
-            // Add the new team to the tournament
-            _tournamentManager.AddTeamToTournament(newTeam, tournament.Id);
-
-            // Check if tournament can be locked after adding the team
-            if (_tournamentManager.CanTeamsBeLockedResolver(tournament))
-            {
-                _tournamentManager.SetCanTeamsBeLocked(tournament, true);
-            }
-            else
-            {
-                _tournamentManager.SetCanTeamsBeLocked(tournament, false);
-            }
-
-            // Adjust ranks of remaining teams
-            if (tournament.Type.Equals(TournamentType.RoundRobin))
-            {
-                tournament.SetRanksByTieBreakerLogic();
+                // Check if tournament is tie breaker rank system to adjust ranks
+                if (tournament is ITieBreakerRankSystem tiebreakerTournament)
+                {
+                    // Adjust ranks of remaining teams
+                    tiebreakerTournament.SetRanksByTieBreakerLogic();
+                }
             }
 
             // Save and reload the tournament database
@@ -142,4 +116,54 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             return _embedManager.TeamRegistrationSuccess(newTeam, tournament);
         }
     }
+
+    //public Embed LadderRegisterTeamProcess(Team newTeam, Tournament tournament, List<Member> convertedMembersList)
+    //{
+    //    // Add the new team to the tournament
+    //    _tournamentManager.AddTeamToTournament(newTeam, tournament.Id);
+
+    //    // Save and reload the tournament database
+    //    _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+    //    // Backup to git repo
+    //    _gitBackupManager.CopyAndBackupFilesToGit();
+
+    //    return _embedManager.TeamRegistrationSuccess(newTeam, tournament);
+    //}
+
+    //public Embed RoundRobinRegisterTeamProcess(Team newTeam, Tournament tournament, List<Member> convertedMembersList)
+    //{
+    //    // Check if the tournament is accepting new teams
+    //    if (!_tournamentManager.CanAcceptNewTeams(tournament))
+    //    {
+    //        return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time. Check if teams are locked or if the tournament has already started.");
+    //    }                           
+
+    //    // Add the new team to the tournament
+    //    _tournamentManager.AddTeamToTournament(newTeam, tournament.Id);
+
+    //    // Check if tournament can be locked after adding the team
+    //    if (_tournamentManager.CanTeamsBeLockedResolver(tournament))
+    //    {
+    //        _tournamentManager.SetCanTeamsBeLocked(tournament, true);
+    //    }
+    //    else
+    //    {
+    //        _tournamentManager.SetCanTeamsBeLocked(tournament, false);
+    //    }
+
+    //    // Adjust ranks of remaining teams
+    //    if (tournament.Type.Equals(TournamentType.RoundRobin))
+    //    {
+    //        tournament.SetRanksByTieBreakerLogic();
+    //    }
+
+    //    // Save and reload the tournament database
+    //    _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+    //    // Backup to git repo
+    //    _gitBackupManager.CopyAndBackupFilesToGit();
+
+    //    return _embedManager.TeamRegistrationSuccess(newTeam, tournament);
+    //}
 }

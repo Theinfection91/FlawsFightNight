@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Interfaces
 {
-    public interface ITieBreaker
+    public interface INormalLadderRankSystem
     {
-        ITieBreakerRule TieBreakerRule { get; set; }
-        void SetRanksByTieBreakerLogic();
+        void ReassignRanks();
     }
 }

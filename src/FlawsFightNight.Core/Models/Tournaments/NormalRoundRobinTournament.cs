@@ -10,7 +10,7 @@ using FlawsFightNight.Core.Models.TieBreakers;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class NormalRoundRobinTournament : TournamentBase, IRoundBased, ITeamLocking, ITieBreaker
+    public class NormalRoundRobinTournament : TournamentBase, IRoundBased, ITeamLocking, ITieBreakerRankSystem
     {
         public int CurrentRound { get; set; } = 0;
         public int? TotalRounds { get; set; } = null;

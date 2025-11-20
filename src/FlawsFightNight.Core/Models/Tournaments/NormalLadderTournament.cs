@@ -9,7 +9,7 @@ using FlawsFightNight.Core.Models.MatchLogs;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class NormalLadderTournament : TournamentBase, IRankSystem
+    public class NormalLadderTournament : TournamentBase, INormalLadderRankSystem
     {
         public NormalLadderTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {

@@ -684,13 +684,13 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Team Embeds
-        public Embed TeamRegistrationSuccess(Team team, Tournament tournament)
+        public Embed TeamRegistrationSuccess(Team team, TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🎉 Team Registered Successfully")
-                .WithDescription($"The team **{team.Name}** has been successfully registered in the **{GetFormattedTournamentType(tournament)}** tournament **{tournament.Name}**!")
+                .WithDescription($"The team **{team.Name}** has been successfully registered in the **{tournament.GetFormattedType()}** tournament **{tournament.Name}**!")
                 .AddField("Tournament ID", tournament.Id)
-                .AddField("Tournament Type", GetFormattedTournamentType(tournament))
+                .AddField("Tournament Type", tournament.GetFormattedType())
                 .AddField("Members", string.Join(", ", team.Members.Select(m => m.DisplayName)))
                 .WithColor(Color.Green)
                 .WithFooter("Good luck to your team!")
@@ -778,26 +778,15 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Tournament Embeds
-        public Embed CreateTournamentSuccessResolver(Tournament tournament)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                case TournamentType.NormalLadder:
-                    return LadderCreateTournamentSuccess(tournament);
-                case TournamentType.RoundRobin:
-                    return RoundRobinCreateTournamentSuccess(tournament);
-                default:
-                    return ToDoEmbed();
-            }
-        }
-
         public Embed CreateTournamentSuccessResolver(TournamentBase tournament)
         {
             switch (tournament.Type)
             {
                 case TournamentType.NormalLadder:
                     return NormalLadderCreateTournamentSuccess((NormalLadderTournament)tournament);
+                case TournamentType.NormalRoundRobin:
+                case TournamentType.OpenRoundRobin:
+                    return RoundRobinCreateTournamentSuccess(tournament);
                 default:
                     return ToDoEmbed();
             }
@@ -816,7 +805,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        private Embed RoundRobinCreateTournamentSuccess(Tournament tournament)
+        private Embed RoundRobinCreateTournamentSuccess(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🎉 Round Robin Tournament Created")
