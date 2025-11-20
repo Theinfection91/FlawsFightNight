@@ -1,5 +1,6 @@
 ﻿using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,8 +42,8 @@ namespace FlawsFightNight.Managers
 
         public bool IsTeamNameUnique(string teamName)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            foreach (TournamentBase tournament in tournaments)
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
                 {

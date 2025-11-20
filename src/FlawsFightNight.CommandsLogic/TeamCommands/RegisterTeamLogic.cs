@@ -45,12 +45,12 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetNewTournamentById(tournamentId);
 
             // Can register new teams if Ladder Tournament is running, but cannot register them to Round Robin Tournament or SE/DE Bracket once they have started
-            if (!_tournamentManager.CanAcceptNewTeams(tournament))
+            if (!tournament.CanAcceptNewTeams())
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time. Check if teams are locked.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time. Check if teams are locked if applicable.");
             }
 
             // Check if the team name is unique within the tournament
@@ -83,10 +83,10 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Handle different tournament types
             switch (tournament.Type)
             {
-                case TournamentType.Ladder:
-                    return LadderRegisterTeamProcess(newTeam, tournament, convertedMembersList);
-                case TournamentType.RoundRobin:
-                    return RoundRobinRegisterTeamProcess(newTeam, tournament, convertedMembersList);
+                //case TournamentType.Ladder:
+                //    return LadderRegisterTeamProcess(newTeam, tournament, convertedMembersList);
+                //case TournamentType.RoundRobin:
+                //    return RoundRobinRegisterTeamProcess(newTeam, tournament, convertedMembersList);
                 default:
                     return _embedManager.ErrorEmbed(Name, "Tournament type not supported for team registration yet.");
             }

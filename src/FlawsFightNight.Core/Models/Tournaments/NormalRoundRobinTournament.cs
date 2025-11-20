@@ -75,6 +75,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
             return false;
         }
 
+        public override bool CanAcceptNewTeams()
+        {
+            return !IsRunning && !IsTeamsLocked;
+        }
+
         public bool DoesRoundContainByeMatch()
         {
             // TODO Test Normal RR DoesRoundContainByeMatch logic here

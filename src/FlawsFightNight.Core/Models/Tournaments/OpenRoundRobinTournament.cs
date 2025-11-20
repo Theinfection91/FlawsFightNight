@@ -62,6 +62,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
             return false;
         }
 
+        public override bool CanAcceptNewTeams()
+        {
+            return !IsRunning && !IsTeamsLocked;
+        }
+
         public void SetRanksByTieBreakerLogic()
         {
             // TODO Test Tie Breaker application logic here
