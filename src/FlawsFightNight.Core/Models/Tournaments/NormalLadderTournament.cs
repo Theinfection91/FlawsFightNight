@@ -43,6 +43,8 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override string GetFormattedType() => "Normal Ladder";
 
+        public override bool CanDelete() => !IsRunning;
+
         public void ReassignRanks()
         {
             if (Teams == null || Teams.Count == 0)

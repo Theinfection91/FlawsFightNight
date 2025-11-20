@@ -134,12 +134,24 @@ namespace FlawsFightNight.Managers
             SaveAndReloadTournamentsDatabase();
         }
 
+        // TODO Old version, remove later
         public void RemoveTournament(string tournamentId)
         {
             var tournament = TournamentsDatabaseFile.Tournaments.FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
             if (tournament != null)
             {
                 TournamentsDatabaseFile.Tournaments.Remove(tournament);
+                SaveAndReloadTournamentsDatabase();
+            }
+        }
+
+        // New version
+        public void RemoveTournamentBase(string tournamentId)
+        {
+            var tournament = TournamentsDatabaseFile.NewTournaments.FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
+            if (tournament != null)
+            {
+                TournamentsDatabaseFile.NewTournaments.Remove(tournament);
                 SaveAndReloadTournamentsDatabase();
             }
         }

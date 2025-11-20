@@ -52,6 +52,16 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override string GetFormattedType() => "Open Round Robin";
 
+        public override bool CanDelete()
+        {
+            if (!IsRunning && !IsTeamsLocked)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         public void SetRanksByTieBreakerLogic()
         {
             // TODO Test Tie Breaker application logic here

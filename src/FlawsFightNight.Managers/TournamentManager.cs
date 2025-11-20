@@ -107,7 +107,7 @@ namespace FlawsFightNight.Managers
 
         public void DeleteTournament(string tournamentId)
         {
-            _dataManager.RemoveTournament(tournamentId);
+            _dataManager.RemoveTournamentBase(tournamentId);
         }
 
         public bool CanAcceptNewTeams(Tournament tournament)
@@ -276,9 +276,17 @@ namespace FlawsFightNight.Managers
             return null;
         }
 
+        // TODO Old version, remove later
         public Tournament? GetTournamentById(string tournamentId)
         {
             return _dataManager.TournamentsDatabaseFile.Tournaments
+                .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // New version
+        public TournamentBase? GetNewTournamentById(string tournamentId)
+        {
+            return _dataManager.TournamentsDatabaseFile.NewTournaments
                 .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
         }
 

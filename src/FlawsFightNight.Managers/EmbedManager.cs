@@ -803,7 +803,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public Embed DeleteTournamentSuccess(Tournament tournament)
+        public Embed DeleteTournamentSuccess(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🗑️ Tournament Deleted Successfully")
