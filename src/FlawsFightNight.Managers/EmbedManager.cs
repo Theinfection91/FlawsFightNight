@@ -1060,7 +1060,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed LockInRoundSuccess(Tournament tournament)
+        public Embed LockInRoundSuccess(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🔒 Round Locked In")
@@ -1072,7 +1072,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed UnlockRoundSuccess(Tournament tournament)
+        public Embed UnlockRoundSuccess(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🔓 Round Unlocked")

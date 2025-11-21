@@ -39,5 +39,14 @@ namespace FlawsFightNight.Core.Models.MatchLogs
             }
             return allPostMatches;
         }
+
+        public bool IsRoundComplete(int roundNumber)
+        {
+            if (MatchesToPlayByRound.ContainsKey(roundNumber))
+            {
+                return MatchesToPlayByRound[roundNumber].Count == 0;
+            }
+            return false;
+        }
     }
 }

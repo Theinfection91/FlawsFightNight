@@ -12,6 +12,12 @@ namespace FlawsFightNight.Core.Interfaces
         int? TotalRounds { get; set; }
         bool IsRoundComplete { get; set; }
         bool IsRoundLockedIn { get; set; }
+        bool CanRoundComplete();
+        bool CanLockRound();
+        void LockRound();
+        bool CanUnlockRound();
+        void UnlockRound();
+        bool CanAdvanceRound();
         void AdvanceRound();
     }
 }

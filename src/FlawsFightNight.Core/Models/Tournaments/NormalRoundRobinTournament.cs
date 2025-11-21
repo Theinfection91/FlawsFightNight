@@ -109,6 +109,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
             CanTeamsBeLocked = true;
         }
 
+        public bool CanRoundComplete()
+        {
+            if (MatchLog.)
+        }
+
         public bool DoesRoundContainByeMatch()
         {
             // TODO Test Normal RR DoesRoundContainByeMatch logic here
