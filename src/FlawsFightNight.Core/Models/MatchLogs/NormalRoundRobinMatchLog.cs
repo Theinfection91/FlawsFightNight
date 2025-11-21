@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FlawsFightNight.Core.Models.Tournaments;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +13,12 @@ namespace FlawsFightNight.Core.Models.MatchLogs
         public Dictionary<int, List<PostMatch>> PostMatchesByRound { get; set; } = [];
 
         public NormalRoundRobinMatchLog() { }
+
+        public override void ClearLog()
+        {
+            MatchesToPlayByRound.Clear();
+            PostMatchesByRound.Clear();
+        }
 
         public override List<Match> GetAllActiveMatches(int currentRound = 0)
         {

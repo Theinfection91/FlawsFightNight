@@ -17,7 +17,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             MatchLog = new NormalLadderMatchLog();
         }
 
-        public override bool IsReadyToStart()
+        public override bool CanStart()
         {
             // A ladder tournament requires at least 3 teams to function properly
             return Teams.Count >= 3;
@@ -26,10 +26,15 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public override void Start()
         {
             IsRunning = true;
-            // TODO Add Ladder specific start logic here
+
+            // Reset team stats to zero
+            foreach (var team in Teams)
+            {
+                team.ResetTeamToZero();
+            }
         }
 
-        public override bool IsReadyToEnd()
+        public override bool CanEnd()
         {
             // A ladder tournament can be ended at any time
             return true;

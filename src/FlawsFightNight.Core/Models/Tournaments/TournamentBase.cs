@@ -19,7 +19,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public List<Team> Teams { get; set; } = [];
         public bool IsRunning { get; set; } = false;
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
-
         public IMatchLog MatchLog { get; protected set; }
 
         public TournamentBase(string id, string name, int teamSize)
@@ -29,9 +28,9 @@ namespace FlawsFightNight.Core.Models.Tournaments
             TeamSize = teamSize;
         }
 
-        public abstract bool IsReadyToStart();
+        public abstract bool CanStart();
         public abstract void Start();
-        public abstract bool IsReadyToEnd();
+        public abstract bool CanEnd();
         public abstract void End();
         public abstract string GetFormattedType();
         public abstract bool CanDelete();

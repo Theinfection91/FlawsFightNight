@@ -870,41 +870,12 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed StartTournamentSuccessResolver(Tournament tournament)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    return LadderStartTournamentSuccess(tournament);
-                case TournamentType.RoundRobin:
-                    return RoundRobinStartTournamentSuccess(tournament);
-                default:
-                    return ErrorEmbed("Unsupported tournament type.");
-            }
-        }
-
-        private Embed LadderStartTournamentSuccess(Tournament tournament)
+        public Embed StartTournamentSuccess(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🏆 Tournament Started")
-                .WithDescription($"The Ladder tournament **{tournament.Name}** has been successfully started!")
+                .WithDescription($"The {tournament.GetFormattedType()} Tournament **{tournament.Name}** has been successfully started!")
                 .AddField("Tournament ID", tournament.Id)
-                .AddField("Match Format", tournament.TeamSizeFormat)
-                .AddField("Total Teams", tournament.Teams.Count)
-                .WithColor(Color.Green)
-                .WithFooter("Good luck to all teams!")
-                .WithTimestamp(DateTimeOffset.Now);
-            return embed.Build();
-        }
-
-        private Embed RoundRobinStartTournamentSuccess(Tournament tournament)
-        {
-            var embed = new EmbedBuilder()
-                .WithTitle("🏆 Tournament Started")
-                .WithDescription($"The {tournament.RoundRobinMatchType} Round Robin tournament **{tournament.Name}** has been successfully started!")
-                .AddField("Tournament ID", tournament.Id)
-                .AddField("Match Type", tournament.RoundRobinMatchType.ToString())
-                .AddField("Tie Breaker Rules", tournament.TieBreakerRule.Name)
                 .AddField("Match Format", tournament.TeamSizeFormat)
                 .AddField("Total Teams", tournament.Teams.Count)
                 .WithColor(Color.Green)

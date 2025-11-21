@@ -13,6 +13,12 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 
         public OpenRoundRobinMatchLog() { }
 
+        public override void ClearLog()
+        {
+            MatchesToPlay.Clear();
+            PostMatches.Clear();
+        }
+
         public override List<Match> GetAllActiveMatches(int currentRound = 0) => MatchesToPlay;
         public override List<PostMatch> GetAllPostMatches() => PostMatches;
     }

@@ -9,6 +9,7 @@ namespace FlawsFightNight.Core.Interfaces
 {
     public interface IMatchLog
     {
+        void ClearLog();
         List<Match> GetAllActiveMatches(int currentRound = 0);
         List<PostMatch> GetAllPostMatches();
         (int pointsFor, int pointsAgainst) GetPointsForAndAgainst(string teamName);

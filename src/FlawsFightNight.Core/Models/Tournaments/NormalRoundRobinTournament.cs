@@ -32,21 +32,22 @@ namespace FlawsFightNight.Core.Models.Tournaments
             MatchLog = new NormalRoundRobinMatchLog();
         }
 
-        public override bool IsReadyToStart()
+        public override bool CanStart()
         {
             return IsTeamsLocked == true && IsRunning == false && Teams.Count >= 3;
         }
 
         public override void Start()
         {
-            // TODO Test Normal Round Robin specific Start logic
             CurrentRound = 1;
             IsRunning = true;
             CanTeamsBeLocked = false;
             CanTeamsBeUnlocked = false;
+
+
         }
 
-        public override bool IsReadyToEnd()
+        public override bool CanEnd()
         {
             // A Normal Round Robin tournament ends when all rounds are complete and locked in
             return CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;

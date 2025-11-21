@@ -16,6 +16,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public bool CanTeamsBeLocked { get; set; } = false;
         public bool CanTeamsBeUnlocked { get; set; } = false;
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
+        public bool IsDoubleRoundRobin { get; set; } = true;
 
         public OpenRoundRobinTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
@@ -23,7 +24,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             MatchLog = new OpenRoundRobinMatchLog();
         }
 
-        public override bool IsReadyToStart()
+        public override bool CanStart()
         {
             return IsTeamsLocked == true && IsRunning == false && Teams.Count >= 3;
         }
@@ -36,7 +37,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             CanTeamsBeUnlocked = false;
         }
 
-        public override bool IsReadyToEnd()
+        public override bool CanEnd()
         {
             return MatchLog.GetAllActiveMatches().Count == 0 && IsRunning;
         }

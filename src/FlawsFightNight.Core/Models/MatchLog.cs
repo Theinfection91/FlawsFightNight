@@ -23,6 +23,11 @@ namespace FlawsFightNight.Core.Models
 
         public MatchLog() { }
 
+        public void ClearLog()
+        {
+
+        }
+
         public (int, int) GetPointsForAndAgainst(string teamName)
         {
             // Normal Round Robin

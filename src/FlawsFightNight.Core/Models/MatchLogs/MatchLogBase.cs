@@ -9,6 +9,7 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 {
     public abstract class MatchLogBase : IMatchLog
     {
+        public abstract void ClearLog();
         public abstract List<Match> GetAllActiveMatches(int currentRound = 0);
         public abstract List<PostMatch> GetAllPostMatches();
         public virtual (int pointsFor, int pointsAgainst) GetPointsForAndAgainst(string teamName)
