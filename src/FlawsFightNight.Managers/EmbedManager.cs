@@ -1063,7 +1063,7 @@ namespace FlawsFightNight.Managers
         }
 
 
-        public Embed LockTeamsSuccess(Tournament tournament)
+        public Embed LockTeamsSuccess(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🔒 Teams Locked")
@@ -1076,7 +1076,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed UnlockTeamsSuccess(Tournament tournament)
+        public Embed UnlockTeamsSuccess(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🔓 Teams Unlocked")

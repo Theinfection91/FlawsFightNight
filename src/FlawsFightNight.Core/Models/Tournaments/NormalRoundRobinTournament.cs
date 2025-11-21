@@ -80,6 +80,34 @@ namespace FlawsFightNight.Core.Models.Tournaments
             return !IsRunning && !IsTeamsLocked;
         }
 
+        public bool CanLockTeams()
+        {
+            return !IsRunning && !IsTeamsLocked && CanTeamsBeLocked;
+        }
+
+        public bool CanUnlockTeams()
+        {
+            return !IsRunning && IsTeamsLocked && CanTeamsBeUnlocked;
+        }
+
+        public void LockTeams()
+        {
+            IsTeamsLocked = true;
+            CanTeamsBeLocked = false;
+
+            // Allow teams to be unlocked after locking, until tournament starts
+            CanTeamsBeUnlocked = true;
+        }
+
+        public void UnlockTeams()
+        {
+            IsTeamsLocked = false;
+            CanTeamsBeUnlocked = false;
+
+            // Allow teams to be locked again after unlocking
+            CanTeamsBeLocked = true;
+        }
+
         public bool DoesRoundContainByeMatch()
         {
             // TODO Test Normal RR DoesRoundContainByeMatch logic here

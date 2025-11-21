@@ -90,7 +90,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             {
                 // Check if tournament can be locked after adding the team
                 // For now, only enable locking if tournament is running and has at least 3 teams
-                if (tournament.IsRunning && tournament.Teams.Count >= 3)
+                if (!tournament.IsRunning && tournament.Teams.Count >= 3)
                 {
                     _tournamentManager.SetCanTeamsBeLocked(lockableTournament, true);
                 }
