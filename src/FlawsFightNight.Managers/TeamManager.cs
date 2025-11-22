@@ -90,8 +90,8 @@ namespace FlawsFightNight.Managers
 
         public Team GetTeamByName(string teamName)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            foreach (var tournament in tournaments)
             {
                 Team? team = tournament.Teams.FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
                 if (team != null)
@@ -102,7 +102,7 @@ namespace FlawsFightNight.Managers
             return null; // No team found with the given name
         }
 
-        public Team? GetTeamByName(Tournament tournament, string teamName)
+        public Team? GetTeamByName(TournamentBase tournament, string teamName)
         {
             return tournament.Teams
                 .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
@@ -128,7 +128,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Edit Match Helpers
-        public void EditMatchRollback(Tournament tournament, PostMatch postMatch)
+        public void EditMatchRollback(TournamentBase tournament, PostMatch postMatch)
         {
             var winner = GetTeamByName(tournament, postMatch.Winner);
             var loser = GetTeamByName(tournament, postMatch.Loser);

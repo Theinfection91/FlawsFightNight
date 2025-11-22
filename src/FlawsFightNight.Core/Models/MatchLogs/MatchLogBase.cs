@@ -1,4 +1,5 @@
 ﻿using FlawsFightNight.Core.Interfaces;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,5 +33,8 @@ namespace FlawsFightNight.Core.Models.MatchLogs
             }
             return (pointsFor, pointsAgainst);
         }
+        public abstract bool ContainsMatchId(string matchId);
+        public abstract Match? GetMatchById(string matchId);
+        public abstract void ConvertMatchToPostMatch(TournamentBase tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore);
     }
 }

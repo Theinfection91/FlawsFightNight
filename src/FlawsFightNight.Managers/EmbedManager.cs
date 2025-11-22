@@ -415,7 +415,7 @@ namespace FlawsFightNight.Managers
         }
 
 
-        public Embed ReportWinSuccess(Tournament tournament, Match match, Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, bool isGuildAdminReporting)
+        public Embed ReportWinSuccess(TournamentBase tournament, Match match, Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, bool isGuildAdminReporting)
         {
             string reporterText = isGuildAdminReporting
                 ? "An **admin** reported this match result."

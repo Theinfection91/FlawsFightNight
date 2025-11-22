@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Discord.WebSocket;
 using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Core.Interfaces;
+using FlawsFightNight.Core.Models.MatchLogs;
 
 namespace FlawsFightNight.CommandsLogic.MatchCommands
 {
@@ -73,14 +74,13 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // Grab the match associated with report
-            Match match = _matchManager.GetMatchByMatchIdResolver(tournament, matchId);
-
+            Match? match = tournament.MatchLog.GetMatchById(matchId);
             if (match == null)
             {
                 return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' could not be found in the tournament '{tournament.Name}'. Make sure you are not trying to report a match that has already been played.");
             }
 
-            // Check if match is bye match, in new version of bot we are not allowing reporting of bye matches as system will handle it.
+            // Check if match is bye match, system will handle those.
             if (match.IsByeMatch)
             {
                 return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' is a Bye match and cannot be reported manually. Bye matches are automatically handled by the system when a round ends in a Normal Round Robin tournament.");
@@ -109,32 +109,18 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, $"You are not a member of the team '{winningTeam.Name}', or an admin on this server, and cannot report a win for them.");
             }
 
-            // Needs Normal RR checks like making sure match is in current round being played
-            if (tournament.Type.Equals(TournamentType.RoundRobin) && tournament.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal) && !_matchManager.IsMatchInCurrentRound(tournament, match.Id))
+            // Normal RR check to make sure match is in current round being played
+            if (tournament is IRoundBased rbTournament && tournament.MatchLog is NormalRoundRobinMatchLog rrLog && !rrLog.DoesRoundContainMatchId(rbTournament.CurrentRound, match.Id))
             {
-                return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' is not part of the current round '{tournament.CurrentRound}' being played in the tournament '{tournament.Name}'. You may only report matches that are part of the current round.");
+                return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' is not part of the current round '{rbTournament.CurrentRound}' being played in the tournament '{tournament.Name}'. You may only report matches that are part of the current round.");
             }
 
             // Record wins and losses
             _teamManager.RecordTeamWin(winningTeam, winningTeamScore);
             _teamManager.RecordTeamLoss(losingTeam, losingTeamScore);
 
-            // Process report win based on tournament type
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    LadderReportWinProcess(winningTeam, winningTeamScore, losingTeam, losingTeamScore, tournament, match, isGuildAdmin);
-                    break;
-                case TournamentType.RoundRobin:
-                    RoundRobinReportWinProcess(winningTeam, winningTeamScore, losingTeam, losingTeamScore, tournament, match, isGuildAdmin);
-                    break;
-                case TournamentType.SingleElimination:
-                case TournamentType.DoubleElimination:
-                    return _embedManager.ToDoEmbed("Single/Double Elimination Report Win logic is not yet implemented.");
-            }
-
             // Convert match to post-match
-            _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
+            tournament.MatchLog.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
@@ -142,44 +128,44 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
-            // Update Autcomplete Cache
+            // TODO (Looks like this was left out of v0.2.0 ... whoops) Update Autocomplete Cache
 
             return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin);
         }
 
-        private void RoundRobinReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
-        {
-            // Convert match to post-match and record win/loss
-            _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
+        //private void RoundRobinReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
+        //{
+        //    // Convert match to post-match and record win/loss
+        //    _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
 
-            // Adjust ranks of remaining teams
-            tournament.SetRanksByTieBreakerLogic();
-        }
+        //    // Adjust ranks of remaining teams
+        //    tournament.SetRanksByTieBreakerLogic();
+        //}
 
-        private void LadderReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
-        {
-            // If winning team is challenger then rank change will occur
-            if (_matchManager.IsWinningTeamChallenger(match, winningTeam))
-            {
-                // Winning team takes the rank of the losing team
-                winningTeam.Rank = losingTeam.Rank;
-                // Losing team moves down one rank
-                losingTeam.Rank++;
+        //private void LadderReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
+        //{
+        //    // If winning team is challenger then rank change will occur
+        //    if (_matchManager.IsWinningTeamChallenger(match, winningTeam))
+        //    {
+        //        // Winning team takes the rank of the losing team
+        //        winningTeam.Rank = losingTeam.Rank;
+        //        // Losing team moves down one rank
+        //        losingTeam.Rank++;
 
-                // Reassign ranks of entire tournament
-                _matchManager.ReassignRanksInLadderTournament(tournament);
-            }
-            else
-            {
-                // No rank change, no action needed
-            }
+        //        // Reassign ranks of entire tournament
+        //        _matchManager.ReassignRanksInLadderTournament(tournament);
+        //    }
+        //    else
+        //    {
+        //        // No rank change, no action needed
+        //    }
 
-            // Change each Team's IsChallengeable status back to true
-            winningTeam.IsChallengeable = true;
-            losingTeam.IsChallengeable = true;
+        //    // Change each Team's IsChallengeable status back to true
+        //    winningTeam.IsChallengeable = true;
+        //    losingTeam.IsChallengeable = true;
 
-            // Run challenge rank comparison for tournament to make sure LiveView displays correct rank for team in challenges
-            _matchManager.ChallengeRankComparisonProcess(tournament);
-        }
+        //    // Run challenge rank comparison for tournament to make sure LiveView displays correct rank for team in challenges
+        //    _matchManager.ChallengeRankComparisonProcess(tournament);
+        //}
     }
 }
