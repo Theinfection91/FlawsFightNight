@@ -107,6 +107,11 @@ namespace FlawsFightNight.Managers
             return tournament.Teams
                 .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
         }
+        public Team? GetTeamByName(Tournament tournament, string teamName)
+        {
+            return tournament.Teams
+                .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
+        }
         #endregion
 
         #region Wins/Losses and Streaks
@@ -128,7 +133,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Edit Match Helpers
-        public void EditMatchRollback(TournamentBase tournament, PostMatch postMatch)
+        public void EditMatchRollback(Tournament tournament, PostMatch postMatch)
         {
             var winner = GetTeamByName(tournament, postMatch.Winner);
             var loser = GetTeamByName(tournament, postMatch.Loser);
