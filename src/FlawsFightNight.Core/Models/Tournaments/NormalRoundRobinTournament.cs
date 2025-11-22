@@ -151,10 +151,13 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public void AdvanceRound()
         {
-            if (DoesRoundContainByeMatch())
+            // Convert any bye matches to post matches before advancing
+            if (DoesRoundContainByeMatch() && MatchLog is NormalRoundRobinMatchLog rrLog)
             {
-                
+                rrLog.ConvertByeMatch(CurrentRound);
             }
+
+            // Advance to the next round process
             CurrentRound++;
             IsRoundComplete = false;
             IsRoundLockedIn = false;

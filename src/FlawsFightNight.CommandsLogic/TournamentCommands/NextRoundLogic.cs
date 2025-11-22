@@ -62,63 +62,6 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
                 return _embedManager.NextRoundSuccess(tournament, roundBasedTournament.CurrentRound);
             }
-
-            // Handle different tournament types
-            //switch (tournament.Type)
-            //{
-            //    case TournamentType.Ladder:
-            //        return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is a Ladder tournament and does not have rounds.");
-            //    case TournamentType.RoundRobin:
-            //        return RoundRobinNextRoundProcess(tournament);
-            //    default:
-            //        return _embedManager.ErrorEmbed(Name, "Tournament type not supported for advancing rounds yet.");
-            //}
-        }
-
-        private Embed RoundRobinNextRoundProcess(Tournament tournament)
-        {
-            if (!tournament.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal))
-            {
-                return _embedManager.ErrorEmbed(Name, $"Only Normal Round Robin tournaments support advancing to the next round at this time.");
-            }
-
-            // Check if the round is complete
-            if (!tournament.IsRoundComplete)
-            {
-                return _embedManager.ErrorEmbed(Name, $"The round for tournament '{tournament.Name}' is not complete. Please ensure all matches are reported before locking in the round.");
-            }
-
-            // Check if the round is already locked in
-            if (!tournament.IsRoundLockedIn)
-            {
-                return _embedManager.ErrorEmbed(Name, $"The round for tournament '{tournament.Name}' is not locked in.");
-            }
-
-            if (tournament.CanEndNormalRoundRobinTournament)
-            {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is ready to end so you cannot go to the next round. Please use the appropriate command to end it.");
-            }
-
-            // Report bye matches if any exist
-            if (tournament.DoesRoundContainByeMatch())
-            {
-                // Grab the bye match
-                var byeMatch = tournament.GetByeMatchInCurrentRound();
-
-                // Report the bye match as completed
-                _matchManager.ConvertMatchToPostMatchResolver(tournament, byeMatch, byeMatch.GetCorrectPlayerNameForByeMatch(), 0, byeMatch.GetCorrectByeNameForByeMatch(), 0, byeMatch.IsByeMatch);
-            }
-
-            // Advance to the next round
-            _tournamentManager.NextRoundResolver(tournament);
-
-            // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-            // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
-
-            return _embedManager.NextRoundSuccess(tournament);
         }
     }
 }
