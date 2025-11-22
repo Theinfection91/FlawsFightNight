@@ -68,6 +68,6 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
                 return _embedManager.UnlockRoundSuccess(tournament);
             }
-        }+
+        }
     }
 }

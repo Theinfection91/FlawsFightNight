@@ -111,7 +111,49 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public bool CanRoundComplete()
         {
-            if (MatchLog.)
+            if (MatchLog is NormalRoundRobinMatchLog rrLog)
+            {
+                return rrLog.IsRoundComplete(CurrentRound);
+            }
+            return false;
+        }
+
+        public bool CanLockRound()
+        {
+            return IsRoundComplete && !IsRoundLockedIn;
+        }
+
+        public void LockRound()
+        {
+            IsRoundLockedIn = true;
+        }
+
+        public bool CanUnlockRound()
+        {
+            return IsRoundLockedIn;
+        }
+
+        public void UnlockRound()
+        {
+            IsRoundLockedIn = false;
+        }
+
+        public bool CanAdvanceRound()
+        {
+            if (MatchLog is NormalRoundRobinMatchLog rrLog)
+            {
+                // Can advance if the round is locked in, complete, and there are more rounds to play
+                return IsRoundLockedIn && rrLog.IsRoundComplete(CurrentRound) && 
+                    CurrentRound < TotalRounds;
+            }
+            return false;
+        }
+
+        public void AdvanceRound()
+        {
+            CurrentRound++;
+            IsRoundComplete = false;
+            IsRoundLockedIn = false;
         }
 
         public bool DoesRoundContainByeMatch()
@@ -123,14 +165,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
                 return matchesThisRound.Any(m => m.IsByeMatch);
             }
             return false;
-        }
-
-        public void AdvanceRound()
-        {
-            // TODO Test Normal RR AdvanceRound logic here
-            CurrentRound++;
-            IsRoundComplete = false;
-            IsRoundLockedIn = false;
         }
 
         public void SetRanksByTieBreakerLogic()
