@@ -19,8 +19,8 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool DoesTeamExist(string teamName, bool isCaseSensitive = false)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            foreach (TournamentBase tournament in tournaments)
             {
                 if (isCaseSensitive)
                 {

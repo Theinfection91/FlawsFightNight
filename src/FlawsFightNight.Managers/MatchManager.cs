@@ -64,65 +64,68 @@ namespace FlawsFightNight.Managers
         public bool IsMatchIdInDatabase(string matchId)
         {
             // Check Normal Round Robin
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
             {
-                foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
+                if (tournament.MatchLog is NormalRoundRobinMatchLog normalRoundRobinMatchLog)
                 {
-                    foreach (var match in round)
+                    foreach (var round in normalRoundRobinMatchLog.MatchesToPlayByRound.Values)
                     {
-                        if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                        foreach (var match in round)
                         {
-                            return true;
+                            if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return true;
+                            }
                         }
                     }
-                }
-                foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
-                {
-                    foreach (var match in round)
+                    foreach (var round in normalRoundRobinMatchLog.PostMatchesByRound.Values)
                     {
-                        if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                        foreach (var match in round)
                         {
-                            return true;
+                            if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return true;
+                            }
                         }
                     }
                 }
             }
             // Check Open Round Robin
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            {
-                foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
-                {
-                    if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-                foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
-                {
-                    if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-            // Check Ladder
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            {
-                foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
-                {
-                    if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-                foreach (var postMatch in tournament.MatchLog.LadderPostMatches)
-                {
-                    if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
+            //foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            //{
+            //    foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
+            //    {
+            //        if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+            //        {
+            //            return true;
+            //        }
+            //    }
+            //    foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
+            //    {
+            //        if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+            //        {
+            //            return true;
+            //        }
+            //    }
+            //}
+            //// Check Ladder
+            //foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            //{
+            //    foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+            //    {
+            //        if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+            //        {
+            //            return true;
+            //        }
+            //    }
+            //    foreach (var postMatch in tournament.MatchLog.LadderPostMatches)
+            //    {
+            //        if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+            //        {
+            //            return true;
+            //        }
+            //    }
+            //}
             return false;
         }
 

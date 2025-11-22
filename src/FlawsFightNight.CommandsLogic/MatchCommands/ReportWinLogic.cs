@@ -9,6 +9,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.WebSocket;
+using FlawsFightNight.Core.Models.Tournaments;
+using FlawsFightNight.Core.Interfaces;
 
 namespace FlawsFightNight.CommandsLogic.MatchCommands
 {
@@ -48,17 +50,20 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // Grab the tournament associated with the match
-            Tournament tournament = _tournamentManager.GetTournamentFromTeamName(winningTeamName);
+            TournamentBase tournament = _tournamentManager.GetTournamentFromTeamName(winningTeamName);
 
             if (!tournament.IsRunning)
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
             }
 
-            // Check if the tournament is Normal Round Robin and the round is marked complete
-            if (tournament.IsRoundComplete && tournament.Type.Equals(TournamentType.RoundRobin) && tournament.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal))
+            // Check if the tournament is IRoundBased and if the round is marked complete
+            if (tournament is IRoundBased roundBasedTournament)
             {
-                return _embedManager.ErrorEmbed(Name, "The tournament is showing the round has been marked as complete.");
+                if (roundBasedTournament.IsRoundComplete)
+                {
+                    return _embedManager.ErrorEmbed(Name, "The tournament is showing the round has been marked as complete.");
+                }
             }
 
             // Check if match exists in database

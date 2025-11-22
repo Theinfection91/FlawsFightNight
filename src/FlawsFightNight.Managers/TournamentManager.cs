@@ -291,9 +291,9 @@ namespace FlawsFightNight.Managers
                 .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
         }
 
-        public Tournament GetTournamentFromTeamName(string teamName)
+        public TournamentBase GetTournamentFromTeamName(string teamName)
         {
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
                 {
