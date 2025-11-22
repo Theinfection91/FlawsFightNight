@@ -6,6 +6,7 @@ using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -1084,11 +1085,11 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed NextRoundSuccess(Tournament tournament)
+        public Embed NextRoundSuccess(TournamentBase tournament, int currentRound)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("➡️ Next Round Started")
-                .WithDescription($"The tournament **{tournament.Name}** has successfully advanced to the next round: **Round {tournament.CurrentRound}**.")
+                .WithDescription($"The tournament **{tournament.Name}** has successfully advanced to the next round: **Round {currentRound}**.")
                 .AddField("Tournament ID", tournament.Id)
                 .WithColor(Color.Green)
                 .WithFooter("Good luck to all teams in the next round!")

@@ -44,7 +44,8 @@ namespace FlawsFightNight.Core.Models.MatchLogs
         {
             if (MatchesToPlayByRound.ContainsKey(roundNumber))
             {
-                return MatchesToPlayByRound[roundNumber].Count == 0;
+                // Check if all non-bye matches have been reported in current round
+                return MatchesToPlayByRound[roundNumber].Where(m => !m.IsByeMatch).ToList().Count == 0;
             }
             return false;
         }

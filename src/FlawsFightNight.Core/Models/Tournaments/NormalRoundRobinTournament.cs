@@ -151,6 +151,10 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public void AdvanceRound()
         {
+            if (DoesRoundContainByeMatch())
+            {
+                
+            }
             CurrentRound++;
             IsRoundComplete = false;
             IsRoundLockedIn = false;

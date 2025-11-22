@@ -1,5 +1,6 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
@@ -31,18 +32,47 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetNewTournamentById(tournamentId);
+
+            if (!tournament.IsRunning)
+            {
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
+            }
+
+            // Check if the tournament is IRoundBased
+            if (tournament is not IRoundBased roundBasedTournament)
+            {
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a round-based tournament and does not support round mechanics.");
+            }
+            else
+            {
+                if (!roundBasedTournament.CanAdvanceRound())
+                {
+                    return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot advance to the next round at this time. Ensure all matches are completed and there is another round to advance to.");
+                }
+
+                // Advance to next round
+                roundBasedTournament.AdvanceRound();
+
+                // Save and reload the tournament database
+                _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+                // Backup to git repo
+                _gitBackupManager.CopyAndBackupFilesToGit();
+
+                return _embedManager.NextRoundSuccess(tournament, roundBasedTournament.CurrentRound);
+            }
 
             // Handle different tournament types
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is a Ladder tournament and does not have rounds.");
-                case TournamentType.RoundRobin:
-                    return RoundRobinNextRoundProcess(tournament);
-                default:
-                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for advancing rounds yet.");
-            }
+            //switch (tournament.Type)
+            //{
+            //    case TournamentType.Ladder:
+            //        return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is a Ladder tournament and does not have rounds.");
+            //    case TournamentType.RoundRobin:
+            //        return RoundRobinNextRoundProcess(tournament);
+            //    default:
+            //        return _embedManager.ErrorEmbed(Name, "Tournament type not supported for advancing rounds yet.");
+            //}
         }
 
         private Embed RoundRobinNextRoundProcess(Tournament tournament)

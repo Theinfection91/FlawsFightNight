@@ -17,6 +17,7 @@ namespace FlawsFightNight.Core.Interfaces
         void LockRound();
         bool CanUnlockRound();
         void UnlockRound();
+        bool DoesRoundContainByeMatch();
         bool CanAdvanceRound();
         void AdvanceRound();
     }
