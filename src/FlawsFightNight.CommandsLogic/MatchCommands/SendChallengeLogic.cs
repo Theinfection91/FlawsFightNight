@@ -62,7 +62,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // Grab tournament from challenger team
-            Tournament? tournament = _tournamentManager.GetTournamentFromTeamName(challengerTeam.Name);
+            var tournament = _tournamentManager.GetTournamentFromTeamName(challengerTeam.Name);
             if (tournament == null)
             {
                 // Shouldn't be possible, but just in case
@@ -130,7 +130,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             var newChallengeMatch = _matchManager.CreateLadderMatchWithChallenge(challengerTeam, challengedTeam);
 
             // Add the new match to the tournament
-            tournament.AddLadderMatchToMatchLog(newChallengeMatch);
+            tournament.MatchLog.AddMatch(newChallengeMatch);
 
             // Update both teams challengeable status
             challengerTeam.IsChallengeable = false;

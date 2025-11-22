@@ -81,7 +81,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             team.Rank = newRank;
 
             // Reassign ranks to ensure no duplicates or gaps
-            tournament.ReassignRanksInTournament();
+            //tournament.ReassignRanksInTournament();
 
             // Save changes
             _tournamentManager.SaveAndReloadTournamentsDatabase();

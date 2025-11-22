@@ -577,92 +577,93 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public Match GetOpenMatchByTeamNameResolver(Tournament tournament, string teamName)
+        public Match GetOpenMatchByTeamNameResolver(TournamentBase tournament, string teamName)
         {
             switch (tournament.Type)
             {
-                case TournamentType.Ladder:
-                    return GetOpenMatchByTeamNameLadder(tournament, teamName);
-                case TournamentType.RoundRobin:
-                    switch (tournament.RoundRobinMatchType)
-                    {
-                        case RoundRobinMatchType.Normal:
-                            return GetOpenMatchByTeamNameNormalRoundRobin(tournament, teamName);
-                        case RoundRobinMatchType.Open:
-                            return GetOpenMatchByTeamNameOpenRoundRobin(tournament, teamName);
-                        default:
-                            //Console.WriteLine($"Match retrieval not implemented for round robin match type: {tournament.RoundRobinMatchType}");
-                            return null;
-                    }
+                //case TournamentType.Ladder:
+                //    return GetOpenMatchByTeamNameLadder(tournament, teamName);
+                //case TournamentType.RoundRobin:
+                //    switch (tournament.RoundRobinMatchType)
+                //    {
+                //        case RoundRobinMatchType.Normal:
+                //            return GetOpenMatchByTeamNameNormalRoundRobin(tournament, teamName);
+                //        case RoundRobinMatchType.Open:
+                //            return GetOpenMatchByTeamNameOpenRoundRobin(tournament, teamName);
+                //        default:
+                //            //Console.WriteLine($"Match retrieval not implemented for round robin match type: {tournament.RoundRobinMatchType}");
+                //            return null;
+                //    }
                 default:
                     return null;
             }
         }
 
-        private Match GetOpenMatchByTeamNameLadder(Tournament tournament, string teamName)
+        private Match GetOpenMatchByTeamNameLadder(TournamentBase tournament, string teamName)
         {
-            foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
-            {
-                if (match == null)
-                {
-                    //Console.WriteLine("Encountered null match in list, skipping.");
-                    continue;
-                }
-                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
-                if (!string.IsNullOrEmpty(match.TeamA) &&
-                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return match;
-                }
-                if (!string.IsNullOrEmpty(match.TeamB) &&
-                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return match;
-                }
-            }
+            //foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+            //{
+            //    if (match == null)
+            //    {
+            //        //Console.WriteLine("Encountered null match in list, skipping.");
+            //        continue;
+            //    }
+            //    //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+            //    if (!string.IsNullOrEmpty(match.TeamA) &&
+            //        match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+            //    {
+            //        return match;
+            //    }
+            //    if (!string.IsNullOrEmpty(match.TeamB) &&
+            //        match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+            //    {
+            //        return match;
+            //    }
+            //}
             //Console.WriteLine($"No match found for team '{teamName}' in ladder matches.");
             return null;
         }
 
-        private Match GetOpenMatchByTeamNameNormalRoundRobin(Tournament tournament, string teamName)
+        private Match GetOpenMatchByTeamNameNormalRoundRobin(TournamentBase tournament, string teamName)
         {
-            int currentRound = tournament.CurrentRound;
-            //Console.WriteLine($"Looking in round: {currentRound}");
+            
+            //int currentRound = 0;
+            ////Console.WriteLine($"Looking in round: {currentRound}");
 
-            if (!tournament.MatchLog.MatchesToPlayByRound.TryGetValue(currentRound, out var matches))
-            {
-                //Console.WriteLine($"No entry for round {currentRound} in MatchesToPlayByRound.");
-                return null;
-            }
+            //if (!tournament.MatchLog.GetAllActiveMatches().TryGetValue(currentRound, out var matches))
+            //{
+            //    //Console.WriteLine($"No entry for round {currentRound} in MatchesToPlayByRound.");
+            //    return null;
+            //}
 
-            if (matches == null)
-            {
-                //Console.WriteLine($"Match list for round {currentRound} is null.");
-                return null;
-            }
+            //if (matches == null)
+            //{
+            //    //Console.WriteLine($"Match list for round {currentRound} is null.");
+            //    return null;
+            //}
 
-            foreach (var match in matches)
-            {
-                if (match == null)
-                {
-                    //Console.WriteLine("Encountered null match in list, skipping.");
-                    continue;
-                }
+            //foreach (var match in matches)
+            //{
+            //    if (match == null)
+            //    {
+            //        //Console.WriteLine("Encountered null match in list, skipping.");
+            //        continue;
+            //    }
 
-                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+            //    //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
 
-                if (!string.IsNullOrEmpty(match.TeamA) &&
-                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return match;
-                }
+            //    if (!string.IsNullOrEmpty(match.TeamA) &&
+            //        match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+            //    {
+            //        return match;
+            //    }
 
-                if (!string.IsNullOrEmpty(match.TeamB) &&
-                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return match;
-                }
-            }
+            //    if (!string.IsNullOrEmpty(match.TeamB) &&
+            //        match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+            //    {
+            //        return match;
+            //    }
+            //}
 
             //Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
             return null;
@@ -879,16 +880,16 @@ namespace FlawsFightNight.Managers
                    match.Challenge.Challenger.Equals(winningTeam.Name, StringComparison.OrdinalIgnoreCase);
         }
 
-        public bool HasChallengeSent(Tournament tournament, string challengerTeamName)
+        public bool HasChallengeSent(TournamentBase tournament, string challengerTeamName)
         {
-            return tournament.MatchLog.LadderMatchesToPlay.Any(m =>
+            return tournament.MatchLog.GetAllActiveMatches().Any(m =>
                 m.Challenge != null &&
                 m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase));
         }
 
-        public Match? GetChallengeMatchByChallengerName(Tournament tournament, string challengerTeamName)
+        public Match? GetChallengeMatchByChallengerName(TournamentBase tournament, string challengerTeamName)
         {
-            return tournament.MatchLog.LadderMatchesToPlay.FirstOrDefault(m =>
+            return tournament.MatchLog.GetAllActiveMatches().FirstOrDefault(m =>
                 m.Challenge != null &&
                 m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase));
         }
@@ -1532,7 +1533,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public async void SendChallengeSuccessNotificationProcess(Tournament tournament, Match match, Team challengerTeam, Team challengedTeam)
+        public async void SendChallengeSuccessNotificationProcess(TournamentBase tournament, Match match, Team challengerTeam, Team challengedTeam)
         {
             try
             {
@@ -1573,7 +1574,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public async void SendChallengeCancelNotificationProcess(Tournament tournament, Match match, Team challengerTeam, Team challengedTeam)
+        public async void SendChallengeCancelNotificationProcess(TournamentBase tournament, Match match, Team challengerTeam, Team challengedTeam)
         {
             try
             {

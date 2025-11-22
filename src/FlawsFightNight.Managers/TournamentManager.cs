@@ -238,7 +238,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public bool IsTeamsInSameTournament(Tournament tournament, Team teamA, Team teamB)
+        public bool IsTeamsInSameTournament(TournamentBase tournament, Team teamA, Team teamB)
         {
             var teams = new List<Team> { teamA, teamB };
             foreach (Team team in teams)

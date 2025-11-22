@@ -29,6 +29,16 @@ namespace FlawsFightNight.Core.Models
 
         }
 
+        public void AddMatch(Match match)
+        {
+
+        }
+
+        public void RemoveMatch(Match match)
+        {
+
+        }
+
         public (int, int) GetPointsForAndAgainst(string teamName)
         {
             // Normal Round Robin

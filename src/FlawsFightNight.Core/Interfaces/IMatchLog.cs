@@ -15,6 +15,8 @@ namespace FlawsFightNight.Core.Interfaces
         List<PostMatch> GetAllPostMatches();
         bool ContainsMatchId(string matchId);
         Match? GetMatchById(string matchId);
+        void AddMatch(Match match);
+        void RemoveMatch(Match match);
         (int pointsFor, int pointsAgainst) GetPointsForAndAgainst(string teamName);
         void ConvertMatchToPostMatch(TournamentBase tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore);
     }

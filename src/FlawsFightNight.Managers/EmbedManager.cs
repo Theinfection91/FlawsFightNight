@@ -440,7 +440,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Challenge Embeds
-        public Embed SendChallengeSuccess(Tournament tournament, Match match, bool isGuildAdminReporting)
+        public Embed SendChallengeSuccess(TournamentBase tournament, Match match, bool isGuildAdminReporting)
         {
             string reporterText = isGuildAdminReporting
                 ? "An **admin** sent this challenge."
@@ -461,7 +461,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed CancelChallengeSuccess(Tournament tournament, Match match, bool isGuildAdminReporting)
+        public Embed CancelChallengeSuccess(TournamentBase tournament, Match match, bool isGuildAdminReporting)
         {
             string reporterText = isGuildAdminReporting
                 ? "An **admin** canceled this challenge."
@@ -617,7 +617,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed LadderSendChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        public Embed LadderSendChallengeMatchNotification(TournamentBase tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
         {
             switch (isChallenger)
             {
@@ -650,7 +650,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public Embed LadderCancelChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        public Embed LadderCancelChallengeMatchNotification(TournamentBase tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
         {
             switch (isChallenger)
             {
@@ -712,7 +712,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed AddTeamLossSuccess(Team team, Tournament tournament, int numberOfLosses)
+        public Embed AddTeamLossSuccess(Team team, TournamentBase tournament, int numberOfLosses)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("❌ Team Loss Recorded Successfully")
@@ -725,7 +725,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed AddTeamWinSuccess(Team team, Tournament tournament, int numberOfWins)
+        public Embed AddTeamWinSuccess(Team team, TournamentBase tournament, int numberOfWins)
         {
             var embed = new EmbedBuilder()
                  .WithTitle("✅ Team Win Recorded Successfully")
@@ -738,7 +738,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed RemoveTeamWinSuccess(Team team, Tournament tournament, int numberOfWins)
+        public Embed RemoveTeamWinSuccess(Team team, TournamentBase tournament, int numberOfWins)
         {
             var embed = new EmbedBuilder()
                  .WithTitle("✅ Team Win(s) Removed Successfully")
@@ -751,7 +751,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed RemoveTeamLossSuccess(Team team, Tournament tournament, int numberOfLosses)
+        public Embed RemoveTeamLossSuccess(Team team, TournamentBase tournament, int numberOfLosses)
         {
             var embed = new EmbedBuilder()
                  .WithTitle("✅ Team Loss(es) Removed Successfully")
@@ -764,7 +764,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed SetTeamRankSuccess(Team team, Tournament tournament)
+        public Embed SetTeamRankSuccess(Team team, TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🏅 Team Rank Updated Successfully")

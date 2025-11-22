@@ -75,6 +75,31 @@ namespace FlawsFightNight.Core.Models.MatchLogs
             return null;
         }
 
+        public override void AddMatch(Match match)
+        {
+            if (!MatchesToPlayByRound.ContainsKey(match.RoundNumber))
+            {
+                MatchesToPlayByRound[match.RoundNumber] = new List<Match>();
+            }
+            MatchesToPlayByRound[match.RoundNumber].Add(match);
+        }
+
+        public override void RemoveMatch(Match match)
+        {
+            foreach (var roundNumber in MatchesToPlayByRound.Keys.ToList())
+            {
+                if (MatchesToPlayByRound[roundNumber].Remove(match))
+                {
+                    // If no more matches left in this round, remove the round entry
+                    if (MatchesToPlayByRound[roundNumber].Count == 0)
+                    {
+                        MatchesToPlayByRound.Remove(roundNumber);
+                    }
+                    break;
+                }
+            }
+        }
+
         public bool IsRoundComplete(int roundNumber)
         {
             if (MatchesToPlayByRound.ContainsKey(roundNumber))

@@ -35,6 +35,8 @@ namespace FlawsFightNight.Core.Models.MatchLogs
         }
         public abstract bool ContainsMatchId(string matchId);
         public abstract Match? GetMatchById(string matchId);
+        public abstract void AddMatch(Match match);
+        public abstract void RemoveMatch(Match match);
         public abstract void ConvertMatchToPostMatch(TournamentBase tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore);
     }
 }
