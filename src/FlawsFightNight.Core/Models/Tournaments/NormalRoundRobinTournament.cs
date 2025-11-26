@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
@@ -25,11 +26,13 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public bool IsDoubleRoundRobin { get; set; } = true;
 
+        [JsonConstructor]
+        protected NormalRoundRobinTournament() : base() { }
 
         public NormalRoundRobinTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
             Type = TournamentType.NormalRoundRobin;
-            MatchLog = new NormalRoundRobinMatchLog();
+            MatchLog ??= new NormalRoundRobinMatchLog();
             Console.WriteLine($"Test - {MatchLog.GetType().ToString()}");
         }
 

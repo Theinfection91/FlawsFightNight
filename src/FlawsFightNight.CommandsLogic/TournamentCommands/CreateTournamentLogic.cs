@@ -52,7 +52,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                     return _embedManager.ToDoEmbed("Sorry, but for now only Normal Ladder and either Normal or Open Round Robin tournaments may be created and played. Please try again.");
                 }
 
-                // Add the tournament, this will also save and reload the database
+                // Add the tournament
                 _tournamentManager.AddTournament(tournament);
 
                 // Save and reload the database
