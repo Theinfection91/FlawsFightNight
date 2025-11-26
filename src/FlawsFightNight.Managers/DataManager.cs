@@ -131,7 +131,7 @@ namespace FlawsFightNight.Managers
         public void AddTournament(TournamentBase tournament)
         {
             TournamentsDatabaseFile.NewTournaments.Add(tournament);
-            SaveAndReloadTournamentsDatabase();
+            //SaveAndReloadTournamentsDatabase();
         }
 
         // TODO Old version, remove later

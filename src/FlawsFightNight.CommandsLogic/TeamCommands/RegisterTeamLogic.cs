@@ -108,7 +108,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             }
 
             // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            //_tournamentManager.SaveAndReloadTournamentsDatabase();
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

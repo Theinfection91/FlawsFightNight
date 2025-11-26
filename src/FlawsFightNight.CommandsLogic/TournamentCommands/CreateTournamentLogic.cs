@@ -27,36 +27,46 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
         public Embed CreateTournamentProcess(SocketInteractionContext context, string name, TournamentType tournamentType, int teamSize, string? description = null)
         {
-            // Check if tournament name is unique
-            if (!_tournamentManager.IsTournamentNameUnique(name))
+            try
             {
-                return _embedManager.ErrorEmbed(Name, $"A tournament with the name '{name}' already exists. Please choose a different name.");
+                // Check if tournament name is unique
+                if (!_tournamentManager.IsTournamentNameUnique(name))
+                {
+                    return _embedManager.ErrorEmbed(Name, $"A tournament with the name '{name}' already exists. Please choose a different name.");
+                }
+
+                // TODO Old version, remove later
+                //Tournament tournament = _tournamentManager.CreateTournament(name, tournamentType, teamSize, description);
+
+                // New version
+                TournamentBase tournament = _tournamentManager.CreateNewTournament(name, tournamentType, teamSize, description);
+
+                if (tournament == null)
+                {
+                    return _embedManager.ErrorEmbed(Name, "Null tournament returned. Canceling command. Contact an admin for support.");
+                }
+
+                // Prevent any tournament types that are not Round Robin or Ladder for now
+                if (tournament.Type is not (TournamentType.NormalLadder or TournamentType.NormalRoundRobin or TournamentType.OpenRoundRobin))
+                {
+                    return _embedManager.ToDoEmbed("Sorry, but for now only Normal Ladder and either Normal or Open Round Robin tournaments may be created and played. Please try again.");
+                }
+
+                // Add the tournament, this will also save and reload the database
+                _tournamentManager.AddTournament(tournament);
+
+                // Save and reload the database
+                _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+                // Backup to git repo
+                _gitBackupManager.CopyAndBackupFilesToGit();
+
+                return _embedManager.CreateTournamentSuccessResolver(tournament);
             }
-
-            // TODO Old version, remove later
-            //Tournament tournament = _tournamentManager.CreateTournament(name, tournamentType, teamSize, description);
-
-            // New version
-            TournamentBase tournament = _tournamentManager.CreateNewTournament(name, tournamentType, teamSize, description);
-
-            if (tournament == null)
+            catch (Exception ex)
             {
-                return _embedManager.ErrorEmbed(Name, "Null tournament returned. Canceling command. Contact an admin for support.");
+                return _embedManager.ToDoEmbed($"An error occurred while creating the tournament: {ex.Message}");
             }
-
-            // Prevent any tournament types that are not Round Robin or Ladder for now
-            if (tournament.Type is not (TournamentType.NormalLadder or TournamentType.NormalRoundRobin or TournamentType.OpenRoundRobin))
-            {
-                return _embedManager.ToDoEmbed("Sorry, but for now only Normal Ladder and either Normal or Open Round Robin tournaments may be created and played. Please try again.");
-            }
-
-            // Add the tournament, this will also save and reload the database
-            _tournamentManager.AddTournament(tournament);
-
-            // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
-
-            return _embedManager.CreateTournamentSuccessResolver(tournament);
         }
     }
 }

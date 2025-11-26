@@ -33,6 +33,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 
         public Embed ReportWinProcess(SocketInteractionContext context, string matchId, string winningTeamName, int winningTeamScore, int losingTeamScore)
         {
+            _tournamentManager.LoadTournamentsDatabase();
             if (losingTeamScore > winningTeamScore)
             {
                 return _embedManager.ErrorEmbed(Name, "The losing team score cannot be greater than the winning team score.");

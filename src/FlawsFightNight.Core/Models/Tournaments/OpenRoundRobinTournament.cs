@@ -22,6 +22,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
         {
             Type = TournamentType.OpenRoundRobin;
             MatchLog = new OpenRoundRobinMatchLog();
+            Console.WriteLine($"{MatchLog.GetType().ToString()}");
         }
 
         public override bool CanStart()
