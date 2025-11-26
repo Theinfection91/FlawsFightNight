@@ -13,7 +13,10 @@ namespace FlawsFightNight.Core.Models.MatchLogs
         public Dictionary<int, List<Match>> MatchesToPlayByRound { get; set; } = [];
         public Dictionary<int, List<PostMatch>> PostMatchesByRound { get; set; } = [];
 
-        public NormalRoundRobinMatchLog() { }
+        public NormalRoundRobinMatchLog()
+        {
+            
+        }
 
         public override void ClearLog()
         {
@@ -55,6 +58,13 @@ namespace FlawsFightNight.Core.Models.MatchLogs
             foreach (var round in MatchesToPlayByRound.Values)
             {
                 if (round.Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+            }
+            foreach (var round in PostMatchesByRound.Values)
+            {
+                if (round.Any(pm => pm.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
                 {
                     return true;
                 }

@@ -66,66 +66,12 @@ namespace FlawsFightNight.Managers
             // Check Normal Round Robin
             foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
             {
-                if (tournament.MatchLog is NormalRoundRobinMatchLog normalRoundRobinMatchLog)
+                Console.WriteLine($"Checking Tournament: {tournament.Name}");
+                if (tournament.MatchLog.ContainsMatchId(matchId))
                 {
-                    foreach (var round in normalRoundRobinMatchLog.MatchesToPlayByRound.Values)
-                    {
-                        foreach (var match in round)
-                        {
-                            if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                    foreach (var round in normalRoundRobinMatchLog.PostMatchesByRound.Values)
-                    {
-                        foreach (var match in round)
-                        {
-                            if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                            {
-                                return true;
-                            }
-                        }
-                    }
+                    return true;
                 }
             }
-            // Check Open Round Robin
-            //foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            //{
-            //    foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
-            //    {
-            //        if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-            //        {
-            //            return true;
-            //        }
-            //    }
-            //    foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
-            //    {
-            //        if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-            //        {
-            //            return true;
-            //        }
-            //    }
-            //}
-            //// Check Ladder
-            //foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            //{
-            //    foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
-            //    {
-            //        if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-            //        {
-            //            return true;
-            //        }
-            //    }
-            //    foreach (var postMatch in tournament.MatchLog.LadderPostMatches)
-            //    {
-            //        if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-            //        {
-            //            return true;
-            //        }
-            //    }
-            //}
             return false;
         }
 
@@ -626,7 +572,7 @@ namespace FlawsFightNight.Managers
 
         private Match GetOpenMatchByTeamNameNormalRoundRobin(TournamentBase tournament, string teamName)
         {
-            
+
             //int currentRound = 0;
             ////Console.WriteLine($"Looking in round: {currentRound}");
 
@@ -1451,7 +1397,7 @@ namespace FlawsFightNight.Managers
                 tournament.MatchLog.MatchesToPlayByRound.Remove(match.RoundNumber);
 
                 //Console.WriteLine($"All matches for round {match.RoundNumber} have been completed. Admins now need to double check scores and then lock in the round before advancing.");
-                
+
                 tournament.IsRoundComplete = true;
             }
 
