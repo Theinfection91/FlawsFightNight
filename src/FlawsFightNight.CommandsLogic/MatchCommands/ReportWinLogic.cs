@@ -52,7 +52,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 
             // Grab the tournament associated with the match
             TournamentBase tournament = _tournamentManager.GetTournamentFromTeamName(winningTeamName);
-            Console.WriteLine($"{tournament.MatchLog.GetAllActiveMatches().Count}");
 
             if (!tournament.IsRunning)
             {

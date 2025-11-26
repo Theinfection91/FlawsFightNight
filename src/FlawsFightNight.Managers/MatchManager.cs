@@ -63,7 +63,6 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool IsMatchIdInDatabase(string matchId)
         {
-            // Check Normal Round Robin
             foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
             {
                 Console.WriteLine($"Checking Tournament: {tournament.Name}");

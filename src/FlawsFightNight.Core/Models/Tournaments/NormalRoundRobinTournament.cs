@@ -30,6 +30,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
         {
             Type = TournamentType.NormalRoundRobin;
             MatchLog = new NormalRoundRobinMatchLog();
+            Console.WriteLine($"{MatchLog.GetType().ToString()}");
         }
 
         public override bool CanStart()

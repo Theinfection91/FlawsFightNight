@@ -15,7 +15,7 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 
         public NormalRoundRobinMatchLog()
         {
-            
+
         }
 
         public override void ClearLog()
@@ -35,12 +35,14 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 
         public override List<Match> GetAllActiveMatches(int currentRound = 0)
         {
-            if (currentRound > 0 && MatchesToPlayByRound.ContainsKey(currentRound))
+            foreach (var round in MatchesToPlayByRound.Values)
             {
-                return MatchesToPlayByRound[currentRound].Where(m => !m.IsByeMatch).ToList();
+                foreach (var match in round)
+                {
+                    return MatchesToPlayByRound.Values.SelectMany(r => r).Where(m => !m.IsByeMatch).ToList();
+                }
             }
-
-            return new List<Match>();
+            return [];
         }
 
         public override List<PostMatch> GetAllPostMatches()
@@ -55,16 +57,30 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 
         public override bool ContainsMatchId(string matchId)
         {
-            foreach (var round in MatchesToPlayByRound.Values)
+            //foreach (var round in MatchesToPlayByRound.Values)
+            //{
+            //    if (round.Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
+            //    {
+            //        return true;
+            //    }
+            //}
+            //foreach (var round in PostMatchesByRound.Values)
+            //{
+            //    if (round.Any(pm => pm.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
+            //    {
+            //        return true;
+            //    }
+            //}
+            foreach (var match in GetAllActiveMatches())
             {
-                if (round.Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
+                if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
             }
-            foreach (var round in PostMatchesByRound.Values)
+            foreach (var postMatch in GetAllPostMatches())
             {
-                if (round.Any(pm => pm.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
+                if (postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
