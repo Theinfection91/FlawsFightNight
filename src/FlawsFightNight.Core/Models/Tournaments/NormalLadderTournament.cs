@@ -1,21 +1,29 @@
-﻿using System;
+﻿using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
+using FlawsFightNight.Core.Models.MatchLogs;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FlawsFightNight.Core.Enums;
-using FlawsFightNight.Core.Interfaces;
-using FlawsFightNight.Core.Models.MatchLogs;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
     public class NormalLadderTournament : TournamentBase, INormalLadderRankSystem
     {
         public override TournamentType Type { get; protected set; } = TournamentType.NormalLadder;
-        public override MatchLogBase MatchLog { get; protected set; } = new NormalLadderMatchLog();
+
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
+        public override MatchLogBase MatchLog { get; protected set; }
+
+        [JsonConstructor]
+        protected NormalLadderTournament() : base() { }
+
         public NormalLadderTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
-
+            MatchLog ??= new NormalLadderMatchLog();
+            Console.WriteLine($"Normal Ladder Constructor Called");
         }
 
         public override bool CanStart()

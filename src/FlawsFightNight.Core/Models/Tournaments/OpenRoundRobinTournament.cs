@@ -7,24 +7,30 @@ using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.MatchLogs;
 using FlawsFightNight.Core.Models.TieBreakers;
+using Newtonsoft.Json;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
     public class OpenRoundRobinTournament : TournamentBase, ITeamLocking, ITieBreakerRankSystem
     {
         public override TournamentType Type { get; protected set; } = TournamentType.OpenRoundRobin;
-        public override MatchLogBase MatchLog { get; protected set; } = new OpenRoundRobinMatchLog();
+
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
+        public override MatchLogBase MatchLog { get; protected set; }
+
         public bool IsTeamsLocked { get; set; } = false;
         public bool CanTeamsBeLocked { get; set; } = false;
         public bool CanTeamsBeUnlocked { get; set; } = false;
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
         public bool IsDoubleRoundRobin { get; set; } = true;
 
+        [JsonConstructor]
+        public OpenRoundRobinTournament() : base() { }
+
         public OpenRoundRobinTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
-            //Type = TournamentType.OpenRoundRobin;
-            //MatchLog = new OpenRoundRobinMatchLog();
-            Console.WriteLine($"Open RR - {MatchLog.GetType().ToString()}");
+            MatchLog ??= new OpenRoundRobinMatchLog();
+            Console.WriteLine($"Open RR Constructor Called");
         }
 
         public override bool CanStart()
