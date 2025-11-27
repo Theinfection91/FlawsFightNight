@@ -72,16 +72,44 @@ namespace FlawsFightNight.Core.Models.Tournaments
         {
             if (Teams == null || Teams.Count == 0)
             {
+                Console.WriteLine("ReassignRanks: No teams available. Nothing to do.");
                 return;
             }
 
+            // Snapshot before sorting
+            try
+            {
+                var beforeSnapshot = string.Join(", ", Teams.Select((t, idx) => $"[{idx}] {t.Name} (rank={t.Rank})"));
+                Console.WriteLine($"ReassignRanks: Before sort -> {beforeSnapshot}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ReassignRanks: Failed to create before-snapshot: {ex.Message}");
+            }
+
             Teams.Sort((a, b) => a.Rank.CompareTo(b.Rank));
+            Console.WriteLine("ReassignRanks: Teams sorted by rank.");
+
+            // Snapshot after sorting
+            try
+            {
+                var afterSnapshot = string.Join(", ", Teams.Select((t, idx) => $"[{idx}] {t.Name} (rank={t.Rank})"));
+                Console.WriteLine($"ReassignRanks: After sort -> {afterSnapshot}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ReassignRanks: Failed to create after-snapshot: {ex.Message}");
+            }
 
             // Reassign ranks sequentially from 1 to N
             for (int i = 0; i < Teams.Count; i++)
             {
+                var oldRank = Teams[i].Rank;
                 Teams[i].Rank = i + 1;
+                Console.WriteLine($"ReassignRanks: Assigned new rank {Teams[i].Rank} to team {Teams[i].Name} (old rank={oldRank})");
             }
+
+            Console.WriteLine("ReassignRanks: Completed rank reassignment.");
         }
     }
 }

@@ -46,7 +46,20 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 
         public override void ConvertMatchToPostMatch(TournamentBase tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore)
         {
-            // TODO Normal Ladder Post Match Conversion Logic
+            // Ensure the match exists in active matches
+            if (!GetAllActiveMatches().Contains(match))
+            {
+                return;
+            }
+
+            // Create PostMatch
+            PostMatch postMatch = new(match.Id, winningTeamName, winningTeamScore, losingTeamName, losingTeamScore, match.CreatedOn, match.IsByeMatch, match.Challenge);
+
+            // Add to PostMatches
+            PostMatches.Add(postMatch);
+
+            // Remove from active Matches
+            RemoveMatch(match);
         }
     }
 }
