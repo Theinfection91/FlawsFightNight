@@ -44,8 +44,8 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override bool CanEnd()
         {
-            // A ladder tournament can be ended at any time
-            return true;
+            // If the tournament is running, it can be ended at any time
+            return IsRunning;
         }
 
         public override void End()

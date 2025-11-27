@@ -885,20 +885,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed EndTournamentSuccessResolver(Tournament tournament, bool isTieBreakerNeeded = false, string tieBreakerInfo = null)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    return LadderEndTournamentSuccess(tournament);
-                case TournamentType.RoundRobin:
-                    return RoundRobinEndTournamentSuccess(tournament, isTieBreakerNeeded, tieBreakerInfo);
-                default:
-                    return ErrorEmbed("Unsupported tournament type.");
-            }
-        }
-
-        private Embed LadderEndTournamentSuccess(Tournament tournament)
+        public Embed NormalLadderEndTournamentSuccess(TournamentBase tournament)
         {
             // Grab top 3 teams
             Team? firstPlace = tournament.Teams.Count > 0 ? tournament.Teams.OrderBy(t => t.Rank).First() : null;
@@ -954,7 +941,7 @@ namespace FlawsFightNight.Managers
             return embedBuilder.Build();
         }
 
-        private Embed RoundRobinEndTournamentSuccess(Tournament tournament, bool isTieBreakerNeeded = false, string tieBreakerInfo = null)
+        public Embed RoundRobinEndTournamentSuccess(TournamentBase tournament, bool isTieBreakerNeeded = false, string tieBreakerInfo = null)
         {
             // Grab top 3 teams
             Team? firstPlace = tournament.Teams.Count > 0 ? tournament.Teams.OrderBy(t => t.Rank).First() : null;
@@ -966,7 +953,7 @@ namespace FlawsFightNight.Managers
             string secondPlaceMembers = secondPlace?.GetMembersAsString() ?? "";
             string thirdPlaceMembers = thirdPlace?.GetMembersAsString() ?? "";
 
-            var description = $"The tournament **{tournament.Name}** ({tournament.TeamSizeFormat} {tournament.GetFormattedTournamentType()}) has officially ended.";
+            var description = $"The tournament **{tournament.Name}** ({tournament.TeamSizeFormat} {tournament.GetFormattedType()}) has officially ended.";
 
             if (isTieBreakerNeeded)
             {
@@ -1033,7 +1020,6 @@ namespace FlawsFightNight.Managers
 
             return embedBuilder.Build();
         }
-
 
         public Embed LockTeamsSuccess(TournamentBase tournament)
         {

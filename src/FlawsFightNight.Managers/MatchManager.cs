@@ -337,33 +337,22 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public bool IsTieBreakerNeededForFirstPlace(MatchLog matchLog)
+        public bool IsTieBreakerNeededForFirstPlace(MatchLogBase matchLog)
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
             // Count wins
-            foreach (var round in matchLog.PostMatchesByRound)
+            foreach (var match in matchLog.GetAllPostMatches())
             {
-                foreach (var postMatch in round.Value)
+                if (!match.WasByeMatch)
                 {
-                    if (postMatch.WasByeMatch) continue;
-
-                    string winnerKey = postMatch.Winner ?? "UNKNOWN";
-
-                    if (!teamWins.ContainsKey(winnerKey))
-                        teamWins[winnerKey] = 0;
-
-                    teamWins[winnerKey]++;
+                    string winner = match.Winner;
+                    if (!teamWins.ContainsKey(winner))
+                    {
+                        teamWins[winner] = 0;
+                    }
+                    teamWins[winner]++;
                 }
-            }
-
-            foreach (var match in matchLog.OpenRoundRobinPostMatches)
-            {
-                if (match.WasByeMatch) continue;
-                string winnerKey = match.Winner ?? "UNKNOWN";
-                if (!teamWins.ContainsKey(winnerKey))
-                    teamWins[winnerKey] = 0;
-                teamWins[winnerKey]++;
             }
 
             if (teamWins.Count == 0)
@@ -556,38 +545,22 @@ namespace FlawsFightNight.Managers
             return null; // PostMatch ID not found
         }
 
-        public List<string> GetTiedTeams(MatchLog matchLog, bool isDoubleRoundRobin)
+        public List<string> GetTiedTeams(MatchLogBase matchLog)
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
             // Count wins
-            foreach (var roundKvp in matchLog.PostMatchesByRound)
+            foreach (var match in matchLog.GetAllPostMatches())
             {
-                foreach (var postMatch in roundKvp.Value)
+                if (!match.WasByeMatch)
                 {
-                    if (!postMatch.WasByeMatch)
+                    string winner = match.Winner;
+                    if (!teamWins.ContainsKey(winner))
                     {
-                        string winnerKey = postMatch.Winner;
-
-                        if (!teamWins.ContainsKey(winnerKey))
-                        {
-                            teamWins[winnerKey] = 0;
-                        }
-
-                        teamWins[winnerKey]++;
+                        teamWins[winner] = 0;
                     }
+                    teamWins[winner]++;
                 }
-            }
-
-            foreach (var match in matchLog.OpenRoundRobinPostMatches)
-            {
-                if (match.WasByeMatch) continue;
-                string winnerKey = match.Winner;
-                if (!teamWins.ContainsKey(winnerKey))
-                {
-                    teamWins[winnerKey] = 0;
-                }
-                teamWins[winnerKey]++;
             }
 
             if (teamWins.Count == 0)
