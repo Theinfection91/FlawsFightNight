@@ -45,7 +45,6 @@ namespace FlawsFightNight.Data.Handlers
 
         public T Load()
         {
-            Console.WriteLine($"Loading data from {_filePath}");
             var json = File.ReadAllText(_filePath);
             return JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
             {
@@ -88,7 +87,6 @@ namespace FlawsFightNight.Data.Handlers
 
         public void Save(T data)
         {
-            Console.WriteLine($"Saving data to {_filePath}");
             var json = JsonConvert.SerializeObject(data, Formatting.Indented, new JsonSerializerSettings
             {
                 TypeNameHandling = TypeNameHandling.Auto

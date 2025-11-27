@@ -123,6 +123,9 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Convert match to post-match
             tournament.MatchLog.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
 
+            // Adjust ranks if needed
+            tournament.AdjustRanks();
+
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
 

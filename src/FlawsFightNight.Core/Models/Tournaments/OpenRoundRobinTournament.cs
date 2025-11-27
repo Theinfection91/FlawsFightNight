@@ -30,7 +30,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public OpenRoundRobinTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
             MatchLog ??= new OpenRoundRobinMatchLog();
-            Console.WriteLine($"Open RR Constructor Called");
         }
 
         public override bool CanStart()
@@ -103,6 +102,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
             // Allow teams to be locked again after unlocking
             CanTeamsBeLocked = true;
+        }
+
+        public override void AdjustRanks()
+        {
+            SetRanksByTieBreakerLogic();
         }
 
         public void SetRanksByTieBreakerLogic()

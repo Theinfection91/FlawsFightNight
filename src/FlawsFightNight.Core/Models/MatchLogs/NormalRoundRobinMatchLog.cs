@@ -179,33 +179,40 @@ namespace FlawsFightNight.Core.Models.MatchLogs
         {
             if (MatchesToPlayByRound.ContainsKey(roundNumber))
             {
-                foreach (var match in MatchesToPlayByRound[roundNumber])
+                // Take a snapshot of matches to process
+                var matchesThisRound = MatchesToPlayByRound[roundNumber]
+                    .Where(m => m.IsByeMatch)
+                    .ToList();
+
+                foreach (var match in matchesThisRound)
                 {
-                    if (match.IsByeMatch)
-                    {
-                        // Create a PostMatch for the bye match
-                        PostMatch postMatch = new(match.Id, match.GetCorrectByeNameForByeMatch(), 0, "BYE", 0, DateTime.UtcNow, true);
+                    // Create a PostMatch for the bye match
+                    PostMatch postMatch = new(
+                        match.Id,
+                        match.GetCorrectByeNameForByeMatch(),
+                        0,
+                        "BYE",
+                        0,
+                        DateTime.UtcNow,
+                        true
+                    );
 
-                        // If no PostMatches list for this round, create it
-                        if (!PostMatchesByRound.ContainsKey(roundNumber))
-                        {
-                            PostMatchesByRound[roundNumber] = new List<PostMatch>();
-                        }
+                    // Ensure PostMatchesByRound entry exists
+                    if (!PostMatchesByRound.ContainsKey(roundNumber))
+                        PostMatchesByRound[roundNumber] = new List<PostMatch>();
 
-                        // Add the PostMatch to the round's list
-                        PostMatchesByRound[roundNumber].Add(postMatch);
+                    // Add the PostMatch
+                    PostMatchesByRound[roundNumber].Add(postMatch);
 
-                        // Remove the match from MatchesToPlay
-                        MatchesToPlayByRound[roundNumber].Remove(match);
-
-                        // If no more matches left in this round, remove the round entry
-                        if (MatchesToPlayByRound[roundNumber].Count == 0)
-                        {
-                            MatchesToPlayByRound.Remove(roundNumber);
-                        }
-                    }
+                    // Remove the original match safely
+                    MatchesToPlayByRound[roundNumber].Remove(match);
                 }
+
+                // Remove round entry if no more matches left
+                if (MatchesToPlayByRound[roundNumber].Count == 0)
+                    MatchesToPlayByRound.Remove(roundNumber);
             }
         }
+
     }
 }

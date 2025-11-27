@@ -65,7 +65,6 @@ namespace FlawsFightNight.Managers
         {
             foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
             {
-                Console.WriteLine($"Checking Tournament: {tournament.Name}");
                 if (tournament.MatchLog.ContainsMatchId(matchId))
                 {
                     return true;

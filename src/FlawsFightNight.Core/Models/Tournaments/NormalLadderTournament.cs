@@ -23,7 +23,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public NormalLadderTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
             MatchLog ??= new NormalLadderMatchLog();
-            Console.WriteLine($"Normal Ladder Constructor Called");
         }
 
         public override bool CanStart()
@@ -62,6 +61,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public override bool CanAcceptNewTeams()
         {
             return true;
+        }
+
+        public override void AdjustRanks()
+        {
+            ReassignRanks();
         }
 
         public void ReassignRanks()

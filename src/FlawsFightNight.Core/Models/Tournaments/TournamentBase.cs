@@ -39,5 +39,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public abstract string GetFormattedType();
         public abstract bool CanDelete();
         public abstract bool CanAcceptNewTeams();
+        public abstract void AdjustRanks();
     }
 }

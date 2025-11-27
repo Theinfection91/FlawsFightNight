@@ -37,7 +37,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public NormalRoundRobinTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
             MatchLog ??= new NormalRoundRobinMatchLog();
-            Console.WriteLine($"Normal RR Constructor Called");
         }
 
         public override bool CanStart()
@@ -174,10 +173,22 @@ namespace FlawsFightNight.Core.Models.Tournaments
             // TODO Test Normal RR DoesRoundContainByeMatch logic here
             if (MatchLog is NormalRoundRobinMatchLog rrLog)
             {
-                var matchesThisRound = rrLog.GetAllActiveMatches().Where(m => m.RoundNumber == CurrentRound);
-                return matchesThisRound.Any(m => m.IsByeMatch);
+                //var matchesThisRound = rrLog.GetAllActiveMatches().Where(m => m.RoundNumber == CurrentRound);
+                //return matchesThisRound.Any(m => m.IsByeMatch);
+                foreach (var match in rrLog.MatchesToPlayByRound[CurrentRound])
+                {
+                    if (match.IsByeMatch)
+                    {
+                        return true;
+                    }
+                }
             }
             return false;
+        }
+
+        public override void AdjustRanks()
+        {
+            SetRanksByTieBreakerLogic();
         }
 
         public void SetRanksByTieBreakerLogic()
