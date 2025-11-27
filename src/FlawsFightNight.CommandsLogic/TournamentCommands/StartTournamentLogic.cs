@@ -43,7 +43,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' does not meet the requirements to start. Please ensure all conditions are met before starting the tournament.");
             }
 
-            // Build match schedule s if applicable and start tournament
+            // Build match schedules if applicable and start tournament
             if (tournament is NormalRoundRobinTournament normalRRTournament)
             {
                 _matchManager.BuildRoundRobinMatchSchedule(normalRRTournament);
@@ -53,6 +53,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 _matchManager.BuildRoundRobinMatchSchedule(openRRTournament);
             }
             tournament.Start();
+
+            // Send out match schedules to each member of every team
+            _matchManager.SendMatchSchedulesToTeamsResolver(tournament);
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
