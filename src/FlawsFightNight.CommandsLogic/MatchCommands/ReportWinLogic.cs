@@ -123,12 +123,15 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Convert match to post-match
             tournament.MatchLog.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
 
-            if (tournament is NormalLadderTournament)
+            if (tournament is NormalLadderTournament ladderTournament)
             {
                 if (_matchManager.IsWinningTeamChallenger(match, winningTeam))
                 {
-                    winningTeam.Rank = losingTeam.Rank;
-                    losingTeam.Rank++;
+                    //winningTeam.Rank = losingTeam.Rank;
+                    //losingTeam.Rank++;
+                    //ladderTournament.ReassignRanks();
+
+                    ladderTournament.RankChangeProcess(winningTeam, losingTeam);
                 }
                 winningTeam.IsChallengeable = true;
                 losingTeam.IsChallengeable = true;

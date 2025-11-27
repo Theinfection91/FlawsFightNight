@@ -68,6 +68,21 @@ namespace FlawsFightNight.Core.Models.Tournaments
             ReassignRanks();
         }
 
+        public void RankChangeProcess(Team winningTeam, Team losingTeam)
+        {
+            // Swap ranks between winning and losing teams, losing team moves down one rank
+            winningTeam.Rank = losingTeam.Rank;
+
+            // All teams ranked between the winning and losing teams move down one rank
+            foreach (var team in Teams)
+            {
+                if (team != winningTeam && team.Rank >= winningTeam.Rank && team.Rank < losingTeam.Rank)
+                {
+                    team.Rank++;
+                }
+            }
+        }
+
         public void ReassignRanks()
         {
             if (Teams == null || Teams.Count == 0)
