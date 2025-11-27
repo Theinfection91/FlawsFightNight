@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
 using System;
@@ -845,26 +846,14 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed SetupTournamentResolver(Tournament tournament)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.RoundRobin:
-                    return RoundRobinSetupTournamentSuccess(tournament);
-                default:
-                    return ErrorEmbed("Unsupported tournament type.");
-            }
-        }
-
-        private Embed RoundRobinSetupTournamentSuccess(Tournament tournament)
+        public Embed RoundRobinSetupTournamentSuccess(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("⚙️ Tournament Setup Success")
                 .WithDescription($"The Round Robin tournament **{tournament.Name}** has been successfully updated.")
                 .AddField("Tournament ID", tournament.Id)
-                .AddField("Match Type", tournament.RoundRobinMatchType)
-                .AddField("Tie Breaker Rules", tournament.TieBreakerRule.Name)
-                .AddField("Round Robin Type", tournament.IsDoubleRoundRobin ? RoundRobinLengthType.Double : RoundRobinLengthType.Single)
+                .AddField("Tie Breaker Rules", (tournament as ITieBreakerRankSystem)?.TieBreakerRule.Name)
+                .AddField("Round Robin Type", (bool)((tournament as IRoundRobinLength)?.IsDoubleRoundRobin) ? RoundRobinLengthType.Double : RoundRobinLengthType.Single)
                 .WithColor(Color.Green)
                 .WithFooter("You can change the settings again anytime before starting.")
                 .WithTimestamp(DateTimeOffset.Now);

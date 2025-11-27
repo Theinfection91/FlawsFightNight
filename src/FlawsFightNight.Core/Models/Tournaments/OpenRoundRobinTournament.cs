@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class OpenRoundRobinTournament : TournamentBase, ITeamLocking, ITieBreakerRankSystem
+    public class OpenRoundRobinTournament : TournamentBase, IRoundRobinLength, ITeamLocking, ITieBreakerRankSystem
     {
         public override TournamentType Type { get; protected set; } = TournamentType.OpenRoundRobin;
         public bool IsTeamsLocked { get; set; } = false;

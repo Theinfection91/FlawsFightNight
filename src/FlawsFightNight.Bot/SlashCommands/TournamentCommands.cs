@@ -144,14 +144,13 @@ namespace FlawsFightNight.Bot.SlashCommands
             [Summary("tournament_id", "The ID of the tournament to setup")
             //, Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))
             ] string tournamentId,
-            [Summary("match_type", "Normal for round based, open for any time matches")] RoundRobinMatchType matchType,
             [Summary("tie_breaker_ruleset", "The ruleset to use for tie breakers")] TieBreakerType tieBreakerType,
             [Summary("length", "Whether the tournament is a double or single round robin")] RoundRobinLengthType roundRobinType)
         {
             try
             {
                 await DeferAsync();
-                var result = _setupTournamentLogic.SetupRoundRobinTournamentProcess(tournamentId, matchType, tieBreakerType, roundRobinType);
+                var result = _setupTournamentLogic.SetupRoundRobinTournamentProcess(tournamentId, tieBreakerType, roundRobinType);
                 await FollowupAsync(embed: result);
                 // TODO Re-enable when correcting autocomplete
                 //_autocompleteCache.UpdateCache();
