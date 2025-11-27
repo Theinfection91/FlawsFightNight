@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,7 +33,7 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public bool IsMemberRegisteredInTournament(ulong memberId, Tournament tournament)
+        public bool IsMemberRegisteredInTournament(ulong memberId, TournamentBase tournament)
         {
             foreach (Team team in tournament.Teams)
             {

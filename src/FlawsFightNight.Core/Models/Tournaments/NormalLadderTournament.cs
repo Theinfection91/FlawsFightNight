@@ -1,23 +1,31 @@
-﻿using System;
+﻿using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
+using FlawsFightNight.Core.Models.MatchLogs;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FlawsFightNight.Core.Enums;
-using FlawsFightNight.Core.Interfaces;
-using FlawsFightNight.Core.Models.MatchLogs;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class NormalLadderTournament : TournamentBase, IRankSystem
+    public class NormalLadderTournament : TournamentBase, INormalLadderRankSystem
     {
-        public NormalLadderTournament()
+        public override TournamentType Type { get; protected set; } = TournamentType.NormalLadder;
+
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
+        public override MatchLogBase MatchLog { get; protected set; }
+
+        [JsonConstructor]
+        protected NormalLadderTournament() : base() { }
+
+        public NormalLadderTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
-            Type = TournamentType.NormalLadder;
-            MatchLog = new NormalLadderMatchLog();
+            MatchLog ??= new NormalLadderMatchLog();
         }
 
-        public override bool IsReadyToStart()
+        public override bool CanStart()
         {
             // A ladder tournament requires at least 3 teams to function properly
             return Teams.Count >= 3;
@@ -26,13 +34,18 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public override void Start()
         {
             IsRunning = true;
-            // TODO Add Ladder specific start logic here
+
+            // Reset team stats to zero
+            foreach (var team in Teams)
+            {
+                team.ResetTeamToZero();
+            }
         }
 
-        public override bool IsReadyToEnd()
+        public override bool CanEnd()
         {
-            // A ladder tournament can be ended at any time
-            return true;
+            // If the tournament is running, it can be ended at any time
+            return IsRunning;
         }
 
         public override void End()
@@ -42,6 +55,18 @@ namespace FlawsFightNight.Core.Models.Tournaments
         }
 
         public override string GetFormattedType() => "Normal Ladder";
+
+        public override bool CanDelete() => !IsRunning;
+
+        public override bool CanAcceptNewTeams()
+        {
+            return true;
+        }
+
+        public override void AdjustRanks()
+        {
+            ReassignRanks();
+        }
 
         public void ReassignRanks()
         {

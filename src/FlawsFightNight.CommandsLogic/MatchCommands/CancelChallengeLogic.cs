@@ -39,7 +39,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             Team? challengerTeam = _teamManager.GetTeamByName(challengerTeamName);
 
             // Grab tournament from challenger team
-            Tournament? tournament = _tournamentManager.GetTournamentFromTeamName(challengerTeamName);
+            var tournament = _tournamentManager.GetTournamentFromTeamName(challengerTeamName);
             if (tournament == null)
             {
                 // Shouldn't be possible, but just in case
@@ -101,7 +101,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             _matchManager.SendChallengeCancelNotificationProcess(tournament, pendingMatch, challengerTeam, challengedTeam);
 
             // Cancel the challenge, remove match
-            tournament.DeleteLadderMatchFromMatchLog(pendingMatch);
+            tournament.MatchLog.RemoveMatch(pendingMatch);
 
             // Save and reload the tournaments database
             _tournamentManager.SaveAndReloadTournamentsDatabase();

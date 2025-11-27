@@ -11,5 +11,9 @@ namespace FlawsFightNight.Core.Interfaces
         bool IsTeamsLocked { get; set; }
         bool CanTeamsBeLocked { get; set; }
         bool CanTeamsBeUnlocked { get; set; }
+        bool CanLockTeams();
+        bool CanUnlockTeams();
+        void LockTeams();
+        void UnlockTeams();
     }
 }

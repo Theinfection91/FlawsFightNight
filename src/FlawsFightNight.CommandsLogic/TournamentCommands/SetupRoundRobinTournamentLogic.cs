@@ -1,7 +1,9 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.TieBreakers;
+using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -24,7 +26,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed SetupRoundRobinTournamentProcess(string tournamentId, RoundRobinMatchType roundRobinMatchType, TieBreakerType tieBreakerType, RoundRobinLengthType roundRobinType)
+        public Embed SetupRoundRobinTournamentProcess(string tournamentId, TieBreakerType tieBreakerType, RoundRobinLengthType roundRobinType)
         {
             // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
@@ -33,46 +35,41 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // Grab the tournament
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
-
-            // Ensure it is a round robin tournament
-            if (!tournament.Type.Equals(TournamentType.RoundRobin))
+            var tournament = _tournamentManager.GetNewTournamentById(tournamentId);
+            if (tournament == null)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a Round Robin tournament. This command can only be used for Round Robin tournaments.");
+                return _embedManager.ErrorEmbed(Name, "An error occurred while retrieving the tournament. Contact support.");
+            }
+
+            // Ensure it is a form of round robin tournament
+            if (tournament is not NormalRoundRobinTournament or OpenRoundRobinTournament)
+            {
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a Normal or Open Round Robin Tournament. This command can only be used for Round Robin tournaments.");
             }
 
             if (tournament.IsRunning)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is already running. You cannot change its settings now.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is already running. You cannot change it's settings now.");
             }
 
-            // Change match type to choosen type
-            switch (roundRobinMatchType)
-            {
-                case RoundRobinMatchType.Normal:
-                    tournament.RoundRobinMatchType = RoundRobinMatchType.Normal;
-                    break;
-                case RoundRobinMatchType.Open:
-                    tournament.RoundRobinMatchType = RoundRobinMatchType.Open;
-                    break;
-            }
-
-            // Change tie breaker logic to choosen type
-            switch (tieBreakerType)
-            {
-                case TieBreakerType.Traditional:
-                    tournament.TieBreakerRule = new TraditionalTieBreaker();
-                    break;
-            }
+            // Change tie breaker logic to chosen type
+            if (tournament is ITieBreakerRankSystem tbTournament)
+                switch (tieBreakerType)
+                {
+                    case TieBreakerType.Traditional:
+                        tbTournament.TieBreakerRule = new TraditionalTieBreaker();
+                        break;
+                }
 
             // Change round robin type
-           switch (roundRobinType)
+            if (tournament is IRoundRobinLength rrTournament)
+                switch (roundRobinType)
             {
                 case RoundRobinLengthType.Single:
-                    tournament.IsDoubleRoundRobin = false;
+                    rrTournament.IsDoubleRoundRobin = false;
                     break;
                 case RoundRobinLengthType.Double:
-                    tournament.IsDoubleRoundRobin = true;
+                    rrTournament.IsDoubleRoundRobin = true;
                     break;
             }
 
@@ -82,7 +79,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
-            return _embedManager.SetupTournamentResolver(tournament);
+            return _embedManager.RoundRobinSetupTournamentSuccess(tournament);
         }
     }
 }

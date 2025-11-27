@@ -7,46 +7,48 @@ using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.MatchLogs;
 using FlawsFightNight.Core.Models.TieBreakers;
+using Newtonsoft.Json;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class NormalRoundRobinTournament : TournamentBase, IRoundBased, ITeamLocking, ITieBreaker
+    public class NormalRoundRobinTournament : TournamentBase, IRoundBased, IRoundRobinLength, ITeamLocking, ITieBreakerRankSystem
     {
+        public override TournamentType Type { get; protected set; } = TournamentType.NormalRoundRobin;
         public int CurrentRound { get; set; } = 0;
         public int? TotalRounds { get; set; } = null;
         public bool IsRoundComplete { get; set; } = false;
         public bool IsRoundLockedIn { get; set; } = false;
-
         public bool IsTeamsLocked { get; set; } = false;
         public bool CanTeamsBeLocked { get; set; } = false;
         public bool CanTeamsBeUnlocked { get; set; } = false;
-
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
-
         public bool IsDoubleRoundRobin { get; set; } = true;
 
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
+        public override MatchLogBase MatchLog { get; protected set; }
 
-        public NormalRoundRobinTournament()
+        [JsonConstructor]
+        protected NormalRoundRobinTournament() : base() { }
+
+        public NormalRoundRobinTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
-            Type = TournamentType.NormalRoundRobin;
-            MatchLog = new NormalRoundRobinMatchLog();
+            MatchLog ??= new NormalRoundRobinMatchLog();
         }
 
-        public override bool IsReadyToStart()
+        public override bool CanStart()
         {
             return IsTeamsLocked == true && IsRunning == false && Teams.Count >= 3;
         }
 
         public override void Start()
         {
-            // TODO Test Normal Round Robin specific Start logic
             CurrentRound = 1;
             IsRunning = true;
             CanTeamsBeLocked = false;
             CanTeamsBeUnlocked = false;
         }
 
-        public override bool IsReadyToEnd()
+        public override bool CanEnd()
         {
             // A Normal Round Robin tournament ends when all rounds are complete and locked in
             return CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
@@ -65,23 +67,124 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override string GetFormattedType() => "Normal Round Robin";
 
-        public bool DoesRoundContainByeMatch()
+        public override bool CanDelete()
         {
-            // TODO Test Normal RR DoesRoundContainByeMatch logic here
+            if (!IsRunning && !IsTeamsLocked)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public override bool CanAcceptNewTeams()
+        {
+            return !IsRunning && !IsTeamsLocked;
+        }
+
+        public bool CanLockTeams()
+        {
+            return !IsRunning && !IsTeamsLocked && CanTeamsBeLocked;
+        }
+
+        public bool CanUnlockTeams()
+        {
+            return !IsRunning && IsTeamsLocked && CanTeamsBeUnlocked;
+        }
+
+        public void LockTeams()
+        {
+            IsTeamsLocked = true;
+            CanTeamsBeLocked = false;
+
+            // Allow teams to be unlocked after locking, until tournament starts
+            CanTeamsBeUnlocked = true;
+        }
+
+        public void UnlockTeams()
+        {
+            IsTeamsLocked = false;
+            CanTeamsBeUnlocked = false;
+
+            // Allow teams to be locked again after unlocking
+            CanTeamsBeLocked = true;
+        }
+
+        public bool CanRoundComplete()
+        {
             if (MatchLog is NormalRoundRobinMatchLog rrLog)
             {
-                var matchesThisRound = rrLog.GetAllActiveMatches().Where(m => m.RoundNumber == CurrentRound);
-                return matchesThisRound.Any(m => m.IsByeMatch);
+                return rrLog.IsRoundComplete(CurrentRound);
+            }
+            return false;
+        }
+
+        public bool CanLockRound()
+        {
+            return IsRoundComplete && !IsRoundLockedIn;
+        }
+
+        public void LockRound()
+        {
+            IsRoundLockedIn = true;
+        }
+
+        public bool CanUnlockRound()
+        {
+            return IsRoundLockedIn;
+        }
+
+        public void UnlockRound()
+        {
+            IsRoundLockedIn = false;
+        }
+
+        public bool CanAdvanceRound()
+        {
+            if (MatchLog is NormalRoundRobinMatchLog rrLog)
+            {
+                // Can advance if the round is locked in, complete, and there are more rounds to play
+                return IsRoundLockedIn && rrLog.IsRoundComplete(CurrentRound) && 
+                    CurrentRound < TotalRounds;
             }
             return false;
         }
 
         public void AdvanceRound()
         {
-            // TODO Test Normal RR AdvanceRound logic here
+            // Convert any bye matches to post matches before advancing
+            if (DoesRoundContainByeMatch() && MatchLog is NormalRoundRobinMatchLog rrLog)
+            {
+                rrLog.ConvertByeMatch(CurrentRound);
+            }
+
+            // Advance to the next round process
             CurrentRound++;
             IsRoundComplete = false;
             IsRoundLockedIn = false;
+        }
+
+        public bool DoesRoundContainByeMatch()
+        {
+            // TODO Test Normal RR DoesRoundContainByeMatch logic here
+            if (MatchLog is NormalRoundRobinMatchLog rrLog)
+            {
+                //var matchesThisRound = rrLog.GetAllActiveMatches().Where(m => m.RoundNumber == CurrentRound);
+                //return matchesThisRound.Any(m => m.IsByeMatch);
+                foreach (var match in rrLog.MatchesToPlayByRound[CurrentRound])
+                {
+                    if (match.IsByeMatch)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public override void AdjustRanks()
+        {
+            SetRanksByTieBreakerLogic();
         }
 
         public void SetRanksByTieBreakerLogic()

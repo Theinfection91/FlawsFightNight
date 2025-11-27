@@ -1,5 +1,6 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
@@ -29,42 +30,20 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetNewTournamentById(tournamentId);
 
-            // Handle different tournament types
-            switch (tournament.Type)
+            if (tournament is not ITeamLocking unlockableTournament)
             {
-                case TournamentType.Ladder:
-                    return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is a Ladder tournament and does not require unlocking teams.");
-                case TournamentType.RoundRobin:
-                    return RoundRobinUnlockTeamsProcess(tournament);
-                default:
-                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for unlocking teams yet.");
-            }
-        }
-
-        private Embed RoundRobinUnlockTeamsProcess(Tournament tournament)
-        {          
-            // Check if tournament is already running
-            if (tournament.IsRunning)
-            {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is currently running. Teams cannot be unlocked while the tournament is active.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' does not support unlocking teams.");
             }
 
-            // Check if the tournament is already unlocked
-            if (!tournament.IsTeamsLocked)
+            if (!unlockableTournament.CanUnlockTeams())
             {
-                return _embedManager.ErrorEmbed(Name, $"The teams in the tournament '{tournament.Name}' are already unlocked.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be unlocked at this time. Check if it is running or if teams are already unlocked.");
             }
 
-            // Check if tournament can be unlocked
-            if (!tournament.CanTeamsBeUnlocked)
-            {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be unlocked at this time.");
-            }
-
-            // Unlock the teams in the tournament
-            _tournamentManager.UnlockTeamsInTournament(tournament);
+            // Unlock teams in tournament
+            unlockableTournament.UnlockTeams();
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();

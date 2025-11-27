@@ -1,4 +1,5 @@
 ﻿using FlawsFightNight.Core.Interfaces;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +23,21 @@ namespace FlawsFightNight.Core.Models
         public List<PostMatch> LadderPostMatches { get; set; } = [];
 
         public MatchLog() { }
+
+        public void ClearLog()
+        {
+
+        }
+
+        public void AddMatch(Match match)
+        {
+
+        }
+
+        public void RemoveMatch(Match match)
+        {
+
+        }
 
         public (int, int) GetPointsForAndAgainst(string teamName)
         {
@@ -96,6 +112,60 @@ namespace FlawsFightNight.Core.Models
             // Ladder Post Matches
             allPostMatches.AddRange(LadderPostMatches);
             return allPostMatches;
+        }
+
+        public bool ContainsMatchId(string matchId)
+        {
+            // Normal Round Robin Matches
+            foreach (var round in MatchesToPlayByRound.Values)
+            {
+                if (round.Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+            }
+            // Open Round Robin Matches
+            if (OpenRoundRobinMatchesToPlay.Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+            // Ladder Matches
+            if (LadderMatchesToPlay.Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public Match GetMatchById(string matchId)
+        {
+            // Normal Round Robin Matches
+            foreach (var round in MatchesToPlayByRound.Values)
+            {
+                var match = round.FirstOrDefault(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+            // Open Round Robin Matches
+            var openMatch = OpenRoundRobinMatchesToPlay.FirstOrDefault(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase));
+            if (openMatch != null)
+            {
+                return openMatch;
+            }
+            // Ladder Matches
+            var ladderMatch = LadderMatchesToPlay.FirstOrDefault(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase));
+            if (ladderMatch != null)
+            {
+                return ladderMatch;
+            }
+            return null;
+        }
+
+        public void ConvertMatchToPostMatch(TournamentBase tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore)
+        {
+            
         }
 
         public List<PostMatch> GetEditablePostMatches()

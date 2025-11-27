@@ -29,19 +29,18 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 
         public Embed DeleteTeamProcess(string teamName)
         {
-            // Grab tournament from team name
-            var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
+            //// Grab tournament from team name
+            //var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
 
-            // Send to specific logic based on tournament type
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    return LadderDeleteTeamProcess(tournament, teamName);
-                case TournamentType.RoundRobin:
-                    return RoundRobinDeleteTeamProcess(tournament, teamName);
-                default:
+            //// Send to specific logic based on tournament type
+            //switch (tournament.Type)
+            //{
+            //    case TournamentType.Ladder:
+            //        return LadderDeleteTeamProcess(tournament, teamName);
+            //    case TournamentType.RoundRobin:
+            //        return RoundRobinDeleteTeamProcess(tournament, teamName);
+                //default:
                     return _embedManager.ErrorEmbed(Name, "Tournament type not supported for team deletion yet.");
-            }
         }
 
         public Embed LadderDeleteTeamProcess(Tournament tournament, string teamName)

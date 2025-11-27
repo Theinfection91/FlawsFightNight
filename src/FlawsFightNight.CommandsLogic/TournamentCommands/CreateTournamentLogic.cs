@@ -2,6 +2,7 @@
 using Discord.Interactions;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -32,21 +33,25 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"A tournament with the name '{name}' already exists. Please choose a different name.");
             }
 
-            Tournament tournament = _tournamentManager.CreateTournament(name, tournamentType, teamSize, description);
-
-            // Prevent any tournament types that are not Round Robin or Ladder for now
-            if (!tournament.Type.Equals(TournamentType.RoundRobin) && !tournament.Type.Equals(TournamentType.Ladder))
-            {
-                return _embedManager.ToDoEmbed("Sorry, but for now only Ladder and Round Robin tournaments may be created and played. Please try again.");
-            }
+            // New version
+            TournamentBase tournament = _tournamentManager.CreateNewTournament(name, tournamentType, teamSize, description);
 
             if (tournament == null)
             {
-                return _embedManager.ErrorEmbed(Name, "Null tournament returned. Canceling command.");
+                return _embedManager.ErrorEmbed(Name, "Null tournament returned. Canceling command. Contact an admin for support.");
             }
 
-            // Add the tournament, this will also save and reload the database
+            // Prevent any tournament types that are not Round Robin or Ladder for now
+            if (tournament.Type is not (TournamentType.NormalLadder or TournamentType.NormalRoundRobin or TournamentType.OpenRoundRobin))
+            {
+                return _embedManager.ToDoEmbed("Sorry, but for now only Normal Ladder and either Normal or Open Round Robin tournaments may be created and played. Please try again.");
+            }
+
+            // Add the tournament
             _tournamentManager.AddTournament(tournament);
+
+            // Save and reload the database
+            _tournamentManager.SaveAndReloadTournamentsDatabase();
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

@@ -1,5 +1,6 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Managers;
 using System;
@@ -29,55 +30,44 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetNewTournamentById(tournamentId);
 
-            // Handle different tournament types
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is a Ladder tournament and does not have rounds to unlock.");
-                case TournamentType.RoundRobin:
-                    return RoundRobinUnlockRoundProcess(tournament);
-                default:
-                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for unlocking rounds yet.");
-            }
-        }
-
-        private Embed RoundRobinUnlockRoundProcess(Tournament tournament)
-        {
-            if (!tournament.RoundRobinMatchType.Equals(RoundRobinMatchType.Normal))
-            {
-                return _embedManager.ErrorEmbed(Name, $"Only Normal Round Robin tournaments support unlocking rounds at this time.");
-            }
-
-            // Check if tournament is already running
+            // Check if tournament is running
             if (!tournament.IsRunning)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Rounds cannot be unlocked while the tournament is inactive.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
             }
 
-            if (!tournament.IsRoundComplete)
+            // Check if the tournament is IRoundBased
+            if (tournament is not IRoundBased roundBasedTournament)
             {
-                return _embedManager.ErrorEmbed(Name, $"The current round for tournament '{tournament.Name}' is not complete, cannot unlock round that was never locked in.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a round-based tournament and does not support unlocking rounds.");
             }
-
-            // Check if the tournament is already unlocked
-            if (!tournament.IsRoundLockedIn)
+            else
             {
-                // If the round is not locked in, it means it is already unlocked
-                return _embedManager.ErrorEmbed(Name, $"The round in the tournament '{tournament.Name}' is already unlocked and ready to be locked in.");
+                // Check if the round is already unlocked
+                if (!roundBasedTournament.IsRoundLockedIn)
+                {
+                    return _embedManager.ErrorEmbed(Name, $"The round in the tournament '{tournament.Name}' is already unlocked and ready to be locked in.");
+                }
+
+                // Check if the round can be unlocked
+                if (!roundBasedTournament.CanUnlockRound())
+                {
+                    return _embedManager.ErrorEmbed(Name, $"The current round in tournament '{tournament.Name}' cannot be unlocked at this time.");
+                }
+
+                // Unlock the round
+                roundBasedTournament.UnlockRound();
+
+                // Save and reload the tournament database
+                _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+                // Backup to git repo
+                _gitBackupManager.CopyAndBackupFilesToGit();
+
+                return _embedManager.UnlockRoundSuccess(tournament);
             }
-
-            // Unlock the rounds in the tournament
-            tournament.IsRoundLockedIn = false;
-
-            // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
-
-            // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
-
-            return _embedManager.UnlockRoundSuccess(tournament);
         }
     }
 }

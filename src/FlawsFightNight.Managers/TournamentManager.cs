@@ -1,6 +1,8 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,15 +34,15 @@ namespace FlawsFightNight.Managers
             LoadTournamentsDatabase();
         }
 
-        public void AddTournament(Tournament tournament)
+        public void AddTournament(TournamentBase tournament)
         {
             _dataManager.AddTournament(tournament);
         }
 
         public bool IsTournamentNameUnique(string tournamentName)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            foreach (TournamentBase tournament in tournaments)
             {
                 if (tournament.Name.Equals(tournamentName, StringComparison.OrdinalIgnoreCase))
                 {
@@ -50,137 +52,55 @@ namespace FlawsFightNight.Managers
             return true; // Team name is unique across all tournaments
         }
 
-        public Tournament CreateTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
+        public TournamentBase CreateNewTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
         {
             string? id = GenerateTournamentId();
-            return new Tournament(name, description)
+            if (id == null)
             {
-                Id = id,
-                Type = tournamentType,
-                TeamSize = teamSize
-            };
+                return null;
+            }
+
+            switch (tournamentType)
+            {
+                case TournamentType.NormalLadder:
+                    return new NormalLadderTournament(id, name, teamSize);
+
+                case TournamentType.NormalRoundRobin:
+                    return new NormalRoundRobinTournament(id, name, teamSize);
+
+                case TournamentType.OpenRoundRobin:
+                    return new OpenRoundRobinTournament(id, name, teamSize);
+
+                default:
+                    return null;
+            }
         }
 
         public void DeleteTournament(string tournamentId)
         {
-            _dataManager.RemoveTournament(tournamentId);
+            _dataManager.RemoveTournamentBase(tournamentId);
         }
 
-        public bool CanAcceptNewTeams(Tournament tournament)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    return true; // Ladder tournaments can always accept new teams
-
-                case TournamentType.RoundRobin:
-                case TournamentType.NormalRoundRobin:
-                case TournamentType.OpenRoundRobin:
-                    return !tournament.IsTeamsLocked;
-
-                case TournamentType.SingleElimination:
-                case TournamentType.DoubleElimination:
-                    return !tournament.IsRunning; // SE/DE tournaments cannot accept new teams once they start
-
-                default:
-                    return false; // Unknown tournament type
-            }
-        }
-
-        public bool CanTeamsBeLockedResolver(Tournament tournament)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.RoundRobin:
-                    return CanRoundRobinTeamsBeLocked(tournament);
-
-                case TournamentType.SingleElimination:
-                case TournamentType.DoubleElimination:
-                    return !tournament.IsRunning && tournament.CanTeamsBeLocked; // SE/DE can lock teams if not running
-
-                case TournamentType.NormalRoundRobin:
-                case TournamentType.OpenRoundRobin:
-                    return CanRoundRobinTeamsBeLocked(tournament);
-
-                default:
-                    return false; // Unknown tournament type
-            }
-        }
-
-        public bool CanRoundRobinTeamsBeLocked(Tournament tournament)
-        {
-            if (tournament.IsRunning) return false; // Cannot lock teams if tournament is running
-
-            if (tournament.Teams.Count < 3) return false; // Need at least 3 teams to lock teams in Round Robin
-
-            return true;
-        }
-
-        public void SetCanTeamsBeLocked(Tournament tournament, bool canTeamsBeLocked)
+        public void SetCanTeamsBeLocked(ITeamLocking tournament, bool canTeamsBeLocked)
         {
             tournament.CanTeamsBeLocked = canTeamsBeLocked;
-        }
-
-        public void LockTeamsInTournament(Tournament tournament)
-        {
-            tournament.IsTeamsLocked = true;
-            tournament.CanTeamsBeLocked = false;
-
-            // Allow teams to be unlocked after locking, until tournament starts
-            tournament.CanTeamsBeUnlocked = true;
-        }
-
-        public void UnlockTeamsInTournament(Tournament tournament)
-        {
-            tournament.IsTeamsLocked = false;
-            tournament.CanTeamsBeUnlocked = false;
-
-            // Allow teams to be locked again
-            tournament.CanTeamsBeLocked = true;
-        }
-
-        public void NextRoundResolver(Tournament tournament)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    // Ladder tournaments do not have rounds
-                    break;
-                case TournamentType.RoundRobin:
-                    AdvanceRoundRobinToNextRound(tournament);
-                    break;
-                case TournamentType.SingleElimination:
-                case TournamentType.DoubleElimination:
-                    // SE/DE round advancement logic would go here
-                    break;
-                default:
-                    // Unknown tournament type
-                    break;
-            }
-        }
-
-        private void AdvanceRoundRobinToNextRound(Tournament tournament)
-        {
-            tournament.CurrentRound++;
-            tournament.IsRoundComplete = false;
-            tournament.IsRoundLockedIn = false;
         }
 
         public bool IsTournamentIdInDatabase(string tournamentId, bool isCaseSensitive = false)
         {
             if (isCaseSensitive)
             {
-                return _dataManager.TournamentsDatabaseFile.Tournaments
+                return _dataManager.TournamentsDatabaseFile.NewTournaments
                     .Any(t => t.Id.Equals(tournamentId));
             }
             else
             {
-                return _dataManager.TournamentsDatabaseFile.Tournaments
+                return _dataManager.TournamentsDatabaseFile.NewTournaments
                     .Any(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
             }
         }
 
-        public bool IsTeamsInSameTournament(Tournament tournament, Team teamA, Team teamB)
+        public bool IsTeamsInSameTournament(TournamentBase tournament, Team teamA, Team teamB)
         {
             var teams = new List<Team> { teamA, teamB };
             foreach (Team team in teams)
@@ -219,15 +139,23 @@ namespace FlawsFightNight.Managers
             return null;
         }
 
+        // TODO Old version, remove later
         public Tournament? GetTournamentById(string tournamentId)
         {
             return _dataManager.TournamentsDatabaseFile.Tournaments
                 .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
         }
 
-        public Tournament GetTournamentFromTeamName(string teamName)
+        // New version
+        public TournamentBase? GetNewTournamentById(string tournamentId)
         {
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            return _dataManager.TournamentsDatabaseFile.NewTournaments
+                .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public TournamentBase GetTournamentFromTeamName(string teamName)
+        {
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
                 {
@@ -332,7 +260,7 @@ namespace FlawsFightNight.Managers
 
         public void AddTeamToTournament(Team team, string tournamentId)
         {
-            Tournament? tournament = GetTournamentById(tournamentId);
+            TournamentBase? tournament = GetNewTournamentById(tournamentId);
             if (tournament != null)
             {
                 tournament.Teams.Add(team);

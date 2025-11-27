@@ -1,4 +1,5 @@
 ﻿using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Data.DataModels;
 using FlawsFightNight.Data.Handlers;
 using System;
@@ -114,16 +115,26 @@ namespace FlawsFightNight.Managers
 
         public void SaveAndReloadTournamentsDatabase()
         {
+            // TODO Test, should work for new TournamentBase with no changes
             _tournamentsDatabaseHandler.Save(TournamentsDatabaseFile);
             LoadTournamentsDatabase();
         }
 
+        // TODO Old version, remove later
         public void AddTournament(Tournament tournament)
         {
             TournamentsDatabaseFile.Tournaments.Add(tournament);
             SaveAndReloadTournamentsDatabase();
         }
 
+        // New version
+        public void AddTournament(TournamentBase tournament)
+        {
+            TournamentsDatabaseFile.NewTournaments.Add(tournament);
+            //SaveAndReloadTournamentsDatabase();
+        }
+
+        // TODO Old version, remove later
         public void RemoveTournament(string tournamentId)
         {
             var tournament = TournamentsDatabaseFile.Tournaments.FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
@@ -131,6 +142,16 @@ namespace FlawsFightNight.Managers
             {
                 TournamentsDatabaseFile.Tournaments.Remove(tournament);
                 SaveAndReloadTournamentsDatabase();
+            }
+        }
+
+        // New version
+        public void RemoveTournamentBase(string tournamentId)
+        {
+            var tournament = TournamentsDatabaseFile.NewTournaments.FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
+            if (tournament != null)
+            {
+                TournamentsDatabaseFile.NewTournaments.Remove(tournament);
             }
         }
         #endregion

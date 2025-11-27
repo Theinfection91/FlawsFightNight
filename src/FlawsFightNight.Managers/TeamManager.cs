@@ -1,5 +1,6 @@
 ﻿using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,8 +19,8 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool DoesTeamExist(string teamName, bool isCaseSensitive = false)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            foreach (TournamentBase tournament in tournaments)
             {
                 if (isCaseSensitive)
                 {
@@ -41,8 +42,8 @@ namespace FlawsFightNight.Managers
 
         public bool IsTeamNameUnique(string teamName)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            foreach (TournamentBase tournament in tournaments)
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
                 {
@@ -89,8 +90,8 @@ namespace FlawsFightNight.Managers
 
         public Team GetTeamByName(string teamName)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            foreach (var tournament in tournaments)
             {
                 Team? team = tournament.Teams.FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
                 if (team != null)
@@ -101,6 +102,11 @@ namespace FlawsFightNight.Managers
             return null; // No team found with the given name
         }
 
+        public Team? GetTeamByName(TournamentBase tournament, string teamName)
+        {
+            return tournament.Teams
+                .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
+        }
         public Team? GetTeamByName(Tournament tournament, string teamName)
         {
             return tournament.Teams

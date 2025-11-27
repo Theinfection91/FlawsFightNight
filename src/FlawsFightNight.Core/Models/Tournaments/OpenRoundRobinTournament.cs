@@ -7,23 +7,31 @@ using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.MatchLogs;
 using FlawsFightNight.Core.Models.TieBreakers;
+using Newtonsoft.Json;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class OpenRoundRobinTournament : TournamentBase, ITeamLocking, ITieBreaker
+    public class OpenRoundRobinTournament : TournamentBase, IRoundRobinLength, ITeamLocking, ITieBreakerRankSystem
     {
+        public override TournamentType Type { get; protected set; } = TournamentType.OpenRoundRobin;
         public bool IsTeamsLocked { get; set; } = false;
         public bool CanTeamsBeLocked { get; set; } = false;
         public bool CanTeamsBeUnlocked { get; set; } = false;
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
+        public bool IsDoubleRoundRobin { get; set; } = true;
 
-        public OpenRoundRobinTournament()
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
+        public override MatchLogBase MatchLog { get; protected set; }
+
+        [JsonConstructor]
+        public OpenRoundRobinTournament() : base() { }
+
+        public OpenRoundRobinTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
-            Type = TournamentType.OpenRoundRobin;
-            MatchLog = new OpenRoundRobinMatchLog();
+            MatchLog ??= new OpenRoundRobinMatchLog();
         }
 
-        public override bool IsReadyToStart()
+        public override bool CanStart()
         {
             return IsTeamsLocked == true && IsRunning == false && Teams.Count >= 3;
         }
@@ -36,7 +44,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             CanTeamsBeUnlocked = false;
         }
 
-        public override bool IsReadyToEnd()
+        public override bool CanEnd()
         {
             return MatchLog.GetAllActiveMatches().Count == 0 && IsRunning;
         }
@@ -51,6 +59,54 @@ namespace FlawsFightNight.Core.Models.Tournaments
         }
 
         public override string GetFormattedType() => "Open Round Robin";
+
+        public override bool CanDelete()
+        {
+            if (!IsRunning && !IsTeamsLocked)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public override bool CanAcceptNewTeams()
+        {
+            return !IsRunning && !IsTeamsLocked;
+        }
+
+        public bool CanLockTeams()
+        {
+            return !IsRunning && !IsTeamsLocked && CanTeamsBeLocked;
+        }
+
+        public bool CanUnlockTeams()
+        {
+            return !IsRunning && IsTeamsLocked && CanTeamsBeUnlocked;
+        }
+
+        public void LockTeams()
+        {
+            IsTeamsLocked = true;
+            CanTeamsBeLocked = false;
+
+            // Allow teams to be unlocked after locking, until tournament starts
+            CanTeamsBeUnlocked = true;
+        }
+
+        public void UnlockTeams()
+        {
+            IsTeamsLocked = false;
+            CanTeamsBeUnlocked = false;
+
+            // Allow teams to be locked again after unlocking
+            CanTeamsBeLocked = true;
+        }
+
+        public override void AdjustRanks()
+        {
+            SetRanksByTieBreakerLogic();
+        }
 
         public void SetRanksByTieBreakerLogic()
         {

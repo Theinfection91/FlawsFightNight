@@ -1,4 +1,5 @@
 ﻿using FlawsFightNight.Core.Interfaces;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,7 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 {
     public abstract class MatchLogBase : IMatchLog
     {
+        public abstract void ClearLog();
         public abstract List<Match> GetAllActiveMatches(int currentRound = 0);
         public abstract List<PostMatch> GetAllPostMatches();
         public virtual (int pointsFor, int pointsAgainst) GetPointsForAndAgainst(string teamName)
@@ -31,5 +33,10 @@ namespace FlawsFightNight.Core.Models.MatchLogs
             }
             return (pointsFor, pointsAgainst);
         }
+        public abstract bool ContainsMatchId(string matchId);
+        public abstract Match? GetMatchById(string matchId);
+        public abstract void AddMatch(Match match);
+        public abstract void RemoveMatch(Match match);
+        public abstract void ConvertMatchToPostMatch(TournamentBase tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore);
     }
 }
