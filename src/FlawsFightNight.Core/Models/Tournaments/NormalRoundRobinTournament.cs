@@ -14,6 +14,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
     public class NormalRoundRobinTournament : TournamentBase, IRoundBased, ITeamLocking, ITieBreakerRankSystem
     {
         public override TournamentType Type { get; protected set; } = TournamentType.NormalRoundRobin;
+        public override MatchLogBase MatchLog { get; protected set; }
         public int CurrentRound { get; set; } = 0;
         public int? TotalRounds { get; set; } = null;
         public bool IsRoundComplete { get; set; } = false;
@@ -27,8 +28,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public bool IsDoubleRoundRobin { get; set; } = true;
 
-        public override MatchLogBase MatchLog { get; protected set; } = new NormalRoundRobinMatchLog();
-
         [JsonConstructor]
         protected NormalRoundRobinTournament() : base() { }
 
@@ -36,7 +35,8 @@ namespace FlawsFightNight.Core.Models.Tournaments
         {
             //Type = TournamentType.NormalRoundRobin;
             //MatchLog ??= new NormalRoundRobinMatchLog();
-            Console.WriteLine($"Test - {MatchLog.GetType().ToString()}");
+            //Console.WriteLine($"Test - {MatchLog.GetType().ToString()}");
+            Console.WriteLine($"Normal RR Constructor Called");
         }
 
         public override bool CanStart()

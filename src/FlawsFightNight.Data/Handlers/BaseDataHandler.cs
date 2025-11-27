@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,15 +42,49 @@ namespace FlawsFightNight.Data.Handlers
             }
         }
 
-        public T Load()
+
+        //public T Load()
+        //{
+        //    Console.WriteLine($"Loading data from {_filePath}");
+        //    var json = File.ReadAllText(_filePath);
+        //    return JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
+        //    {
+        //        TypeNameHandling = TypeNameHandling.Auto
+        //    }) ?? new T();
+        //}
+
+        public T Load(T existing = default)
         {
             Console.WriteLine($"Loading data from {_filePath}");
             var json = File.ReadAllText(_filePath);
-            return JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
+
+            if (string.IsNullOrWhiteSpace(json))
+                return existing ?? new T();
+
+            // Detect type in JSON
+            var typeInJson = JsonConvert.DeserializeObject<JObject>(json)?["$type"]?.ToString();
+            var existingType = existing?.GetType().FullName;
+
+            if (existing == null || existingType != typeInJson)
             {
-                TypeNameHandling = TypeNameHandling.Auto
-            }) ?? new T();
+                // Create a new instance of the correct type
+                return JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.Auto
+                }) ?? new T();
+            }
+            else
+            {
+                // Populate the existing instance
+                JsonConvert.PopulateObject(json, existing, new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.Auto
+                });
+                return existing;
+            }
         }
+
+
 
         public void Save(T data)
         {
