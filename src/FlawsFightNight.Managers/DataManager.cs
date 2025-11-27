@@ -152,7 +152,6 @@ namespace FlawsFightNight.Managers
             if (tournament != null)
             {
                 TournamentsDatabaseFile.NewTournaments.Remove(tournament);
-                SaveAndReloadTournamentsDatabase();
             }
         }
         #endregion

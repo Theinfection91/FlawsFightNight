@@ -14,22 +14,18 @@ namespace FlawsFightNight.Core.Models.Tournaments
     public class NormalRoundRobinTournament : TournamentBase, IRoundBased, ITeamLocking, ITieBreakerRankSystem
     {
         public override TournamentType Type { get; protected set; } = TournamentType.NormalRoundRobin;
-
-        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
-        public override MatchLogBase MatchLog { get; protected set; }
-
         public int CurrentRound { get; set; } = 0;
         public int? TotalRounds { get; set; } = null;
         public bool IsRoundComplete { get; set; } = false;
         public bool IsRoundLockedIn { get; set; } = false;
-
         public bool IsTeamsLocked { get; set; } = false;
         public bool CanTeamsBeLocked { get; set; } = false;
         public bool CanTeamsBeUnlocked { get; set; } = false;
-
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
-
         public bool IsDoubleRoundRobin { get; set; } = true;
+
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
+        public override MatchLogBase MatchLog { get; protected set; }
 
         [JsonConstructor]
         protected NormalRoundRobinTournament() : base() { }

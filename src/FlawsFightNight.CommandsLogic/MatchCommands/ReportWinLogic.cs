@@ -69,10 +69,10 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // Check if match exists in database
-            //if (!_matchManager.IsMatchIdInDatabase(matchId))
-            //{
-            //    return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' does not exist.");
-            //}
+            if (!_matchManager.IsMatchIdInDatabase(matchId))
+            {
+                return _embedManager.ErrorEmbed(Name, $"The match with ID '{matchId}' does not exist.");
+            }
 
             // Grab the match associated with report
             Match? match = tournament.MatchLog.GetMatchById(matchId);
@@ -123,7 +123,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Convert match to post-match
             tournament.MatchLog.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
 
-            // Adjust ranks if needed
+            // Adjust ranks
             tournament.AdjustRanks();
 
             // Save and reload the tournament database
@@ -132,44 +132,9 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
-            // TODO (Looks like this was left out of v0.2.0 ... whoops) Update Autocomplete Cache
+            // TODO Update Autocomplete Cache (Looks like this was left out of v0.2.0 ... whoops)
 
             return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin);
         }
-
-        //private void RoundRobinReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
-        //{
-        //    // Convert match to post-match and record win/loss
-        //    _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
-
-        //    // Adjust ranks of remaining teams
-        //    tournament.SetRanksByTieBreakerLogic();
-        //}
-
-        //private void LadderReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
-        //{
-        //    // If winning team is challenger then rank change will occur
-        //    if (_matchManager.IsWinningTeamChallenger(match, winningTeam))
-        //    {
-        //        // Winning team takes the rank of the losing team
-        //        winningTeam.Rank = losingTeam.Rank;
-        //        // Losing team moves down one rank
-        //        losingTeam.Rank++;
-
-        //        // Reassign ranks of entire tournament
-        //        _matchManager.ReassignRanksInLadderTournament(tournament);
-        //    }
-        //    else
-        //    {
-        //        // No rank change, no action needed
-        //    }
-
-        //    // Change each Team's IsChallengeable status back to true
-        //    winningTeam.IsChallengeable = true;
-        //    losingTeam.IsChallengeable = true;
-
-        //    // Run challenge rank comparison for tournament to make sure LiveView displays correct rank for team in challenges
-        //    _matchManager.ChallengeRankComparisonProcess(tournament);
-        //}
     }
 }

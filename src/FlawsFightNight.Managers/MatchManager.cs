@@ -88,21 +88,6 @@ namespace FlawsFightNight.Managers
             return false; // Match not found in current round
         }
 
-        public bool HasByeMatchRemaining(Tournament tournament)
-        {
-            foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
-            {
-                foreach (var match in round)
-                {
-                    if (match.IsByeMatch)
-                    {
-                        return true; // Found a bye match
-                    }
-                }
-            }
-            return false; // No bye matches found
-        }
-
         public bool HasMatchBeenPlayed(Tournament tournament, string matchId)
         {
             foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
@@ -129,21 +114,6 @@ namespace FlawsFightNight.Managers
         {
             return (!string.IsNullOrEmpty(postMatch.Winner) && postMatch.Winner.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
                    (!string.IsNullOrEmpty(postMatch.Loser) && postMatch.Loser.Equals(teamName, StringComparison.OrdinalIgnoreCase));
-        }
-
-        public bool IsMatchInCurrentRound(Tournament tournament, string matchId)
-        {
-            if (tournament.MatchLog.MatchesToPlayByRound.TryGetValue(tournament.CurrentRound, out var matches))
-            {
-                foreach (var match in matches)
-                {
-                    if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true; // Match found in current round
-                    }
-                }
-            }
-            return false; // Match not found in current round
         }
 
         public bool IsMatchMadeForTeamResolver(Tournament tournament, string teamName)
@@ -543,101 +513,6 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private Match GetOpenMatchByTeamNameLadder(TournamentBase tournament, string teamName)
-        {
-            //foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
-            //{
-            //    if (match == null)
-            //    {
-            //        //Console.WriteLine("Encountered null match in list, skipping.");
-            //        continue;
-            //    }
-            //    //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
-            //    if (!string.IsNullOrEmpty(match.TeamA) &&
-            //        match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-            //    {
-            //        return match;
-            //    }
-            //    if (!string.IsNullOrEmpty(match.TeamB) &&
-            //        match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-            //    {
-            //        return match;
-            //    }
-            //}
-            //Console.WriteLine($"No match found for team '{teamName}' in ladder matches.");
-            return null;
-        }
-
-        private Match GetOpenMatchByTeamNameNormalRoundRobin(TournamentBase tournament, string teamName)
-        {
-
-            //int currentRound = 0;
-            ////Console.WriteLine($"Looking in round: {currentRound}");
-
-            //if (!tournament.MatchLog.GetAllActiveMatches().TryGetValue(currentRound, out var matches))
-            //{
-            //    //Console.WriteLine($"No entry for round {currentRound} in MatchesToPlayByRound.");
-            //    return null;
-            //}
-
-            //if (matches == null)
-            //{
-            //    //Console.WriteLine($"Match list for round {currentRound} is null.");
-            //    return null;
-            //}
-
-            //foreach (var match in matches)
-            //{
-            //    if (match == null)
-            //    {
-            //        //Console.WriteLine("Encountered null match in list, skipping.");
-            //        continue;
-            //    }
-
-            //    //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
-
-            //    if (!string.IsNullOrEmpty(match.TeamA) &&
-            //        match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-            //    {
-            //        return match;
-            //    }
-
-            //    if (!string.IsNullOrEmpty(match.TeamB) &&
-            //        match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-            //    {
-            //        return match;
-            //    }
-            //}
-
-            //Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
-            return null;
-        }
-
-        private Match GetOpenMatchByTeamNameOpenRoundRobin(Tournament tournament, string teamName)
-        {
-            foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
-            {
-                if (match == null)
-                {
-                    //Console.WriteLine("Encountered null match in list, skipping.");
-                    continue;
-                }
-                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
-                if (!string.IsNullOrEmpty(match.TeamA) &&
-                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return match;
-                }
-                if (!string.IsNullOrEmpty(match.TeamB) &&
-                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return match;
-                }
-            }
-            //Console.WriteLine($"No match found for team '{teamName}' in open round robin.");
-            return null;
-        }
-
         public string GetLosingTeamName(Match match, string winningTeamName)
         {
             if (match.TeamA != null && match.TeamA.Equals(winningTeamName, StringComparison.OrdinalIgnoreCase))
@@ -649,70 +524,6 @@ namespace FlawsFightNight.Managers
                 return match.TeamA;
             }
             return null; // No losing team found
-        }
-
-        public string GetMostWinsWinner(MatchLog matchLog)
-        {
-            var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            // Count wins for each team
-            foreach (var round in matchLog.PostMatchesByRound.Values)
-            {
-                foreach (var postMatch in round)
-                {
-                    if (!postMatch.WasByeMatch)
-                    {
-                        if (!teamWins.ContainsKey(postMatch.Winner))
-                            teamWins[postMatch.Winner] = 0;
-                        teamWins[postMatch.Winner]++;
-                    }
-                }
-            }
-            // Find the team with the most wins
-            if (teamWins.Count == 0)
-                return null;
-            return teamWins.Aggregate((l, r) => l.Value > r.Value ? l : r).Key;
-        }
-
-        public int GetNumberOfTeamsTied(MatchLog matchLog)
-        {
-            var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            // Count wins for each team
-            foreach (var round in matchLog.PostMatchesByRound.Values)
-            {
-                foreach (var postMatch in round)
-                {
-                    if (!postMatch.WasByeMatch)
-                    {
-                        if (!teamWins.ContainsKey(postMatch.Winner))
-                            teamWins[postMatch.Winner] = 0;
-                        teamWins[postMatch.Winner]++;
-                    }
-                }
-            }
-            // Check for ties
-            var winCounts = teamWins.Values.GroupBy(w => w).ToList();
-            int tiedTeams = 0;
-            foreach (var group in winCounts)
-            {
-                if (group.Count() > 1 && group.Key > 0) // More than one team with the same non-zero win count
-                {
-                    tiedTeams += group.Count();
-                }
-            }
-            return tiedTeams; // Return number of teams involved in ties
-        }
-
-        public PostMatch GetPostMatchById(string matchId)
-        {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            {
-                var postMatch = GetPostMatchByIdInTournament(tournament, matchId);
-                if (postMatch != null)
-                {
-                    return postMatch;
-                }
-            }
-            return null;
         }
 
         public PostMatch GetPostMatchByIdInTournament(Tournament tournament, string matchId)
@@ -967,35 +778,6 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Match/PostMatch Schedule Build/Validate/Clear
-        //public void BuildMatchScheduleResolver(Tournament tournament)
-        //{
-        //    switch (tournament.Type)
-        //    {
-        //        case TournamentType.Ladder:
-        //            // Ladder tournaments do not have a match schedule resolver
-        //            break;
-
-        //        case TournamentType.RoundRobin:
-        //            switch (tournament.RoundRobinMatchType)
-        //            {
-        //                case RoundRobinMatchType.Normal:
-        //                    BuildNormalRoundRobinMatchSchedule(tournament, tournament.IsDoubleRoundRobin);
-        //                    break;
-        //                case RoundRobinMatchType.Open:
-        //                    BuildOpenRoundRobinMatchSchedule(tournament, tournament.IsDoubleRoundRobin);
-        //                    break;
-        //                default:
-        //                    //Console.WriteLine($"Match schedule resolver not implemented for round robin match type: {tournament.RoundRobinMatchType}");
-        //                    break;
-        //            }
-        //            break;
-
-        //        default:
-        //            //Console.WriteLine($"Match schedule resolver not implemented for tournament type: {tournament.Type}");
-        //            break;
-        //    }
-        //}
-
         public void BuildRoundRobinMatchSchedule(NormalRoundRobinTournament tournament)
         {
             const int maxRetries = 10;
@@ -1134,133 +916,6 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        //public void BuildNormalRoundRobinMatchSchedule(Tournament tournament, bool isDoubleRoundRobin = true)
-        //{
-        //    const int maxRetries = 10;
-        //    int attempt = 0;
-
-        //    while (attempt < maxRetries)
-        //    {
-        //        attempt++;
-        //        ClearNormalMatchSchedule(tournament);
-
-        //        var teams = tournament.Teams.Select(t => t.Name).ToList();
-        //        bool hasBye = false;
-        //        const string byePlaceholder = "BYE";
-        //        if (teams.Count % 2 != 0)
-        //        {
-        //            hasBye = true;
-        //            teams.Add(byePlaceholder);
-        //        }
-
-        //        int numRounds = teams.Count - 1;
-        //        int half = teams.Count / 2;
-        //        var rotating = new List<string>(teams); // first element fixed
-
-        //        // Single Round Robin Logic
-        //        for (int round = 1; round <= numRounds; round++)
-        //        {
-        //            var pairings = new List<Match>();
-        //            for (int i = 0; i < half; i++)
-        //            {
-        //                string a = rotating[i];
-        //                string b = rotating[teams.Count - 1 - i];
-        //                if (a == byePlaceholder && b == byePlaceholder) continue;
-
-        //                bool isByeMatch = hasBye && (a == byePlaceholder || b == byePlaceholder);
-        //                var match = new Match(
-        //                    a == byePlaceholder ? "BYE" : a,
-        //                    b == byePlaceholder ? "BYE" : b)
-        //                {
-        //                    Id = GenerateMatchId(),
-        //                    IsByeMatch = isByeMatch,
-        //                    RoundNumber = round,
-        //                    CreatedOn = DateTime.UtcNow
-        //                };
-        //                pairings.Add(match);
-        //            }
-        //            tournament.MatchLog.MatchesToPlayByRound[round] = pairings;
-
-        //            // rotate teams, first element fixed
-        //            var last = rotating[^1];
-        //            rotating.RemoveAt(rotating.Count - 1);
-        //            rotating.Insert(1, last);
-        //        }
-
-        //        // Double Round Robin Logic
-        //        if (isDoubleRoundRobin)
-        //        {
-        //            int currentMaxRound = tournament.MatchLog.MatchesToPlayByRound.Count;
-        //            for (int round = 1; round <= currentMaxRound; round++)
-        //            {
-        //                var original = tournament.MatchLog.MatchesToPlayByRound[round];
-        //                var reversed = original.Select(m => new Match(m.TeamB, m.TeamA)
-        //                {
-        //                    Id = GenerateMatchId(),
-        //                    IsByeMatch = m.IsByeMatch,
-        //                    RoundNumber = round + currentMaxRound,
-        //                    CreatedOn = DateTime.UtcNow
-        //                }).ToList();
-
-        //                tournament.MatchLog.MatchesToPlayByRound[round + currentMaxRound] = reversed;
-        //            }
-        //        }
-
-        //        if (ValidateNormalRoundRobin(tournament, isDoubleRoundRobin))
-        //        {
-        //            tournament.TotalRounds = tournament.MatchLog.MatchesToPlayByRound.Count;
-        //            break;
-        //        }
-        //        else
-        //        {
-        //            //Console.WriteLine($"Validation failed on attempt {attempt}, retrying build...");
-        //        }
-        //    }
-        //    if (attempt == maxRetries)
-        //    {
-        //        //Console.WriteLine("Failed to build a valid round-robin schedule after max retries.");
-        //    }
-        //}
-
-        //public void BuildOpenRoundRobinMatchSchedule(Tournament tournament, bool isDoubleRoundRobin = true)
-        //{
-        //    var teams = tournament.Teams.Select(t => t.Name).ToList();
-
-        //    // generate all unique pairings
-        //    var matches = new List<Match>();
-        //    for (int i = 0; i < teams.Count; i++)
-        //    {
-        //        for (int j = i + 1; j < teams.Count; j++)
-        //        {
-        //            var match = new Match(teams[i], teams[j])
-        //            {
-        //                Id = GenerateMatchId(),
-        //                IsByeMatch = false,
-        //                RoundNumber = 0,
-        //                CreatedOn = DateTime.UtcNow
-        //            };
-        //            matches.Add(match);
-        //        }
-        //    }
-
-        //    // Add matches to the open list
-        //    tournament.MatchLog.OpenRoundRobinMatchesToPlay.AddRange(matches);
-
-        //    // If double round robin, add reversed pairings
-        //    if (isDoubleRoundRobin)
-        //    {
-        //        var reversed = matches.Select(m => new Match(m.TeamB, m.TeamA)
-        //        {
-        //            Id = GenerateMatchId(),
-        //            IsByeMatch = false,
-        //            RoundNumber = 0,
-        //            CreatedOn = DateTime.UtcNow
-        //        }).ToList();
-
-        //        tournament.MatchLog.OpenRoundRobinMatchesToPlay.AddRange(reversed);
-        //    }
-        //}
-
         private bool ValidateNormalRoundRobin(TournamentBase tournament, bool isDoubleRoundRobin)
         {
             var teams = tournament.Teams.Select(t => t.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
@@ -1323,119 +978,6 @@ namespace FlawsFightNight.Managers
 
             }
             return false;
-        }
-
-        public void ClearNormalMatchSchedule(Tournament tournament)
-        {
-            // Clear the match schedule for the tournament
-            tournament.MatchLog.MatchesToPlayByRound.Clear();
-            tournament.MatchLog.PostMatchesByRound.Clear();
-        }
-
-        public PostMatch CreateNewPostMatch(string matchId, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, DateTime originalCreationDateTime, bool wasByeMatch = false, Challenge challenge = null)
-        {
-            return new PostMatch(matchId, winningTeamName, winnerScore, losingTeamName, loserScore, originalCreationDateTime, wasByeMatch, challenge);
-        }
-
-        public void ConvertMatchToPostMatchResolver(Tournament tournament, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, bool wasByeMatch = false)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    ConvertMatchToPostMatchLadder(tournament, match, winningTeamName, winnerScore, losingTeamName, loserScore, match.Challenge);
-                    break;
-                case TournamentType.RoundRobin:
-                    switch (tournament.RoundRobinMatchType)
-                    {
-                        case RoundRobinMatchType.Normal:
-                            ConvertMatchToPostMatchNormalRoundRobin(tournament, match, winningTeamName, winnerScore, losingTeamName, loserScore, wasByeMatch);
-                            break;
-                        case RoundRobinMatchType.Open:
-                            ConvertMatchToPostMatchOpenRoundRobin(tournament, match, winningTeamName, winnerScore, losingTeamName, loserScore, wasByeMatch);
-                            break;
-                        default:
-                            //Console.WriteLine($"Match conversion not implemented for round robin match type: {tournament.RoundRobinMatchType}");
-                            break;
-                    }
-                    break;
-                default:
-                    //Console.WriteLine($"Match conversion not implemented for tournament type: {tournament.Type}");
-                    break;
-            }
-        }
-
-        private void ConvertMatchToPostMatchNormalRoundRobin(Tournament tournament, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, bool wasByeMatch = false)
-        {
-            if (!tournament.MatchLog.MatchesToPlayByRound.ContainsKey(match.RoundNumber))
-            {
-                //Console.WriteLine($"Round {match.RoundNumber} does not exist in the match schedule.");
-                return;
-            }
-            var matchesInRound = tournament.MatchLog.MatchesToPlayByRound[match.RoundNumber];
-            if (!matchesInRound.Contains(match))
-            {
-                //Console.WriteLine("The specified match does not exist in the given round.");
-                return;
-            }
-
-            // Create PostMatch
-            PostMatch postMatch = CreateNewPostMatch(match.Id, winningTeamName, winnerScore, losingTeamName, loserScore, match.CreatedOn, wasByeMatch);
-
-            // Add to PostMatchesByRound
-            if (!tournament.MatchLog.PostMatchesByRound.ContainsKey(match.RoundNumber))
-                tournament.MatchLog.PostMatchesByRound[match.RoundNumber] = new List<PostMatch>();
-            tournament.MatchLog.PostMatchesByRound[match.RoundNumber].Add(postMatch);
-
-            // Remove from MatchesToPlayByRound
-            matchesInRound.Remove(match);
-
-            // If no matches left in the round or a bye match is left, remove the round entry
-            if (matchesInRound.Count == 0)
-            {
-                tournament.MatchLog.MatchesToPlayByRound.Remove(match.RoundNumber);
-
-                //Console.WriteLine($"All matches for round {match.RoundNumber} have been completed. Admins now need to double check scores and then lock in the round before advancing.");
-
-                tournament.IsRoundComplete = true;
-            }
-
-            // If one match is left and bool returns true then it must be bye match and round is complete. Next round command will handle converting to post match and adding to correct dictionary.
-            if (matchesInRound.Count == 1 && tournament.DoesRoundContainByeMatch())
-            {
-                tournament.IsRoundComplete = true;
-            }
-        }
-
-        private void ConvertMatchToPostMatchOpenRoundRobin(Tournament tournament, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, bool wasByeMatch = false)
-        {
-            if (!tournament.MatchLog.OpenRoundRobinMatchesToPlay.Contains(match))
-            {
-                //Console.WriteLine("The specified match does not exist in the open round robin match list.");
-                return;
-            }
-            // Create PostMatch
-            PostMatch postMatch = CreateNewPostMatch(match.Id, winningTeamName, winnerScore, losingTeamName, loserScore, match.CreatedOn, wasByeMatch);
-
-            // Add to OpenRoundRobinPostMatches list
-            tournament.MatchLog.OpenRoundRobinPostMatches.Add(postMatch);
-
-            // Remove from OpenRoundRobinMatchesToPlay
-            tournament.MatchLog.OpenRoundRobinMatchesToPlay.Remove(match);
-        }
-
-        private void ConvertMatchToPostMatchLadder(Tournament tournament, Match match, string winningTeamName, int winnerScore, string losingTeamName, int loserScore, Challenge challenge)
-        {
-            if (!tournament.MatchLog.LadderMatchesToPlay.Contains(match))
-            {
-                //Console.WriteLine("The specified match does not exist in the ladder match list.");
-                return;
-            }
-            // Create PostMatch
-            PostMatch postMatch = CreateNewPostMatch(match.Id, winningTeamName, winnerScore, losingTeamName, loserScore, match.CreatedOn, false, match.Challenge);
-            // Add to LadderPostMatches list
-            tournament.MatchLog.LadderPostMatches.Add(postMatch);
-            // Remove from LadderMatchesToPlay
-            tournament.MatchLog.LadderMatchesToPlay.Remove(match);
         }
         #endregion
 
@@ -1644,43 +1186,6 @@ namespace FlawsFightNight.Managers
                 }
             }
             return matches;
-        }
-
-        public void SendMatchSchedulesToTeamsResolver(Tournament tournament)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.RoundRobin:
-                    switch (tournament.RoundRobinMatchType)
-                    {
-                        case RoundRobinMatchType.Normal:
-                            foreach (var team in tournament.Teams)
-                            {
-                                foreach (var user in team.Members)
-                                {
-                                    SendNormalRoundRobinMatchScheduleNotificationToDiscordId(user.DiscordId, tournament);
-                                }
-                            }
-                            break;
-                        case RoundRobinMatchType.Open:
-                            foreach (var team in tournament.Teams)
-                            {
-                                foreach (var user in team.Members)
-                                {
-                                    SendOpenRoundRobinMatchScheduleNotificationToDiscordId(user.DiscordId, tournament);
-                                }
-                            }
-                            break;
-                        default:
-                            //Console.WriteLine($"Match schedule sending not implemented for round robin match type: {tournament.RoundRobinMatchType}");
-                            break;
-                    }
-                    break;
-                default:
-                    //Console.WriteLine($"Match schedule sending not implemented for tournament type: {tournament.Type}");
-                    break;
-            }
-
         }
         #endregion
 

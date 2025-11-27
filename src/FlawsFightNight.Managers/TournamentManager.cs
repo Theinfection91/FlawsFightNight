@@ -34,13 +34,6 @@ namespace FlawsFightNight.Managers
             LoadTournamentsDatabase();
         }
 
-        // TODO Old Version, remove later
-        public void AddTournament(Tournament tournament)
-        {
-            _dataManager.AddTournament(tournament);
-        }
-
-        // New Version
         public void AddTournament(TournamentBase tournament)
         {
             _dataManager.AddTournament(tournament);
@@ -48,18 +41,6 @@ namespace FlawsFightNight.Managers
 
         public bool IsTournamentNameUnique(string tournamentName)
         {
-            // TODO Old Version, remove later
-            //List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            //foreach (Tournament tournament in tournaments)
-            //{
-            //    if (tournament.Name.Equals(tournamentName, StringComparison.OrdinalIgnoreCase))
-            //    {
-            //        return false;
-            //    }
-            //}
-            //return true; // Team name is unique across all tournaments
-
-            // New Version
             List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
             foreach (TournamentBase tournament in tournaments)
             {
@@ -69,17 +50,6 @@ namespace FlawsFightNight.Managers
                 }
             }
             return true; // Team name is unique across all tournaments
-        }
-
-        public Tournament CreateTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
-        {
-            string? id = GenerateTournamentId();
-            return new Tournament(name, description)
-            {
-                Id = id,
-                Type = tournamentType,
-                TeamSize = teamSize
-            };
         }
 
         public TournamentBase CreateNewTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
@@ -111,121 +81,13 @@ namespace FlawsFightNight.Managers
             _dataManager.RemoveTournamentBase(tournamentId);
         }
 
-        public bool CanAcceptNewTeams(Tournament tournament)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    return true; // Ladder tournaments can always accept new teams
-
-                case TournamentType.RoundRobin:
-                case TournamentType.NormalRoundRobin:
-                case TournamentType.OpenRoundRobin:
-                    return !tournament.IsTeamsLocked;
-
-                case TournamentType.SingleElimination:
-                case TournamentType.DoubleElimination:
-                    return !tournament.IsRunning; // SE/DE tournaments cannot accept new teams once they start
-
-                default:
-                    return false; // Unknown tournament type
-            }
-        }
-
-        public bool CanTeamsBeLockedResolver(Tournament tournament)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.RoundRobin:
-                    return CanRoundRobinTeamsBeLocked(tournament);
-
-                case TournamentType.SingleElimination:
-                case TournamentType.DoubleElimination:
-                    return !tournament.IsRunning && tournament.CanTeamsBeLocked; // SE/DE can lock teams if not running
-
-                case TournamentType.NormalRoundRobin:
-                case TournamentType.OpenRoundRobin:
-                    return CanRoundRobinTeamsBeLocked(tournament);
-
-                default:
-                    return false; // Unknown tournament type
-            }
-        }
-
-        public bool CanRoundRobinTeamsBeLocked(Tournament tournament)
-        {
-            if (tournament.IsRunning) return false; // Cannot lock teams if tournament is running
-
-            if (tournament.Teams.Count < 3) return false; // Need at least 3 teams to lock teams in Round Robin
-
-            return true;
-        }
-
         public void SetCanTeamsBeLocked(ITeamLocking tournament, bool canTeamsBeLocked)
         {
             tournament.CanTeamsBeLocked = canTeamsBeLocked;
         }
 
-        public void LockTeamsInTournament(Tournament tournament)
-        {
-            tournament.IsTeamsLocked = true;
-            tournament.CanTeamsBeLocked = false;
-
-            // Allow teams to be unlocked after locking, until tournament starts
-            tournament.CanTeamsBeUnlocked = true;
-        }
-
-        public void UnlockTeamsInTournament(Tournament tournament)
-        {
-            tournament.IsTeamsLocked = false;
-            tournament.CanTeamsBeUnlocked = false;
-
-            // Allow teams to be locked again
-            tournament.CanTeamsBeLocked = true;
-        }
-
-        public void NextRoundResolver(Tournament tournament)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    // Ladder tournaments do not have rounds
-                    break;
-                case TournamentType.RoundRobin:
-                    AdvanceRoundRobinToNextRound(tournament);
-                    break;
-                case TournamentType.SingleElimination:
-                case TournamentType.DoubleElimination:
-                    // SE/DE round advancement logic would go here
-                    break;
-                default:
-                    // Unknown tournament type
-                    break;
-            }
-        }
-
-        private void AdvanceRoundRobinToNextRound(Tournament tournament)
-        {
-            tournament.CurrentRound++;
-            tournament.IsRoundComplete = false;
-            tournament.IsRoundLockedIn = false;
-        }
-
         public bool IsTournamentIdInDatabase(string tournamentId, bool isCaseSensitive = false)
         {
-            // TODO Old version, remove later
-            //if (isCaseSensitive)
-            //{
-            //    return _dataManager.TournamentsDatabaseFile.Tournaments
-            //        .Any(t => t.Id.Equals(tournamentId));
-            //}
-            //else
-            //{
-            //    return _dataManager.TournamentsDatabaseFile.Tournaments
-            //        .Any(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
-            //}
-
-            // New version
             if (isCaseSensitive)
             {
                 return _dataManager.TournamentsDatabaseFile.NewTournaments
