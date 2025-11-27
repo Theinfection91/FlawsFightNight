@@ -11,10 +11,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
 {
     public class NormalLadderTournament : TournamentBase, INormalLadderRankSystem
     {
+        public override TournamentType Type { get; protected set; } = TournamentType.NormalLadder;
+        public override MatchLogBase MatchLog { get; protected set; } = new NormalLadderMatchLog();
         public NormalLadderTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
-            Type = TournamentType.NormalLadder;
-            MatchLog = new NormalLadderMatchLog();
+
         }
 
         public override bool CanStart()

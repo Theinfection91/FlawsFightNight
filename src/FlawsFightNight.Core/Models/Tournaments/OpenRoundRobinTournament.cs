@@ -12,6 +12,8 @@ namespace FlawsFightNight.Core.Models.Tournaments
 {
     public class OpenRoundRobinTournament : TournamentBase, ITeamLocking, ITieBreakerRankSystem
     {
+        public override TournamentType Type { get; protected set; } = TournamentType.OpenRoundRobin;
+        public override MatchLogBase MatchLog { get; protected set; } = new OpenRoundRobinMatchLog();
         public bool IsTeamsLocked { get; set; } = false;
         public bool CanTeamsBeLocked { get; set; } = false;
         public bool CanTeamsBeUnlocked { get; set; } = false;
@@ -20,9 +22,9 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public OpenRoundRobinTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
-            Type = TournamentType.OpenRoundRobin;
-            MatchLog = new OpenRoundRobinMatchLog();
-            Console.WriteLine($"{MatchLog.GetType().ToString()}");
+            //Type = TournamentType.OpenRoundRobin;
+            //MatchLog = new OpenRoundRobinMatchLog();
+            Console.WriteLine($"Open RR - {MatchLog.GetType().ToString()}");
         }
 
         public override bool CanStart()
