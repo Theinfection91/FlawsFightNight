@@ -2,18 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.MatchLogs;
 using FlawsFightNight.Core.Models.TieBreakers;
+using Newtonsoft.Json;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
     public class NormalRoundRobinTournament : TournamentBase, IRoundBased, ITeamLocking, ITieBreakerRankSystem
     {
         public override TournamentType Type { get; protected set; } = TournamentType.NormalRoundRobin;
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
         public override MatchLogBase MatchLog { get; protected set; }
         public int CurrentRound { get; set; } = 0;
         public int? TotalRounds { get; set; } = null;
@@ -34,7 +35,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public NormalRoundRobinTournament(string id, string name, int teamSize) : base(id, name, teamSize)
         {
             //Type = TournamentType.NormalRoundRobin;
-            //MatchLog ??= new NormalRoundRobinMatchLog();
+            MatchLog ??= new NormalRoundRobinMatchLog();
             //Console.WriteLine($"Test - {MatchLog.GetType().ToString()}");
             Console.WriteLine($"Normal RR Constructor Called");
         }
