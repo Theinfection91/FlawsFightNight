@@ -44,6 +44,32 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             Team? challengerTeam = _teamManager.GetTeamByName(challengerTeamName);
             Team? challengedTeam = _teamManager.GetTeamByName(challengedTeamName);
 
+            // Grab tournament from challenger team
+            var tournament = _tournamentManager.GetTournamentFromTeamName(challengerTeam.Name);
+            if (tournament == null)
+            {
+                // Shouldn't be possible, but just in case
+                return _embedManager.ErrorEmbed(Name, "Tournament is null. Contact support.");
+            }
+
+            // Ensure tournament is a ladder type
+            if (tournament is not NormalLadderTournament)
+            {
+                return _embedManager.ErrorEmbed(Name, $"Challenges can only be sent in Ladder type tournaments. The tournament '{tournament.Name}' is of type '{tournament.Type}'.");
+            }
+
+            // Ensure tournament is running
+            if (!tournament.IsRunning)
+            {
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Challenges can only be sent in running tournaments.");
+            }
+
+            // Ensure teams are in the same tournament
+            if (!_tournamentManager.IsTeamsInSameTournament(tournament, challengerTeam, challengedTeam))
+            {
+                return _embedManager.ErrorEmbed(Name, $"Both teams must be registered in the same tournament to issue a challenge. Please check the team registrations and try again.");
+            }
+
             // Ensure challenger team is not the same as challenged team
             if (challengerTeam.Name.Equals(challengedTeam.Name, StringComparison.OrdinalIgnoreCase))
             {
@@ -62,32 +88,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, $"The challenger team (#{challengerTeam.Rank}){challengerTeam.Name} can not challenge (#{challengedTeam.Rank}){challengedTeam.Name} - Teams may only challenge up to 2 ranks above them.");
             }
 
-            // Grab tournament from challenger team
-            var tournament = _tournamentManager.GetTournamentFromTeamName(challengerTeam.Name);
-            if (tournament == null)
-            {
-                // Shouldn't be possible, but just in case
-                return _embedManager.ErrorEmbed(Name, "Tournament is null. Contact support.");
-            }
-
-            // Ensure teams are in the same tournament
-            if (!_tournamentManager.IsTeamsInSameTournament(tournament, challengerTeam, challengedTeam))
-            {
-                return _embedManager.ErrorEmbed(Name, $"Both teams must be registered in the same tournament to issue a challenge. Please check the team registrations and try again.");
-            }
-
-            // Ensure tournament is a ladder type
-            if (tournament is not NormalLadderTournament)
-            {
-                return _embedManager.ErrorEmbed(Name, $"Challenges can only be sent in Ladder type tournaments. The tournament '{tournament.Name}' is of type '{tournament.Type}'.");
-            }
-
-            // Ensure tournament is running
-            if (!tournament.IsRunning)
-            {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Challenges can only be sent in running tournaments.");
-            }
-
             // Check if invoker is on challenger team (or guild admin)
             if (context.User is not SocketGuildUser guildUser)
             {
@@ -104,7 +104,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Check each teams challenge status, ensure neither are already in a challenge situation (Challenge sent or received and awaiting to be played)
             if (!challengerTeam.IsChallengeable)
             {
-                var existingChallenge = _matchManager.GetOpenMatchByTeamNameResolver(tournament, challengerTeam.Name);
+                var existingChallenge = _matchManager.GetOpenMatchByTeamNameLadder(tournament, challengerTeam.Name);
                 if (challengerTeam.Name.Equals(existingChallenge.Challenge.Challenger))
                 {
                     return _embedManager.ErrorEmbed(Name, $"The team '{challengerTeam.Name}' has already sent a challenge to '{existingChallenge.Challenge.Challenged}' and is awaiting the match to be played.");
@@ -116,7 +116,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
             if (!challengedTeam.IsChallengeable)
             {
-                var existingChallenge = _matchManager.GetOpenMatchByTeamNameResolver(tournament, challengedTeam.Name);
+                var existingChallenge = _matchManager.GetOpenMatchByTeamNameLadder(tournament, challengedTeam.Name);
                 if (challengedTeam.Name.Equals(existingChallenge.Challenge.Challenger))
                 {
                     return _embedManager.ErrorEmbed(Name, $"The team '{challengedTeam.Name}' has already sent a challenge to '{existingChallenge.Challenge.Challenged}' and is awaiting the match to be played.");

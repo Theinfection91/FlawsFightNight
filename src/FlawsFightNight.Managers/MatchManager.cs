@@ -502,6 +502,75 @@ namespace FlawsFightNight.Managers
             }
         }
 
+        public Match GetOpenMatchByTeamNameLadder(TournamentBase tournament, string teamName)
+        {
+            foreach (var match in tournament.MatchLog.GetAllActiveMatches())
+            {
+                if (match == null)
+                {
+                    //Console.WriteLine("Encountered null match in list, skipping.");
+                    continue;
+                }
+                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+                if (!string.IsNullOrEmpty(match.TeamA) &&
+                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+                if (!string.IsNullOrEmpty(match.TeamB) &&
+                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+            }
+            //Console.WriteLine($"No match found for team '{teamName}' in ladder matches.");
+            return null;
+        }
+
+        private Match GetOpenMatchByTeamNameNormalRoundRobin(NormalRoundRobinTournament tournament, string teamName)
+        {
+            int currentRound = tournament.CurrentRound;
+            //Console.WriteLine($"Looking in round: {currentRound}");
+
+            if (!(tournament.MatchLog as NormalRoundRobinMatchLog).MatchesToPlayByRound.TryGetValue(currentRound, out var matches))
+            {
+                //Console.WriteLine($"No entry for round {currentRound} in MatchesToPlayByRound.");
+                return null;
+            }
+
+            if (matches == null)
+            {
+                //Console.WriteLine($"Match list for round {currentRound} is null.");
+                return null;
+            }
+
+            foreach (var match in matches)
+            {
+                if (match == null)
+                {
+                    //Console.WriteLine("Encountered null match in list, skipping.");
+                    continue;
+                }
+
+                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+
+                if (!string.IsNullOrEmpty(match.TeamA) &&
+                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+
+                if (!string.IsNullOrEmpty(match.TeamB) &&
+                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+            }
+
+            //Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
+            return null;
+        }
+
         public string GetLosingTeamName(Match match, string winningTeamName)
         {
             if (match.TeamA != null && match.TeamA.Equals(winningTeamName, StringComparison.OrdinalIgnoreCase))
