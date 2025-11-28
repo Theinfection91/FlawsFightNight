@@ -1,4 +1,5 @@
 ﻿using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
 using System;
@@ -63,10 +64,10 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllLadderTeams()
         {
             List<Team> ladderTeams = new List<Team>();
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            var tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            foreach (var tournament in tournaments)
             {
-                if (tournament.Type.Equals(TournamentType.Ladder))
+                if (tournament is NormalLadderTournament)
                 {
                     ladderTeams.AddRange(tournament.Teams);
                 }
@@ -77,10 +78,10 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllRoundBasedTeams()
         {
             List<Team> roundBasedTeams = new();
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            foreach (var tournament in tournaments)
             {
-                if (tournament.Type.Equals(TournamentType.RoundRobin)) // Will add elimination later
+                if (tournament is IRoundBased) // Will add elimination later
                 {
                     roundBasedTeams.AddRange(tournament.Teams);
                 }

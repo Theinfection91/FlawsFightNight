@@ -133,9 +133,9 @@ namespace FlawsFightNight.Managers
         public List<Match> GetAllActiveMatches()
         {
             List<Match> allMatches = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
             {
-                allMatches.AddRange(tournament.MatchLog.GetAllActiveMatches(tournament.CurrentRound));
+                allMatches.AddRange(tournament.MatchLog.GetAllActiveMatches());
             }
             return allMatches;
         }
@@ -143,7 +143,7 @@ namespace FlawsFightNight.Managers
         public List<PostMatch> GetAllPostMatches()
         {
             List<PostMatch> allPostMatches = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
             {
                 allPostMatches.AddRange(tournament.MatchLog.GetAllPostMatches());
             }
@@ -153,9 +153,12 @@ namespace FlawsFightNight.Managers
         public List<PostMatch> GetAllRoundRobinPostMatches()
         {
             List<PostMatch> allPostMatches = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
             {
-                allPostMatches.AddRange(tournament.MatchLog.GetEditablePostMatches());
+                if (tournament is NormalRoundRobinTournament || tournament is OpenRoundRobinTournament)
+                {
+                    allPostMatches.AddRange(tournament.MatchLog.GetAllPostMatches());
+                }
             }
             return allPostMatches;
         }
