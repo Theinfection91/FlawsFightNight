@@ -63,7 +63,7 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool IsMatchIdInDatabase(string matchId)
         {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 if (tournament.MatchLog.ContainsMatchId(matchId))
                 {
@@ -73,7 +73,7 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public bool HasMatchBeenPlayed(TournamentBase tournament, string matchId)
+        public bool HasMatchBeenPlayed(Tournament tournament, string matchId)
         {
             foreach (var match in tournament.MatchLog.GetAllPostMatches())
             {
@@ -91,7 +91,7 @@ namespace FlawsFightNight.Managers
                    (!string.IsNullOrEmpty(postMatch.Loser) && postMatch.Loser.Equals(teamName, StringComparison.OrdinalIgnoreCase));
         }
 
-        public bool IsTieBreakerNeededForFirstPlace(MatchLogBase matchLog)
+        public bool IsTieBreakerNeededForFirstPlace(MatchLog matchLog)
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
@@ -133,7 +133,7 @@ namespace FlawsFightNight.Managers
         public List<Match> GetAllActiveMatches()
         {
             List<Match> allMatches = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 allMatches.AddRange(tournament.MatchLog.GetAllActiveMatches());
             }
@@ -143,7 +143,7 @@ namespace FlawsFightNight.Managers
         public List<PostMatch> GetAllPostMatches()
         {
             List<PostMatch> allPostMatches = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 allPostMatches.AddRange(tournament.MatchLog.GetAllPostMatches());
             }
@@ -153,7 +153,7 @@ namespace FlawsFightNight.Managers
         public List<PostMatch> GetAllRoundRobinPostMatches()
         {
             List<PostMatch> allPostMatches = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 if (tournament is NormalRoundRobinTournament || tournament is OpenRoundRobinTournament)
                 {
@@ -163,7 +163,7 @@ namespace FlawsFightNight.Managers
             return allPostMatches;
         }
 
-        public Match GetOpenMatchByTeamNameLadder(TournamentBase tournament, string teamName)
+        public Match GetOpenMatchByTeamNameLadder(Tournament tournament, string teamName)
         {
             foreach (var match in tournament.MatchLog.GetAllActiveMatches())
             {
@@ -201,7 +201,7 @@ namespace FlawsFightNight.Managers
             return null; // No losing team found
         }
 
-        public PostMatch GetPostMatchByIdInTournament(TournamentBase tournament, string matchId)
+        public PostMatch GetPostMatchByIdInTournament(Tournament tournament, string matchId)
         {
             foreach (var match in tournament.MatchLog.GetAllPostMatches())
             {
@@ -213,7 +213,7 @@ namespace FlawsFightNight.Managers
             return null; // Match ID not found
         }
 
-        public List<string> GetTiedTeams(MatchLogBase matchLog)
+        public List<string> GetTiedTeams(MatchLog matchLog)
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
@@ -267,14 +267,14 @@ namespace FlawsFightNight.Managers
                    match.Challenge.Challenger.Equals(winningTeam.Name, StringComparison.OrdinalIgnoreCase);
         }
 
-        public bool HasChallengeSent(TournamentBase tournament, string challengerTeamName)
+        public bool HasChallengeSent(Tournament tournament, string challengerTeamName)
         {
             return tournament.MatchLog.GetAllActiveMatches().Any(m =>
                 m.Challenge != null &&
                 m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase));
         }
 
-        public Match? GetChallengeMatchByChallengerName(TournamentBase tournament, string challengerTeamName)
+        public Match? GetChallengeMatchByChallengerName(Tournament tournament, string challengerTeamName)
         {
             return tournament.MatchLog.GetAllActiveMatches().FirstOrDefault(m =>
                 m.Challenge != null &&
@@ -441,7 +441,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private bool ValidateNormalRoundRobin(TournamentBase tournament, bool isDoubleRoundRobin)
+        private bool ValidateNormalRoundRobin(Tournament tournament, bool isDoubleRoundRobin)
         {
             var teams = tournament.Teams.Select(t => t.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
@@ -507,7 +507,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Match Message System
-        public void SendMatchSchedulesToTeamsResolver(TournamentBase tournament)
+        public void SendMatchSchedulesToTeamsResolver(Tournament tournament)
         {
             if (tournament is NormalRoundRobinTournament)
             {
@@ -531,7 +531,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private async void SendNormalRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, TournamentBase tournament)
+        private async void SendNormalRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, Tournament tournament)
         {
             // This is a fire-and-forget method. Errors are logged but not thrown.
             try
@@ -568,7 +568,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private async void SendOpenRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, TournamentBase tournament)
+        private async void SendOpenRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, Tournament tournament)
         {
             // This is a fire-and-forget method. Errors are logged but not thrown.
             try
@@ -606,7 +606,7 @@ namespace FlawsFightNight.Managers
         }
 
 
-        public async void SendChallengeSuccessNotificationProcess(TournamentBase tournament, Match match, Team challengerTeam, Team challengedTeam)
+        public async void SendChallengeSuccessNotificationProcess(Tournament tournament, Match match, Team challengerTeam, Team challengedTeam)
         {
             try
             {
@@ -647,7 +647,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public async void SendChallengeCancelNotificationProcess(TournamentBase tournament, Match match, Team challengerTeam, Team challengedTeam)
+        public async void SendChallengeCancelNotificationProcess(Tournament tournament, Match match, Team challengerTeam, Team challengedTeam)
         {
             try
             {
@@ -690,7 +690,7 @@ namespace FlawsFightNight.Managers
 
         public string GetTeamNameFromDiscordId(ulong discordId, string tournamentId)
         {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 foreach (var team in tournament.Teams)
                 {
@@ -706,7 +706,7 @@ namespace FlawsFightNight.Managers
             return "null";
         }
 
-        public List<Match> GetMatchesForTeamNormalRoundRobin(string teamName, MatchLogBase matchLog)
+        public List<Match> GetMatchesForTeamNormalRoundRobin(string teamName, MatchLog matchLog)
         {
             var matches = new List<Match>();
             foreach (var match in matchLog.GetAllActiveMatches())
@@ -721,7 +721,7 @@ namespace FlawsFightNight.Managers
             return matches;
         }
 
-        public List<Match> GetMatchesForTeamOpenRoundRobin(string teamName, MatchLogBase matchLog)
+        public List<Match> GetMatchesForTeamOpenRoundRobin(string teamName, MatchLog matchLog)
         {
             var matches = new List<Match>();
             foreach (var match in matchLog.GetAllActiveMatches())
@@ -737,7 +737,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Edit Match Helpers
-        public void RecalculateAllWinLossStreaks(TournamentBase tournament)
+        public void RecalculateAllWinLossStreaks(Tournament tournament)
         {
             // Reset all team streaks
             foreach (var team in tournament.Teams)

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.MatchLogs
 {
-    public class NormalRoundRobinMatchLog : MatchLogBase
+    public class NormalRoundRobinMatchLog : MatchLog
     {
         public Dictionary<int, List<Match>> MatchesToPlayByRound { get; set; } = [];
         public Dictionary<int, List<PostMatch>> PostMatchesByRound { get; set; } = [];
@@ -136,7 +136,7 @@ namespace FlawsFightNight.Core.Models.MatchLogs
             return false;
         }
 
-        public override void ConvertMatchToPostMatch(TournamentBase tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore)
+        public override void ConvertMatchToPostMatch(Tournament tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore)
         {
             if (tournament is IRoundBased rbTournament)
             {

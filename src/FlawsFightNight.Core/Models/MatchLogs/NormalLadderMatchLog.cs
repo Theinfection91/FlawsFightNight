@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.MatchLogs
 {
-    public class NormalLadderMatchLog : MatchLogBase, IChallengeLog
+    public class NormalLadderMatchLog : MatchLog, IChallengeLog
     {
         public List<Match> MatchesToPlay { get; set; } = [];
         public List<PostMatch> PostMatches { get; set; } = [];
@@ -46,7 +46,7 @@ namespace FlawsFightNight.Core.Models.MatchLogs
             MatchesToPlay.Remove(match);
         }
 
-        public override void ConvertMatchToPostMatch(TournamentBase tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore)
+        public override void ConvertMatchToPostMatch(Tournament tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore)
         {
             // Ensure the match exists in active matches
             if (!GetAllActiveMatches().Contains(match))

@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class NormalLadderTournament : TournamentBase, INormalLadderRankSystem
+    public class NormalLadderTournament : Tournament, INormalLadderRankSystem
     {
         public override TournamentType Type { get; protected set; } = TournamentType.NormalLadder;
 
         [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
-        public override MatchLogBase MatchLog { get; protected set; }
+        public override MatchLog MatchLog { get; protected set; }
 
         [JsonConstructor]
         protected NormalLadderTournament() : base() { }

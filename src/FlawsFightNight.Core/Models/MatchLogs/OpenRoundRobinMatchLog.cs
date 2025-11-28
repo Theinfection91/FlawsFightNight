@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.MatchLogs
 {
-    public class OpenRoundRobinMatchLog : MatchLogBase
+    public class OpenRoundRobinMatchLog : MatchLog
     {
         public List<Match> MatchesToPlay { get; set; } = [];
         public List<PostMatch> PostMatches { get; set; } = [];
@@ -44,7 +44,7 @@ namespace FlawsFightNight.Core.Models.MatchLogs
             MatchesToPlay.Remove(match);
         }
 
-        public override void ConvertMatchToPostMatch(TournamentBase tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore)
+        public override void ConvertMatchToPostMatch(Tournament tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore)
         {
             // TODO Open Round Robin Post Match Conversion Logic
         }

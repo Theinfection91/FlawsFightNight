@@ -34,7 +34,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // New version
-            TournamentBase tournament = _tournamentManager.CreateNewTournament(name, tournamentType, teamSize, description);
+            Tournament tournament = _tournamentManager.CreateNewTournament(name, tournamentType, teamSize, description);
 
             if (tournament == null)
             {

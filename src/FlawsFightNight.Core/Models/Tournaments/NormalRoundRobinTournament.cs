@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class NormalRoundRobinTournament : TournamentBase, IRoundBased, IRoundRobinLength, ITeamLocking, ITieBreakerRankSystem
+    public class NormalRoundRobinTournament : Tournament, IRoundBased, IRoundRobinLength, ITeamLocking, ITieBreakerRankSystem
     {
         public override TournamentType Type { get; protected set; } = TournamentType.NormalRoundRobin;
         public int CurrentRound { get; set; } = 0;
@@ -25,7 +25,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public bool IsDoubleRoundRobin { get; set; } = true;
 
         [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
-        public override MatchLogBase MatchLog { get; protected set; }
+        public override MatchLog MatchLog { get; protected set; }
 
         [JsonConstructor]
         protected NormalRoundRobinTournament() : base() { }

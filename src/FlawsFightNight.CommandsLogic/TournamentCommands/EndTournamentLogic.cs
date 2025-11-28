@@ -29,7 +29,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
         public Embed EndTournamentProcess(string tournamentId)
         {
             // Grab tournament, modal should have ensured it exists
-            var tournament = _tournamentManager.GetNewTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
             // Check if tournament is already running
             if (!tournament.IsRunning)
