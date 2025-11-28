@@ -100,26 +100,38 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public List<Tournament> GetAllTournaments()
+        public List<TournamentBase> GetAllTournaments()
         {
-            return _dataManager.TournamentsDatabaseFile.Tournaments;
+            return _dataManager.TournamentsDatabaseFile.NewTournaments;
         }
 
-        public List<Tournament> GetAllLadderTournaments()
+        public List<TournamentBase> GetAllLadderTournaments()
         {
-            return _dataManager.TournamentsDatabaseFile.Tournaments
-                .Where(t => t.Type == TournamentType.Ladder)
-                .ToList();
+            List<TournamentBase> ladderTournaments = new();
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            {
+                if (tournament is NormalLadderTournament)
+                {
+                    ladderTournaments.Add(tournament);
+                }
+            }
+            return ladderTournaments;
         }
 
-        public List<Tournament> GetAllRoundRobinTournaments()
+        public List<TournamentBase> GetAllRoundRobinTournaments()
         {
-            return _dataManager.TournamentsDatabaseFile.Tournaments
-                .Where(t => t.Type == TournamentType.RoundRobin)
-                .ToList();
+            List<TournamentBase> roundRobinTournaments = new();
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            {
+                if (tournament is NormalRoundRobinTournament || tournament is OpenRoundRobinTournament)
+                {
+                    roundRobinTournaments.Add(tournament);
+                }
+            }
+            return roundRobinTournaments;
         }
 
-        public List<Tournament> GetAllEliminationTournaments()
+        public List<TournamentBase> GetAllEliminationTournaments()
         {
             // TODO
 

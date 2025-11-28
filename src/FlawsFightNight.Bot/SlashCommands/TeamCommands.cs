@@ -30,8 +30,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [RequireGuildAdmin]
         public async Task RegisterTeamAsync(
             [Summary("name", "The name of the team")] string name,
-            [Summary("tournament_id", "The ID of the tournament to register for")
-            //, Autocomplete(typeof(TournamentIdAutocomplete))
+            [Summary("tournament_id", "The ID of the tournament to register for"), Autocomplete(typeof(TournamentIdAutocomplete))
             ] string tournamentId,
             [Summary("member1", "A member to add to the team.")] IUser member1,
             [Summary("member2", "A member to add to the team.")] IUser? member2 = null,
@@ -85,8 +84,7 @@ namespace FlawsFightNight.Bot.SlashCommands
 
                 var result = _registerTeamLogic.RegisterTeamProcess(name, tournamentId, members);
                 await FollowupAsync(embed: result);
-                // TODO Re-enable when correcting autocomplete
-                //_autocompleteCache.UpdateCache();
+                _autocompleteCache.UpdateCache();
 
             }
             catch (Exception ex)

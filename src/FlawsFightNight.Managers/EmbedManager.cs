@@ -19,23 +19,6 @@ namespace FlawsFightNight.Managers
     {
         public EmbedManager() { }
 
-        public string GetFormattedTournamentType(Tournament tournament)
-        {
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    return "Ladder";
-                case TournamentType.RoundRobin:
-                    return "Round Robin";
-                case TournamentType.SingleElimination:
-                    return "Single Elimination";
-                case TournamentType.DoubleElimination:
-                    return "Double Elimination";
-                default:
-                    return "null";
-            }
-        }
-
         public Embed ToDoEmbed(string message = "This feature is not yet implemented.")
         {
             var embed = new EmbedBuilder()
@@ -1093,7 +1076,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed ShowAllTournamentsSuccess(List<Tournament> tournaments)
+        public Embed ShowAllTournamentsSuccess(List<TournamentBase> tournaments)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("📋 All Tournaments")
@@ -1109,10 +1092,10 @@ namespace FlawsFightNight.Managers
             foreach (var tournament in tournaments.OrderByDescending(t => t.CreatedOn))
             {
                 string status = tournament.IsRunning ? "🟢 Running" : "🔴 Not Running";
-                string teamsLockedStatus = tournament.IsTeamsLocked ? "🔒 Locked" : "🔓 Unlocked";
-                string roundInfo = tournament.TotalRounds.HasValue
-                    ? $"{tournament.CurrentRound}/{tournament.TotalRounds.Value}"
-                    : $"{tournament.CurrentRound}/N/A";
+                string teamsLockedStatus = (tournament as ITeamLocking).IsTeamsLocked ? "🔒 Locked" : "🔓 Unlocked";
+                string roundInfo = (tournament as IRoundBased).TotalRounds.HasValue
+                    ? $"{(tournament as IRoundBased).CurrentRound}/{(tournament as IRoundBased).TotalRounds.Value}"
+                    : $"{(tournament as IRoundBased).CurrentRound}/N/A";
                 string description = string.Join("\n", new[]
                 {
                     $"**Type:** {tournament.Type}",
