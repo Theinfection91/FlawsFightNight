@@ -68,63 +68,40 @@ namespace FlawsFightNight.Core.Models.Tournaments
             ReassignRanks();
         }
 
-        public void RankChangeProcess(Team winningTeam, Team losingTeam)
-        {
-            // Swap ranks between winning and losing teams, losing team moves down one rank
-            winningTeam.Rank = losingTeam.Rank;
-
-            // All teams ranked between the winning and losing teams move down one rank
-            foreach (var team in Teams)
-            {
-                if (team != winningTeam && team.Rank >= winningTeam.Rank && team.Rank < losingTeam.Rank)
-                {
-                    team.Rank++;
-                }
-            }
-        }
-
         public void ReassignRanks()
         {
-            if (Teams == null || Teams.Count == 0)
-            {
-                Console.WriteLine("ReassignRanks: No teams available. Nothing to do.");
-                return;
-            }
-
             // Snapshot before sorting
-            try
-            {
-                var beforeSnapshot = string.Join(", ", Teams.Select((t, idx) => $"[{idx}] {t.Name} (rank={t.Rank})"));
-                Console.WriteLine($"ReassignRanks: Before sort -> {beforeSnapshot}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"ReassignRanks: Failed to create before-snapshot: {ex.Message}");
-            }
+            //try
+            //{
+            //    var beforeSnapshot = string.Join(", ", Teams.Select((t, idx) => $"[{idx}] {t.Name} (rank={t.Rank})"));
+            //    Console.WriteLine($"ReassignRanks: Before sort -> {beforeSnapshot}");
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"ReassignRanks: Failed to create before-snapshot: {ex.Message}");
+            //}
 
+            // Sort teams by their current rank
             Teams.Sort((a, b) => a.Rank.CompareTo(b.Rank));
-            Console.WriteLine("ReassignRanks: Teams sorted by rank.");
 
             // Snapshot after sorting
-            try
-            {
-                var afterSnapshot = string.Join(", ", Teams.Select((t, idx) => $"[{idx}] {t.Name} (rank={t.Rank})"));
-                Console.WriteLine($"ReassignRanks: After sort -> {afterSnapshot}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"ReassignRanks: Failed to create after-snapshot: {ex.Message}");
-            }
+            //try
+            //{
+            //    var afterSnapshot = string.Join(", ", Teams.Select((t, idx) => $"[{idx}] {t.Name} (rank={t.Rank})"));
+            //    Console.WriteLine($"ReassignRanks: After sort -> {afterSnapshot}");
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"ReassignRanks: Failed to create after-snapshot: {ex.Message}");
+            //}
 
-            // Reassign ranks sequentially from 1 to N
+            // Reassign ranks sequentially starting from 1
             for (int i = 0; i < Teams.Count; i++)
             {
-                var oldRank = Teams[i].Rank;
                 Teams[i].Rank = i + 1;
-                Console.WriteLine($"ReassignRanks: Assigned new rank {Teams[i].Rank} to team {Teams[i].Name} (old rank={oldRank})");
+                //Console.WriteLine($"ReassignRanks: Assigned new rank {Teams[i].Rank} to team {Teams[i].Name}");
             }
-
-            Console.WriteLine("ReassignRanks: Completed rank reassignment.");
+            //Console.WriteLine("ReassignRanks: Completed rank reassignment.");
         }
     }
 }

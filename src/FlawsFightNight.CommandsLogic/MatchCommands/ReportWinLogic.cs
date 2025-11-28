@@ -127,11 +127,16 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             {
                 if (_matchManager.IsWinningTeamChallenger(match, winningTeam))
                 {
-                    //winningTeam.Rank = losingTeam.Rank;
-                    //losingTeam.Rank++;
+                    winningTeam.Rank = losingTeam.Rank;
+                    losingTeam.Rank++;
+                    foreach (var team in ladderTournament.Teams)
+                    {
+                        if (team.Rank.Equals(losingTeam.Rank) && !team.Equals(losingTeam))
+                        {
+                            team.Rank++;
+                        }
+                    }
                     //ladderTournament.ReassignRanks();
-
-                    ladderTournament.RankChangeProcess(winningTeam, losingTeam);
                 }
                 winningTeam.IsChallengeable = true;
                 losingTeam.IsChallengeable = true;
