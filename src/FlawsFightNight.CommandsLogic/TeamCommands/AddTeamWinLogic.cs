@@ -1,5 +1,6 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -34,10 +35,10 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
 
             // Check tournament type
-            if (!tournament.Type.Equals(TournamentType.Ladder))
+            if (tournament is not NormalLadderTournament)
             {
                 // Only ladder tournaments can have wins added manually
-                return _embedManager.ErrorEmbed(Name, $"Wins can only be added manually to teams in Ladder tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
+                return _embedManager.ErrorEmbed(Name, $"Wins can only be added manually to teams in Normal Ladder tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
             }
 
             // Check if tournament is running
@@ -53,7 +54,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             }
 
             // Grab team
-            var team = _teamManager.GetTeamByName(teamName);
+            var team = tournament.GetTeam(teamName);
 
             // Add win(s)
             team.Wins += numberOfWins;

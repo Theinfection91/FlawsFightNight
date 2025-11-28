@@ -1,5 +1,6 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -35,13 +36,13 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
 
             // Check tournament type, only ladder tournaments can have ranks set manually
-            if (!tournament.Type.Equals(TournamentType.Ladder))
+            if (tournament is not NormalLadderTournament)
             {
-                return _embedManager.ErrorEmbed(Name, $"Ranks can only be set manually for teams in Ladder tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
+                return _embedManager.ErrorEmbed(Name, $"Ranks can only be set manually for teams in Normal Ladder tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
             }
 
             // Grab team
-            var team = _teamManager.GetTeamByName(teamName);
+            var team = tournament.GetTeam(teamName);
 
             // Check if new rank is valid
             if (newRank < 1 || newRank > tournament.Teams.Count)
@@ -82,6 +83,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 
             // Reassign ranks to ensure no duplicates or gaps
             //tournament.ReassignRanksInTournament();
+            tournament.AdjustRanks();
 
             // Save changes
             _tournamentManager.SaveAndReloadTournamentsDatabase();

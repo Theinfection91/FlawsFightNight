@@ -117,8 +117,8 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // Record wins and losses
-            _teamManager.RecordTeamWin(winningTeam, winningTeamScore);
-            _teamManager.RecordTeamLoss(losingTeam, losingTeamScore);
+            winningTeam.RecordWin(winningTeamScore);
+            losingTeam.RecordLoss(losingTeamScore);
 
             // Convert match to post-match
             tournament.MatchLog.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);

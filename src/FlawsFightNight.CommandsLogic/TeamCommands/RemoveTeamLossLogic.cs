@@ -1,5 +1,6 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -34,7 +35,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
 
             // Check tournament type
-            if (!tournament.Type.Equals(TournamentType.Ladder))
+            if (tournament is not NormalLadderTournament)
             {
                 // Only ladder tournaments can have losses removed manually
                 return _embedManager.ErrorEmbed(Name, $"Losses can only be removed manually from teams in Ladder tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
@@ -53,7 +54,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             }
 
             // Grab team
-            var team = _teamManager.GetTeamByName(teamName);
+            var team = tournament.GetTeam(teamName);
 
             // Check if team has enough losses to remove
             if (team.Losses < numberOfLosses)
