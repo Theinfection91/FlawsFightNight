@@ -1405,7 +1405,7 @@ namespace FlawsFightNight.Managers
             //    .OrderByDescending(pm => pm.CreatedOn)
             //    .ToList();
 
-            var allMatches = tournament.MatchLog.GetAllPostMatches();
+            var allMatches = tournament.MatchLog.GetAllPostMatches().OrderByDescending(pm => pm.CreatedOn);
 
             // For each team, calculate streak starting from the most recent match
             foreach (var team in tournament.Teams)
