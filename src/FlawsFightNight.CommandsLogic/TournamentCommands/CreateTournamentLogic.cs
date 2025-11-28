@@ -42,9 +42,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // Prevent any tournament types that are not Round Robin or Ladder for now
-            if (tournament.Type is not (TournamentType.NormalLadder or TournamentType.NormalRoundRobin or TournamentType.OpenRoundRobin))
+            if (tournament.Type is not (TournamentType.DSRLadder or TournamentType.NormalLadder or TournamentType.NormalRoundRobin or TournamentType.OpenRoundRobin))
             {
-                return _embedManager.ToDoEmbed("Sorry, but for now only Normal Ladder and either Normal or Open Round Robin tournaments may be created and played. Please try again.");
+                return _embedManager.ToDoEmbed("Sorry, but for now only DSR Ladder, Normal Ladder, and either Normal or Open Round Robin tournaments may be created and played. Please try again.");
             }
 
             // Add the tournament

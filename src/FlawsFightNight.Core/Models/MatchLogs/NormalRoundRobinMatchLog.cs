@@ -57,20 +57,6 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 
         public override bool ContainsMatchId(string matchId)
         {
-            //foreach (var round in MatchesToPlayByRound.Values)
-            //{
-            //    if (round.Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
-            //    {
-            //        return true;
-            //    }
-            //}
-            //foreach (var round in PostMatchesByRound.Values)
-            //{
-            //    if (round.Any(pm => pm.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
-            //    {
-            //        return true;
-            //    }
-            //}
             foreach (var match in GetAllActiveMatches())
             {
                 if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))

@@ -15,5 +15,6 @@ namespace FlawsFightNight.Core.Enums
         NormalLadder,
         NormalRoundRobin,
         OpenRoundRobin,
+        DSRLadder,
     }
 }

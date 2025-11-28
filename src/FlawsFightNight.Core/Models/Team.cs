@@ -21,6 +21,7 @@ namespace FlawsFightNight.Core.Models
 
         // Tournament Specific Fields
         #region Ladder
+        public int Rating { get; set; }
         public bool IsChallengeable { get; set; } = true;
         #endregion
 

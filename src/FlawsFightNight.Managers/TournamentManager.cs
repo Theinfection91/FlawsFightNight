@@ -62,6 +62,9 @@ namespace FlawsFightNight.Managers
 
             switch (tournamentType)
             {
+                case TournamentType.DSRLadder:
+                    return new DSRLadderTournament(id, name, teamSize);
+
                 case TournamentType.NormalLadder:
                     return new NormalLadderTournament(id, name, teamSize);
 

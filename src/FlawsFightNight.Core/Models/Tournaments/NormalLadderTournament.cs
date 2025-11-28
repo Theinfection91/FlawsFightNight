@@ -58,10 +58,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override bool CanDelete() => !IsRunning;
 
-        public override bool CanAcceptNewTeams()
-        {
-            return true;
-        }
+        public override bool CanAcceptNewTeams() => true;
 
         public override void AdjustRanks()
         {

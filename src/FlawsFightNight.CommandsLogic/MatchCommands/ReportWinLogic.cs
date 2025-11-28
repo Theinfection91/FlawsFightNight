@@ -123,6 +123,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Convert match to post-match
             tournament.MatchLog.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
 
+            // Handle normal ladder tournament challenge procedures
             if (tournament is NormalLadderTournament ladderTournament)
             {
                 if (_matchManager.IsWinningTeamChallenger(match, winningTeam))
@@ -136,10 +137,19 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                             team.Rank++;
                         }
                     }
-                    //ladderTournament.ReassignRanks();
                 }
                 winningTeam.IsChallengeable = true;
                 losingTeam.IsChallengeable = true;
+            }
+
+            // Handle DSR Ladder tournament procedures
+            if (tournament is DSRLadderTournament dsrLadderTournament)
+            {
+                dsrLadderTournament.HandleTeamRatingChange(winningTeam, losingTeam, winningTeamScore, losingTeamScore, out int winningTeamRatingChange, out int losingTeamRatingChange);
+
+                // Output rating change in console for now
+                Console.WriteLine($"[DSR Rating Change] {winningTeam.Name} rating change: {winningTeamRatingChange}, new rating: {winningTeam.Rating}");
+                Console.WriteLine($"[DSR Rating Change] {losingTeam.Name} rating change: {losingTeamRatingChange}, new rating: {losingTeam.Rating}");
             }
 
             // Adjust ranks
