@@ -3,6 +3,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -46,8 +47,8 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, $"The team '{challengerTeam.Name}' is not registered in any tournament. Please register the team to a ladder tournament before canceling challenges.");
             }
 
-            // Ensure tournament is a ladder type
-            if (!tournament.Type.Equals(TournamentType.Ladder))
+            // Ensure tournament is a ladder type 
+            if (tournament is not NormalLadderTournament)
             {
                 return _embedManager.ErrorEmbed(Name, $"Challenges can only be sent in Ladder type tournaments. The tournament '{tournament.Name}' is of type '{tournament.Type}'.");
             }

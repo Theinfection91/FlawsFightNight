@@ -70,18 +70,38 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public void ReassignRanks()
         {
-            if (Teams == null || Teams.Count == 0)
-            {
-                return;
-            }
+            // Snapshot before sorting
+            //try
+            //{
+            //    var beforeSnapshot = string.Join(", ", Teams.Select((t, idx) => $"[{idx}] {t.Name} (rank={t.Rank})"));
+            //    Console.WriteLine($"ReassignRanks: Before sort -> {beforeSnapshot}");
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"ReassignRanks: Failed to create before-snapshot: {ex.Message}");
+            //}
 
+            // Sort teams by their current rank
             Teams.Sort((a, b) => a.Rank.CompareTo(b.Rank));
 
-            // Reassign ranks sequentially from 1 to N
+            // Snapshot after sorting
+            //try
+            //{
+            //    var afterSnapshot = string.Join(", ", Teams.Select((t, idx) => $"[{idx}] {t.Name} (rank={t.Rank})"));
+            //    Console.WriteLine($"ReassignRanks: After sort -> {afterSnapshot}");
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"ReassignRanks: Failed to create after-snapshot: {ex.Message}");
+            //}
+
+            // Reassign ranks sequentially starting from 1
             for (int i = 0; i < Teams.Count; i++)
             {
                 Teams[i].Rank = i + 1;
+                //Console.WriteLine($"ReassignRanks: Assigned new rank {Teams[i].Rank} to team {Teams[i].Name}");
             }
+            //Console.WriteLine("ReassignRanks: Completed rank reassignment.");
         }
     }
 }

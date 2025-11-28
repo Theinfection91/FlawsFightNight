@@ -73,38 +73,13 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public bool IsPostMatchInCurrentRound(Tournament tournament, string matchId)
+        public bool HasMatchBeenPlayed(TournamentBase tournament, string matchId)
         {
-            if (tournament.MatchLog.PostMatchesByRound.TryGetValue(tournament.CurrentRound, out var matches))
+            foreach (var match in tournament.MatchLog.GetAllPostMatches())
             {
-                foreach (var match in matches)
+                if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true; // Match found in current round
-                    }
-                }
-            }
-            return false; // Match not found in current round
-        }
-
-        public bool HasMatchBeenPlayed(Tournament tournament, string matchId)
-        {
-            foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
-            {
-                foreach (var postMatch in round)
-                {
-                    if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true; // Match has been played
-                    }
-                }
-            }
-            foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
-            {
-                if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true; // Match has been played
+                    return true; // Match found in played matches
                 }
             }
             return false; // Match not found in played matches
@@ -279,64 +254,6 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public bool IsTieBreakerNeeded(MatchLog matchLog)
-        {
-            var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-            //Console.WriteLine("=== Debug: Starting Tie-Breaker Check ===");
-
-            // Count wins for each team (single or double)
-            foreach (var round in matchLog.PostMatchesByRound)
-            {
-                //Console.WriteLine($"Checking Round {round.Key} with {round.Value.Count} matches");
-
-                foreach (var postMatch in round.Value)
-                {
-                    if (!postMatch.WasByeMatch)
-                    {
-                        // Treat Winner as string directly
-                        string winnerKey = postMatch.Winner ?? "UNKNOWN";
-
-                        //Console.WriteLine($"  Winner found: {winnerKey}");
-
-                        if (!teamWins.ContainsKey(winnerKey))
-                        {
-                            teamWins[winnerKey] = 0;
-                            //Console.WriteLine($"  -> New entry created for {winnerKey}");
-                        }
-
-                        teamWins[winnerKey]++;
-                        //Console.WriteLine($"  -> {winnerKey} now has {teamWins[winnerKey]} wins");
-                    }
-                    else
-                    {
-                        //Console.WriteLine("  Skipping bye match");
-                    }
-                }
-            }
-
-            //Console.WriteLine("=== Debug: Final Team Wins ===");
-            foreach (var kvp in teamWins)
-            {
-                //Console.WriteLine($"Team {kvp.Key} : {kvp.Value} wins");
-            }
-
-            // Check for ties
-            var winCounts = teamWins.Values.GroupBy(w => w).ToList();
-            foreach (var group in winCounts)
-            {
-                //Console.WriteLine($"Checking win count {group.Key} -> {group.Count()} teams");
-                if (group.Count() > 1 && group.Key > 0) // Multiple teams with same non-zero wins
-                {
-                    //Console.WriteLine("Tie detected! Tie-breaker needed.");
-                    return true;
-                }
-            }
-
-            //Console.WriteLine("No ties detected. No tie-breaker needed.");
-            return false;
-        }
-
         public bool IsTieBreakerNeededForFirstPlace(MatchLogBase matchLog)
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -480,26 +397,29 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public Match GetOpenMatchByTeamNameResolver(TournamentBase tournament, string teamName)
+        public Match GetOpenMatchByTeamNameLadder(TournamentBase tournament, string teamName)
         {
-            switch (tournament.Type)
+            foreach (var match in tournament.MatchLog.GetAllActiveMatches())
             {
-                //case TournamentType.Ladder:
-                //    return GetOpenMatchByTeamNameLadder(tournament, teamName);
-                //case TournamentType.RoundRobin:
-                //    switch (tournament.RoundRobinMatchType)
-                //    {
-                //        case RoundRobinMatchType.Normal:
-                //            return GetOpenMatchByTeamNameNormalRoundRobin(tournament, teamName);
-                //        case RoundRobinMatchType.Open:
-                //            return GetOpenMatchByTeamNameOpenRoundRobin(tournament, teamName);
-                //        default:
-                //            //Console.WriteLine($"Match retrieval not implemented for round robin match type: {tournament.RoundRobinMatchType}");
-                //            return null;
-                //    }
-                default:
-                    return null;
+                if (match == null)
+                {
+                    //Console.WriteLine("Encountered null match in list, skipping.");
+                    continue;
+                }
+                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
+                if (!string.IsNullOrEmpty(match.TeamA) &&
+                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+                if (!string.IsNullOrEmpty(match.TeamB) &&
+                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
             }
+            //Console.WriteLine($"No match found for team '{teamName}' in ladder matches.");
+            return null;
         }
 
         public string GetLosingTeamName(Match match, string winningTeamName)
@@ -515,34 +435,16 @@ namespace FlawsFightNight.Managers
             return null; // No losing team found
         }
 
-        public PostMatch GetPostMatchByIdInTournament(Tournament tournament, string matchId)
+        public PostMatch GetPostMatchByIdInTournament(TournamentBase tournament, string matchId)
         {
-            foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
+            foreach (var match in tournament.MatchLog.GetAllPostMatches())
             {
-                foreach (var postMatch in round)
+                if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return postMatch; // PostMatch found
-                    }
+                    return match; // Match found
                 }
             }
-            foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
-            {
-                if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                {
-                    return postMatch; // PostMatch found
-                }
-            }
-            // Ladder PostMatches
-            foreach (var postMatch in tournament.MatchLog.LadderPostMatches)
-            {
-                if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                {
-                    return postMatch; // PostMatch found
-                }
-            }
-            return null; // PostMatch ID not found
+            return null; // Match ID not found
         }
 
         public List<string> GetTiedTeams(MatchLogBase matchLog)
@@ -578,7 +480,6 @@ namespace FlawsFightNight.Managers
             // Only return if there's an actual tie (2 or more teams at max)
             return topTiedTeams.Count > 1 ? topTiedTeams : new List<string>();
         }
-
         #endregion
 
         #region Ladder Challenge Methods
@@ -592,14 +493,6 @@ namespace FlawsFightNight.Managers
                 return true;
             }
             return false;
-        }
-
-        public bool IsChallengePending(Tournament tournament, string challengerTeamName, string challengedTeamName)
-        {
-            return tournament.MatchLog.LadderMatchesToPlay.Any(m =>
-                m.Challenge != null &&
-                m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase) &&
-                m.Challenge.Challenged.Equals(challengedTeamName, StringComparison.OrdinalIgnoreCase));
         }
 
         public bool IsWinningTeamChallenger(Match match, Team winningTeam)
@@ -955,7 +848,31 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Match Message System
-        public async void SendNormalRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, Tournament tournament)
+        public void SendMatchSchedulesToTeamsResolver(TournamentBase tournament)
+        {
+            if (tournament is NormalRoundRobinTournament)
+            {
+                foreach (var team in tournament.Teams)
+                {
+                    foreach (var user in team.Members)
+                    {
+                        SendNormalRoundRobinMatchScheduleNotificationToDiscordId(user.DiscordId, tournament);
+                    }
+                }
+            }
+            else if (tournament is OpenRoundRobinTournament)
+            {
+                foreach (var team in tournament.Teams)
+                {
+                    foreach (var user in team.Members)
+                    {
+                        SendOpenRoundRobinMatchScheduleNotificationToDiscordId(user.DiscordId, tournament);
+                    }
+                }
+            }
+        }
+
+        private async void SendNormalRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, TournamentBase tournament)
         {
             // This is a fire-and-forget method. Errors are logged but not thrown.
             try
@@ -983,7 +900,7 @@ namespace FlawsFightNight.Managers
                     //Console.WriteLine($"Failed to create DM channel with user {user.Username}.");
                     return;
                 }
-                var message = _embedManager.NormalRoundRobinMatchScheduleNotification(tournament, matches, user.Username, discordId, teamName);
+                var message = _embedManager.NormalRoundRobinMatchScheduleNotification(tournament as NormalRoundRobinTournament, matches, user.Username, discordId, teamName);
                 await dmChannel.SendMessageAsync(embed: message);
             }
             catch (Exception ex)
@@ -991,6 +908,44 @@ namespace FlawsFightNight.Managers
                 //Console.WriteLine($"Error sending DM to user with Discord ID {discordId}: {ex.Message}");
             }
         }
+
+        private async void SendOpenRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, TournamentBase tournament)
+        {
+            // This is a fire-and-forget method. Errors are logged but not thrown.
+            try
+            {
+                var user = await _client.GetUserAsync(discordId);
+                if (user == null)
+                {
+                    //Console.WriteLine($"User with Discord ID {discordId} not found.");
+                    return;
+                }
+
+                // Check if the user is a bot
+                if (user.IsBot)
+                {
+                    return;
+                }
+
+                // Grab matches
+                var teamName = GetTeamNameFromDiscordId(user.Id, tournament.Id);
+                var matches = GetMatchesForTeamOpenRoundRobin(teamName, tournament.MatchLog);
+
+                var dmChannel = await user.CreateDMChannelAsync();
+                if (dmChannel == null)
+                {
+                    //Console.WriteLine($"Failed to create DM channel with user {user.Username}.");
+                    return;
+                }
+                var message = _embedManager.OpenRoundRobinMatchScheduleNotification(tournament, matches, user.Username, discordId, teamName);
+                await dmChannel.SendMessageAsync(embed: message);
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine($"Error sending DM to user with Discord ID {discordId}: {ex.Message}");
+            }
+        }
+
 
         public async void SendChallengeSuccessNotificationProcess(TournamentBase tournament, Match match, Team challengerTeam, Team challengedTeam)
         {
@@ -1074,46 +1029,9 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public async void SendOpenRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, Tournament tournament)
-        {
-            // This is a fire-and-forget method. Errors are logged but not thrown.
-            try
-            {
-                var user = await _client.GetUserAsync(discordId);
-                if (user == null)
-                {
-                    //Console.WriteLine($"User with Discord ID {discordId} not found.");
-                    return;
-                }
-
-                // Check if the user is a bot
-                if (user.IsBot)
-                {
-                    return;
-                }
-
-                // Grab matches
-                var teamName = GetTeamNameFromDiscordId(user.Id, tournament.Id);
-                var matches = GetMatchesForTeamOpenRoundRobin(teamName, tournament.MatchLog);
-
-                var dmChannel = await user.CreateDMChannelAsync();
-                if (dmChannel == null)
-                {
-                    //Console.WriteLine($"Failed to create DM channel with user {user.Username}.");
-                    return;
-                }
-                var message = _embedManager.OpenRoundRobinMatchScheduleNotification(tournament, matches, user.Username, discordId, teamName);
-                await dmChannel.SendMessageAsync(embed: message);
-            }
-            catch (Exception ex)
-            {
-                //Console.WriteLine($"Error sending DM to user with Discord ID {discordId}: {ex.Message}");
-            }
-        }
-
         public string GetTeamNameFromDiscordId(ulong discordId, string tournamentId)
         {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
             {
                 foreach (var team in tournament.Teams)
                 {
@@ -1129,28 +1047,25 @@ namespace FlawsFightNight.Managers
             return "null";
         }
 
-        public List<Match> GetMatchesForTeamNormalRoundRobin(string teamName, MatchLog matchLog)
+        public List<Match> GetMatchesForTeamNormalRoundRobin(string teamName, MatchLogBase matchLog)
         {
             var matches = new List<Match>();
-            foreach (var round in matchLog.MatchesToPlayByRound.Keys)
+            foreach (var match in matchLog.GetAllActiveMatches())
             {
-                foreach (var match in matchLog.MatchesToPlayByRound[round])
+                if ((match.TeamA != null && match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
+                    (match.TeamB != null && match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
                 {
-                    if ((match.TeamA != null && match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
-                        (match.TeamB != null && match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        matches.Add(match);
-                        matches = matches.OrderBy(m => m.RoundNumber).ToList();
-                    }
+                    matches.Add(match);
+                    matches = matches.OrderBy(m => m.RoundNumber).ToList();
                 }
             }
             return matches;
         }
 
-        public List<Match> GetMatchesForTeamOpenRoundRobin(string teamName, MatchLog matchLog)
+        public List<Match> GetMatchesForTeamOpenRoundRobin(string teamName, MatchLogBase matchLog)
         {
             var matches = new List<Match>();
-            foreach (var match in matchLog.OpenRoundRobinMatchesToPlay)
+            foreach (var match in matchLog.GetAllActiveMatches())
             {
                 if ((match.TeamA != null && match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase)) ||
                     (match.TeamB != null && match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
@@ -1312,7 +1227,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Edit Match Helpers
-        public void RecalculateAllWinLossStreaks(Tournament tournament)
+        public void RecalculateAllWinLossStreaks(TournamentBase tournament)
         {
             // Reset all team streaks
             foreach (var team in tournament.Teams)
@@ -1322,10 +1237,12 @@ namespace FlawsFightNight.Managers
             }
 
             // Flatten all matches, order most recent first
-            var allMatches = tournament.MatchLog.PostMatchesByRound.Values.SelectMany(v => v)
-                .Concat(tournament.MatchLog.OpenRoundRobinPostMatches)
-                .OrderByDescending(pm => pm.CreatedOn)
-                .ToList();
+            //var allMatches = tournament.MatchLog.PostMatchesByRound.Values.SelectMany(v => v)
+            //    .Concat(tournament.MatchLog.OpenRoundRobinPostMatches)
+            //    .OrderByDescending(pm => pm.CreatedOn)
+            //    .ToList();
+
+            var allMatches = tournament.MatchLog.GetAllPostMatches().OrderByDescending(pm => pm.CreatedOn);
 
             // For each team, calculate streak starting from the most recent match
             foreach (var team in tournament.Teams)

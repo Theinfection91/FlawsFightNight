@@ -382,7 +382,7 @@ namespace FlawsFightNight.Managers
 
         #region Match Embeds
 
-        public Embed RoundRobinEditMatchSuccess(Tournament tournament, PostMatch match)
+        public Embed RoundRobinEditMatchSuccess(TournamentBase tournament, PostMatch match)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("✏️ Match Edited Successfully")
@@ -555,7 +555,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Direct Message Notification Embeds
-        public Embed NormalRoundRobinMatchScheduleNotification(Tournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
+        public Embed NormalRoundRobinMatchScheduleNotification(NormalRoundRobinTournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"📅 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Schedule")
@@ -587,7 +587,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed OpenRoundRobinMatchScheduleNotification(Tournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
+        public Embed OpenRoundRobinMatchScheduleNotification(TournamentBase tournament, List<Match> matches, string userName, ulong discordId, string teamName)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"📅 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Schedule")
