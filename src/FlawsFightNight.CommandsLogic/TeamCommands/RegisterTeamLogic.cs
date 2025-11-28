@@ -83,7 +83,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             Team newTeam = _teamManager.CreateTeam(teamName, convertedMembersList, tournament.Teams.Count + 1);
 
             // Add new team to the tournament
-            _tournamentManager.AddTeamToTournament(newTeam, tournament.Id);
+            tournament.AddTeam(newTeam);
 
             // Check if tournament is of type ITeamLocking to handle locking logic
             if (tournament is ITeamLocking lockableTournament)

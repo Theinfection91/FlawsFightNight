@@ -100,19 +100,6 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public bool IsTeamsInSameTournament(TournamentBase tournament, Team teamA, Team teamB)
-        {
-            var teams = new List<Team> { teamA, teamB };
-            foreach (Team team in teams)
-            {
-                if (!tournament.Teams.Contains(team))
-                {
-                    return false; // At least one team is not in the tournament
-                }
-            }
-            return true; // All teams are in the tournament
-        }
-
         public List<Tournament> GetAllTournaments()
         {
             return _dataManager.TournamentsDatabaseFile.Tournaments;
@@ -181,78 +168,6 @@ namespace FlawsFightNight.Managers
             return null;
         }
 
-        //public Tournament GetTournamentFromMatchId(string matchId)
-        //{
-        //    foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-        //    {
-        //        foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
-        //        {
-        //            foreach (var match in round)
-        //            {
-        //                if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-        //                {
-        //                    return tournament;
-        //                }
-        //            }
-        //        }
-        //    }
-        //    foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-        //    {
-        //        foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
-        //        {
-        //            foreach (var match in round)
-        //            {
-        //                if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-        //                {
-        //                    return tournament;
-        //                }
-        //            }
-        //        }
-        //    }
-        //    foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-        //    {
-        //        foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
-        //        {
-        //            if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-        //            {
-        //                return tournament;
-        //            }
-        //        }
-        //    }
-        //    foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-        //    {
-        //        foreach (var match in tournament.MatchLog.OpenRoundRobinPostMatches)
-        //        {
-        //            if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-        //            {
-        //                return tournament;
-        //            }
-        //        }
-        //    }
-        //    // Ladder Matches
-        //    foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-        //    {
-        //        foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
-        //        {
-        //            if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-        //            {
-        //                return tournament;
-        //            }
-        //        }
-        //    }
-        //    foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-        //    {
-        //        foreach (var match in tournament.MatchLog.LadderPostMatches)
-        //        {
-        //            if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-        //            {
-        //                return tournament;
-        //            }
-        //        }
-        //    }
-        //    return null;
-        //}
-
         public string? GenerateTournamentId()
         {
             bool isUnique = false;
@@ -272,15 +187,6 @@ namespace FlawsFightNight.Managers
                 }
             }
             return null;
-        }
-
-        public void AddTeamToTournament(Team team, string tournamentId)
-        {
-            TournamentBase? tournament = GetNewTournamentById(tournamentId);
-            if (tournament != null)
-            {
-                tournament.Teams.Add(team);
-            }
         }
     }
 }
