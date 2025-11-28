@@ -1,4 +1,6 @@
 ﻿using Discord;
+using Discord.Interactions;
+using Discord.WebSocket;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
@@ -27,7 +29,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed EditMatchProcess(string matchId, string winningTeamName, int winningTeamScore, int losingTeamScore)
+        public Embed EditMatchProcess(SocketInteractionContext context, string matchId, string winningTeamName, int winningTeamScore, int losingTeamScore)
         {
             // Basic validation of score inputs
             if (winningTeamScore < 0 || losingTeamScore < 0)
@@ -90,6 +92,16 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             if (tournament is NormalRoundRobinTournament && !_matchManager.IsPostMatchInCurrentRound(tournament, postMatch.Id))
             {
                 return _embedManager.ErrorEmbed(Name, $"The match with ID: {matchId} is not in the current round being played. You can only edit matches from the current round.");
+            }
+
+            // Check if invoker is an admin, only admins can edit match results even if they were part of the match
+            if (context.User is not SocketGuildUser guildUser)
+            {
+                return _embedManager.ErrorEmbed(Name, "Only members of the guild may use this command.");
+            }
+            if (guildUser.GuildPermissions.Administrator == false)
+            {
+                return _embedManager.ErrorEmbed(Name, "You must be an administrator to edit match results, even if you were part of the match. Contact an admin to assist you.");
             }
 
             // Roll back old results
