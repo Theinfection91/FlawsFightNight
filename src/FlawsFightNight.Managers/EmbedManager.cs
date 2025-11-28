@@ -700,7 +700,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed TeamDeleteSuccess(Team team, Tournament tournament)
+        public Embed TeamDeleteSuccess(Team team, TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🗑️ Team Deleted Successfully")
