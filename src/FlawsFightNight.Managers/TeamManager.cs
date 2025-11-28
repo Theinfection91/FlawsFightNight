@@ -133,7 +133,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Edit Match Helpers
-        public void EditMatchRollback(Tournament tournament, PostMatch postMatch)
+        public void EditMatchRollback(TournamentBase tournament, PostMatch postMatch)
         {
             var winner = GetTeamByName(tournament, postMatch.Winner);
             var loser = GetTeamByName(tournament, postMatch.Loser);
@@ -146,7 +146,7 @@ namespace FlawsFightNight.Managers
             loser.TotalScore -= postMatch.LoserScore;
         }
 
-        public void EditMatchApply(Tournament tournament, PostMatch postMatch)
+        public void EditMatchApply(TournamentBase tournament, PostMatch postMatch)
         {
             var winner = GetTeamByName(tournament, postMatch.Winner);
             var loser = GetTeamByName(tournament, postMatch.Loser);

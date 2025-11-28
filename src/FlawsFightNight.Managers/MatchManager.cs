@@ -88,23 +88,28 @@ namespace FlawsFightNight.Managers
             return false; // Match not found in current round
         }
 
-        public bool HasMatchBeenPlayed(Tournament tournament, string matchId)
+        public bool IsPostMatchInCurrentRound(TournamentBase tournament, string matchId)
         {
-            foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
+            if ((tournament.MatchLog as NormalRoundRobinMatchLog).PostMatchesByRound.TryGetValue((tournament as NormalRoundRobinTournament).CurrentRound, out var matches))
             {
-                foreach (var postMatch in round)
+                foreach (var match in matches)
                 {
-                    if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                    if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                     {
-                        return true; // Match has been played
+                        return true; // Match found in current round
                     }
                 }
             }
-            foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
+            return false; // Match not found in current round
+        }
+
+        public bool HasMatchBeenPlayed(TournamentBase tournament, string matchId)
+        {
+            foreach (var match in tournament.MatchLog.GetAllPostMatches())
             {
-                if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                 {
-                    return true; // Match has been played
+                    return true; // Match found in played matches
                 }
             }
             return false; // Match not found in played matches
@@ -584,34 +589,16 @@ namespace FlawsFightNight.Managers
             return null; // No losing team found
         }
 
-        public PostMatch GetPostMatchByIdInTournament(Tournament tournament, string matchId)
+        public PostMatch GetPostMatchByIdInTournament(TournamentBase tournament, string matchId)
         {
-            foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
+            foreach (var match in tournament.MatchLog.GetAllPostMatches())
             {
-                foreach (var postMatch in round)
+                if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return postMatch; // PostMatch found
-                    }
+                    return match; // Match found
                 }
             }
-            foreach (var postMatch in tournament.MatchLog.OpenRoundRobinPostMatches)
-            {
-                if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                {
-                    return postMatch; // PostMatch found
-                }
-            }
-            // Ladder PostMatches
-            foreach (var postMatch in tournament.MatchLog.LadderPostMatches)
-            {
-                if (!string.IsNullOrEmpty(postMatch.Id) && postMatch.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                {
-                    return postMatch; // PostMatch found
-                }
-            }
-            return null; // PostMatch ID not found
+            return null; // Match ID not found
         }
 
         public List<string> GetTiedTeams(MatchLogBase matchLog)
@@ -1403,7 +1390,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Edit Match Helpers
-        public void RecalculateAllWinLossStreaks(Tournament tournament)
+        public void RecalculateAllWinLossStreaks(TournamentBase tournament)
         {
             // Reset all team streaks
             foreach (var team in tournament.Teams)
@@ -1413,10 +1400,12 @@ namespace FlawsFightNight.Managers
             }
 
             // Flatten all matches, order most recent first
-            var allMatches = tournament.MatchLog.PostMatchesByRound.Values.SelectMany(v => v)
-                .Concat(tournament.MatchLog.OpenRoundRobinPostMatches)
-                .OrderByDescending(pm => pm.CreatedOn)
-                .ToList();
+            //var allMatches = tournament.MatchLog.PostMatchesByRound.Values.SelectMany(v => v)
+            //    .Concat(tournament.MatchLog.OpenRoundRobinPostMatches)
+            //    .OrderByDescending(pm => pm.CreatedOn)
+            //    .ToList();
+
+            var allMatches = tournament.MatchLog.GetAllPostMatches();
 
             // For each team, calculate streak starting from the most recent match
             foreach (var team in tournament.Teams)

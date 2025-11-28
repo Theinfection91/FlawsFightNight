@@ -382,7 +382,7 @@ namespace FlawsFightNight.Managers
 
         #region Match Embeds
 
-        public Embed RoundRobinEditMatchSuccess(Tournament tournament, PostMatch match)
+        public Embed RoundRobinEditMatchSuccess(TournamentBase tournament, PostMatch match)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("✏️ Match Edited Successfully")

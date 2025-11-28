@@ -165,77 +165,93 @@ namespace FlawsFightNight.Managers
             return null;
         }
 
-        public Tournament GetTournamentFromMatchId(string matchId)
+        public TournamentBase GetTournamentFromMatchId(string matchId)
         {
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
             {
-                foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
+                if (tournament.MatchLog.GetAllActiveMatches().Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
                 {
-                    foreach (var match in round)
-                    {
-                        if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return tournament;
-                        }
-                    }
+                    return tournament;
                 }
-            }
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            {
-                foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
+                if (tournament.MatchLog.GetAllPostMatches().Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
                 {
-                    foreach (var match in round)
-                    {
-                        if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return tournament;
-                        }
-                    }
-                }
-            }
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            {
-                foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
-                {
-                    if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return tournament;
-                    }
-                }
-            }
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            {
-                foreach (var match in tournament.MatchLog.OpenRoundRobinPostMatches)
-                {
-                    if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return tournament;
-                    }
-                }
-            }
-            // Ladder Matches
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            {
-                foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
-                {
-                    if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return tournament;
-                    }
-                }
-            }
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            {
-                foreach (var match in tournament.MatchLog.LadderPostMatches)
-                {
-                    if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return tournament;
-                    }
+                    return tournament;
                 }
             }
             return null;
         }
+
+        //public Tournament GetTournamentFromMatchId(string matchId)
+        //{
+        //    foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+        //    {
+        //        foreach (var round in tournament.MatchLog.MatchesToPlayByRound.Values)
+        //        {
+        //            foreach (var match in round)
+        //            {
+        //                if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+        //                {
+        //                    return tournament;
+        //                }
+        //            }
+        //        }
+        //    }
+        //    foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+        //    {
+        //        foreach (var round in tournament.MatchLog.PostMatchesByRound.Values)
+        //        {
+        //            foreach (var match in round)
+        //            {
+        //                if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+        //                {
+        //                    return tournament;
+        //                }
+        //            }
+        //        }
+        //    }
+        //    foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+        //    {
+        //        foreach (var match in tournament.MatchLog.OpenRoundRobinMatchesToPlay)
+        //        {
+        //            if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+        //            {
+        //                return tournament;
+        //            }
+        //        }
+        //    }
+        //    foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+        //    {
+        //        foreach (var match in tournament.MatchLog.OpenRoundRobinPostMatches)
+        //        {
+        //            if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+        //            {
+        //                return tournament;
+        //            }
+        //        }
+        //    }
+        //    // Ladder Matches
+        //    foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+        //    {
+        //        foreach (var match in tournament.MatchLog.LadderMatchesToPlay)
+        //        {
+        //            if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+        //            {
+        //                return tournament;
+        //            }
+        //        }
+        //    }
+        //    foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+        //    {
+        //        foreach (var match in tournament.MatchLog.LadderPostMatches)
+        //        {
+        //            if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
+        //            {
+        //                return tournament;
+        //            }
+        //        }
+        //    }
+        //    return null;
+        //}
 
         public string? GenerateTournamentId()
         {
