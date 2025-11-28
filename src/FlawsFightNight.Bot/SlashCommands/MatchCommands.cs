@@ -2,6 +2,7 @@
 using Discord.Interactions;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.CommandsLogic.MatchCommands;
+using FlawsFightNight.Bot.PreconditionAttributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,6 +47,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("edit", "Edit a post-match's details in RR and Elimination.")]
+        [RequireGuildAdmin]
         public async Task EditMatchAsync(
             [Summary("post_match_id", "The ID of the match to target."), Autocomplete(typeof(PostMatchIdAutocomplete))] string postMatchId,
             [Summary("winning_team_name", "The winner of the match, can be the same as before edit."), Autocomplete(typeof(WinningTeamNameAutocomplete))] string winningTeamName,
@@ -55,7 +57,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _editMatchLogic.EditMatchProcess(Context, postMatchId, winningTeamName, winningTeamScore, losingTeamScore);
+                var result = _editMatchLogic.EditMatchProcess(postMatchId, winningTeamName, winningTeamScore, losingTeamScore);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }

@@ -40,5 +40,30 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public abstract bool CanDelete();
         public abstract bool CanAcceptNewTeams();
         public abstract void AdjustRanks();
+
+        public void AddTeam(Team team)
+        {
+            Teams.Add(team);
+        }
+
+        public bool ContainsTeam(Team team)
+        {
+            return Teams.Contains(team);
+        }
+
+        public bool ContainsTeams(Team teamA, Team teamB)
+        {
+            return Teams.Contains(teamA) && Teams.Contains(teamB);
+        }
+
+        public Team? GetTeam(string teamName)
+        {
+            return Teams.FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public void RemoveTeam(Team team)
+        {
+            Teams.Remove(team);
+        }
     }
 }

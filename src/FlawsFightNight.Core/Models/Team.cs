@@ -81,5 +81,21 @@ namespace FlawsFightNight.Core.Models
         {
             return string.Join(", ", Members.Select(m => m.DisplayName));
         }
+
+        public void RecordWin(int points = 0)
+        {
+            Wins++;
+            WinStreak++;
+            LoseStreak = 0;
+            TotalScore += points;
+        }
+
+        public void RecordLoss(int points = 0)
+        {
+            Losses++;
+            LoseStreak++;
+            WinStreak = 0;
+            TotalScore -= points;
+        }
     }
 }

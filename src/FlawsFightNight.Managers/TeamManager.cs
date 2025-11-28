@@ -107,29 +107,6 @@ namespace FlawsFightNight.Managers
             return tournament.Teams
                 .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
         }
-        public Team? GetTeamByName(Tournament tournament, string teamName)
-        {
-            return tournament.Teams
-                .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
-        }
-        #endregion
-
-        #region Wins/Losses and Streaks
-        public void RecordTeamWin(Team team, int points = 0)
-        {
-            team.Wins++;
-            team.WinStreak++;
-            team.LoseStreak = 0; // Reset loss streak
-            team.TotalScore += points;
-        }
-
-        public void RecordTeamLoss(Team team, int points = 0)
-        {
-            team.Losses++;
-            team.LoseStreak++;
-            team.WinStreak = 0; // Reset win streak
-            team.TotalScore += points;
-        }
         #endregion
 
         #region Edit Match Helpers
@@ -168,20 +145,6 @@ namespace FlawsFightNight.Managers
                 Members = members,
                 Rank = rank
             };
-        }
-
-        public void DeleteTeamFromDatabase(string teamName)
-        {
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            {
-                Team? teamToRemove = tournament.Teams
-                    .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
-                if (teamToRemove != null)
-                {
-                    tournament.Teams.Remove(teamToRemove);
-                    break; // Exit after removing the team
-                }
-            }
         }
     }
 }

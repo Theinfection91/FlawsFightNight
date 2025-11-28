@@ -65,7 +65,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // Ensure teams are in the same tournament
-            if (!_tournamentManager.IsTeamsInSameTournament(tournament, challengerTeam, challengedTeam))
+            if (!tournament.ContainsTeams(challengerTeam, challengedTeam))
             {
                 return _embedManager.ErrorEmbed(Name, $"Both teams must be registered in the same tournament to issue a challenge. Please check the team registrations and try again.");
             }
