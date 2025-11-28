@@ -73,36 +73,6 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public bool IsPostMatchInCurrentRound(Tournament tournament, string matchId)
-        {
-            if (tournament.MatchLog.PostMatchesByRound.TryGetValue(tournament.CurrentRound, out var matches))
-            {
-                foreach (var match in matches)
-                {
-                    if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true; // Match found in current round
-                    }
-                }
-            }
-            return false; // Match not found in current round
-        }
-
-        public bool IsPostMatchInCurrentRound(TournamentBase tournament, string matchId)
-        {
-            if ((tournament.MatchLog as NormalRoundRobinMatchLog).PostMatchesByRound.TryGetValue((tournament as NormalRoundRobinTournament).CurrentRound, out var matches))
-            {
-                foreach (var match in matches)
-                {
-                    if (!string.IsNullOrEmpty(match.Id) && match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true; // Match found in current round
-                    }
-                }
-            }
-            return false; // Match not found in current round
-        }
-
         public bool HasMatchBeenPlayed(TournamentBase tournament, string matchId)
         {
             foreach (var match in tournament.MatchLog.GetAllPostMatches())
@@ -284,64 +254,6 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public bool IsTieBreakerNeeded(MatchLog matchLog)
-        {
-            var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-            //Console.WriteLine("=== Debug: Starting Tie-Breaker Check ===");
-
-            // Count wins for each team (single or double)
-            foreach (var round in matchLog.PostMatchesByRound)
-            {
-                //Console.WriteLine($"Checking Round {round.Key} with {round.Value.Count} matches");
-
-                foreach (var postMatch in round.Value)
-                {
-                    if (!postMatch.WasByeMatch)
-                    {
-                        // Treat Winner as string directly
-                        string winnerKey = postMatch.Winner ?? "UNKNOWN";
-
-                        //Console.WriteLine($"  Winner found: {winnerKey}");
-
-                        if (!teamWins.ContainsKey(winnerKey))
-                        {
-                            teamWins[winnerKey] = 0;
-                            //Console.WriteLine($"  -> New entry created for {winnerKey}");
-                        }
-
-                        teamWins[winnerKey]++;
-                        //Console.WriteLine($"  -> {winnerKey} now has {teamWins[winnerKey]} wins");
-                    }
-                    else
-                    {
-                        //Console.WriteLine("  Skipping bye match");
-                    }
-                }
-            }
-
-            //Console.WriteLine("=== Debug: Final Team Wins ===");
-            foreach (var kvp in teamWins)
-            {
-                //Console.WriteLine($"Team {kvp.Key} : {kvp.Value} wins");
-            }
-
-            // Check for ties
-            var winCounts = teamWins.Values.GroupBy(w => w).ToList();
-            foreach (var group in winCounts)
-            {
-                //Console.WriteLine($"Checking win count {group.Key} -> {group.Count()} teams");
-                if (group.Count() > 1 && group.Key > 0) // Multiple teams with same non-zero wins
-                {
-                    //Console.WriteLine("Tie detected! Tie-breaker needed.");
-                    return true;
-                }
-            }
-
-            //Console.WriteLine("No ties detected. No tie-breaker needed.");
-            return false;
-        }
-
         public bool IsTieBreakerNeededForFirstPlace(MatchLogBase matchLog)
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -485,28 +397,6 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public Match GetOpenMatchByTeamNameResolver(TournamentBase tournament, string teamName)
-        {
-            switch (tournament.Type)
-            {
-                //case TournamentType.Ladder:
-                //    return GetOpenMatchByTeamNameLadder(tournament, teamName);
-                //case TournamentType.RoundRobin:
-                //    switch (tournament.RoundRobinMatchType)
-                //    {
-                //        case RoundRobinMatchType.Normal:
-                //            return GetOpenMatchByTeamNameNormalRoundRobin(tournament, teamName);
-                //        case RoundRobinMatchType.Open:
-                //            return GetOpenMatchByTeamNameOpenRoundRobin(tournament, teamName);
-                //        default:
-                //            //Console.WriteLine($"Match retrieval not implemented for round robin match type: {tournament.RoundRobinMatchType}");
-                //            return null;
-                //    }
-                default:
-                    return null;
-            }
-        }
-
         public Match GetOpenMatchByTeamNameLadder(TournamentBase tournament, string teamName)
         {
             foreach (var match in tournament.MatchLog.GetAllActiveMatches())
@@ -529,50 +419,6 @@ namespace FlawsFightNight.Managers
                 }
             }
             //Console.WriteLine($"No match found for team '{teamName}' in ladder matches.");
-            return null;
-        }
-
-        private Match GetOpenMatchByTeamNameNormalRoundRobin(NormalRoundRobinTournament tournament, string teamName)
-        {
-            int currentRound = tournament.CurrentRound;
-            //Console.WriteLine($"Looking in round: {currentRound}");
-
-            if (!(tournament.MatchLog as NormalRoundRobinMatchLog).MatchesToPlayByRound.TryGetValue(currentRound, out var matches))
-            {
-                //Console.WriteLine($"No entry for round {currentRound} in MatchesToPlayByRound.");
-                return null;
-            }
-
-            if (matches == null)
-            {
-                //Console.WriteLine($"Match list for round {currentRound} is null.");
-                return null;
-            }
-
-            foreach (var match in matches)
-            {
-                if (match == null)
-                {
-                    //Console.WriteLine("Encountered null match in list, skipping.");
-                    continue;
-                }
-
-                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
-
-                if (!string.IsNullOrEmpty(match.TeamA) &&
-                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return match;
-                }
-
-                if (!string.IsNullOrEmpty(match.TeamB) &&
-                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return match;
-                }
-            }
-
-            //Console.WriteLine($"No match found for team '{teamName}' in round {currentRound}.");
             return null;
         }
 
@@ -634,7 +480,6 @@ namespace FlawsFightNight.Managers
             // Only return if there's an actual tie (2 or more teams at max)
             return topTiedTeams.Count > 1 ? topTiedTeams : new List<string>();
         }
-
         #endregion
 
         #region Ladder Challenge Methods
@@ -648,14 +493,6 @@ namespace FlawsFightNight.Managers
                 return true;
             }
             return false;
-        }
-
-        public bool IsChallengePending(Tournament tournament, string challengerTeamName, string challengedTeamName)
-        {
-            return tournament.MatchLog.LadderMatchesToPlay.Any(m =>
-                m.Challenge != null &&
-                m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase) &&
-                m.Challenge.Challenged.Equals(challengedTeamName, StringComparison.OrdinalIgnoreCase));
         }
 
         public bool IsWinningTeamChallenger(Match match, Team winningTeam)

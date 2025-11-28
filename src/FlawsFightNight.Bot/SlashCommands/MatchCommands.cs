@@ -55,7 +55,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _editMatchLogic.EditMatchProcess(postMatchId, winningTeamName, winningTeamScore, losingTeamScore);
+                var result = _editMatchLogic.EditMatchProcess(Context, postMatchId, winningTeamName, winningTeamScore, losingTeamScore);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }
