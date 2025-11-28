@@ -3,6 +3,7 @@ using Discord.Interactions;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.MatchLogs;
 using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
@@ -82,28 +83,27 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region LiveView Embeds
-        public Embed MatchesLiveViewResolver(Tournament tournament)
+        public Embed MatchesLiveViewResolver(TournamentBase tournament)
         {
-            switch (tournament.Type)
+            if (tournament is NormalLadderTournament ladderTournament)
             {
-                case TournamentType.Ladder:
-                    return LadderMatchesLiveView(tournament);
-                case TournamentType.RoundRobin:
-                    switch (tournament.RoundRobinMatchType)
-                    {
-                        case RoundRobinMatchType.Open:
-                            return RoundRobinOpenMatchesLiveView(tournament);
-                        case RoundRobinMatchType.Normal:
-                            return RoundRobinNormalMatchesLiveView(tournament);
-                        default:
-                            return ToDoEmbed();
-                    }
-                default:
-                    return ToDoEmbed();
+                return LadderMatchesLiveView(ladderTournament);
+            }
+            if (tournament is NormalRoundRobinTournament normalRoundRobinTournament)
+            {
+                return RoundRobinNormalMatchesLiveView(normalRoundRobinTournament);
+            }
+            if (tournament is OpenRoundRobinTournament openRoundRobinTournament)
+            {
+                return RoundRobinOpenMatchesLiveView(openRoundRobinTournament);
+            }
+            else
+            {
+                return ToDoEmbed();
             }
         }
 
-        private Embed LadderMatchesLiveView(Tournament tournament)
+        private Embed LadderMatchesLiveView(NormalLadderTournament tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Ladder Tournament Challenge Matches")
@@ -111,9 +111,9 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Orange)
                 .WithCurrentTimestamp();
             // --- Pending Challenges ---
-            if (tournament.MatchLog.LadderMatchesToPlay.Count > 0)
+            if (tournament.MatchLog.GetAllActiveMatches().Count > 0)
             {
-                var challenges = tournament.MatchLog.LadderMatchesToPlay
+                var challenges = tournament.MatchLog.GetAllActiveMatches()
                     .Select(m => $"⚔️ *Match ID#: {m.Id}* | " +
                                   $"(#{m.Challenge.ChallengerRank}) **{m.Challenge.Challenger}** " +
                                   $"has challenged (#{m.Challenge.ChallengedRank}) **{m.Challenge.Challenged}**")
@@ -125,9 +125,9 @@ namespace FlawsFightNight.Managers
                 embed.AddField("⚔️ Pending Challenges", "No pending challenges at the moment.", false);
             }
             // --- Previous Matches ---
-            if (tournament.MatchLog.LadderPostMatches.Count > 0)
+            if (tournament.MatchLog.GetAllPostMatches().Count > 0)
             {
-                var matches = tournament.MatchLog.LadderPostMatches
+                var matches = tournament.MatchLog.GetAllPostMatches()
                     .Select(pm => $"✅ *Match ID#: {pm.Id}* | " +
                                   $"**{pm.Winner}** defeated **{pm.Loser}** " +
                                   $"by **{pm.WinnerScore}** to **{pm.LoserScore}** " +
@@ -142,7 +142,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        private Embed RoundRobinOpenMatchesLiveView(Tournament tournament)
+        private Embed RoundRobinOpenMatchesLiveView(OpenRoundRobinTournament tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Open Round Robin Tournament Matches")
@@ -151,13 +151,13 @@ namespace FlawsFightNight.Managers
                 .WithCurrentTimestamp();
 
             // --- Matches To Play ---
-            if (tournament.MatchLog.OpenRoundRobinMatchesToPlay.Count > 0)
+            if (tournament.MatchLog.GetAllActiveMatches().Count > 0)
             {
-                var normalMatches = tournament.MatchLog.OpenRoundRobinMatchesToPlay
+                var normalMatches = tournament.MatchLog.GetAllActiveMatches()
                     .Where(m => !m.IsByeMatch)
                     .Select(m => $"🔹 *Match ID#: {m.Id}* | **{m.TeamA}** vs **{m.TeamB}**");
 
-                var byeMatches = tournament.MatchLog.OpenRoundRobinMatchesToPlay
+                var byeMatches = tournament.MatchLog.GetAllActiveMatches()
                     .Where(m => m.IsByeMatch)
                     .Select(m => $"💤 *Match ID#: {m.Id}* | *{m.GetCorrectByeNameForByeMatch()} Bye Match*");
 
@@ -171,9 +171,9 @@ namespace FlawsFightNight.Managers
             }
 
             // --- Previous Matches ---
-            if (tournament.MatchLog.OpenRoundRobinPostMatches.Count > 0)
+            if (tournament.MatchLog.GetAllPostMatches().Count > 0)
             {
-                var matches = tournament.MatchLog.OpenRoundRobinPostMatches
+                var matches = tournament.MatchLog.GetAllPostMatches()
                     .Select(pm => pm.WasByeMatch
                         ? $"💤 *{pm.Winner} Bye Match*"
                         : $"✅ *Match ID#: {pm.Id}* | " +
@@ -219,7 +219,7 @@ namespace FlawsFightNight.Managers
         }
 
 
-        private Embed RoundRobinNormalMatchesLiveView(Tournament tournament)
+        private Embed RoundRobinNormalMatchesLiveView(NormalRoundRobinTournament tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Normal Round Robin Tournament Matches")
@@ -227,11 +227,11 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Orange)
                 .WithCurrentTimestamp();
 
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEndNormalRoundRobinTournament)
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEnd())
             {
                 embed.AddField("🔒 Locked", "Round is locked and ready to advance.", true);
             }
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEndNormalRoundRobinTournament)
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEnd())
             {
                 embed.AddField("🔒 Locked - Ready to end tournament 🏅", "Round is locked and the tournament is ready to end have the results locked in.", true);
             }
@@ -241,7 +241,7 @@ namespace FlawsFightNight.Managers
             }
 
             // --- Matches To Play ---
-            if (tournament.MatchLog.MatchesToPlayByRound.TryGetValue(tournament.CurrentRound, out var matchesToPlay)
+            if ((tournament.MatchLog as NormalRoundRobinMatchLog).MatchesToPlayByRound.TryGetValue(tournament.CurrentRound, out var matchesToPlay)
                 && matchesToPlay.Count > 0)
             {
                 var sb = new StringBuilder();
@@ -267,9 +267,9 @@ namespace FlawsFightNight.Managers
 
 
             // --- Past Matches (grouped by round) ---
-            if (tournament.MatchLog.PostMatchesByRound.Count > 0)
+            if ((tournament.MatchLog as NormalRoundRobinMatchLog).PostMatchesByRound.Count > 0)
             {
-                foreach (var round in tournament.MatchLog.PostMatchesByRound.OrderBy(kvp => kvp.Key))
+                foreach (var round in (tournament.MatchLog as NormalRoundRobinMatchLog).PostMatchesByRound.OrderBy(kvp => kvp.Key))
                 {
                     var sb = new StringBuilder();
                     foreach (var postMatch in round.Value.OrderBy(pm => pm.CompletedOn))
@@ -291,7 +291,23 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed LadderStandingsLiveView(Tournament tournament)
+        public Embed StandingsLiveViewResolver(TournamentBase tournament)
+        {
+            if (tournament is NormalLadderTournament)
+            {
+                return LadderStandingsLiveView(tournament);
+            }
+            if (tournament is NormalRoundRobinTournament or OpenRoundRobinTournament)
+            {
+                return RoundRobinStandingsLiveView(tournament);
+            }
+            else
+            {
+                return ToDoEmbed();
+            }
+        }
+
+        public Embed LadderStandingsLiveView(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} Ladder Tournament Standings")
@@ -318,11 +334,16 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed RoundRobinStandingsLiveView(Tournament tournament)
+        public Embed RoundRobinStandingsLiveView(TournamentBase tournament)
         {
+            string displayRoundInfo = string.Empty;
+            if (tournament is IRoundBased roundBasedTournament)
+            {
+                displayRoundInfo = $"**Round {roundBasedTournament.CurrentRound}/{roundBasedTournament.TotalRounds ?? 0}**\n";
+            }
             var embed = new EmbedBuilder()
-                .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} {tournament.RoundRobinMatchType} Round Robin Tournament Standings")
-                .WithDescription($"*ID#: {tournament.Id}*\n**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
+                .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Tournament Standings")
+                .WithDescription($"*ID#: {tournament.Id}*\n{displayRoundInfo}")
                 .WithColor(Color.Gold)
                 .WithCurrentTimestamp();
 
@@ -348,7 +369,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed TeamsLiveView(Tournament tournament)
+        public Embed TeamsLiveView(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"👥 {tournament.Name} - {tournament.TeamSizeFormat} Tournament Teams")
@@ -481,7 +502,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Set LiveView Embeds
-        public Embed SetMatchesChannelSuccess(IMessageChannel channel, Tournament tournament)
+        public Embed SetMatchesChannelSuccess(IMessageChannel channel, TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("✅ Matches Channel Set Successfully")
@@ -493,7 +514,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed RemoveMatchesChannelSuccess(Tournament tournament)
+        public Embed RemoveMatchesChannelSuccess(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("✅ Matches Channel Removed Successfully")
@@ -505,7 +526,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed SetStandingsChannelSuccess(IMessageChannel channel, Tournament tournament)
+        public Embed SetStandingsChannelSuccess(IMessageChannel channel, TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("✅ Standings Channel Set Successfully")
@@ -517,7 +538,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed RemoveStandingsChannelSuccess(Tournament tournament)
+        public Embed RemoveStandingsChannelSuccess(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("✅ Standings Channel Removed Successfully")
@@ -529,7 +550,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed SetTeamsChannelSuccess(IMessageChannel channel, Tournament tournament)
+        public Embed SetTeamsChannelSuccess(IMessageChannel channel, TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("✅ Teams Channel Set Successfully")
@@ -541,7 +562,7 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed RemoveTeamsChannelSuccess(Tournament tournament)
+        public Embed RemoveTeamsChannelSuccess(TournamentBase tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle("✅ Teams Channel Removed Successfully")

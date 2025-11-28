@@ -28,7 +28,7 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetNewTournamentById(tournamentId);
             // Check if a teams channel is set
             if (tournament.TeamsChannelId == 0)
             {

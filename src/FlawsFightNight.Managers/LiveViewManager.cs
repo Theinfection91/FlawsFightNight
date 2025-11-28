@@ -135,14 +135,14 @@ namespace FlawsFightNight.Managers
                 //    throw new Exception("TestMode: Randomly simulated failure.");
                 //}
 
-                if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
+                if (_dataManager.TournamentsDatabaseFile.NewTournaments.Count == 0)
                 {
                     //Console.WriteLine("No tournaments found. No need to post to matches channels.");
                     _lastMatchesUpdate = DateTime.UtcNow;
                     return;
                 }
 
-                foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+                foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
                 {
                     if (tournament == null)
                     {
@@ -258,13 +258,13 @@ namespace FlawsFightNight.Managers
             {
                 await _standingsSemaphore.WaitAsync();
 
-                if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
+                if (_dataManager.TournamentsDatabaseFile.NewTournaments.Count == 0)
                 {
                     _lastStandingsUpdate = DateTime.UtcNow;
                     return;
                 }
 
-                foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+                foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
                 {
                     if (tournament == null || tournament.StandingsChannelId == 0)
                     {
@@ -282,12 +282,7 @@ namespace FlawsFightNight.Managers
                     }
 
                     // build the standings embed depending on type
-                    Embed standingsEmbed = tournament.Type switch
-                    {
-                        TournamentType.Ladder => _embedManager.LadderStandingsLiveView(tournament),
-                        TournamentType.RoundRobin => _embedManager.RoundRobinStandingsLiveView(tournament),
-                        _ => null
-                    };
+                    Embed standingsEmbed = _embedManager.StandingsLiveViewResolver(tournament);
 
                     if (standingsEmbed == null)
                         continue; // unsupported type, skip
@@ -356,14 +351,14 @@ namespace FlawsFightNight.Managers
             {
                 await _teamsSemaphore.WaitAsync();
 
-                if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
+                if (_dataManager.TournamentsDatabaseFile.NewTournaments.Count == 0)
                 {
                     //Console.WriteLine("No tournaments found. No need to post to teams channels.");
                     _lastTeamsUpdate = DateTime.UtcNow;
                     return;
                 }
 
-                foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+                foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
                 {
                     if (tournament == null)
                     {

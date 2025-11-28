@@ -25,6 +25,14 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
         public abstract MatchLogBase MatchLog { get; protected set; }
 
+        // Discord Channel ID's for LiveView
+        public ulong MatchesChannelId { get; set; } = 0;
+        public ulong MatchesMessageId { get; set; } = 0;
+        public ulong StandingsChannelId { get; set; } = 0;
+        public ulong StandingsMessageId { get; set; } = 0;
+        public ulong TeamsChannelId { get; set; } = 0;
+        public ulong TeamsMessageId { get; set; } = 0;
+
         public TournamentBase(string id, string name, int teamSize)
         {
             Id = id;
