@@ -124,13 +124,14 @@ namespace FlawsFightNight.Managers
 
         private async Task SendMatchesToChannelAsync()
         {
-            _lastMatchesUpdate = DateTime.UtcNow;
-
             await _matchesSemaphore.WaitAsync();
             try
             {
                 if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
+                {
+                    _lastMatchesUpdate = DateTime.UtcNow;
                     return;
+                }
 
                 foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
                 {
@@ -207,13 +208,14 @@ namespace FlawsFightNight.Managers
 
         private async Task SendStandingsToChannelAsync()
         {
-            _lastStandingsUpdate = DateTime.UtcNow;
-
             await _standingsSemaphore.WaitAsync();
             try
             {
                 if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
+                {
+                    _lastStandingsUpdate = DateTime.UtcNow;
                     return;
+                }
 
                 foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
                 {
@@ -295,13 +297,14 @@ namespace FlawsFightNight.Managers
         }
         private async Task SendTeamsToChannelAsync()
         {
-            _lastTeamsUpdate = DateTime.UtcNow;
-
             await _teamsSemaphore.WaitAsync();
             try
             {
                 if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
+                {
+                    _lastTeamsUpdate = DateTime.UtcNow;
                     return;
+                }
 
                 foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
                 {
