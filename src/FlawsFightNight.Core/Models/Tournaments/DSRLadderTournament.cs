@@ -26,11 +26,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
             public static int GetKFactorForTeam(int rating)
             {
                 if (rating < 2100)
-                    return 64;
+                    return 128;
                 else if (rating <= 2400)
-                    return 48;
+                    return 96;
                 else
-                    return 32;
+                    return 64;
             }
         }
 
@@ -60,7 +60,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             // Reset team stats to zero
             foreach (var team in Teams)
             {
-                team.Rating = 1200;
+                team.Rating = 1800;
                 team.ResetTeamToZero();
             }
         }
@@ -120,12 +120,12 @@ namespace FlawsFightNight.Core.Models.Tournaments
             // For every win in the winner's streak beyond the first, award 4 points up to a maximum of 20 points
             int winStreakBonus = Math.Min(20, Math.Max(0, winner.WinStreak - 1) * 4);
             // For every loss in the loser's streak beyond the first, deduct 4 points up to a maximum of -20 points
-            int lossStreakPenalty = Math.Max(-20, Math.Min(0, -(loser.LoseStreak - 1) * 4));
+            //int lossStreakPenalty = Math.Max(-20, Math.Min(0, -(loser.LoseStreak - 1) * 4));
 
             // --- Apply rating changes ---
-            // Winner gets full margin bonus, loser gets half the margin bonus deducted
+            // Winner gets full margin bonus
             int finalWinnerChange = baseWinnerChange + marginBonus + winStreakBonus;
-            int finalLoserChange = baseLoserChange + lossStreakPenalty;
+            int finalLoserChange = baseLoserChange / (int)1.5;
 
             winner.Rating += finalWinnerChange;
             loser.Rating += finalLoserChange;
