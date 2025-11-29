@@ -416,7 +416,7 @@ namespace FlawsFightNight.Managers
                         $"\n**{team.Name}** (#{team.Rank})\n" +
                         $"👤 Members: {string.Join(", ", team.Members.Select(m => m.DisplayName))}\n";
                     // If Ladder Tournament, display challenge status
-                    if (tournament.Type == TournamentType.Ladder)
+                    if (tournament.Type == TournamentType.NormalLadder || tournament.Type == TournamentType.DSRLadder)
                     {
                         embed.Description += $"Challenge Status: {team.GetFormattedChallengeStatus()}\n";
                     }

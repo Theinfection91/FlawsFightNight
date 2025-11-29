@@ -8,13 +8,10 @@ namespace FlawsFightNight.Core.Enums
 {
     public enum TournamentType
     {
-        Ladder,
-        RoundRobin,
-        SingleElimination,
-        DoubleElimination,
+        DSRLadder,
         NormalLadder,
         NormalRoundRobin,
         OpenRoundRobin,
-        DSRLadder,
+
     }
 }

@@ -71,6 +71,10 @@ namespace FlawsFightNight.Managers
                 {
                     ladderTeams.AddRange(tournament.Teams);
                 }
+                else if (tournament is DSRLadderTournament)
+                {
+                    ladderTeams.AddRange(tournament.Teams);
+                }
             }
             return ladderTeams;
         }

@@ -150,8 +150,8 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 (tournament.MatchLog as DSRLadderMatchLog)?.RecordRatingChangeToPostMatch(matchId, winningTeamRatingChange, losingTeamRatingChange);
 
                 // Output rating change in console for now
-                Console.WriteLine($"[DSR Rating Change] {winningTeam.Name} rating change: {winningTeamRatingChange}, new rating: {winningTeam.Rating}");
-                Console.WriteLine($"[DSR Rating Change] {losingTeam.Name} rating change: {losingTeamRatingChange}, new rating: {losingTeam.Rating}");
+                //Console.WriteLine($"[DSR Rating Change] {winningTeam.Name} rating change: {winningTeamRatingChange}, new rating: {winningTeam.Rating}");
+                //Console.WriteLine($"[DSR Rating Change] {losingTeam.Name} rating change: {losingTeamRatingChange}, new rating: {losingTeam.Rating}");
             }
 
             winningTeam.IsChallengeable = true;

@@ -33,13 +33,8 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"A tournament with the name '{name}' already exists. Please choose a different name.");
             }
 
-            // New version
+            // Create the tournament
             Tournament tournament = _tournamentManager.CreateNewTournament(name, tournamentType, teamSize, description);
-
-            if (tournament == null)
-            {
-                return _embedManager.ErrorEmbed(Name, "Null tournament returned. Canceling command. Contact an admin for support.");
-            }
 
             // Prevent any tournament types that are not Round Robin or Ladder for now
             if (tournament.Type is not (TournamentType.DSRLadder or TournamentType.NormalLadder or TournamentType.NormalRoundRobin or TournamentType.OpenRoundRobin))
