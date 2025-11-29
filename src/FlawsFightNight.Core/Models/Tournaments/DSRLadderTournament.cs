@@ -26,11 +26,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
             public static int GetKFactorForTeam(int rating)
             {
                 if (rating < 2100)
-                    return 32;
+                    return 64;
                 else if (rating <= 2400)
-                    return 24;
+                    return 48;
                 else
-                    return 16;
+                    return 32;
             }
         }
 
@@ -125,7 +125,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             // --- Apply rating changes ---
             // Winner gets full margin bonus, loser gets half the margin bonus deducted
             int finalWinnerChange = baseWinnerChange + marginBonus + winStreakBonus;
-            int finalLoserChange = baseLoserChange + lossStreakPenalty - (marginBonus / 2);
+            int finalLoserChange = baseLoserChange + lossStreakPenalty;
 
             winner.Rating += finalWinnerChange;
             loser.Rating += finalLoserChange;
