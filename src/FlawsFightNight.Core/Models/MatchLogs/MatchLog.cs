@@ -35,6 +35,18 @@ namespace FlawsFightNight.Core.Models.MatchLogs
         }
         public abstract bool ContainsMatchId(string matchId);
         public abstract Match? GetMatchById(string matchId);
+        public virtual Match? GetMatchByTeamName(string teamName)
+        {
+            foreach (var match in GetAllActiveMatches())
+            {
+                if (match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase) ||
+                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+            }
+            return null;
+        }
         public abstract void AddMatch(Match match);
         public abstract void RemoveMatch(Match match);
         public abstract void ConvertMatchToPostMatch(Tournament tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore);

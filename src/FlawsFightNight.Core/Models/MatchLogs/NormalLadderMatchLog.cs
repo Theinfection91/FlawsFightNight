@@ -82,6 +82,18 @@ namespace FlawsFightNight.Core.Models.MatchLogs
             return false;
         }
 
+        public bool IsTeamChallenger(Team challengerTeam)
+        {
+            foreach (var match in MatchesToPlay)
+            {
+                if (match.Challenge.Challenger.Equals(challengerTeam.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public bool IsRankCorrectForTeam(Team team)
         {
             foreach (var match in MatchesToPlay)
@@ -99,7 +111,7 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 
         public Match? GetChallengeMatch(Team team)
         {
-            foreach (var match in MatchesToPlay)
+            foreach (var match in GetAllActiveMatches())
             {
                 if (match.TeamA.Equals(team.Name, StringComparison.OrdinalIgnoreCase) ||
                     match.TeamB.Equals(team.Name, StringComparison.OrdinalIgnoreCase))
@@ -108,30 +120,6 @@ namespace FlawsFightNight.Core.Models.MatchLogs
                 }
             }
             return null;
-        }
-
-        public void RunChallengeRankCorrection(List<Team> challengeTeams)
-        {
-            foreach (var team in challengeTeams)
-            {
-                // Check if the team's rank is correct
-                if (!IsRankCorrectForTeam(team))
-                {
-                    var challengeMatch = GetChallengeMatch(team);
-                    if (challengeMatch != null && challengeMatch.Challenge != null)
-                    {
-                        // Update the rank in the challenge
-                        if (challengeMatch.Challenge.Challenger.Equals(team.Name, StringComparison.OrdinalIgnoreCase))
-                        {
-                            challengeMatch.Challenge.ChallengerRank = team.Rank;
-                        }
-                        else if (challengeMatch.Challenge.Challenged.Equals(team.Name, StringComparison.OrdinalIgnoreCase))
-                        {
-                            challengeMatch.Challenge.ChallengedRank = team.Rank;
-                        }
-                    }
-                }
-            }
         }
         #endregion
     }

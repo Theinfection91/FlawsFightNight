@@ -99,6 +99,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
             }
             return challengeTeams;
         }
+
+        public bool IsChallengedTeamWithinRanks(Team challenger, Team challenged)
+        {
+            return (challenger.Rank - challenged.Rank) is >= 1 and <= 2;
+        }
     }
 }
 

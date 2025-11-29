@@ -82,6 +82,11 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Create Team object
             Team newTeam = _teamManager.CreateTeam(teamName, convertedMembersList, tournament.Teams.Count + 1);
 
+            if (tournament is DSRLadderTournament)
+            {
+                newTeam.Rating = 1200;
+            }
+
             // Add new team to the tournament
             tournament.AddTeam(newTeam);
 

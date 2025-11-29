@@ -68,9 +68,13 @@ namespace FlawsFightNight.Managers
         #region LiveView Embeds
         public Embed MatchesLiveViewResolver(Tournament tournament)
         {
+            if (tournament is DSRLadderTournament dsrLadderTournament)
+            {
+                return DSRLadderMatchesLiveView(dsrLadderTournament);
+            }
             if (tournament is NormalLadderTournament ladderTournament)
             {
-                return LadderMatchesLiveView(ladderTournament);
+                return NormalLadderMatchesLiveView(ladderTournament);
             }
             if (tournament is NormalRoundRobinTournament normalRoundRobinTournament)
             {
@@ -86,7 +90,46 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private Embed LadderMatchesLiveView(NormalLadderTournament tournament)
+        private Embed DSRLadderMatchesLiveView(DSRLadderTournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} DSR Ladder Tournament Challenge Matches")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Total Teams: {tournament.Teams.Count}**\n")
+                .WithColor(Color.Orange)
+                .WithCurrentTimestamp();
+            // --- Pending Challenges ---
+            if (tournament.MatchLog.GetAllActiveMatches().Count > 0)
+            {
+                var challenges = tournament.MatchLog.GetAllActiveMatches()
+                    .Select(m => $"⚔️ *Match ID#: {m.Id}* | " +
+                                  $"(#{m.Challenge.ChallengerRank} - Rating: {m.Challenge.ChallengerRating}) **{m.Challenge.Challenger}** " +
+                                  $"has challenged (#{m.Challenge.ChallengedRank} - Rating: {m.Challenge.ChallengedRating}) **{m.Challenge.Challenged}**")
+                    .ToList();
+                AddMatchesInPages(embed, "⚔️ Pending Challenges", challenges);
+            }
+            else
+            {
+                embed.AddField("⚔️ Pending Challenges", "No pending challenges at the moment.", false);
+            }
+            // --- Previous Matches ---
+            if (tournament.MatchLog.GetAllPostMatches().Count > 0)
+            {
+                var matches = tournament.MatchLog.GetAllPostMatches()
+                    .Select(pm => $"✅ *Match ID#: {pm.Id}* | " +
+                                  $"**{pm.Winner}** defeated **{pm.Loser}** " +
+                                  $"by **{pm.WinnerScore}** to **{pm.LoserScore}** " +
+                                  $"\n{pm.GetRatingChangeText()}")
+                    .ToList();
+                AddMatchesInPages(embed, "📜 Previous Matches (Oldest to Newest)", matches);
+            }
+            else
+            {
+                embed.AddField("📜 Previous Matches", "No matches completed yet.", false);
+            }
+            return embed.Build();
+        }
+
+        private Embed NormalLadderMatchesLiveView(NormalLadderTournament tournament)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Ladder Tournament Challenge Matches")
@@ -602,14 +645,46 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed LadderSendChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        public Embed SendLadderChallengeMatchNotificationResolver(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        {
+            if (tournament is NormalLadderTournament)
+            {
+                return NormalLadderSendChallengeMatchNotification(tournament, challengerTeam, challengedTeam, isChallenger);
+            }
+            if (tournament is DSRLadderTournament)
+            {
+                return DSRLadderSendChallengeMatchNotification(tournament, challengerTeam, challengedTeam, isChallenger);
+            }
+            else
+            {
+                return ToDoEmbed();
+            }
+        }
+
+        public Embed CancelLadderChallengeMatchNotificationResolver(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        {
+            if (tournament is NormalLadderTournament)
+            {
+                return NormalLadderCancelChallengeMatchNotification(tournament, challengerTeam, challengedTeam, isChallenger);
+            }
+            if (tournament is DSRLadderTournament)
+            {
+                return DSRLadderCancelChallengeMatchNotification(tournament, challengerTeam, challengedTeam, isChallenger);
+            }
+            else
+            {
+                return ToDoEmbed();
+            }
+        }
+
+        private Embed NormalLadderSendChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
         {
             switch (isChallenger)
             {
                 case true:
                     {
                         var embed = new EmbedBuilder()
-                            .WithTitle($"🏅 {tournament.Name} - {tournament.TeamSizeFormat} Ladder Challenge Notification")
+                            .WithTitle($"🏅 {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Notification")
                             .WithColor(Color.Gold)
                             .WithDescription($"Your team (#{challengerTeam.Rank})**{challengerTeam.Name}** has successfully sent a challenge to (#{challengedTeam.Rank})**{challengedTeam.Name}**!\n\nGood luck!")
                             .AddField("👥 Your Team", challengerTeam.Name, true)
@@ -622,7 +697,7 @@ namespace FlawsFightNight.Managers
                 case false:
                     {
                         var embed = new EmbedBuilder()
-                            .WithTitle($"🏅 {tournament.Name} - {tournament.TeamSizeFormat} Ladder Challenge Notification")
+                            .WithTitle($"🏅 {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Notification")
                             .WithColor(Color.Gold)
                             .WithDescription($"Your team (#{challengedTeam.Rank})**{challengedTeam.Name}** has received a challenge from (#{challengerTeam.Rank})**{challengerTeam.Name}**!\n\nGood luck!")
                             .AddField("👥 Your Team", challengedTeam.Name, true)
@@ -635,14 +710,14 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public Embed LadderCancelChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        private Embed NormalLadderCancelChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
         {
             switch (isChallenger)
             {
                 case true:
                     {
                         var embed = new EmbedBuilder()
-                            .WithTitle($"🗑️ {tournament.Name} - {tournament.TeamSizeFormat} Ladder Challenge Canceled")
+                            .WithTitle($"🗑️ {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Canceled")
                             .WithColor(Color.Orange)
                             .WithDescription($"Your team (#{challengerTeam.Rank})**{challengerTeam.Name}** has canceled the challenge to (#{challengedTeam.Rank})**{challengedTeam.Name}**.")
                             .AddField("👥 Your Team", challengerTeam.Name, true)
@@ -655,9 +730,75 @@ namespace FlawsFightNight.Managers
                 case false:
                     {
                         var embed = new EmbedBuilder()
-                            .WithTitle($"🗑️ {tournament.Name} - {tournament.TeamSizeFormat} Ladder Challenge Canceled")
+                            .WithTitle($"🗑️ {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Canceled")
                             .WithColor(Color.Orange)
                             .WithDescription($"The challenge from (#{challengerTeam.Rank})**{challengerTeam.Name}** to your team (#{challengedTeam.Rank})**{challengedTeam.Name}** has been canceled.")
+                            .AddField("👥 Your Team", challengedTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenger Team", challengerTeam.Name, true)
+                            .WithFooter("Challenge Canceled")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+            }
+        }
+
+        private Embed DSRLadderSendChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        {
+            switch (isChallenger)
+            {
+                case true:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🏅 {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Notification")
+                            .WithColor(Color.Gold)
+                            .WithDescription($"Your team [#{challengerTeam.Rank} - Rating: {challengerTeam.Rating}]**{challengerTeam.Name}** has successfully sent a challenge to [#{challengedTeam.Rank} - Rating: {challengedTeam.Rating}]**{challengedTeam.Name}**!\n\nGood luck!")
+                            .AddField("👥 Your Team", challengerTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenged Team", challengedTeam.Name, true)
+                            .WithFooter("Challenge Sent")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+                case false:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🏅 {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Notification")
+                            .WithColor(Color.Gold)
+                            .WithDescription($"Your team [#{challengedTeam.Rank} - Rating: {challengedTeam.Rating}]**{challengedTeam.Name}** has received a challenge from [#{challengerTeam.Rank} - Rating: {challengerTeam.Rating}]**{challengerTeam.Name}**!\n\nGood luck!")
+                            .AddField("👥 Your Team", challengedTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenger Team", challengerTeam.Name, true)
+                            .WithFooter("Challenge Received")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+            }
+        }
+
+        private Embed DSRLadderCancelChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        {
+            switch (isChallenger)
+            {
+                case true:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🗑️ {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Canceled")
+                            .WithColor(Color.Orange)
+                            .WithDescription($"Your team [#{challengerTeam.Rank} - Rating: {challengerTeam.Rating}]**{challengerTeam.Name}** has canceled the challenge to [#{challengedTeam.Rank} - Rating: {challengedTeam.Rating}]**{challengedTeam.Name}**.")
+                            .AddField("👥 Your Team", challengerTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenged Team", challengedTeam.Name, true)
+                            .WithFooter("Challenge Canceled")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+                case false:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🗑️ {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Canceled")
+                            .WithColor(Color.Orange)
+                            .WithDescription($"The challenge from [#{challengerTeam.Rank} - Rating: {challengerTeam.Rating}]**{challengerTeam.Name}** to your team [#{challengedTeam.Rank} - Rating: {challengedTeam.Rating}]**{challengedTeam.Name}** has been canceled.")
                             .AddField("👥 Your Team", challengedTeam.Name, true)
                             .AddField("🏷️ Tournament ID", tournament.Id, true)
                             .AddField("🏆 Challenger Team", challengerTeam.Name, true)
@@ -768,6 +909,9 @@ namespace FlawsFightNight.Managers
         {
             switch (tournament.Type)
             {
+                case TournamentType.DSRLadder:
+                    // TODO DSR Create Tournament Embed
+                    return ToDoEmbed("Need DSR Create Tournament Embed");
                 case TournamentType.NormalLadder:
                     return NormalLadderCreateTournamentSuccess((NormalLadderTournament)tournament);
                 case TournamentType.NormalRoundRobin:

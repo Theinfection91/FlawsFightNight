@@ -163,31 +163,6 @@ namespace FlawsFightNight.Managers
             return allPostMatches;
         }
 
-        public Match GetOpenMatchByTeamNameLadder(Tournament tournament, string teamName)
-        {
-            foreach (var match in tournament.MatchLog.GetAllActiveMatches())
-            {
-                if (match == null)
-                {
-                    //Console.WriteLine("Encountered null match in list, skipping.");
-                    continue;
-                }
-                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
-                if (!string.IsNullOrEmpty(match.TeamA) &&
-                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return match;
-                }
-                if (!string.IsNullOrEmpty(match.TeamB) &&
-                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return match;
-                }
-            }
-            //Console.WriteLine($"No match found for team '{teamName}' in ladder matches.");
-            return null;
-        }
-
         public string GetLosingTeamName(Match match, string winningTeamName)
         {
             if (match.TeamA != null && match.TeamA.Equals(winningTeamName, StringComparison.OrdinalIgnoreCase))
@@ -249,18 +224,6 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Ladder Challenge Methods
-        public bool IsChallengedTeamWithinRanks(Team challenger, Team challenged)
-        {
-            int rankDifference = challenger.Rank - challenged.Rank;
-
-            // Challenger can challenge up to 2 ranks above (e.g., 6 can challenge 5 or 4, but not 3)
-            if (rankDifference >= 1 && rankDifference <= 2)
-            {
-                return true;
-            }
-            return false;
-        }
-
         public bool IsWinningTeamChallenger(Match match, Team winningTeam)
         {
             return match.Challenge != null &&
@@ -281,7 +244,7 @@ namespace FlawsFightNight.Managers
                 m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase));
         }
 
-        public Match CreateLadderMatchWithChallenge(Team challengerTeam, Team challengedTeam)
+        public Match CreateChallengeMatch(Team challengerTeam, Team challengedTeam, int challengerRating = 0, int challengedRating = 0)
         {
             var match = new Match(challengerTeam.Name, challengedTeam.Name)
             {
@@ -289,14 +252,18 @@ namespace FlawsFightNight.Managers
                 IsByeMatch = false,
                 RoundNumber = 0,
                 CreatedOn = DateTime.UtcNow,
-                Challenge = CreateChallenge(challengerTeam, challengedTeam)
+                Challenge = CreateChallenge(challengerTeam, challengedTeam, challengerRating, challengedRating)
             };
             return match;
         }
 
-        private Challenge CreateChallenge(Team challengerTeam, Team challengedTeam)
+        private Challenge CreateChallenge(Team challengerTeam, Team challengedTeam, int challengerRating, int challengedRating)
         {
-            var challenge = new Challenge(challengerTeam.Name, challengerTeam.Rank, challengedTeam.Name, challengedTeam.Rank);
+            var challenge = new Challenge(challengerTeam.Name, challengerTeam.Rank, challengedTeam.Name, challengedTeam.Rank)
+            {
+                ChallengerRating = challengerRating,
+                ChallengedRating = challengedRating
+            };
 
             return challenge;
         }
@@ -622,7 +589,7 @@ namespace FlawsFightNight.Managers
                     {
                         continue;
                     }
-                    var message = _embedManager.LadderSendChallengeMatchNotification(tournament, challengerTeam, challengedTeam, true);
+                    var message = _embedManager.SendLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, true);
                     await dmChannel.SendMessageAsync(embed: message);
                 }
                 foreach (var member in challengedTeam.Members)
@@ -637,7 +604,7 @@ namespace FlawsFightNight.Managers
                     {
                         continue;
                     }
-                    var message = _embedManager.LadderSendChallengeMatchNotification(tournament, challengerTeam, challengedTeam, false);
+                    var message = _embedManager.SendLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, false);
                     await dmChannel.SendMessageAsync(embed: message);
                 }
             }
@@ -663,7 +630,7 @@ namespace FlawsFightNight.Managers
                     {
                         continue;
                     }
-                    var message = _embedManager.LadderCancelChallengeMatchNotification(tournament, challengerTeam, challengedTeam, true);
+                    var message = _embedManager.CancelLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, true);
                     await dmChannel.SendMessageAsync(embed: message);
                 }
                 foreach (var member in challengedTeam.Members)
@@ -678,7 +645,7 @@ namespace FlawsFightNight.Managers
                     {
                         continue;
                     }
-                    var message = _embedManager.LadderCancelChallengeMatchNotification(tournament, challengerTeam, challengedTeam, false);
+                    var message = _embedManager.CancelLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, false);
                     await dmChannel.SendMessageAsync(embed: message);
                 }
             }

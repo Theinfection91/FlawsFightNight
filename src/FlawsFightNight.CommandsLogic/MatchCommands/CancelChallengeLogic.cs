@@ -2,6 +2,7 @@
 using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Managers;
@@ -39,26 +40,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Grab teams
             Team? challengerTeam = _teamManager.GetTeamByName(challengerTeamName);
 
-            // Grab tournament from challenger team
-            var tournament = _tournamentManager.GetTournamentFromTeamName(challengerTeamName);
-            if (tournament == null)
-            {
-                // Shouldn't be possible, but just in case
-                return _embedManager.ErrorEmbed(Name, $"The team '{challengerTeam.Name}' is not registered in any tournament. Please register the team to a ladder tournament before canceling challenges.");
-            }
-
-            // Ensure tournament is a ladder type 
-            if (tournament is not NormalLadderTournament)
-            {
-                return _embedManager.ErrorEmbed(Name, $"Challenges can only be sent in Ladder type tournaments. The tournament '{tournament.Name}' is of type '{tournament.Type}'.");
-            }
-
-            // Ensure tournament is running
-            if (!tournament.IsRunning)
-            {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Challenges can only be canceled in running tournaments.");
-            }
-
             // Check if invoker is on challenger team (or guild admin)
             if (context.User is not SocketGuildUser guildUser)
             {
@@ -72,27 +53,37 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, $"You are not a member of the team '{challengerTeam.Name}', or an admin on this server, and cannot cancel a challenge on their behalf.");
             }
 
+            // Grab tournament from challenger team
+            var tournament = _tournamentManager.GetTournamentFromTeamName(challengerTeamName);
+            if (tournament == null)
+            {
+                // Shouldn't be possible, but just in case
+                return _embedManager.ErrorEmbed(Name, $"The team '{challengerTeam.Name}' is not registered in any tournament. Please register the team to a ladder tournament before canceling challenges.");
+            }
+
+            // Ensure tournament is a ladder type 
+            if (!tournament.Type.Equals(TournamentType.NormalLadder) && !tournament.Type.Equals(TournamentType.DSRLadder))
+            {
+                return _embedManager.ErrorEmbed(Name, $"Challenges can only be sent in Normal or DSR Ladder tournaments. The tournament '{tournament.Name}' is of type '{tournament.Type}'.");
+            }
+
+            // Ensure tournament is running
+            if (!tournament.IsRunning)
+            {
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Challenges can only be canceled in running tournaments.");
+            }
+
             // Check if there is a pending challenge between these two teams
-            if (!_matchManager.HasChallengeSent(tournament, challengerTeamName))
+            if (!(tournament.MatchLog as IChallengeLog).IsTeamChallenger(challengerTeam))
             {
                 return _embedManager.ErrorEmbed(Name, $"The team '{challengerTeam.Name}' does not have any pending challenges sent out to cancel.");
             }
 
             // Get the pending match
-            var pendingMatch = _matchManager.GetChallengeMatchByChallengerName(tournament, challengerTeamName);
-            if (pendingMatch == null)
-            {
-                // Shouldn't be possible, but just in case
-                return _embedManager.ErrorEmbed(Name, "No pending match found. Canceling command.");
-            }
+            var pendingMatch = (tournament.MatchLog as IChallengeLog).GetChallengeMatch(challengerTeam);
 
             // Grab challenged team
-            var challengedTeam = _teamManager.GetTeamByName(pendingMatch.Challenge.Challenged);
-            if (challengedTeam == null)
-            {
-                // Shouldn't be possible, but just in case
-                return _embedManager.ErrorEmbed(Name, $"The team '{pendingMatch.Challenge.Challenged}' was not found. Canceling command.");
-            }
+            var challengedTeam = tournament.GetTeam(pendingMatch.Challenge.Challenged);
 
             // Reset challenge status on both teams
             challengerTeam.IsChallengeable = true;

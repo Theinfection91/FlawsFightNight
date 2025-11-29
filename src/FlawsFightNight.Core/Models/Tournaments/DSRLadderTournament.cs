@@ -85,10 +85,10 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override void AdjustRanks()
         {
-            // Sort teams by their current rating
-            Teams.Sort((a, b) => a.Rating.CompareTo(b.Rating));
+            // Sort teams by rating descending (largest rating first)
+            Teams.Sort((a, b) => b.Rating.CompareTo(a.Rating));
 
-            // Reassign ranks sequentially starting from 1
+            // Reassign ranks sequentially starting from 1 (highest rated gets rank 1)
             for (int i = 0; i < Teams.Count; i++)
             {
                 Teams[i].Rank = i + 1;

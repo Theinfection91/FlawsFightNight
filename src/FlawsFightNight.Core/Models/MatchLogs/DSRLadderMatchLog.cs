@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Models.Tournaments;
+﻿using FlawsFightNight.Core.Interfaces;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.MatchLogs
 {
-    public class DSRLadderMatchLog : MatchLog
+    public class DSRLadderMatchLog : MatchLog, IChallengeLog
     {
         public List<Match> MatchesToPlay { get; set; } = [];
         public List<PostMatch> PostMatches { get; set; } = [];
@@ -19,6 +20,16 @@ namespace FlawsFightNight.Core.Models.MatchLogs
         {
             MatchesToPlay.Clear();
             PostMatches.Clear();
+        }
+
+        public void RecordRatingChangeToPostMatch(string matchId, int winnerRatingChange, int loserRatingChange)
+        {
+            PostMatch? postMatch = PostMatches.FirstOrDefault(pm => pm.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase));
+            if (postMatch != null)
+            {
+                postMatch.WinnerRatingChange = winnerRatingChange;
+                postMatch.LoserRatingChange = loserRatingChange;
+            }
         }
 
         public override List<Match> GetAllActiveMatches(int currentRound = 0) => MatchesToPlay;
@@ -58,6 +69,64 @@ namespace FlawsFightNight.Core.Models.MatchLogs
             PostMatches.Add(postMatch);
             // Remove from active matches
             RemoveMatch(match);
+        }
+        #endregion
+
+        #region IChallengeLog
+        public bool HasPendingChallenge(Team team, out Match challengeMatch)
+        {
+            foreach (var match in MatchesToPlay)
+            {
+                // Check by match, not challenge
+                if (match.TeamA.Equals(team.Name, StringComparison.OrdinalIgnoreCase) ||
+                    match.TeamB.Equals(team.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    challengeMatch = match;
+                    return true;
+                }
+            }
+            challengeMatch = null;
+            return false;
+        }
+
+        public bool IsTeamChallenger(Team challengerTeam)
+        {
+            foreach (var match in MatchesToPlay)
+            {
+                if (match.Challenge.Challenger.Equals(challengerTeam.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool IsRankCorrectForTeam(Team team)
+        {
+            foreach (var match in MatchesToPlay)
+            {
+                if (match.Challenge.Challenger.Equals(team.Name, StringComparison.OrdinalIgnoreCase) || match.Challenge.Challenged.Equals(team.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (match.Challenge.ChallengerRank == team.Rank || match.Challenge.ChallengedRank == team.Rank)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public Match? GetChallengeMatch(Team team)
+        {
+            foreach (var match in MatchesToPlay)
+            {
+                if (match.TeamA.Equals(team.Name, StringComparison.OrdinalIgnoreCase) ||
+                    match.TeamB.Equals(team.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+            }
+            return null;
         }
         #endregion
     }

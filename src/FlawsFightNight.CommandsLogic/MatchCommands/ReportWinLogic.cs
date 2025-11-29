@@ -138,19 +138,24 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                         }
                     }
                 }
-                winningTeam.IsChallengeable = true;
-                losingTeam.IsChallengeable = true;
             }
 
             // Handle DSR Ladder tournament procedures
             if (tournament is DSRLadderTournament dsrLadderTournament)
             {
+                // Run the calculator and output rating changes
                 dsrLadderTournament.HandleTeamRatingChange(winningTeam, losingTeam, winningTeamScore, losingTeamScore, out int winningTeamRatingChange, out int losingTeamRatingChange);
+
+                // Grab the post match and record the rating change of teams
+                (tournament.MatchLog as DSRLadderMatchLog)?.RecordRatingChangeToPostMatch(matchId, winningTeamRatingChange, losingTeamRatingChange);
 
                 // Output rating change in console for now
                 Console.WriteLine($"[DSR Rating Change] {winningTeam.Name} rating change: {winningTeamRatingChange}, new rating: {winningTeam.Rating}");
                 Console.WriteLine($"[DSR Rating Change] {losingTeam.Name} rating change: {losingTeamRatingChange}, new rating: {losingTeam.Rating}");
             }
+
+            winningTeam.IsChallengeable = true;
+            losingTeam.IsChallengeable = true;
 
             // Adjust ranks
             tournament.AdjustRanks();
