@@ -131,8 +131,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                     return _embedManager.ToDoEmbed("Single/Double Elimination Report Win logic is not yet implemented.");
             }
 
-            //
-
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
 
@@ -144,9 +142,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 
         private void RoundRobinReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
         {
-            // Convert match to post-match and record win/loss
-            //_matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
-
             // Adjust ranks of remaining teams
             tournament.SetRanksByTieBreakerLogic();
         }
