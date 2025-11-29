@@ -114,6 +114,9 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             _teamManager.RecordTeamWin(winningTeam, winningTeamScore);
             _teamManager.RecordTeamLoss(losingTeam, losingTeamScore);
 
+            // Convert match to post-match
+            _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
+
             // Process report win based on tournament type
             switch (tournament.Type)
             {
@@ -128,8 +131,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                     return _embedManager.ToDoEmbed("Single/Double Elimination Report Win logic is not yet implemented.");
             }
 
-            // Convert match to post-match
-            _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
+            //
 
             // Save and reload the tournament database
             _tournamentManager.SaveAndReloadTournamentsDatabase();
@@ -137,15 +139,13 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
-            // Update Autcomplete Cache
-
             return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin);
         }
 
         private void RoundRobinReportWinProcess(Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, Tournament tournament, Match match, bool isGuildAdmin)
         {
             // Convert match to post-match and record win/loss
-            _matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
+            //_matchManager.ConvertMatchToPostMatchResolver(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore, match.IsByeMatch);
 
             // Adjust ranks of remaining teams
             tournament.SetRanksByTieBreakerLogic();
