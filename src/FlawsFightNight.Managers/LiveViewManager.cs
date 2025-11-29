@@ -58,7 +58,7 @@ namespace FlawsFightNight.Managers
             Console.WriteLine($"{DateTime.Now} [LiveView - Watchdog] Starting watchdog task...");
             _watchdogTask = Task.Run(async () =>
             {
-                while (true) // watchdog runs until process exit
+                while (true)
                 {
                     try
                     {
@@ -68,7 +68,7 @@ namespace FlawsFightNight.Managers
                         bool standingsDead = _standingsLiveViewTask?.IsFaulted ?? true;
                         bool teamsDead = _teamsLiveViewTask?.IsFaulted ?? true;
 
-                        // Also check if they haven't updated in >3 min
+                        // Also check if they haven't updated in >1.5 min
                         bool matchesHung = (DateTime.UtcNow - _lastMatchesUpdate) > TimeSpan.FromMinutes(1.5);
                         bool standingsHung = (DateTime.UtcNow - _lastStandingsUpdate) > TimeSpan.FromMinutes(1.5);
                         bool teamsHung = (DateTime.UtcNow - _lastTeamsUpdate) > TimeSpan.FromMinutes(1.5);
@@ -101,7 +101,6 @@ namespace FlawsFightNight.Managers
         #region Matches LiveView
         public void StartMatchesLiveViewTask()
         {
-            //Task.Run(() => RunMatchesUpdateTaskAsync());
             _matchesLiveViewTask = Task.Run(() => RunMatchesUpdateTaskAsync(_matchesCts.Token));
         }
 
@@ -184,7 +183,6 @@ namespace FlawsFightNight.Managers
         #region Standings LiveView
         public void StartStandingsLiveViewTask()
         {
-            //Task.Run(() => RunStandingsUpdateTaskAsync());
             _standingsLiveViewTask = Task.Run(() => RunStandingsUpdateTaskAsync(_standingsCts.Token));
         }
 
