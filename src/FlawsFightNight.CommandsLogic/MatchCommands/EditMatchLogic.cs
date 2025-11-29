@@ -81,10 +81,10 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             var postMatch = _matchManager.GetPostMatchByIdInTournament(tournament, matchId);
 
             // Check if post match to edit is within current round being played, cannot edit matches from previous rounds that were locked in
-            if (tournament.RoundRobinMatchType is RoundRobinMatchType.Normal &&  !_matchManager.IsPostMatchInCurrentRound(tournament, postMatch.Id))
-            {
-                return _embedManager.ErrorEmbed(Name, $"The match with ID: {matchId} is not in the current round being played. You can only edit matches from the current round.");
-            }
+            //if (tournament.RoundRobinMatchType is RoundRobinMatchType.Normal &&  !_matchManager.IsPostMatchInCurrentRound(tournament, postMatch.Id))
+            //{
+            //    return _embedManager.ErrorEmbed(Name, $"The match with ID: {matchId} is not in the current round being played. You can only edit matches from the current round.");
+            //}
 
             // Check if given team name is in the match
             if (!_matchManager.IsGivenTeamNameInPostMatch(winningTeamName, postMatch))

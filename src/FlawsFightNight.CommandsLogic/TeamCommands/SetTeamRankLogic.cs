@@ -13,13 +13,15 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
     {
         private EmbedManager _embedManager;
         private GitBackupManager _gitBackupManager;
+        private MatchManager _matchManager;
         private TeamManager _teamManager;
         private TournamentManager _tournamentManager;
 
-        public SetTeamRankLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Set Team Rank")
+        public SetTeamRankLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Set Team Rank")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
+            _matchManager = matchManager;
             _teamManager = teamManager;
             _tournamentManager = tournamentManager;
         }
@@ -82,6 +84,9 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 
             // Reassign ranks to ensure no duplicates or gaps
             tournament.ReassignRanksInTournament();
+
+            // Run challenge rank comparison
+            _matchManager.ChallengeRankComparisonProcess(tournament);
 
             // Save changes
             _tournamentManager.SaveAndReloadTournamentsDatabase();
