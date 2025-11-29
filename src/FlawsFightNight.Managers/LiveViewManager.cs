@@ -359,36 +359,40 @@ namespace FlawsFightNight.Managers
             {
                 case LiveViewChannelType.Matches:
                     _matchesCts.Cancel();
-                    try
-                    {
-                        if (_matchesLiveViewTask != null)
-                            await _matchesLiveViewTask;
-                    }
-                    catch (TaskCanceledException) { } // expected on cancel
+
+                    var oldMatchesTask = _matchesLiveViewTask;
+
+                    // Wait max 2 seconds for it to finish
+                    var timeoutMatchesTask = Task.Delay(2000);
+                    await Task.WhenAny(oldMatchesTask, timeoutMatchesTask);
+
                     _matchesCts.Dispose();
                     _matchesCts = new CancellationTokenSource();
+
                     StartMatchesLiveViewTask();
                     break;
                 case LiveViewChannelType.Standings:
                     _standingsCts.Cancel();
-                    try
-                    {
-                        if (_standingsLiveViewTask != null)
-                            await _standingsLiveViewTask;
-                    }
-                    catch (TaskCanceledException) { } // expected on cancel
+                   
+                    var oldStandingsTask = _standingsLiveViewTask;
+
+                    // Wait max 2 seconds for it to finish
+                    var timeoutStandingsTask = Task.Delay(2000);
+                    await Task.WhenAny(oldStandingsTask, timeoutStandingsTask);
+
                     _standingsCts.Dispose();
                     _standingsCts = new CancellationTokenSource();
+
                     StartStandingsLiveViewTask();
                     break;
                 case LiveViewChannelType.Teams:
                     _teamsCts.Cancel();
 
-                    var oldTask = _teamsLiveViewTask;
+                    var oldTeamsTask = _teamsLiveViewTask;
 
                     // Wait max 2 seconds for it to finish
-                    var timeoutTask = Task.Delay(2000);
-                    await Task.WhenAny(oldTask, timeoutTask);
+                    var timeoutTeamsTask = Task.Delay(2000);
+                    await Task.WhenAny(oldTeamsTask, timeoutTeamsTask);
 
                     // At this point we consider the old task dead
                     _teamsCts.Dispose();
