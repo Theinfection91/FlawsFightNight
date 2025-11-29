@@ -96,7 +96,7 @@ namespace FlawsFightNight.Core.Models
             Losses++;
             LoseStreak++;
             WinStreak = 0;
-            TotalScore -= points;
+            TotalScore += points;
         }
     }
 }
