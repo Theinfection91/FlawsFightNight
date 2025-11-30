@@ -34,15 +34,15 @@ namespace FlawsFightNight.Managers
             LoadTournamentsDatabase();
         }
 
-        public void AddTournament(TournamentBase tournament)
+        public void AddTournament(Tournament tournament)
         {
             _dataManager.AddTournament(tournament);
         }
 
         public bool IsTournamentNameUnique(string tournamentName)
         {
-            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
-            foreach (TournamentBase tournament in tournaments)
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (Tournament tournament in tournaments)
             {
                 if (tournament.Name.Equals(tournamentName, StringComparison.OrdinalIgnoreCase))
                 {
@@ -52,7 +52,7 @@ namespace FlawsFightNight.Managers
             return true; // Team name is unique across all tournaments
         }
 
-        public TournamentBase CreateNewTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
+        public Tournament CreateNewTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
         {
             string? id = GenerateTournamentId();
             if (id == null)
@@ -62,6 +62,9 @@ namespace FlawsFightNight.Managers
 
             switch (tournamentType)
             {
+                case TournamentType.DSRLadder:
+                    return new DSRLadderTournament(id, name, teamSize);
+
                 case TournamentType.NormalLadder:
                     return new NormalLadderTournament(id, name, teamSize);
 
@@ -90,27 +93,31 @@ namespace FlawsFightNight.Managers
         {
             if (isCaseSensitive)
             {
-                return _dataManager.TournamentsDatabaseFile.NewTournaments
+                return _dataManager.TournamentsDatabaseFile.Tournaments
                     .Any(t => t.Id.Equals(tournamentId));
             }
             else
             {
-                return _dataManager.TournamentsDatabaseFile.NewTournaments
+                return _dataManager.TournamentsDatabaseFile.Tournaments
                     .Any(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
             }
         }
 
-        public List<TournamentBase> GetAllTournaments()
+        public List<Tournament> GetAllTournaments()
         {
-            return _dataManager.TournamentsDatabaseFile.NewTournaments;
+            return _dataManager.TournamentsDatabaseFile.Tournaments;
         }
 
-        public List<TournamentBase> GetAllLadderTournaments()
+        public List<Tournament> GetAllLadderTournaments()
         {
-            List<TournamentBase> ladderTournaments = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            List<Tournament> ladderTournaments = new();
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 if (tournament is NormalLadderTournament)
+                {
+                    ladderTournaments.Add(tournament);
+                }
+                else if (tournament is DSRLadderTournament)
                 {
                     ladderTournaments.Add(tournament);
                 }
@@ -118,10 +125,10 @@ namespace FlawsFightNight.Managers
             return ladderTournaments;
         }
 
-        public List<TournamentBase> GetAllRoundRobinTournaments()
+        public List<Tournament> GetAllRoundRobinTournaments()
         {
-            List<TournamentBase> roundRobinTournaments = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            List<Tournament> roundRobinTournaments = new();
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 if (tournament is NormalRoundRobinTournament || tournament is OpenRoundRobinTournament)
                 {
@@ -131,30 +138,22 @@ namespace FlawsFightNight.Managers
             return roundRobinTournaments;
         }
 
-        public List<TournamentBase> GetAllEliminationTournaments()
+        public List<Tournament> GetAllEliminationTournaments()
         {
             // TODO
 
             return null;
         }
 
-        // TODO Old version, remove later
         public Tournament? GetTournamentById(string tournamentId)
         {
             return _dataManager.TournamentsDatabaseFile.Tournaments
                 .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
         }
 
-        // New version
-        public TournamentBase? GetNewTournamentById(string tournamentId)
+        public Tournament GetTournamentFromTeamName(string teamName)
         {
-            return _dataManager.TournamentsDatabaseFile.NewTournaments
-                .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
-        }
-
-        public TournamentBase GetTournamentFromTeamName(string teamName)
-        {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
                 {
@@ -164,9 +163,9 @@ namespace FlawsFightNight.Managers
             return null;
         }
 
-        public TournamentBase GetTournamentFromMatchId(string matchId)
+        public Tournament GetTournamentFromMatchId(string matchId)
         {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 if (tournament.MatchLog.GetAllActiveMatches().Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
                 {

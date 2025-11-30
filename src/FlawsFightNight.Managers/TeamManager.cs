@@ -20,8 +20,8 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool DoesTeamExist(string teamName, bool isCaseSensitive = false)
         {
-            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
-            foreach (TournamentBase tournament in tournaments)
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (Tournament tournament in tournaments)
             {
                 if (isCaseSensitive)
                 {
@@ -43,8 +43,8 @@ namespace FlawsFightNight.Managers
 
         public bool IsTeamNameUnique(string teamName)
         {
-            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
-            foreach (TournamentBase tournament in tournaments)
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            foreach (Tournament tournament in tournaments)
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
                 {
@@ -64,10 +64,14 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllLadderTeams()
         {
             List<Team> ladderTeams = new List<Team>();
-            var tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            var tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
             foreach (var tournament in tournaments)
             {
                 if (tournament is NormalLadderTournament)
+                {
+                    ladderTeams.AddRange(tournament.Teams);
+                }
+                else if (tournament is DSRLadderTournament)
                 {
                     ladderTeams.AddRange(tournament.Teams);
                 }
@@ -78,7 +82,7 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllRoundBasedTeams()
         {
             List<Team> roundBasedTeams = new();
-            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
             foreach (var tournament in tournaments)
             {
                 if (tournament is IRoundBased) // Will add elimination later
@@ -91,7 +95,7 @@ namespace FlawsFightNight.Managers
 
         public Team GetTeamByName(string teamName)
         {
-            List<TournamentBase> tournaments = _dataManager.TournamentsDatabaseFile.NewTournaments;
+            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
             foreach (var tournament in tournaments)
             {
                 Team? team = tournament.Teams.FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
@@ -103,7 +107,7 @@ namespace FlawsFightNight.Managers
             return null; // No team found with the given name
         }
 
-        public Team? GetTeamByName(TournamentBase tournament, string teamName)
+        public Team? GetTeamByName(Tournament tournament, string teamName)
         {
             return tournament.Teams
                 .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
@@ -111,7 +115,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Edit Match Helpers
-        public void EditMatchRollback(TournamentBase tournament, PostMatch postMatch)
+        public void EditMatchRollback(Tournament tournament, PostMatch postMatch)
         {
             var winner = GetTeamByName(tournament, postMatch.Winner);
             var loser = GetTeamByName(tournament, postMatch.Loser);
@@ -124,7 +128,7 @@ namespace FlawsFightNight.Managers
             loser.TotalScore -= postMatch.LoserScore;
         }
 
-        public void EditMatchApply(TournamentBase tournament, PostMatch postMatch)
+        public void EditMatchApply(Tournament tournament, PostMatch postMatch)
         {
             var winner = GetTeamByName(tournament, postMatch.Winner);
             var loser = GetTeamByName(tournament, postMatch.Loser);

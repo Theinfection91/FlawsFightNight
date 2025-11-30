@@ -120,38 +120,20 @@ namespace FlawsFightNight.Managers
             LoadTournamentsDatabase();
         }
 
-        // TODO Old version, remove later
+        // New version
         public void AddTournament(Tournament tournament)
         {
             TournamentsDatabaseFile.Tournaments.Add(tournament);
-            SaveAndReloadTournamentsDatabase();
-        }
-
-        // New version
-        public void AddTournament(TournamentBase tournament)
-        {
-            TournamentsDatabaseFile.NewTournaments.Add(tournament);
             //SaveAndReloadTournamentsDatabase();
-        }
-
-        // TODO Old version, remove later
-        public void RemoveTournament(string tournamentId)
-        {
-            var tournament = TournamentsDatabaseFile.Tournaments.FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
-            if (tournament != null)
-            {
-                TournamentsDatabaseFile.Tournaments.Remove(tournament);
-                SaveAndReloadTournamentsDatabase();
-            }
         }
 
         // New version
         public void RemoveTournamentBase(string tournamentId)
         {
-            var tournament = TournamentsDatabaseFile.NewTournaments.FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
+            var tournament = TournamentsDatabaseFile.Tournaments.FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
             if (tournament != null)
             {
-                TournamentsDatabaseFile.NewTournaments.Remove(tournament);
+                TournamentsDatabaseFile.Tournaments.Remove(tournament);
             }
         }
         #endregion

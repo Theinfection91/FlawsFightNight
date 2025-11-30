@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.MatchLogs
 {
-    public class NormalRoundRobinMatchLog : MatchLogBase
+    public class NormalRoundRobinMatchLog : MatchLog
     {
         public Dictionary<int, List<Match>> MatchesToPlayByRound { get; set; } = [];
         public Dictionary<int, List<PostMatch>> PostMatchesByRound { get; set; } = [];
@@ -57,20 +57,6 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 
         public override bool ContainsMatchId(string matchId)
         {
-            //foreach (var round in MatchesToPlayByRound.Values)
-            //{
-            //    if (round.Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
-            //    {
-            //        return true;
-            //    }
-            //}
-            //foreach (var round in PostMatchesByRound.Values)
-            //{
-            //    if (round.Any(pm => pm.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
-            //    {
-            //        return true;
-            //    }
-            //}
             foreach (var match in GetAllActiveMatches())
             {
                 if (match.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase))
@@ -136,7 +122,7 @@ namespace FlawsFightNight.Core.Models.MatchLogs
             return false;
         }
 
-        public override void ConvertMatchToPostMatch(TournamentBase tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore)
+        public override void ConvertMatchToPostMatch(Tournament tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore)
         {
             if (tournament is IRoundBased rbTournament)
             {

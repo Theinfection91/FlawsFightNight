@@ -135,14 +135,14 @@ namespace FlawsFightNight.Managers
                 //    throw new Exception("TestMode: Randomly simulated failure.");
                 //}
 
-                if (_dataManager.TournamentsDatabaseFile.NewTournaments.Count == 0)
+                if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
                 {
                     //Console.WriteLine("No tournaments found. No need to post to matches channels.");
                     _lastMatchesUpdate = DateTime.UtcNow;
                     return;
                 }
 
-                foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+                foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
                 {
                     if (tournament == null)
                     {
@@ -258,13 +258,13 @@ namespace FlawsFightNight.Managers
             {
                 await _standingsSemaphore.WaitAsync();
 
-                if (_dataManager.TournamentsDatabaseFile.NewTournaments.Count == 0)
+                if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
                 {
                     _lastStandingsUpdate = DateTime.UtcNow;
                     return;
                 }
 
-                foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+                foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
                 {
                     if (tournament == null || tournament.StandingsChannelId == 0)
                     {
@@ -351,14 +351,14 @@ namespace FlawsFightNight.Managers
             {
                 await _teamsSemaphore.WaitAsync();
 
-                if (_dataManager.TournamentsDatabaseFile.NewTournaments.Count == 0)
+                if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
                 {
                     //Console.WriteLine("No tournaments found. No need to post to teams channels.");
                     _lastTeamsUpdate = DateTime.UtcNow;
                     return;
                 }
 
-                foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+                foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
                 {
                     if (tournament == null)
                     {

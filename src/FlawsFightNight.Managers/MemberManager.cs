@@ -33,7 +33,7 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public bool IsMemberRegisteredInTournament(ulong memberId, TournamentBase tournament)
+        public bool IsMemberRegisteredInTournament(ulong memberId, Tournament tournament)
         {
             foreach (Team team in tournament.Teams)
             {

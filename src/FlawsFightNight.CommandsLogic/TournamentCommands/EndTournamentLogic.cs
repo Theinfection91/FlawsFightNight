@@ -29,7 +29,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
         public Embed EndTournamentProcess(string tournamentId)
         {
             // Grab tournament, modal should have ensured it exists
-            var tournament = _tournamentManager.GetNewTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
             // Check if tournament is already running
             if (!tournament.IsRunning)
@@ -89,6 +89,21 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 _gitBackupManager.CopyAndBackupFilesToGit();
 
                 return _embedManager.NormalLadderEndTournamentSuccess(tournament);
+            }
+
+            // Handle DSR Tournament
+            if (tournament is DSRLadderTournament dsrTournament)
+            {
+                // End the tournament, DSR tournaments can be ended as long as they are running
+                dsrTournament.End();
+
+                // Save the updated tournament state
+                _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+                // Backup to git repo
+                _gitBackupManager.CopyAndBackupFilesToGit();
+
+                return _embedManager.DSRLadderEndTournamentSuccess(tournament);
             }
 
             return _embedManager.ErrorEmbed(Name, "An error occurred while trying to end the tournament. Please try again later.");

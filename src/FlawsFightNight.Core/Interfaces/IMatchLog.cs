@@ -18,6 +18,6 @@ namespace FlawsFightNight.Core.Interfaces
         void AddMatch(Match match);
         void RemoveMatch(Match match);
         (int pointsFor, int pointsAgainst) GetPointsForAndAgainst(string teamName);
-        void ConvertMatchToPostMatch(TournamentBase tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore);
+        void ConvertMatchToPostMatch(Tournament tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore);
     }
 }

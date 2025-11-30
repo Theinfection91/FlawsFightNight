@@ -10,8 +10,7 @@ namespace FlawsFightNight.Data.DataModels
 {
     public class TournamentsDatabaseFile
     {
-        public List<Tournament> Tournaments { get; set; } = new List<Tournament>();
-        public List<TournamentBase> NewTournaments { get; set; } = new();
+        public List<Tournament> Tournaments { get; set; } = new();
 
         public TournamentsDatabaseFile() { }
     }

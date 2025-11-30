@@ -63,7 +63,7 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool IsMatchIdInDatabase(string matchId)
         {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 if (tournament.MatchLog.ContainsMatchId(matchId))
                 {
@@ -73,7 +73,7 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public bool HasMatchBeenPlayed(TournamentBase tournament, string matchId)
+        public bool HasMatchBeenPlayed(Tournament tournament, string matchId)
         {
             foreach (var match in tournament.MatchLog.GetAllPostMatches())
             {
@@ -91,7 +91,7 @@ namespace FlawsFightNight.Managers
                    (!string.IsNullOrEmpty(postMatch.Loser) && postMatch.Loser.Equals(teamName, StringComparison.OrdinalIgnoreCase));
         }
 
-        public bool IsTieBreakerNeededForFirstPlace(MatchLogBase matchLog)
+        public bool IsTieBreakerNeededForFirstPlace(MatchLog matchLog)
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
@@ -133,7 +133,7 @@ namespace FlawsFightNight.Managers
         public List<Match> GetAllActiveMatches()
         {
             List<Match> allMatches = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 allMatches.AddRange(tournament.MatchLog.GetAllActiveMatches());
             }
@@ -143,7 +143,7 @@ namespace FlawsFightNight.Managers
         public List<PostMatch> GetAllPostMatches()
         {
             List<PostMatch> allPostMatches = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 allPostMatches.AddRange(tournament.MatchLog.GetAllPostMatches());
             }
@@ -153,7 +153,7 @@ namespace FlawsFightNight.Managers
         public List<PostMatch> GetAllRoundRobinPostMatches()
         {
             List<PostMatch> allPostMatches = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 if (tournament is NormalRoundRobinTournament || tournament is OpenRoundRobinTournament)
                 {
@@ -161,31 +161,6 @@ namespace FlawsFightNight.Managers
                 }
             }
             return allPostMatches;
-        }
-
-        public Match GetOpenMatchByTeamNameLadder(TournamentBase tournament, string teamName)
-        {
-            foreach (var match in tournament.MatchLog.GetAllActiveMatches())
-            {
-                if (match == null)
-                {
-                    //Console.WriteLine("Encountered null match in list, skipping.");
-                    continue;
-                }
-                //Console.WriteLine($"Checking match: TeamA = {match.TeamA}, TeamB = {match.TeamB}");
-                if (!string.IsNullOrEmpty(match.TeamA) &&
-                    match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return match;
-                }
-                if (!string.IsNullOrEmpty(match.TeamB) &&
-                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return match;
-                }
-            }
-            //Console.WriteLine($"No match found for team '{teamName}' in ladder matches.");
-            return null;
         }
 
         public string GetLosingTeamName(Match match, string winningTeamName)
@@ -201,7 +176,7 @@ namespace FlawsFightNight.Managers
             return null; // No losing team found
         }
 
-        public PostMatch GetPostMatchByIdInTournament(TournamentBase tournament, string matchId)
+        public PostMatch GetPostMatchByIdInTournament(Tournament tournament, string matchId)
         {
             foreach (var match in tournament.MatchLog.GetAllPostMatches())
             {
@@ -213,7 +188,7 @@ namespace FlawsFightNight.Managers
             return null; // Match ID not found
         }
 
-        public List<string> GetTiedTeams(MatchLogBase matchLog)
+        public List<string> GetTiedTeams(MatchLog matchLog)
         {
             var teamWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
@@ -249,39 +224,27 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Ladder Challenge Methods
-        public bool IsChallengedTeamWithinRanks(Team challenger, Team challenged)
-        {
-            int rankDifference = challenger.Rank - challenged.Rank;
-
-            // Challenger can challenge up to 2 ranks above (e.g., 6 can challenge 5 or 4, but not 3)
-            if (rankDifference >= 1 && rankDifference <= 2)
-            {
-                return true;
-            }
-            return false;
-        }
-
         public bool IsWinningTeamChallenger(Match match, Team winningTeam)
         {
             return match.Challenge != null &&
                    match.Challenge.Challenger.Equals(winningTeam.Name, StringComparison.OrdinalIgnoreCase);
         }
 
-        public bool HasChallengeSent(TournamentBase tournament, string challengerTeamName)
+        public bool HasChallengeSent(Tournament tournament, string challengerTeamName)
         {
             return tournament.MatchLog.GetAllActiveMatches().Any(m =>
                 m.Challenge != null &&
                 m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase));
         }
 
-        public Match? GetChallengeMatchByChallengerName(TournamentBase tournament, string challengerTeamName)
+        public Match? GetChallengeMatchByChallengerName(Tournament tournament, string challengerTeamName)
         {
             return tournament.MatchLog.GetAllActiveMatches().FirstOrDefault(m =>
                 m.Challenge != null &&
                 m.Challenge.Challenger.Equals(challengerTeamName, StringComparison.OrdinalIgnoreCase));
         }
 
-        public Match CreateLadderMatchWithChallenge(Team challengerTeam, Team challengedTeam)
+        public Match CreateChallengeMatch(Team challengerTeam, Team challengedTeam, int challengerRating = 0, int challengedRating = 0)
         {
             var match = new Match(challengerTeam.Name, challengedTeam.Name)
             {
@@ -289,14 +252,18 @@ namespace FlawsFightNight.Managers
                 IsByeMatch = false,
                 RoundNumber = 0,
                 CreatedOn = DateTime.UtcNow,
-                Challenge = CreateChallenge(challengerTeam, challengedTeam)
+                Challenge = CreateChallenge(challengerTeam, challengedTeam, challengerRating, challengedRating)
             };
             return match;
         }
 
-        private Challenge CreateChallenge(Team challengerTeam, Team challengedTeam)
+        private Challenge CreateChallenge(Team challengerTeam, Team challengedTeam, int challengerRating, int challengedRating)
         {
-            var challenge = new Challenge(challengerTeam.Name, challengerTeam.Rank, challengedTeam.Name, challengedTeam.Rank);
+            var challenge = new Challenge(challengerTeam.Name, challengerTeam.Rank, challengedTeam.Name, challengedTeam.Rank)
+            {
+                ChallengerRating = challengerRating,
+                ChallengedRating = challengedRating
+            };
 
             return challenge;
         }
@@ -441,7 +408,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private bool ValidateNormalRoundRobin(TournamentBase tournament, bool isDoubleRoundRobin)
+        private bool ValidateNormalRoundRobin(Tournament tournament, bool isDoubleRoundRobin)
         {
             var teams = tournament.Teams.Select(t => t.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
@@ -507,7 +474,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Match Message System
-        public void SendMatchSchedulesToTeamsResolver(TournamentBase tournament)
+        public void SendMatchSchedulesToTeamsResolver(Tournament tournament)
         {
             if (tournament is NormalRoundRobinTournament)
             {
@@ -531,7 +498,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private async void SendNormalRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, TournamentBase tournament)
+        private async void SendNormalRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, Tournament tournament)
         {
             // This is a fire-and-forget method. Errors are logged but not thrown.
             try
@@ -568,7 +535,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private async void SendOpenRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, TournamentBase tournament)
+        private async void SendOpenRoundRobinMatchScheduleNotificationToDiscordId(ulong discordId, Tournament tournament)
         {
             // This is a fire-and-forget method. Errors are logged but not thrown.
             try
@@ -606,7 +573,7 @@ namespace FlawsFightNight.Managers
         }
 
 
-        public async void SendChallengeSuccessNotificationProcess(TournamentBase tournament, Match match, Team challengerTeam, Team challengedTeam)
+        public async void SendChallengeSuccessNotificationProcess(Tournament tournament, Match match, Team challengerTeam, Team challengedTeam)
         {
             try
             {
@@ -622,7 +589,7 @@ namespace FlawsFightNight.Managers
                     {
                         continue;
                     }
-                    var message = _embedManager.LadderSendChallengeMatchNotification(tournament, challengerTeam, challengedTeam, true);
+                    var message = _embedManager.SendLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, true);
                     await dmChannel.SendMessageAsync(embed: message);
                 }
                 foreach (var member in challengedTeam.Members)
@@ -637,7 +604,7 @@ namespace FlawsFightNight.Managers
                     {
                         continue;
                     }
-                    var message = _embedManager.LadderSendChallengeMatchNotification(tournament, challengerTeam, challengedTeam, false);
+                    var message = _embedManager.SendLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, false);
                     await dmChannel.SendMessageAsync(embed: message);
                 }
             }
@@ -647,7 +614,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public async void SendChallengeCancelNotificationProcess(TournamentBase tournament, Match match, Team challengerTeam, Team challengedTeam)
+        public async void SendChallengeCancelNotificationProcess(Tournament tournament, Match match, Team challengerTeam, Team challengedTeam)
         {
             try
             {
@@ -663,7 +630,7 @@ namespace FlawsFightNight.Managers
                     {
                         continue;
                     }
-                    var message = _embedManager.LadderCancelChallengeMatchNotification(tournament, challengerTeam, challengedTeam, true);
+                    var message = _embedManager.CancelLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, true);
                     await dmChannel.SendMessageAsync(embed: message);
                 }
                 foreach (var member in challengedTeam.Members)
@@ -678,7 +645,7 @@ namespace FlawsFightNight.Managers
                     {
                         continue;
                     }
-                    var message = _embedManager.LadderCancelChallengeMatchNotification(tournament, challengerTeam, challengedTeam, false);
+                    var message = _embedManager.CancelLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, false);
                     await dmChannel.SendMessageAsync(embed: message);
                 }
             }
@@ -690,7 +657,7 @@ namespace FlawsFightNight.Managers
 
         public string GetTeamNameFromDiscordId(ulong discordId, string tournamentId)
         {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.NewTournaments)
+            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
             {
                 foreach (var team in tournament.Teams)
                 {
@@ -706,7 +673,7 @@ namespace FlawsFightNight.Managers
             return "null";
         }
 
-        public List<Match> GetMatchesForTeamNormalRoundRobin(string teamName, MatchLogBase matchLog)
+        public List<Match> GetMatchesForTeamNormalRoundRobin(string teamName, MatchLog matchLog)
         {
             var matches = new List<Match>();
             foreach (var match in matchLog.GetAllActiveMatches())
@@ -721,7 +688,7 @@ namespace FlawsFightNight.Managers
             return matches;
         }
 
-        public List<Match> GetMatchesForTeamOpenRoundRobin(string teamName, MatchLogBase matchLog)
+        public List<Match> GetMatchesForTeamOpenRoundRobin(string teamName, MatchLog matchLog)
         {
             var matches = new List<Match>();
             foreach (var match in matchLog.GetAllActiveMatches())
@@ -737,7 +704,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Edit Match Helpers
-        public void RecalculateAllWinLossStreaks(TournamentBase tournament)
+        public void RecalculateAllWinLossStreaks(Tournament tournament)
         {
             // Reset all team streaks
             foreach (var team in tournament.Teams)

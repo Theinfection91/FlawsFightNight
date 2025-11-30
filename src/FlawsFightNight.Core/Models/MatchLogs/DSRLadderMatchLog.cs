@@ -8,18 +8,28 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.MatchLogs
 {
-    public class NormalLadderMatchLog : MatchLog, IChallengeLog
+    public class DSRLadderMatchLog : MatchLog, IChallengeLog
     {
         public List<Match> MatchesToPlay { get; set; } = [];
         public List<PostMatch> PostMatches { get; set; } = [];
 
-        public NormalLadderMatchLog() { }
+        public DSRLadderMatchLog() { }
 
         #region Overrides
         public override void ClearLog()
         {
             MatchesToPlay.Clear();
             PostMatches.Clear();
+        }
+
+        public void RecordRatingChangeToPostMatch(string matchId, int winnerRatingChange, int loserRatingChange)
+        {
+            PostMatch? postMatch = PostMatches.FirstOrDefault(pm => pm.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase));
+            if (postMatch != null)
+            {
+                postMatch.WinnerRatingChange = winnerRatingChange;
+                postMatch.LoserRatingChange = loserRatingChange;
+            }
         }
 
         public override List<Match> GetAllActiveMatches(int currentRound = 0) => MatchesToPlay;
@@ -53,14 +63,11 @@ namespace FlawsFightNight.Core.Models.MatchLogs
             {
                 return;
             }
-
             // Create PostMatch
             PostMatch postMatch = new(match.Id, winningTeamName, winningTeamScore, losingTeamName, losingTeamScore, match.CreatedOn, match.IsByeMatch, match.Challenge);
-
             // Add to PostMatches
             PostMatches.Add(postMatch);
-
-            // Remove from active Matches
+            // Remove from active matches
             RemoveMatch(match);
         }
         #endregion
@@ -111,7 +118,7 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 
         public Match? GetChallengeMatch(Team team)
         {
-            foreach (var match in GetAllActiveMatches())
+            foreach (var match in MatchesToPlay)
             {
                 if (match.TeamA.Equals(team.Name, StringComparison.OrdinalIgnoreCase) ||
                     match.TeamB.Equals(team.Name, StringComparison.OrdinalIgnoreCase))

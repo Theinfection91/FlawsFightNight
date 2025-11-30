@@ -24,10 +24,10 @@ namespace FlawsFightNight.Bot.Autocomplete
         private List<Match> _allMatches = new();
         private List<PostMatch> _allPostMatches = new();
         private List<PostMatch> _roundRobinPostMatches = new();
-        private List<TournamentBase> _allTournaments = new();
-        private List<TournamentBase> _ladderTournaments = new();
-        private List<TournamentBase> _roundRobinTournaments = new();
-        private List<TournamentBase> _eliminationTournaments = new();
+        private List<Tournament> _allTournaments = new();
+        private List<Tournament> _ladderTournaments = new();
+        private List<Tournament> _roundRobinTournaments = new();
+        private List<Tournament> _eliminationTournaments = new();
         private List<Team> _ladderTeams = new();
         private List<Team> _roundRobinTeams = new();
 
@@ -109,7 +109,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                     .ThenBy(postMatch => postMatch.Id)
                     .Select(postMatch =>
                     {
-                        var tournament = null as TournamentBase;
+                        var tournament = null as Tournament;
                         foreach (var t in _roundRobinTournaments)
                         {
                             var editablePostMatches = t.MatchLog.GetAllPostMatches();

@@ -10,10 +10,10 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public abstract class TournamentBase
+    public abstract class Tournament
     {
         [JsonConstructor]
-        protected TournamentBase() { }
+        protected Tournament() { }
         public string Id { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
@@ -23,7 +23,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public List<Team> Teams { get; set; } = [];
         public bool IsRunning { get; set; } = false;
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
-        public abstract MatchLogBase MatchLog { get; protected set; }
+        public abstract MatchLog MatchLog { get; protected set; }
 
         // Discord Channel ID's for LiveView
         public ulong MatchesChannelId { get; set; } = 0;
@@ -33,7 +33,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public ulong TeamsChannelId { get; set; } = 0;
         public ulong TeamsMessageId { get; set; } = 0;
 
-        public TournamentBase(string id, string name, int teamSize)
+        public Tournament(string id, string name, int teamSize)
         {
             Id = id;
             Name = name;

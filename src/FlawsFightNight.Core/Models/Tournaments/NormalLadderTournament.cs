@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
-    public class NormalLadderTournament : TournamentBase, INormalLadderRankSystem
+    public class NormalLadderTournament : Tournament, INormalLadderRankSystem
     {
         public override TournamentType Type { get; protected set; } = TournamentType.NormalLadder;
 
         [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
-        public override MatchLogBase MatchLog { get; protected set; }
+        public override MatchLog MatchLog { get; protected set; }
 
         [JsonConstructor]
         protected NormalLadderTournament() : base() { }
@@ -58,10 +58,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override bool CanDelete() => !IsRunning;
 
-        public override bool CanAcceptNewTeams()
-        {
-            return true;
-        }
+        public override bool CanAcceptNewTeams() => true;
 
         public override void AdjustRanks()
         {
@@ -101,6 +98,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
                 }
             }
             return challengeTeams;
+        }
+
+        public bool IsChallengedTeamWithinRanks(Team challenger, Team challenged)
+        {
+            return (challenger.Rank - challenged.Rank) is >= 1 and <= 2;
         }
     }
 }

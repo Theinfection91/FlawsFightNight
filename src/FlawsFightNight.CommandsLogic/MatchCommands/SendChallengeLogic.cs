@@ -44,18 +44,26 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             Team? challengerTeam = _teamManager.GetTeamByName(challengerTeamName);
             Team? challengedTeam = _teamManager.GetTeamByName(challengedTeamName);
 
-            // Grab tournament from challenger team
-            var tournament = _tournamentManager.GetTournamentFromTeamName(challengerTeam.Name);
-            if (tournament == null)
+            // Check if invoker is on challenger team (or guild admin)
+            if (context.User is not SocketGuildUser guildUser)
             {
-                // Shouldn't be possible, but just in case
-                return _embedManager.ErrorEmbed(Name, "Tournament is null. Contact support.");
+                return _embedManager.ErrorEmbed(Name, "Only members of the guild may use this command.");
+            }
+            // Store admin status for embed message use
+            bool isGuildAdmin = guildUser.GuildPermissions.Administrator;
+            // Check if user is on the challenger team
+            if (!_teamManager.IsDiscordIdOnTeam(challengerTeam, context.User.Id) && !isGuildAdmin)
+            {
+                return _embedManager.ErrorEmbed(Name, $"You are not a member of the team '{challengerTeam.Name}', or an admin on this server, and cannot issue a challenge on their behalf.");
             }
 
+            // Grab tournament from challenger team
+            var tournament = _tournamentManager.GetTournamentFromTeamName(challengerTeam.Name);
+
             // Ensure tournament is a ladder type
-            if (tournament is not NormalLadderTournament)
+            if (!tournament.Type.Equals(TournamentType.NormalLadder) && !tournament.Type.Equals(TournamentType.DSRLadder))
             {
-                return _embedManager.ErrorEmbed(Name, $"Challenges can only be sent in Ladder type tournaments. The tournament '{tournament.Name}' is of type '{tournament.Type}'.");
+                return _embedManager.ErrorEmbed(Name, $"Challenges can only be sent in Normal or DSR Ladder type tournaments. The tournament '{tournament.Name}' is of type '{tournament.Type}'.");
             }
 
             // Ensure tournament is running
@@ -76,35 +84,30 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 return _embedManager.ErrorEmbed(Name, "A team cannot challenge itself. Please choose a different team to challenge.");
             }
 
-            // Challenger cannot be higher rank than challenged team
-            if (challengerTeam.Rank < challengedTeam.Rank)
+            if (tournament is NormalLadderTournament ladderTournament)
             {
-                return _embedManager.ErrorEmbed(Name, $"The challenger team (#{challengerTeam.Rank}){challengerTeam.Name} is ranked higher than the challenged team (#{challengedTeam.Rank}){challengedTeam.Name} - In a ladder tournament, a team may only challenge another team that is ranked higher than itself.");
+                // Challenger cannot be higher rank than challenged team
+                if (challengerTeam.Rank < challengedTeam.Rank)
+                {
+                    return _embedManager.ErrorEmbed(Name, $"The challenger team (#{challengerTeam.Rank}){challengerTeam.Name} is ranked higher than the challenged team (#{challengedTeam.Rank}){challengedTeam.Name} - In a ladder tournament, a team may only challenge another team that is ranked higher than itself.");
+                }
+
+                // Ensure challenged team is only 2 ranks above challenger team at most
+                if (!ladderTournament.IsChallengedTeamWithinRanks(challengerTeam, challengedTeam))
+                {
+                    return _embedManager.ErrorEmbed(Name, $"The challenger team (#{challengerTeam.Rank}){challengerTeam.Name} can not challenge (#{challengedTeam.Rank}){challengedTeam.Name} - Teams may only challenge up to 2 ranks above them.");
+                }
             }
 
-            // Ensure challenged team is only 2 ranks above challenger team at most
-            if (!_matchManager.IsChallengedTeamWithinRanks(challengerTeam, challengedTeam))
+            if (tournament is DSRLadderTournament)
             {
-                return _embedManager.ErrorEmbed(Name, $"The challenger team (#{challengerTeam.Rank}){challengerTeam.Name} can not challenge (#{challengedTeam.Rank}){challengedTeam.Name} - Teams may only challenge up to 2 ranks above them.");
-            }
-
-            // Check if invoker is on challenger team (or guild admin)
-            if (context.User is not SocketGuildUser guildUser)
-            {
-                return _embedManager.ErrorEmbed(Name, "Only members of the guild may use this command.");
-            }
-            // Store admin status for embed message use
-            bool isGuildAdmin = guildUser.GuildPermissions.Administrator;
-            // Check if user is on the challenger team
-            if (!_teamManager.IsDiscordIdOnTeam(challengerTeam, context.User.Id) && !isGuildAdmin)
-            {
-                return _embedManager.ErrorEmbed(Name, $"You are not a member of the team '{challengerTeam.Name}', or an admin on this server, and cannot issue a challenge on their behalf.");
+                // TODO: Add any DSR specific challenge rules here if needed, so far it uses same systems as Normal Ladder aside from the above rank checks
             }
 
             // Check each teams challenge status, ensure neither are already in a challenge situation (Challenge sent or received and awaiting to be played)
             if (!challengerTeam.IsChallengeable)
             {
-                var existingChallenge = _matchManager.GetOpenMatchByTeamNameLadder(tournament, challengerTeam.Name);
+                var existingChallenge = tournament.MatchLog.GetMatchByTeamName(challengerTeam.Name);
                 if (challengerTeam.Name.Equals(existingChallenge.Challenge.Challenger))
                 {
                     return _embedManager.ErrorEmbed(Name, $"The team '{challengerTeam.Name}' has already sent a challenge to '{existingChallenge.Challenge.Challenged}' and is awaiting the match to be played.");
@@ -116,7 +119,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
             if (!challengedTeam.IsChallengeable)
             {
-                var existingChallenge = _matchManager.GetOpenMatchByTeamNameLadder(tournament, challengedTeam.Name);
+                var existingChallenge = tournament.MatchLog.GetMatchByTeamName(challengedTeam.Name);
                 if (challengedTeam.Name.Equals(existingChallenge.Challenge.Challenger))
                 {
                     return _embedManager.ErrorEmbed(Name, $"The team '{challengedTeam.Name}' has already sent a challenge to '{existingChallenge.Challenge.Challenged}' and is awaiting the match to be played.");
@@ -128,7 +131,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // Create new challenge match
-            var newChallengeMatch = _matchManager.CreateLadderMatchWithChallenge(challengerTeam, challengedTeam);
+            var newChallengeMatch = _matchManager.CreateChallengeMatch(challengerTeam, challengedTeam, challengerTeam.Rating, challengedTeam.Rating);
 
             // Add the new match to the tournament
             tournament.MatchLog.AddMatch(newChallengeMatch);

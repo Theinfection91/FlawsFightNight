@@ -28,7 +28,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
         public Embed DeleteTournamentProcess(string tournamentId)
         {
             // Grab tournament, modal should have ensured it exists
-            var tournament = _tournamentManager.GetNewTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
             if (!tournament.CanDelete())
             {

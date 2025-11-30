@@ -35,7 +35,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // Grab the tournament
-            var tournament = _tournamentManager.GetNewTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetTournamentById(tournamentId);
             if (tournament == null)
             {
                 return _embedManager.ErrorEmbed(Name, "An error occurred while retrieving the tournament. Contact support.");

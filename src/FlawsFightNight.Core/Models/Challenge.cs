@@ -10,8 +10,10 @@ namespace FlawsFightNight.Core.Models
     {
         public string Challenger { get; set; }
         public int ChallengerRank { get; set; }
+        public int ChallengerRating { get; set; }
         public string Challenged { get; set; }
         public int ChallengedRank { get; set; }
+        public int ChallengedRating { get; set; }
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 
         public Challenge(string challenger, int challengerRank, string challenged, int challengedRank)

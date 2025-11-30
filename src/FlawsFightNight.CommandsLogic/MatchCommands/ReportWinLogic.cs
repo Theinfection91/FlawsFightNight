@@ -52,7 +52,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // Grab the tournament associated with the match
-            TournamentBase tournament = _tournamentManager.GetTournamentFromTeamName(winningTeamName);
+            Tournament tournament = _tournamentManager.GetTournamentFromTeamName(winningTeamName);
 
             if (!tournament.IsRunning)
             {
@@ -123,6 +123,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Convert match to post-match
             tournament.MatchLog.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
 
+            // Handle normal ladder tournament challenge procedures
             if (tournament is NormalLadderTournament ladderTournament)
             {
                 if (_matchManager.IsWinningTeamChallenger(match, winningTeam))
@@ -136,11 +137,25 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                             team.Rank++;
                         }
                     }
-                    //ladderTournament.ReassignRanks();
                 }
-                winningTeam.IsChallengeable = true;
-                losingTeam.IsChallengeable = true;
             }
+
+            // Handle DSR Ladder tournament procedures
+            if (tournament is DSRLadderTournament dsrLadderTournament)
+            {
+                // Run the calculator and output rating changes
+                dsrLadderTournament.HandleTeamRatingChange(winningTeam, losingTeam, winningTeamScore, losingTeamScore, out int winningTeamRatingChange, out int losingTeamRatingChange);
+
+                // Grab the post match and record the rating change of teams
+                (tournament.MatchLog as DSRLadderMatchLog)?.RecordRatingChangeToPostMatch(matchId, winningTeamRatingChange, losingTeamRatingChange);
+
+                // Output rating change in console for now
+                //Console.WriteLine($"[DSR Rating Change] {winningTeam.Name} rating change: {winningTeamRatingChange}, new rating: {winningTeam.Rating}");
+                //Console.WriteLine($"[DSR Rating Change] {losingTeam.Name} rating change: {losingTeamRatingChange}, new rating: {losingTeam.Rating}");
+            }
+
+            winningTeam.IsChallengeable = true;
+            losingTeam.IsChallengeable = true;
 
             // Adjust ranks
             tournament.AdjustRanks();

@@ -31,7 +31,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            var tournament = _tournamentManager.GetNewTournamentById(tournamentId);
+            var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
             // Check if tournament is ITeamLocking type
             if (tournament is not ITeamLocking lockableTournament)
