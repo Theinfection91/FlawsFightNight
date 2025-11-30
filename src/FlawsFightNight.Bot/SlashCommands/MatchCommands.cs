@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using FlawsFightNight.Bot.Autocomplete;
+using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.MatchCommands;
 using FlawsFightNight.Bot.PreconditionAttributes;
 using System;
@@ -46,6 +47,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
         }
 
+        [RequireGuildAdmin]
         [SlashCommand("edit", "Edit a post-match's details in RR and Elimination.")]
         [RequireGuildAdmin]
         public async Task EditMatchAsync(

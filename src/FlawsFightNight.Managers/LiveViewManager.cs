@@ -16,7 +16,6 @@ namespace FlawsFightNight.Managers
         private EmbedManager _embedManager;
         private GitBackupManager _gitBackupManager;
 
-
         // Tasks
         private Task _watchdogTask;
         private Task _matchesLiveViewTask;
@@ -59,7 +58,7 @@ namespace FlawsFightNight.Managers
             Console.WriteLine($"{DateTime.Now} [LiveView - Watchdog] Starting watchdog task...");
             _watchdogTask = Task.Run(async () =>
             {
-                while (true) // watchdog runs until process exit
+                while (true)
                 {
                     try
                     {
@@ -69,10 +68,10 @@ namespace FlawsFightNight.Managers
                         bool standingsDead = _standingsLiveViewTask?.IsFaulted ?? true;
                         bool teamsDead = _teamsLiveViewTask?.IsFaulted ?? true;
 
-                        // Also check if they haven't updated in >1 min
-                        bool matchesHung = (DateTime.UtcNow - _lastMatchesUpdate) > TimeSpan.FromMinutes(3);
-                        bool standingsHung = (DateTime.UtcNow - _lastStandingsUpdate) > TimeSpan.FromMinutes(3);
-                        bool teamsHung = (DateTime.UtcNow - _lastTeamsUpdate) > TimeSpan.FromMinutes(3);
+                        // Also check if they haven't updated in >1.5 min
+                        bool matchesHung = (DateTime.UtcNow - _lastMatchesUpdate) > TimeSpan.FromMinutes(1.5);
+                        bool standingsHung = (DateTime.UtcNow - _lastStandingsUpdate) > TimeSpan.FromMinutes(1.5);
+                        bool teamsHung = (DateTime.UtcNow - _lastTeamsUpdate) > TimeSpan.FromMinutes(1.5);
 
                         if (matchesDead || matchesHung)
                         {
@@ -102,7 +101,6 @@ namespace FlawsFightNight.Managers
         #region Matches LiveView
         public void StartMatchesLiveViewTask()
         {
-            //Task.Run(() => RunMatchesUpdateTaskAsync());
             _matchesLiveViewTask = Task.Run(() => RunMatchesUpdateTaskAsync(_matchesCts.Token));
         }
 
@@ -112,7 +110,7 @@ namespace FlawsFightNight.Managers
             {
                 while (!token.IsCancellationRequested)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(30), token);
+                    await Task.Delay(TimeSpan.FromSeconds(20), token);
                     await SendMatchesToChannelAsync();
                 }
             }
@@ -125,95 +123,50 @@ namespace FlawsFightNight.Managers
 
         private async Task SendMatchesToChannelAsync()
         {
-            //Console.WriteLine($"{DateTime.Now} - Sending match updates to channel...");
+            await _matchesSemaphore.WaitAsync();
             try
             {
-                await _matchesSemaphore.WaitAsync(); // Ensure only one update at a time
-
-                //if (_testMode && Random.Shared.Next(0, 5) == 0)
-                //{
-                //    throw new Exception("TestMode: Randomly simulated failure.");
-                //}
-
                 if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
                 {
-                    //Console.WriteLine("No tournaments found. No need to post to matches channels.");
                     _lastMatchesUpdate = DateTime.UtcNow;
                     return;
                 }
 
                 foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
                 {
-                    if (tournament == null)
-                    {
-                        //Console.WriteLine("Tournament is null. Skipping.");
+                    if (tournament == null || tournament.MatchesChannelId == 0)
                         continue;
-                    }
 
-                    if (tournament.MatchesChannelId == 0)
-                    {
-                        //Console.WriteLine($"Tournament {tournament.Name} has no Matches Channel ID set. Skipping.");
-                        _lastMatchesUpdate = DateTime.UtcNow;
-                        continue;
-                    }
-
-                    // Get the channel from the client
                     var channel = _client.GetChannel(tournament.MatchesChannelId) as IMessageChannel;
-
                     if (channel == null)
                     {
-                        //Console.WriteLine($"Channel with ID {tournament.MatchesChannelId} not found for tournament {tournament.Name}. Skipping.");
                         tournament.MatchesChannelId = 0;
                         await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
                         await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                         continue;
                     }
 
-                    // Get the embed for the matches live view
-                    var matchesEmbed = _embedManager.MatchesLiveViewResolver(tournament);
+                    var embed = _embedManager.MatchesLiveViewResolver(tournament);
 
-                    ulong messageId = tournament.MatchesMessageId;
-                    if (messageId != 0)
+                    // Try to update an existing message
+                    if (tournament.MatchesMessageId != 0)
                     {
-                        // Try to get the existing message
-                        var message = await channel.GetMessageAsync(messageId) as IUserMessage;
-                        if (message != null)
+                        var existing = await channel.GetMessageAsync(tournament.MatchesMessageId) as IUserMessage;
+                        if (existing != null)
                         {
-                            // Edit the existing message with the new embed
-                            await message.ModifyAsync(msg => msg.Embed = matchesEmbed);
-
-                            // Update the last update timestamp
+                            await existing.ModifyAsync(m => m.Embed = embed);
                             _lastMatchesUpdate = DateTime.UtcNow;
-
-                            //Console.WriteLine($"Updated matches message for tournament {tournament.Name} in channel {channel.Name}.");
-                        }
-                        else
-                        {
-                            // If the message doesn't exist, send a new one
-                            var newMessage = await channel.SendMessageAsync(embed: matchesEmbed);
-                            tournament.MatchesMessageId = newMessage.Id;
-
-                            // Update the last update timestamp
-                            _lastMatchesUpdate = DateTime.UtcNow;
-
-                            //Console.WriteLine($"Sent new matches message for tournament {tournament.Name} in channel {channel.Name}.");
-                            await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
-                            await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
+                            continue;
                         }
                     }
-                    else
-                    {
-                        // If no message ID is set, send a new message
-                        var newMessage = await channel.SendMessageAsync(embed: matchesEmbed);
-                        tournament.MatchesMessageId = newMessage.Id;
 
-                        // Update the last update timestamp
-                        _lastMatchesUpdate = DateTime.UtcNow;
+                    // Existing message missing OR no message ID set → send a new message
+                    var newMessage = await channel.SendMessageAsync(embed: embed);
+                    tournament.MatchesMessageId = newMessage.Id;
+                    _lastMatchesUpdate = DateTime.UtcNow;
 
-                        //Console.WriteLine($"Sent new matches message for tournament {tournament.Name} in channel {channel.Name}.");
-                        await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
-                        await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
-                    }
+                    await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
+                    await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                 }
             }
             catch (Exception ex)
@@ -230,7 +183,6 @@ namespace FlawsFightNight.Managers
         #region Standings LiveView
         public void StartStandingsLiveViewTask()
         {
-            //Task.Run(() => RunStandingsUpdateTaskAsync());
             _standingsLiveViewTask = Task.Run(() => RunStandingsUpdateTaskAsync(_standingsCts.Token));
         }
 
@@ -240,7 +192,7 @@ namespace FlawsFightNight.Managers
             {
                 while (!token.IsCancellationRequested)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(25), token);
+                    await Task.Delay(TimeSpan.FromSeconds(15), token);
                     await SendStandingsToChannelAsync();
                 }
             }
@@ -254,10 +206,9 @@ namespace FlawsFightNight.Managers
 
         private async Task SendStandingsToChannelAsync()
         {
+            await _standingsSemaphore.WaitAsync();
             try
             {
-                await _standingsSemaphore.WaitAsync();
-
                 if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
                 {
                     _lastStandingsUpdate = DateTime.UtcNow;
@@ -267,10 +218,7 @@ namespace FlawsFightNight.Managers
                 foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
                 {
                     if (tournament == null || tournament.StandingsChannelId == 0)
-                    {
-                        _lastStandingsUpdate = DateTime.UtcNow;
                         continue;
-                    }
 
                     var channel = _client.GetChannel(tournament.StandingsChannelId) as IMessageChannel;
                     if (channel == null)
@@ -281,27 +229,29 @@ namespace FlawsFightNight.Managers
                         continue;
                     }
 
-                    // build the standings embed depending on type
-                    Embed standingsEmbed = _embedManager.StandingsLiveViewResolver(tournament);
+                    var embed = tournament.Type switch
+                    {
+                        TournamentType.Ladder => _embedManager.LadderStandingsLiveView(tournament),
+                        TournamentType.RoundRobin => _embedManager.RoundRobinStandingsLiveView(tournament),
+                        _ => null
+                    };
 
-                    if (standingsEmbed == null)
-                        continue; // unsupported type, skip
+                    if (embed == null)
+                        continue;
 
-                    // send or update standings message
                     if (tournament.StandingsMessageId != 0)
                     {
-                        var message = await channel.GetMessageAsync(tournament.StandingsMessageId) as IUserMessage;
-                        if (message != null)
+                        var existing = await channel.GetMessageAsync(tournament.StandingsMessageId) as IUserMessage;
+                        if (existing != null)
                         {
-                            await message.ModifyAsync(msg => msg.Embed = standingsEmbed);
+                            await existing.ModifyAsync(m => m.Embed = embed);
                             _lastStandingsUpdate = DateTime.UtcNow;
                             continue;
                         }
                     }
 
-                    // send new message if no valid one exists
-                    var newMessage = await channel.SendMessageAsync(embed: standingsEmbed);
-                    tournament.StandingsMessageId = newMessage.Id;
+                    var newMsg = await channel.SendMessageAsync(embed: embed);
+                    tournament.StandingsMessageId = newMsg.Id;
                     _lastStandingsUpdate = DateTime.UtcNow;
 
                     await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
@@ -317,13 +267,11 @@ namespace FlawsFightNight.Managers
                 _standingsSemaphore.Release();
             }
         }
-
         #endregion
 
         #region Teams LiveView
         public void StartTeamsLiveViewTask()
         {
-            //Task.Run(() => RunTeamsUpdateTaskAsync());
             _teamsLiveViewTask = Task.Run(() => RunTeamsUpdateTaskAsync(_teamsCts.Token));
         }
 
@@ -334,7 +282,7 @@ namespace FlawsFightNight.Managers
                 while (!token.IsCancellationRequested)
                 {
                     //Console.WriteLine($"{DateTime.Now} [TeamsLiveViewTask] Running teams live view update...");
-                    await Task.Delay(TimeSpan.FromSeconds(35), token);
+                    await Task.Delay(TimeSpan.FromSeconds(25), token);
                     await SendTeamsToChannelAsync();
                 }
             }
@@ -344,87 +292,50 @@ namespace FlawsFightNight.Managers
                 Console.WriteLine($"{DateTime.Now} [TeamsLiveViewTask] Exception: {ex}");
             }
         }
-
         private async Task SendTeamsToChannelAsync()
         {
+            await _teamsSemaphore.WaitAsync();
             try
             {
-                await _teamsSemaphore.WaitAsync();
-
                 if (_dataManager.TournamentsDatabaseFile.Tournaments.Count == 0)
                 {
-                    //Console.WriteLine("No tournaments found. No need to post to teams channels.");
                     _lastTeamsUpdate = DateTime.UtcNow;
                     return;
                 }
 
                 foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
                 {
-                    if (tournament == null)
-                    {
-                        //Console.WriteLine("Tournament is null. Skipping.");
+                    if (tournament == null || tournament.TeamsChannelId == 0)
                         continue;
-                    }
-                    if (tournament.TeamsChannelId == 0)
-                    {
-                        //Console.WriteLine($"Tournament {tournament.Name} has no Teams Channel ID set. Skipping.");
-                        _lastTeamsUpdate = DateTime.UtcNow;
-                        continue;
-                    }
-                    // Get the channel from the client
+
                     var channel = _client.GetChannel(tournament.TeamsChannelId) as IMessageChannel;
                     if (channel == null)
                     {
-                        //Console.WriteLine($"Channel with ID {tournament.TeamsChannelId} not found for tournament {tournament.Name}. Skipping.");
                         tournament.TeamsChannelId = 0;
                         await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
                         await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                         continue;
                     }
-                    // Get the embed for the teams live view
-                    var teamsEmbed = _embedManager.TeamsLiveView(tournament);
-                    ulong messageId = tournament.TeamsMessageId;
-                    if (messageId != 0)
+
+                    var embed = _embedManager.TeamsLiveView(tournament);
+
+                    if (tournament.TeamsMessageId != 0)
                     {
-                        // Try to get the existing message
-                        var message = await channel.GetMessageAsync(messageId) as IUserMessage;
-                        if (message != null)
+                        var existing = await channel.GetMessageAsync(tournament.TeamsMessageId) as IUserMessage;
+                        if (existing != null)
                         {
-                            // Edit the existing message with the new embed
-                            await message.ModifyAsync(msg => msg.Embed = teamsEmbed);
-
-                            // Update the last update timestamp
+                            await existing.ModifyAsync(m => m.Embed = embed);
                             _lastTeamsUpdate = DateTime.UtcNow;
-
-                            //Console.WriteLine($"Updated teams message for tournament {tournament.Name} in channel {channel.Name}.");
-                        }
-                        else
-                        {
-                            // If the message doesn't exist, send a new one
-                            var newMessage = await channel.SendMessageAsync(embed: teamsEmbed);
-                            tournament.TeamsMessageId = newMessage.Id;
-
-                            // Update the last update timestamp
-                            _lastTeamsUpdate = DateTime.UtcNow;
-
-                            //Console.WriteLine($"Sent new teams message for tournament {tournament.Name} in channel {channel.Name}.");
-                            await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
-                            await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
+                            continue;
                         }
                     }
-                    else
-                    {
-                        // If no message ID is set, send a new message
-                        var newMessage = await channel.SendMessageAsync(embed: teamsEmbed);
-                        tournament.TeamsMessageId = newMessage.Id;
 
-                        // Update the last update timestamp
-                        _lastTeamsUpdate = DateTime.UtcNow;
+                    var newMsg = await channel.SendMessageAsync(embed: embed);
+                    tournament.TeamsMessageId = newMsg.Id;
+                    _lastTeamsUpdate = DateTime.UtcNow;
 
-                        //Console.WriteLine($"Sent new teams message for tournament {tournament.Name} in channel {channel.Name}.");
-                        await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
-                        await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
-                    }
+                    await Task.Run(() => _dataManager.SaveAndReloadTournamentsDatabase());
+                    await Task.Run(() => _gitBackupManager.CopyAndBackupFilesToGit());
                 }
             }
             catch (Exception ex)
@@ -445,42 +356,46 @@ namespace FlawsFightNight.Managers
             {
                 case LiveViewChannelType.Matches:
                     _matchesCts.Cancel();
-                    try
-                    {
-                        if (_matchesLiveViewTask != null)
-                            await _matchesLiveViewTask;
-                    }
-                    catch (TaskCanceledException) { } // expected on cancel
+
+                    var oldMatchesTask = _matchesLiveViewTask;
+
+                    // Wait max 2 seconds for it to finish
+                    var timeoutMatchesTask = Task.Delay(2000);
+                    await Task.WhenAny(oldMatchesTask, timeoutMatchesTask);
+
                     _matchesCts.Dispose();
                     _matchesCts = new CancellationTokenSource();
+
                     StartMatchesLiveViewTask();
                     break;
                 case LiveViewChannelType.Standings:
                     _standingsCts.Cancel();
-                    try
-                    {
-                        if (_standingsLiveViewTask != null)
-                            await _standingsLiveViewTask;
-                    }
-                    catch (TaskCanceledException) { } // expected on cancel
+                   
+                    var oldStandingsTask = _standingsLiveViewTask;
+
+                    // Wait max 2 seconds for it to finish
+                    var timeoutStandingsTask = Task.Delay(2000);
+                    await Task.WhenAny(oldStandingsTask, timeoutStandingsTask);
+
                     _standingsCts.Dispose();
                     _standingsCts = new CancellationTokenSource();
+
                     StartStandingsLiveViewTask();
                     break;
                 case LiveViewChannelType.Teams:
                     _teamsCts.Cancel();
-                    try
-                    {
-                        if (_teamsLiveViewTask != null)
-                            await _teamsLiveViewTask;
-                    }
-                    catch (TaskCanceledException) { } // expected on cancel
+
+                    var oldTeamsTask = _teamsLiveViewTask;
+
+                    // Wait max 2 seconds for it to finish
+                    var timeoutTeamsTask = Task.Delay(2000);
+                    await Task.WhenAny(oldTeamsTask, timeoutTeamsTask);
+
+                    // At this point we consider the old task dead
                     _teamsCts.Dispose();
                     _teamsCts = new CancellationTokenSource();
+
                     StartTeamsLiveViewTask();
-                    break;
-                default:
-                    Console.WriteLine($"{DateTime.Now} [RestartSpecificChannelAsync] Unknown LiveViewChannelType: {liveViewChannelType}");
                     break;
             }
         }
