@@ -91,6 +91,21 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.NormalLadderEndTournamentSuccess(tournament);
             }
 
+            // Handle DSR Tournament
+            if (tournament is DSRLadderTournament dsrTournament)
+            {
+                // End the tournament, DSR tournaments can be ended as long as they are running
+                dsrTournament.End();
+
+                // Save the updated tournament state
+                _tournamentManager.SaveAndReloadTournamentsDatabase();
+
+                // Backup to git repo
+                _gitBackupManager.CopyAndBackupFilesToGit();
+
+                return _embedManager.DSRLadderEndTournamentSuccess(tournament);
+            }
+
             return _embedManager.ErrorEmbed(Name, "An error occurred while trying to end the tournament. Please try again later.");
         }
     }
