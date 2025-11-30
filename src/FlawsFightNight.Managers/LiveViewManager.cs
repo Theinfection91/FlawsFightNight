@@ -231,8 +231,9 @@ namespace FlawsFightNight.Managers
 
                     var embed = tournament.Type switch
                     {
-                        TournamentType.Ladder => _embedManager.LadderStandingsLiveView(tournament),
-                        TournamentType.RoundRobin => _embedManager.RoundRobinStandingsLiveView(tournament),
+                        TournamentType.NormalLadder => _embedManager.LadderStandingsLiveView(tournament),
+                        TournamentType.NormalRoundRobin => _embedManager.RoundRobinStandingsLiveView(tournament),
+                        TournamentType.OpenRoundRobin => _embedManager.RoundRobinStandingsLiveView(tournament),
                         _ => null
                     };
 
