@@ -75,13 +75,45 @@ namespace FlawsFightNight.Core.Models.Tournaments
             return !IsRunning && !IsTeamsLocked;
         }
 
-        public bool CanLockTeams()
+        public bool CanLockTeams(out ErrorReason errorReason)
         {
+            if (IsRunning)
+            {
+                errorReason = new ErrorReason("Tournament is currently running.");
+                return false;
+            }
+            if (IsTeamsLocked)
+            {
+                errorReason = new ErrorReason("Teams are already locked.");
+                return false;
+            }
+            if (Teams.Count < 3)
+            {
+                errorReason = new ErrorReason("At least 3 teams are required to lock teams.");
+                return false;
+            }
+            errorReason = null;
             return !IsRunning && !IsTeamsLocked && CanTeamsBeLocked;
         }
 
-        public bool CanUnlockTeams()
+        public bool CanUnlockTeams(out ErrorReason errorReason)
         {
+            if (IsRunning)
+            {
+                errorReason = new ErrorReason("Tournament is currently running.");
+                return false;
+            }
+            if (!IsTeamsLocked)
+            {
+                errorReason = new ErrorReason("Teams are not currently locked.");
+                return false;
+            }
+            //if (!CanTeamsBeUnlocked)
+            //{
+            //    errorReason = new ErrorReason("Teams cannot be unlocked at this time.");
+            //    return false;
+            //}
+            errorReason = null;
             return !IsRunning && IsTeamsLocked && CanTeamsBeUnlocked;
         }
 

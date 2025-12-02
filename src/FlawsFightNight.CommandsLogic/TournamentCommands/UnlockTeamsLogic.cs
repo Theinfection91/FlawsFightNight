@@ -37,9 +37,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' does not support unlocking teams.");
             }
 
-            if (!unlockableTournament.CanUnlockTeams())
+            if (!unlockableTournament.CanUnlockTeams(out var errorReason))
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be unlocked at this time. Check if it is running or if teams are already unlocked.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be unlocked at this time: {errorReason.Info}");
             }
 
             // Unlock teams in tournament
