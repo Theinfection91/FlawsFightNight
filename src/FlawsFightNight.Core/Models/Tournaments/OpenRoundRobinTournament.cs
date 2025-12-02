@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Helpers;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.MatchLogs;
 using FlawsFightNight.Core.Models.TieBreakers;
@@ -79,17 +80,17 @@ namespace FlawsFightNight.Core.Models.Tournaments
         {
             if (IsRunning)
             {
-                errorReason = new ErrorReason("Tournament is currently running.");
+                errorReason = ErrorReasonGenerator.GenerateIsRunningError();
                 return false;
             }
             if (IsTeamsLocked)
             {
-                errorReason = new ErrorReason("Teams are already locked.");
+                errorReason = ErrorReasonGenerator.GenerateTeamsAlreadyLockedError();
                 return false;
             }
             if (Teams.Count < 3)
             {
-                errorReason = new ErrorReason("At least 3 teams are required to lock teams.");
+                errorReason = ErrorReasonGenerator.GenerateInsufficientTeamsToLockError();
                 return false;
             }
             errorReason = null;
