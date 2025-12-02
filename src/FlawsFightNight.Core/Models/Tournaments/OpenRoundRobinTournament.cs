@@ -101,12 +101,12 @@ namespace FlawsFightNight.Core.Models.Tournaments
         {
             if (IsRunning)
             {
-                errorReason = new ErrorReason("Tournament is currently running.");
+                errorReason = ErrorReasonGenerator.GenerateIsRunningError();
                 return false;
             }
             if (!IsTeamsLocked)
             {
-                errorReason = new ErrorReason("Teams are not currently locked.");
+                errorReason = ErrorReasonGenerator.GenerateTeamsAlreadyUnlockedError();
                 return false;
             }
             //if (!CanTeamsBeUnlocked)
