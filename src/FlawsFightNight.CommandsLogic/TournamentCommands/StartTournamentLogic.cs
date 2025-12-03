@@ -31,12 +31,6 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Grab tournament, modal should have ensured it exists
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
-            // Check if the tournament is already running
-            if (tournament.IsRunning)
-            {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is already running.");
-            }
-
             // Check if the tournament can be started
             if (!tournament.CanStart(out var errorReason))
             {

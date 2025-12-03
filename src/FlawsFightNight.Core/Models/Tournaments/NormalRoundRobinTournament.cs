@@ -38,19 +38,14 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override bool CanStart(out ErrorReason errorReason)
         {
-            if (IsTeamsLocked == false)
-            {
-                errorReason = ErrorReasonGenerator.GenerateTeamsNotLockedError();
-                return false;
-            }
             if (IsRunning)
             {
                 errorReason = ErrorReasonGenerator.GenerateIsRunningError();
                 return false;
             }
-            if (Teams.Count < 3)
+            if (IsTeamsLocked == false)
             {
-                errorReason = ErrorReasonGenerator.GenerateInsufficientTeamsError();
+                errorReason = ErrorReasonGenerator.GenerateTeamsNotLockedError();
                 return false;
             }
             errorReason = null;
@@ -68,7 +63,12 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public override bool CanEnd(out ErrorReason errorReason)
         {
             errorReason = null;
-
+            // A Normal Round Robin tournament cannot end if it is not running
+            if (!IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsNotRunningError();
+                return false;
+            }
             // A Normal Round Robin tournament ends when all rounds are complete and locked in
             if (CurrentRound < TotalRounds)
             {

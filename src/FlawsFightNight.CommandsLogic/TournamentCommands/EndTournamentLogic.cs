@@ -31,12 +31,6 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Grab tournament, modal should have ensured it exists
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
-            // Check if tournament is already running
-            if (!tournament.IsRunning)
-            {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
-            }
-
             if (!tournament.CanEnd(out var errorReason))
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be ended at this time: {errorReason.Info}");
