@@ -40,9 +40,10 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // Check if teams can be locked
-            if (!lockableTournament.CanLockTeams())
+            if (!lockableTournament.CanLockTeams(out var errorReason))
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be locked at this time. Please ensure it has enough teams and is not running.");
+                // TODO Implement new ErrorReason object with embed for better error handling
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be locked at this time: {errorReason.Info}");
             }
 
             // Lock the teams in the tournament

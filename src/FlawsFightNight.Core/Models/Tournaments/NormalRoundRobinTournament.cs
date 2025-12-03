@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Helpers;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.MatchLogs;
 using FlawsFightNight.Core.Models.TieBreakers;
@@ -35,9 +36,20 @@ namespace FlawsFightNight.Core.Models.Tournaments
             MatchLog ??= new NormalRoundRobinMatchLog();
         }
 
-        public override bool CanStart()
+        public override bool CanStart(out ErrorReason errorReason)
         {
-            return IsTeamsLocked == true && IsRunning == false && Teams.Count >= 3;
+            if (IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsRunningError();
+                return false;
+            }
+            if (IsTeamsLocked == false)
+            {
+                errorReason = ErrorReasonGenerator.GenerateTeamsNotLockedError();
+                return false;
+            }
+            errorReason = null;
+            return true;
         }
 
         public override void Start()
@@ -48,11 +60,37 @@ namespace FlawsFightNight.Core.Models.Tournaments
             CanTeamsBeUnlocked = false;
         }
 
-        public override bool CanEnd()
+        public override bool CanEnd(out ErrorReason errorReason)
         {
+            errorReason = null;
+            // A Normal Round Robin tournament cannot end if it is not running
+            if (!IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsNotRunningError();
+                return false;
+            }
             // A Normal Round Robin tournament ends when all rounds are complete and locked in
-            return CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
+            if (CurrentRound < TotalRounds)
+            {
+                errorReason = ErrorReasonGenerator.GenerateSpecific("Not all rounds are complete.");
+                return false;
+            }
+            if (!IsRoundComplete)
+            {
+                errorReason = ErrorReasonGenerator.GenerateSpecific("Current round is not complete.");
+                return false;
+            }
+            if (!IsRoundLockedIn)
+            {
+                errorReason = ErrorReasonGenerator.GenerateSpecific("Current round is not locked in.");
+                return false;
+            }
+            return true;
         }
+        //{
+        //    // A Normal Round Robin tournament ends when all rounds are complete and locked in
+        //    return CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
+        //}
 
         public override void End()
         {
@@ -82,13 +120,45 @@ namespace FlawsFightNight.Core.Models.Tournaments
             return !IsRunning && !IsTeamsLocked;
         }
 
-        public bool CanLockTeams()
+        public bool CanLockTeams(out ErrorReason errorReason)
         {
+            if (IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsRunningError();
+                return false;
+            }
+            if (IsTeamsLocked)
+            {
+                errorReason = ErrorReasonGenerator.GenerateTeamsAlreadyLockedError();
+                return false;
+            }
+            if (Teams.Count < 3)
+            {
+                errorReason = ErrorReasonGenerator.GenerateInsufficientTeamsError();
+                return false;
+            }
+            errorReason = null;
             return !IsRunning && !IsTeamsLocked && CanTeamsBeLocked;
         }
 
-        public bool CanUnlockTeams()
+        public bool CanUnlockTeams(out ErrorReason errorReason)
         {
+            if (IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsRunningError();
+                return false;
+            }
+            if (!IsTeamsLocked)
+            {
+                errorReason = ErrorReasonGenerator.GenerateTeamsAlreadyUnlockedError();
+                return false;
+            }
+            //if (!CanTeamsBeUnlocked)
+            //{
+            //    errorReason = new ErrorReason("Teams cannot be unlocked at this time.");
+            //    return false;
+            //}
+            errorReason = null;
             return !IsRunning && IsTeamsLocked && CanTeamsBeUnlocked;
         }
 

@@ -1,4 +1,5 @@
 ﻿using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Helpers;
 using FlawsFightNight.Core.Models.MatchLogs;
 using Newtonsoft.Json;
 using System;
@@ -47,10 +48,22 @@ namespace FlawsFightNight.Core.Models.Tournaments
             MatchLog ??= new DSRLadderMatchLog();
         }
 
-        public override bool CanStart()
+        public override bool CanStart(out ErrorReason errorReason)
         {
+            // A DSR ladder tournament cannot be started if it is already running
+            if (IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsRunningError();
+                return false;
+            }
             // A DSR ladder tournament requires at least 3 teams to function properly
-            return Teams.Count >= 3;
+            if (Teams.Count < 3)
+            {
+                errorReason = ErrorReasonGenerator.GenerateInsufficientTeamsError();
+                return false;
+            }
+            errorReason = null;
+            return true;
         }
 
         public override void Start()
@@ -65,10 +78,16 @@ namespace FlawsFightNight.Core.Models.Tournaments
             }
         }
 
-        public override bool CanEnd()
+        public override bool CanEnd(out ErrorReason errorReason)
         {
             // If the tournament is running, it can be ended at any time
-            return IsRunning;
+            if (!IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsNotRunningError();
+                return false;
+            }
+            errorReason = null;
+            return true;
         }
 
         public override void End()

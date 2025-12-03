@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FlawsFightNight.Core.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,8 +12,8 @@ namespace FlawsFightNight.Core.Interfaces
         bool IsTeamsLocked { get; set; }
         bool CanTeamsBeLocked { get; set; }
         bool CanTeamsBeUnlocked { get; set; }
-        bool CanLockTeams();
-        bool CanUnlockTeams();
+        bool CanLockTeams(out ErrorReason errorReason);
+        bool CanUnlockTeams(out ErrorReason errorReason);
         void LockTeams();
         void UnlockTeams();
     }

@@ -40,9 +40,9 @@ namespace FlawsFightNight.Core.Models.Tournaments
             TeamSize = teamSize;
         }
 
-        public abstract bool CanStart();
+        public abstract bool CanStart(out ErrorReason errorReason);
         public abstract void Start();
-        public abstract bool CanEnd();
+        public abstract bool CanEnd(out ErrorReason errorReason);
         public abstract void End();
         public abstract string GetFormattedType();
         public abstract bool CanDelete();

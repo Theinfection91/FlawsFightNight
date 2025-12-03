@@ -253,11 +253,11 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Orange)
                 .WithCurrentTimestamp();
 
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEnd())
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEnd(out var errorReason))
             {
                 embed.AddField("🔒 Locked", "Round is locked and ready to advance.", true);
             }
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEnd())
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEnd(out errorReason))
             {
                 embed.AddField("🔒 Locked - Ready to end tournament 🏅", "Round is locked and the tournament is ready to end have the results locked in.", true);
             }
@@ -939,7 +939,8 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🎉 Round Robin Tournament Created")
-                .WithDescription($"A Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nDefault **Tie Breaker Rules** are *'Traditional'* meaning it looks at each of the following steps and if its a tie it checks the next: head to head matches, then point differential between tied teams, then total points scored vs tied teams, then total points overall, then least points against. If all is tied it comes down to a random 'coinflip' to determine the winner.\n\nDefault **Length** is **'Double Round Robin'** meaning every team plays twice.\n\nDefault **Match Type** is *'Normal'*, meaning there will be the classic round structure of having every team play their match before the round can be advanced.\nThere is also the **Match Type** of *Open* where there are no rounds or bye matches, and teams can report any of their matches at any time. This allows more flexibility in scheduling matches, allowing teams to play their two required matches back to back if need be.\n\nTo change any of these settings, use **/tournament setup_round_robin** anytime before starting the tournament. \n\n**After the tournament starts you may not change any of these settings.\nApply setting changes now to be safe.**")
+                //.WithDescription($"A Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nDefault **Tie Breaker Rules** are *'Traditional'* meaning it looks at each of the following steps and if its a tie it checks the next: head to head matches, then point differential between tied teams, then total points scored vs tied teams, then total points overall, then least points against. If all is tied it comes down to a random 'coinflip' to determine the winner.\n\nDefault **Length** is **'Double Round Robin'** meaning every team plays twice.\n\nDefault **Match Type** is *'Normal'*, meaning there will be the classic round structure of having every team play their match before the round can be advanced.\nThere is also the **Match Type** of *Open* where there are no rounds or bye matches, and teams can report any of their matches at any time. This allows more flexibility in scheduling matches, allowing teams to play their two required matches back to back if need be.\n\nTo change any of these settings, use **/tournament setup_round_robin** anytime before starting the tournament. \n\n**After the tournament starts you may not change any of these settings.\nApply setting changes now to be safe.**")
+                .WithDescription("TODO: Fix this Create RR Tournament Embed")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Match Format", tournament.TeamSizeFormat)
                 .WithColor(Color.Green)
