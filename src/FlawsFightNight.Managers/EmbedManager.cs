@@ -253,11 +253,11 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Orange)
                 .WithCurrentTimestamp();
 
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEnd())
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEnd(out var errorReason))
             {
                 embed.AddField("🔒 Locked", "Round is locked and ready to advance.", true);
             }
-            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEnd())
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEnd(out errorReason))
             {
                 embed.AddField("🔒 Locked - Ready to end tournament 🏅", "Round is locked and the tournament is ready to end have the results locked in.", true);
             }

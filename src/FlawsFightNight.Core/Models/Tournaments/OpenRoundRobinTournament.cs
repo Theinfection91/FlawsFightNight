@@ -32,9 +32,26 @@ namespace FlawsFightNight.Core.Models.Tournaments
             MatchLog ??= new OpenRoundRobinMatchLog();
         }
 
-        public override bool CanStart()
+        public override bool CanStart(out ErrorReason errorReason)
         {
-            return IsTeamsLocked == true && IsRunning == false && Teams.Count >= 3;
+            if (IsTeamsLocked == false)
+            {
+                errorReason = ErrorReasonGenerator.GenerateTeamsNotLockedError();
+                return false;
+            }
+            if (IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsRunningError();
+                return false;
+            }
+            if (Teams.Count < 3)
+            {
+                errorReason = ErrorReasonGenerator.GenerateInsufficientTeamsError();
+                return false;
+            }
+            errorReason = null;
+            return true;
+            //return IsTeamsLocked == true && IsRunning == false && Teams.Count >= 3;
         }
 
         public override void Start()
@@ -45,9 +62,20 @@ namespace FlawsFightNight.Core.Models.Tournaments
             CanTeamsBeUnlocked = false;
         }
 
-        public override bool CanEnd()
+        public override bool CanEnd(out ErrorReason errorReason)
         {
-            return MatchLog.GetAllActiveMatches().Count == 0 && IsRunning;
+            errorReason = null;
+            if (!IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsNotRunningError();
+                return false;
+            }
+            if (MatchLog.GetAllActiveMatches().Count > 0)
+            {
+                errorReason = ErrorReasonGenerator.GenerateSpecific("There are active matches.");
+                return false;
+            }
+            return true;
         }
 
         public override void End()
@@ -90,7 +118,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             }
             if (Teams.Count < 3)
             {
-                errorReason = ErrorReasonGenerator.GenerateInsufficientTeamsToLockError();
+                errorReason = ErrorReasonGenerator.GenerateInsufficientTeamsError();
                 return false;
             }
             errorReason = null;

@@ -36,9 +36,25 @@ namespace FlawsFightNight.Core.Models.Tournaments
             MatchLog ??= new NormalRoundRobinMatchLog();
         }
 
-        public override bool CanStart()
+        public override bool CanStart(out ErrorReason errorReason)
         {
-            return IsTeamsLocked == true && IsRunning == false && Teams.Count >= 3;
+            if (IsTeamsLocked == false)
+            {
+                errorReason = ErrorReasonGenerator.GenerateTeamsNotLockedError();
+                return false;
+            }
+            if (IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsRunningError();
+                return false;
+            }
+            if (Teams.Count < 3)
+            {
+                errorReason = ErrorReasonGenerator.GenerateInsufficientTeamsError();
+                return false;
+            }
+            errorReason = null;
+            return true;
         }
 
         public override void Start()
@@ -49,11 +65,32 @@ namespace FlawsFightNight.Core.Models.Tournaments
             CanTeamsBeUnlocked = false;
         }
 
-        public override bool CanEnd()
+        public override bool CanEnd(out ErrorReason errorReason)
         {
+            errorReason = null;
+
             // A Normal Round Robin tournament ends when all rounds are complete and locked in
-            return CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
+            if (CurrentRound < TotalRounds)
+            {
+                errorReason = ErrorReasonGenerator.GenerateSpecific("Not all rounds are complete.");
+                return false;
+            }
+            if (!IsRoundComplete)
+            {
+                errorReason = ErrorReasonGenerator.GenerateSpecific("Current round is not complete.");
+                return false;
+            }
+            if (!IsRoundLockedIn)
+            {
+                errorReason = ErrorReasonGenerator.GenerateSpecific("Current round is not locked in.");
+                return false;
+            }
+            return true;
         }
+        //{
+        //    // A Normal Round Robin tournament ends when all rounds are complete and locked in
+        //    return CurrentRound >= TotalRounds && IsRoundComplete && IsRoundLockedIn;
+        //}
 
         public override void End()
         {
@@ -97,7 +134,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             }
             if (Teams.Count < 3)
             {
-                errorReason = ErrorReasonGenerator.GenerateInsufficientTeamsToLockError();
+                errorReason = ErrorReasonGenerator.GenerateInsufficientTeamsError();
                 return false;
             }
             errorReason = null;

@@ -37,9 +37,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
             }
 
-            if (!tournament.CanEnd())
+            if (!tournament.CanEnd(out var errorReason))
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be ended at this time. Ensure all requirements are met depending on the tournament type.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be ended at this time: {errorReason.Info}");
             }
 
             // Handle Normal and Open Round Robin Tournaments

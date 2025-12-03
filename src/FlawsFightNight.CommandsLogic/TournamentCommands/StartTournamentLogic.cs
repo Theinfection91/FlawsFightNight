@@ -38,9 +38,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // Check if the tournament can be started
-            if (!tournament.CanStart())
+            if (!tournament.CanStart(out var errorReason))
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' does not meet the requirements to start. Please ensure all conditions are met before starting the tournament.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' does not meet the requirements to start: {errorReason.Info}");
             }
 
             // Build match schedules if applicable and start tournament

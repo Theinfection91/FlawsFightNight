@@ -9,7 +9,7 @@ namespace FlawsFightNight.Core.Helpers
 {
     public static class ErrorReasonGenerator
     {
-        public static ErrorReason GenerateGeneric(string reason)
+        public static ErrorReason GenerateSpecific(string reason)
         {
             return new ErrorReason(reason);
         }
@@ -17,6 +17,16 @@ namespace FlawsFightNight.Core.Helpers
         public static ErrorReason GenerateIsRunningError()
         {
             return new ErrorReason("Tournament is currently running.");
+        }
+
+        public static ErrorReason GenerateIsNotRunningError()
+        {
+            return new ErrorReason("Tournament is not currently running.");
+        }
+
+        public static ErrorReason GenerateTeamsNotLockedError()
+        {
+            return new ErrorReason("Teams are not locked.");
         }
 
         public static ErrorReason GenerateTeamsAlreadyLockedError()
@@ -29,9 +39,9 @@ namespace FlawsFightNight.Core.Helpers
             return new ErrorReason("Teams are already unlocked.");
         }
 
-        public static ErrorReason GenerateInsufficientTeamsToLockError()
+        public static ErrorReason GenerateInsufficientTeamsError()
         {
-            return new ErrorReason($"At least 3 teams are required to lock teams.");
+            return new ErrorReason($"At least 3 teams are required.");
         }
     }
 }
