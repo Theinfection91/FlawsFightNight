@@ -45,11 +45,11 @@ namespace FlawsFightNight.Managers
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
 
-            StartMatchesLiveViewTask();
-            StartStandingsLiveViewTask();
-            StartTeamsLiveViewTask();
+            //StartMatchesLiveViewTask();
+            //StartStandingsLiveViewTask();
+            //StartTeamsLiveViewTask();
 
-            StartWatchdogTask();
+            //StartWatchdogTask();
         }
 
         #region Watchdog

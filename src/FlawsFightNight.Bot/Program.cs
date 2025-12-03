@@ -25,6 +25,7 @@ namespace FlawsFightNight.Bot
 
         private ConfigManager _configManager;
         private LiveViewManager _liveViewManager;
+        private LiveViewService _liveViewService;
 
         public static async Task Main(string[] args)
         {
@@ -103,11 +104,13 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<DataManager>();
                     services.AddSingleton<EmbedManager>();
                     services.AddSingleton<GitBackupManager>();
-                    services.AddSingleton<LiveViewManager>();
                     services.AddSingleton<MatchManager>();
                     services.AddSingleton<MemberManager>();
                     services.AddSingleton<TeamManager>();
                     services.AddSingleton<TournamentManager>();
+
+                    // Services
+                    services.AddHostedService<LiveViewService>();
 
                     // Data handlers
                     services.AddSingleton<DiscordCredentialHandler>();
@@ -166,7 +169,12 @@ namespace FlawsFightNight.Bot
 
             Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");
 
-            _liveViewManager = _services.GetRequiredService<LiveViewManager>();
+            // Grab binder and start hosting
+            var host = _services.GetRequiredService<IHost>();
+            if (_client.LoginState == LoginState.LoggedIn)
+            {
+                await host.StartAsync();
+            }
 
             await Task.Delay(Timeout.InfiniteTimeSpan); // keep bot running
         }
