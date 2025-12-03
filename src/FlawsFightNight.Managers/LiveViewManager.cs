@@ -63,6 +63,8 @@ namespace FlawsFightNight.Managers
                     try
                     {
                         await Task.Delay(TimeSpan.FromSeconds(30));
+                        Console.WriteLine($"lastMatchesUpdate: {_lastMatchesUpdate}\nlastStandingsUpdate: {_lastStandingsUpdate}\nlastTeamsUpdate: {_lastTeamsUpdate}");
+                        Console.WriteLine($"Current Time: {DateTime.UtcNow}");
 
                         bool matchesDead = _matchesLiveViewTask?.IsFaulted ?? true;
                         bool standingsDead = _standingsLiveViewTask?.IsFaulted ?? true;
