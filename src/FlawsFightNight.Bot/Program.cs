@@ -126,13 +126,9 @@ namespace FlawsFightNight.Bot
             _configManager.SetDiscordTokenProcess();
             _configManager.SetGitBackupProcess();
 
-            await RunBotAsync();
-        }
-
-        public async Task RunBotAsync()
-        {
             _commands = _services.GetRequiredService<CommandService>();
             _interactionService = new InteractionService(_client);
+
             _commands.Log += Log;
             _client.Log += Log;
 
@@ -142,7 +138,6 @@ namespace FlawsFightNight.Bot
                 return Task.CompletedTask;
             };
 
-            // Ready handling
             var readyTask = new TaskCompletionSource<bool>();
             _client.Ready += () =>
             {
@@ -156,9 +151,8 @@ namespace FlawsFightNight.Bot
             await _client.LoginAsync(TokenType.Bot, _configManager.GetDiscordToken());
             await _client.StartAsync();
 
-            await readyTask.Task; // Wait until Discord signals Ready
+            await readyTask.Task;
 
-            // Fire-and-forget module registration and guild commands
             _ = Task.Run(async () =>
             {
                 await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
@@ -169,15 +163,63 @@ namespace FlawsFightNight.Bot
 
             Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");
 
-            // Grab binder and start hosting
-            var host = _services.GetRequiredService<IHost>();
-            if (_client.LoginState == LoginState.LoggedIn)
-            {
-                await host.StartAsync();
-            }
+            // Start the host, which runs LiveViewService automatically
+            //await host.RunAsync();
 
-            await Task.Delay(Timeout.InfiniteTimeSpan); // keep bot running
+            await host.StartAsync();   // start services
+            Console.WriteLine("Bot running...");
+            await Task.Delay(Timeout.Infinite); // keep main thread alive
         }
+
+        //public async Task RunBotAsync()
+        //{
+        //    _commands = _services.GetRequiredService<CommandService>();
+        //    _interactionService = new InteractionService(_client);
+        //    _commands.Log += Log;
+        //    _client.Log += Log;
+
+        //    _client.Disconnected += ex =>
+        //    {
+        //        Console.WriteLine($"{DateTime.Now} - Bot disconnected: {ex?.Message ?? "Unknown reason"}");
+        //        return Task.CompletedTask;
+        //    };
+
+        //    // Ready handling
+        //    var readyTask = new TaskCompletionSource<bool>();
+        //    _client.Ready += () =>
+        //    {
+        //        readyTask.TrySetResult(true);
+        //        return Task.CompletedTask;
+        //    };
+
+        //    _client.InteractionCreated += HandleInteractionAsync;
+        //    _client.MessageReceived += HandleCommandAsync;
+
+        //    await _client.LoginAsync(TokenType.Bot, _configManager.GetDiscordToken());
+        //    await _client.StartAsync();
+
+        //    await readyTask.Task; // Wait until Discord signals Ready
+
+        //    // Fire-and-forget module registration and guild commands
+        //    _ = Task.Run(async () =>
+        //    {
+        //        await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+        //        _configManager.SetGuildIdProcess();
+        //        await _interactionService.RegisterCommandsToGuildAsync(_configManager.GetGuildId());
+        //        Console.WriteLine($"{DateTime.Now} - Commands registered to guild {_configManager.GetGuildId()}");
+        //    });
+
+        //    Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");
+
+        //    // Grab binder and start hosting
+        //    var host = _services.GetRequiredService<IHost>();
+        //    if (_client.LoginState == LoginState.LoggedIn)
+        //    {
+        //        await host.StartAsync();
+        //    }
+
+        //    await Task.Delay(Timeout.InfiniteTimeSpan); // keep bot running
+        //}
 
         private async Task HandleInteractionAsync(SocketInteraction interaction)
         {

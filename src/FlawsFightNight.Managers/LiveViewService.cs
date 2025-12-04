@@ -116,8 +116,11 @@ namespace FlawsFightNight.Managers
 
             var newMsg = await channel.SendMessageAsync(embed: embed);
             tournament.MatchesMessageId = newMsg.Id;
-            _dataManager.SaveAndReloadTournamentsDatabase();
-            _gitBackupManager.CopyAndBackupFilesToGit();
+            //await Task.Run(() =>
+            //{
+            //    _dataManager.SaveAndReloadTournamentsDatabase();
+            //    _gitBackupManager.CopyAndBackupFilesToGit();
+            //});
         }
 
         private async Task UpdateStandingsAsync(Tournament tournament, CancellationToken token)
@@ -137,8 +140,11 @@ namespace FlawsFightNight.Managers
             }
             var newMsg = await channel.SendMessageAsync(embed: embed);
             tournament.StandingsMessageId = newMsg.Id;
-            _dataManager.SaveAndReloadTournamentsDatabase();
-            _gitBackupManager.CopyAndBackupFilesToGit();
+            //await Task.Run(() =>
+            //{
+            //    _dataManager.SaveAndReloadTournamentsDatabase();
+            //    _gitBackupManager.CopyAndBackupFilesToGit();
+            //});
         }
 
         private async Task UpdateTeamsAsync(Tournament tournament, CancellationToken token)
@@ -158,8 +164,11 @@ namespace FlawsFightNight.Managers
             }
             var newMsg = await channel.SendMessageAsync(embed: embed);
             tournament.TeamsMessageId = newMsg.Id;
-            _dataManager.SaveAndReloadTournamentsDatabase();
-            _gitBackupManager.CopyAndBackupFilesToGit();
+            //await Task.Run(() =>
+            //{
+            //    _dataManager.SaveAndReloadTournamentsDatabase();
+            //    _gitBackupManager.CopyAndBackupFilesToGit();
+            //});
         }
     }
 }
