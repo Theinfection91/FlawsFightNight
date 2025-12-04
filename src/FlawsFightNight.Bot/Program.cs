@@ -10,6 +10,8 @@ using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Data.Handlers;
 using FlawsFightNight.Managers;
+using Hangfire;
+using Hangfire.MemoryStorage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
@@ -40,6 +42,42 @@ namespace FlawsFightNight.Bot
 
             var program = new Program();
             await program.RunAsync();
+        }
+
+        private async Task HandleInteractionAsync(SocketInteraction interaction)
+        {
+            try
+            {
+                var context = new SocketInteractionContext(_client, interaction);
+                var result = await _interactionService.ExecuteCommandAsync(context, _services);
+                if (!result.IsSuccess)
+                    Console.WriteLine($"{DateTime.Now} - Interaction Error: {result.ErrorReason}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Interaction Exception] {ex}");
+            }
+        }
+
+        private async Task HandleCommandAsync(SocketMessage socketMessage)
+        {
+            if (socketMessage is not SocketUserMessage message || message.Author.IsBot) return;
+
+            int argPos = 0;
+            if (message.HasStringPrefix(_configManager.GetCommandPrefix(), ref argPos) ||
+                message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            {
+                var context = new SocketCommandContext(_client, message);
+                var result = await _commands.ExecuteAsync(context, argPos, _services);
+                if (!result.IsSuccess)
+                    Console.WriteLine($"{DateTime.Now} - Command Error: {result.ErrorReason}");
+            }
+        }
+
+        private Task Log(LogMessage log)
+        {
+            Console.WriteLine(log.ToString());
+            return Task.CompletedTask;
         }
 
         public async Task RunAsync()
@@ -110,7 +148,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<TournamentManager>();
 
                     // Services
-                    services.AddHostedService<LiveViewService>();
+                    //services.AddHostedService<LiveViewService>();
 
                     // Data handlers
                     services.AddSingleton<DiscordCredentialHandler>();
@@ -163,12 +201,133 @@ namespace FlawsFightNight.Bot
 
             Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");
 
-            // Start the host, which runs LiveViewService automatically
-            //await host.RunAsync();
+            try
+            {
+                // --- Hangfire Setup ---
+                // Start Hangfire server in a background Task so it doesn't block
+                _ = Task.Run(() =>
+                {
+                    using var server = new BackgroundJobServer();
+                    Console.WriteLine("Hangfire server started.");
+                });
 
-            await host.StartAsync();   // start services
+                // Recurring job: update tournaments every 15 seconds
+                RecurringJob.AddOrUpdate("LiveViewUpdate", () =>
+                    Program.UpdateTournamentsAsync(
+                        _services.GetRequiredService<DataManager>(),
+                        _services.GetRequiredService<EmbedManager>(),
+                        _services.GetRequiredService<GitBackupManager>()
+                    ), "*/15 * * * * *");
+
+                Console.WriteLine("LiveViewUpdate job scheduled.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Hangfire Exception] {ex}");
+            }
+
+            // Start the host, which runs LiveViewService automatically
             Console.WriteLine("Bot running...");
-            await Task.Delay(Timeout.Infinite); // keep main thread alive
+            await host.RunAsync();
+            //await host.StartAsync();
+            
+            //await Task.Delay(Timeout.Infinite); // keep main thread alive
+        }
+
+        public static async Task UpdateTournamentsAsync(DataManager dataManager, EmbedManager embedManager, GitBackupManager gitBackupManager)
+        {
+            var tournaments = dataManager.TournamentsDatabaseFile.Tournaments.Where(t => t != null).ToList();
+            Console.WriteLine($"[LiveView] Found {tournaments.Count} tournaments to update.");
+
+            foreach (var t in tournaments)
+            {
+                Console.WriteLine($"[LiveView] Starting update for tournament {t.Id}");
+                try
+                {
+                    var client = dataManager.DiscordClient;
+
+                    if (t.MatchesChannelId != 0)
+                    {
+                        Console.WriteLine($"[LiveView] Updating Matches for tournament {t.Id}");
+                        var channel = client.GetChannel(t.MatchesChannelId) as IMessageChannel;
+                        if (channel != null)
+                        {
+                            var embed = embedManager.MatchesLiveViewResolver(t);
+                            if (t.MatchesMessageId != 0)
+                            {
+                                Console.WriteLine($"[LiveView] Modifying existing Matches message {t.MatchesMessageId}");
+                                var existing = await channel.GetMessageAsync(t.MatchesMessageId) as IUserMessage;
+                                if (existing != null) await existing.ModifyAsync(m => m.Embed = embed);
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[LiveView] Sending new Matches message");
+                                var newMsg = await channel.SendMessageAsync(embed: embed);
+                                t.MatchesMessageId = newMsg.Id;
+                            }
+                        }
+                        else Console.WriteLine($"[LiveView] Matches channel {t.MatchesChannelId} not found");
+                    }
+
+                    if (t.StandingsChannelId != 0)
+                    {
+                        Console.WriteLine($"[LiveView] Updating Standings for tournament {t.Id}");
+                        var channel = client.GetChannel(t.StandingsChannelId) as IMessageChannel;
+                        if (channel != null)
+                        {
+                            var embed = embedManager.StandingsLiveViewResolver(t);
+                            if (t.StandingsMessageId != 0)
+                            {
+                                Console.WriteLine($"[LiveView] Modifying existing Standings message {t.StandingsMessageId}");
+                                var existing = await channel.GetMessageAsync(t.StandingsMessageId) as IUserMessage;
+                                if (existing != null) await existing.ModifyAsync(m => m.Embed = embed);
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[LiveView] Sending new Standings message");
+                                var newMsg = await channel.SendMessageAsync(embed: embed);
+                                t.StandingsMessageId = newMsg.Id;
+                            }
+                        }
+                        else Console.WriteLine($"[LiveView] Standings channel {t.StandingsChannelId} not found");
+                    }
+
+                    if (t.TeamsChannelId != 0)
+                    {
+                        Console.WriteLine($"[LiveView] Updating Teams for tournament {t.Id}");
+                        var channel = client.GetChannel(t.TeamsChannelId) as IMessageChannel;
+                        if (channel != null)
+                        {
+                            var embed = embedManager.TeamsLiveView(t);
+                            if (t.TeamsMessageId != 0)
+                            {
+                                Console.WriteLine($"[LiveView] Modifying existing Teams message {t.TeamsMessageId}");
+                                var existing = await channel.GetMessageAsync(t.TeamsMessageId) as IUserMessage;
+                                if (existing != null) await existing.ModifyAsync(m => m.Embed = embed);
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[LiveView] Sending new Teams message");
+                                var newMsg = await channel.SendMessageAsync(embed: embed);
+                                t.TeamsMessageId = newMsg.Id;
+                            }
+                        }
+                        else Console.WriteLine($"[LiveView] Teams channel {t.TeamsChannelId} not found");
+                    }
+
+                    Console.WriteLine($"[LiveView] Finished update for tournament {t.Id}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[LiveView] Tournament {t.Id} update failed: {ex}");
+                }
+            }
+
+            Console.WriteLine("[LiveView] All tournaments updated.");
+
+            // Optionally save and backup
+            // dataManager.SaveAndReloadTournamentsDatabase();
+            // gitBackupManager.CopyAndBackupFilesToGit();
         }
 
         //public async Task RunBotAsync()
@@ -220,41 +379,5 @@ namespace FlawsFightNight.Bot
 
         //    await Task.Delay(Timeout.InfiniteTimeSpan); // keep bot running
         //}
-
-        private async Task HandleInteractionAsync(SocketInteraction interaction)
-        {
-            try
-            {
-                var context = new SocketInteractionContext(_client, interaction);
-                var result = await _interactionService.ExecuteCommandAsync(context, _services);
-                if (!result.IsSuccess)
-                    Console.WriteLine($"{DateTime.Now} - Interaction Error: {result.ErrorReason}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Interaction Exception] {ex}");
-            }
-        }
-
-        private async Task HandleCommandAsync(SocketMessage socketMessage)
-        {
-            if (socketMessage is not SocketUserMessage message || message.Author.IsBot) return;
-
-            int argPos = 0;
-            if (message.HasStringPrefix(_configManager.GetCommandPrefix(), ref argPos) ||
-                message.HasMentionPrefix(_client.CurrentUser, ref argPos))
-            {
-                var context = new SocketCommandContext(_client, message);
-                var result = await _commands.ExecuteAsync(context, argPos, _services);
-                if (!result.IsSuccess)
-                    Console.WriteLine($"{DateTime.Now} - Command Error: {result.ErrorReason}");
-            }
-        }
-
-        private Task Log(LogMessage log)
-        {
-            Console.WriteLine(log.ToString());
-            return Task.CompletedTask;
-        }
     }
 }

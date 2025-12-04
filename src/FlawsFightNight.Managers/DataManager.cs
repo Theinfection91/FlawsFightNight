@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Models;
+﻿using Discord.WebSocket;
+using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Data.DataModels;
 using FlawsFightNight.Data.Handlers;
@@ -14,6 +15,9 @@ namespace FlawsFightNight.Managers
     {
         #region Fields and Constructor
         public string Name { get; set; } = "DataManager";
+
+        // Discord Client
+        public readonly DiscordSocketClient DiscordClient;
 
         // Discord Credential File
         public DiscordCredentialFile DiscordCredentialFile { get; private set; }
@@ -32,8 +36,10 @@ namespace FlawsFightNight.Managers
         private readonly TournamentsDatabaseHandler _tournamentsDatabaseHandler;
 
         // Constructor is given each handler type for each specific JSON file
-        public DataManager(DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentsDatabaseHandler tournamentsDatabaseHandler)
+        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentsDatabaseHandler tournamentsDatabaseHandler)
         {
+            DiscordClient = client;
+
             _discordCredentialHandler = discordCredentialHandler;
             LoadDiscordCredentialFile();
 
