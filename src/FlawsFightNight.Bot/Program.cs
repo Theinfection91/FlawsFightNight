@@ -201,30 +201,30 @@ namespace FlawsFightNight.Bot
 
             Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser?.Username ?? "null"}");
 
-            try
-            {
-                // --- Hangfire Setup ---
-                // Start Hangfire server in a background Task so it doesn't block
-                _ = Task.Run(() =>
-                {
-                    using var server = new BackgroundJobServer();
-                    Console.WriteLine("Hangfire server started.");
-                });
+            //try
+            //{
+            //    // --- Hangfire Setup ---
+            //    // Start Hangfire server in a background Task so it doesn't block
+            //    _ = Task.Run(() =>
+            //    {
+            //        using var server = new BackgroundJobServer();
+            //        Console.WriteLine("Hangfire server started.");
+            //    });
 
-                // Recurring job: update tournaments every 15 seconds
-                RecurringJob.AddOrUpdate("LiveViewUpdate", () =>
-                    Program.UpdateTournamentsAsync(
-                        _services.GetRequiredService<DataManager>(),
-                        _services.GetRequiredService<EmbedManager>(),
-                        _services.GetRequiredService<GitBackupManager>()
-                    ), "*/15 * * * * *");
+            //    // Recurring job: update tournaments every 15 seconds
+            //    RecurringJob.AddOrUpdate("LiveViewUpdate", () =>
+            //        Program.UpdateTournamentsAsync(
+            //            _services.GetRequiredService<DataManager>(),
+            //            _services.GetRequiredService<EmbedManager>(),
+            //            _services.GetRequiredService<GitBackupManager>()
+            //        ), "*/15 * * * * *");
 
-                Console.WriteLine("LiveViewUpdate job scheduled.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Hangfire Exception] {ex}");
-            }
+            //    Console.WriteLine("LiveViewUpdate job scheduled.");
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"[Hangfire Exception] {ex}");
+            //}
 
             // Start the host, which runs LiveViewService automatically
             Console.WriteLine("Bot running...");
