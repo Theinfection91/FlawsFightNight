@@ -184,7 +184,8 @@ namespace FlawsFightNight.Bot
             // Start Discord in background task
             _ = Task.Run(async () => await RunDiscordAsync());
 
-            Console.WriteLine($"{DateTime.Now} - [Program] FlawsFightNight running...");
+            // Display program assembly version
+            Console.WriteLine($"{DateTime.Now} - [Program] {Assembly.GetExecutingAssembly().GetName().Name} v{Assembly.GetExecutingAssembly().GetName().Version} running...");
             await Task.Delay(Timeout.Infinite);
         }
 
