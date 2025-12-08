@@ -79,72 +79,6 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        //protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        //{
-        //    // Wait for Discord client readiness
-        //    if (_client.LoginState != LoginState.LoggedIn)
-        //    {
-        //        var tcs = new TaskCompletionSource<bool>();
-
-        //        Task ReadyHandler()
-        //        {
-        //            tcs.TrySetResult(true);
-        //            return Task.CompletedTask;
-        //        }
-
-        //        _client.Ready += ReadyHandler;
-
-        //        // If client already ready, complete immediately
-        //        if (_client.LoginState == LoginState.LoggedIn)
-        //            tcs.TrySetResult(true);
-
-        //        await tcs.Task;
-        //        _client.Ready -= ReadyHandler;
-        //    }
-
-        //    Console.WriteLine($"{DateTime.Now} [LiveViewService] Starting live view loop");
-
-        //    while (!stoppingToken.IsCancellationRequested)
-        //    {
-        //        try
-        //        {
-        //            await _semaphore.WaitAsync(stoppingToken);
-
-        //            Console.WriteLine($"{DateTime.Now} Heartbeat...");
-
-        //            // Take a snapshot to avoid modifying collection while iterating
-        //            var tournaments = _dataManager.TournamentsDatabaseFile.Tournaments
-        //                .Where(t => t != null)
-        //                .ToList();
-
-        //            foreach (var t in tournaments)
-        //            {
-        //                try
-        //                {
-        //                    Console.WriteLine($"{DateTime.Now} [LiveViewService] Updating tournament {t.Id}");
-        //                    await UpdateMatchesAsync(t, stoppingToken);
-        //                    await UpdateStandingsAsync(t, stoppingToken);
-        //                    await UpdateTeamsAsync(t, stoppingToken);
-        //                }
-        //                catch (Exception ex)
-        //                {
-        //                    Console.WriteLine($"{DateTime.Now} [LiveViewService] Tournament {t.Id} failed: {ex}");
-        //                }
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.WriteLine($"{DateTime.Now} [LiveViewService] Exception: {ex}");
-        //        }
-        //        finally
-        //        {
-        //            _semaphore.Release();
-        //        }
-
-        //        await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
-        //    }
-        //}
-
         private async Task UpdateMatchesAsync(Tournament tournament, CancellationToken token)
         {
             if (tournament.MatchesChannelId == 0) return;
@@ -166,11 +100,11 @@ namespace FlawsFightNight.Managers
 
             var newMsg = await channel.SendMessageAsync(embed: embed);
             tournament.MatchesMessageId = newMsg.Id;
-            //await Task.Run(() =>
-            //{
-            //    _dataManager.SaveAndReloadTournamentsDatabase();
-            //    _gitBackupManager.CopyAndBackupFilesToGit();
-            //});
+            await Task.Run(() =>
+            {
+                _dataManager.SaveAndReloadTournamentsDatabase();
+                _gitBackupManager.CopyAndBackupFilesToGit();
+            });
         }
 
         private async Task UpdateStandingsAsync(Tournament tournament, CancellationToken token)
@@ -190,11 +124,11 @@ namespace FlawsFightNight.Managers
             }
             var newMsg = await channel.SendMessageAsync(embed: embed);
             tournament.StandingsMessageId = newMsg.Id;
-            //await Task.Run(() =>
-            //{
-            //    _dataManager.SaveAndReloadTournamentsDatabase();
-            //    _gitBackupManager.CopyAndBackupFilesToGit();
-            //});
+            await Task.Run(() =>
+            {
+                _dataManager.SaveAndReloadTournamentsDatabase();
+                _gitBackupManager.CopyAndBackupFilesToGit();
+            });
         }
 
         private async Task UpdateTeamsAsync(Tournament tournament, CancellationToken token)
@@ -214,11 +148,11 @@ namespace FlawsFightNight.Managers
             }
             var newMsg = await channel.SendMessageAsync(embed: embed);
             tournament.TeamsMessageId = newMsg.Id;
-            //await Task.Run(() =>
-            //{
-            //    _dataManager.SaveAndReloadTournamentsDatabase();
-            //    _gitBackupManager.CopyAndBackupFilesToGit();
-            //});
+            await Task.Run(() =>
+            {
+                _dataManager.SaveAndReloadTournamentsDatabase();
+                _gitBackupManager.CopyAndBackupFilesToGit();
+            });
         }
     }
 }
