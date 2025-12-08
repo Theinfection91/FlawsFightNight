@@ -29,71 +29,121 @@ namespace FlawsFightNight.Managers
             _gitBackupManager = gitBackupManager;
             _dataManager = dataManager;
         }
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // Wait for Discord client readiness
-            //if (_client.LoginState != LoginState.LoggedIn)
-            //{
-            //    var tcs = new TaskCompletionSource<bool>();
+            // Fire and forget
+            _ = RunLoop(stoppingToken);
+            return Task.CompletedTask;
+        }
 
-            //    Task ReadyHandler()
-            //    {
-            //        tcs.TrySetResult(true);
-            //        return Task.CompletedTask;
-            //    }
+        private async Task RunLoop(CancellationToken token)
+        {
+            // Wait for Discord to be ready
+            var tcs = new TaskCompletionSource();
+            Task ReadyHandler()
+            {
+                tcs.TrySetResult();
+                return Task.CompletedTask;
+            }
+            _client.Ready += ReadyHandler;
 
-            //    _client.Ready += ReadyHandler;
+            await tcs.Task;
+            _client.Ready -= ReadyHandler;
 
-            //    // If client already ready, complete immediately
-            //    if (_client.LoginState == LoginState.LoggedIn)
-            //        tcs.TrySetResult(true);
+            Console.WriteLine($"{DateTime.Now} [LiveViewService] Starting loop");
 
-            //    await tcs.Task;
-            //    _client.Ready -= ReadyHandler;
-            //}
-
-            Console.WriteLine($"{DateTime.Now} [LiveViewService] Starting live view loop");
-
-            while (!stoppingToken.IsCancellationRequested)
+            while (!token.IsCancellationRequested)
             {
                 try
                 {
-                    await _semaphore.WaitAsync(stoppingToken);
-
                     Console.WriteLine($"{DateTime.Now} Heartbeat...");
 
-                    // Take a snapshot to avoid modifying collection while iterating
                     var tournaments = _dataManager.TournamentsDatabaseFile.Tournaments
                         .Where(t => t != null)
                         .ToList();
 
                     foreach (var t in tournaments)
                     {
-                        try
-                        {
-                            Console.WriteLine($"{DateTime.Now} [LiveViewService] Updating tournament {t.Id}");
-                            await UpdateMatchesAsync(t, stoppingToken);
-                            await UpdateStandingsAsync(t, stoppingToken);
-                            await UpdateTeamsAsync(t, stoppingToken);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"{DateTime.Now} [LiveViewService] Tournament {t.Id} failed: {ex}");
-                        }
+                        await UpdateMatchesAsync(t, token);
+                        await UpdateStandingsAsync(t, token);
+                        await UpdateTeamsAsync(t, token);
                     }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"{DateTime.Now} [LiveViewService] Exception: {ex}");
                 }
-                finally
-                {
-                    _semaphore.Release();
-                }
 
-                await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(15), token);
             }
         }
+
+        //protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        //{
+        //    // Wait for Discord client readiness
+        //    if (_client.LoginState != LoginState.LoggedIn)
+        //    {
+        //        var tcs = new TaskCompletionSource<bool>();
+
+        //        Task ReadyHandler()
+        //        {
+        //            tcs.TrySetResult(true);
+        //            return Task.CompletedTask;
+        //        }
+
+        //        _client.Ready += ReadyHandler;
+
+        //        // If client already ready, complete immediately
+        //        if (_client.LoginState == LoginState.LoggedIn)
+        //            tcs.TrySetResult(true);
+
+        //        await tcs.Task;
+        //        _client.Ready -= ReadyHandler;
+        //    }
+
+        //    Console.WriteLine($"{DateTime.Now} [LiveViewService] Starting live view loop");
+
+        //    while (!stoppingToken.IsCancellationRequested)
+        //    {
+        //        try
+        //        {
+        //            await _semaphore.WaitAsync(stoppingToken);
+
+        //            Console.WriteLine($"{DateTime.Now} Heartbeat...");
+
+        //            // Take a snapshot to avoid modifying collection while iterating
+        //            var tournaments = _dataManager.TournamentsDatabaseFile.Tournaments
+        //                .Where(t => t != null)
+        //                .ToList();
+
+        //            foreach (var t in tournaments)
+        //            {
+        //                try
+        //                {
+        //                    Console.WriteLine($"{DateTime.Now} [LiveViewService] Updating tournament {t.Id}");
+        //                    await UpdateMatchesAsync(t, stoppingToken);
+        //                    await UpdateStandingsAsync(t, stoppingToken);
+        //                    await UpdateTeamsAsync(t, stoppingToken);
+        //                }
+        //                catch (Exception ex)
+        //                {
+        //                    Console.WriteLine($"{DateTime.Now} [LiveViewService] Tournament {t.Id} failed: {ex}");
+        //                }
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Console.WriteLine($"{DateTime.Now} [LiveViewService] Exception: {ex}");
+        //        }
+        //        finally
+        //        {
+        //            _semaphore.Release();
+        //        }
+
+        //        await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
+        //    }
+        //}
 
         private async Task UpdateMatchesAsync(Tournament tournament, CancellationToken token)
         {
