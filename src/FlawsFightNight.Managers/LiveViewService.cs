@@ -16,7 +16,6 @@ namespace FlawsFightNight.Managers
         private readonly EmbedManager _embedManager;
         private readonly GitBackupManager _gitBackupManager;
         private readonly DataManager _dataManager;
-        private readonly SemaphoreSlim _semaphore = new(1, 1);
 
         public LiveViewService(
             DiscordSocketClient client,
@@ -51,7 +50,7 @@ namespace FlawsFightNight.Managers
             await tcs.Task;
             _client.Ready -= ReadyHandler;
 
-            Console.WriteLine($"{DateTime.Now} [LiveViewService] Starting service...");
+            Console.WriteLine($"{DateTime.Now} - [LiveViewService] Starting service...");
 
             while (!token.IsCancellationRequested)
             {
@@ -72,7 +71,7 @@ namespace FlawsFightNight.Managers
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"{DateTime.Now} [LiveViewService] Exception: {ex}");
+                    Console.WriteLine($"{DateTime.Now} - [LiveViewService] Exception: {ex}");
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(15), token);

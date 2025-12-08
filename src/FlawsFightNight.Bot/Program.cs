@@ -80,7 +80,7 @@ namespace FlawsFightNight.Bot
 
         public async Task RunAsync()
         {
-            // --- DISCORD CLIENT ---
+            // Discord client setup
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Info,
@@ -90,7 +90,7 @@ namespace FlawsFightNight.Bot
                     GatewayIntents.MessageContent
             });
 
-            // --- HOST & DI ---
+            // Host and DI setup
             var host = Host.CreateDefaultBuilder()
                 .ConfigureServices(services =>
                 {
@@ -156,11 +156,9 @@ namespace FlawsFightNight.Bot
                 })
                 .Build();
 
-            // Store DI
+            // Prep config
             _services = host.Services;
             _configManager = _services.GetRequiredService<ConfigManager>();
-
-            // Prep config
             _configManager.SetDiscordTokenProcess();
             _configManager.SetGitBackupProcess();
 
@@ -186,7 +184,7 @@ namespace FlawsFightNight.Bot
             // Start Discord in background task
             _ = Task.Run(async () => await RunDiscordAsync());
 
-            Console.WriteLine($"{DateTime.Now} - [Program] FlawsFightNight Bot running...");
+            Console.WriteLine($"{DateTime.Now} - [Program] FlawsFightNight running...");
             await Task.Delay(Timeout.Infinite);
         }
 
@@ -210,7 +208,7 @@ namespace FlawsFightNight.Bot
             _configManager.SetGuildIdProcess();
             await _interactionService.RegisterCommandsToGuildAsync(_configManager.GetGuildId());
 
-            Console.WriteLine($"{DateTime.Now} [Discord] Bot logged in as: {_client.CurrentUser}");
+            Console.WriteLine($"{DateTime.Now} - [Discord] Bot logged in as: {_client.CurrentUser}");
         }
     }
 }
