@@ -14,6 +14,7 @@ namespace FlawsFightNight.Managers
     public class DataManager
     {
         #region Fields and Constructor
+        //
         public string Name { get; set; } = "DataManager";
 
         // Discord Client
