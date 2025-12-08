@@ -319,6 +319,8 @@ namespace FlawsFightNight.Managers
 
         public Embed StandingsLiveViewResolver(Tournament tournament)
         {
+            // TODO Add DSR Tournament Embed
+
             if (tournament is NormalLadderTournament)
             {
                 return LadderStandingsLiveView(tournament);
