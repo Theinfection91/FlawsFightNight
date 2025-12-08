@@ -51,13 +51,13 @@ namespace FlawsFightNight.Managers
             await tcs.Task;
             _client.Ready -= ReadyHandler;
 
-            Console.WriteLine($"{DateTime.Now} [LiveViewService] Starting loop");
+            Console.WriteLine($"{DateTime.Now} [LiveViewService] Starting service...");
 
             while (!token.IsCancellationRequested)
             {
                 try
                 {
-                    Console.WriteLine($"{DateTime.Now} Heartbeat...");
+                    //Console.WriteLine($"{DateTime.Now} [LiveViewService] Heartbeat...");
 
                     var tournaments = _dataManager.TournamentsDatabaseFile.Tournaments
                         .Where(t => t != null)

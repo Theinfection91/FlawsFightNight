@@ -52,7 +52,7 @@ namespace FlawsFightNight.Bot
                 var result = await _interactionService.ExecuteCommandAsync(context, _services);
 
                 if (!result.IsSuccess)
-                    Console.WriteLine($"{DateTime.Now} - Interaction Error: {result.ErrorReason}");
+                    Console.WriteLine($"{DateTime.Now} - [Discord] Interaction Error: {result.ErrorReason}");
             }
             catch (Exception ex)
             {
@@ -74,7 +74,7 @@ namespace FlawsFightNight.Bot
                 var result = await _commands.ExecuteAsync(ctx, pos, _services);
 
                 if (!result.IsSuccess)
-                    Console.WriteLine($"{DateTime.Now} - Command Error: {result.ErrorReason}");
+                    Console.WriteLine($"{DateTime.Now} - [Discord] Command Error: {result.ErrorReason}");
             }
         }
 
@@ -173,21 +173,20 @@ namespace FlawsFightNight.Bot
 
             _client.Disconnected += ex =>
             {
-                Console.WriteLine($"{DateTime.Now} - Bot disconnected: {ex?.Message ?? "Unknown"}");
+                Console.WriteLine($"{DateTime.Now} - [Discord] Bot disconnected: {ex?.Message ?? "Unknown"}");
                 return Task.CompletedTask;
             };
 
             _client.InteractionCreated += HandleInteractionAsync;
             _client.MessageReceived += HandleMessageAsync;
 
-            // --- START HOST (starts hosted background services) ---
-            Console.WriteLine("Starting host (LiveViewService starts now)...");
+            // Start hosted services
             await host.StartAsync();
 
-            // --- START DISCORD IN BACKGROUND ---
+            // Start Discord in background task
             _ = Task.Run(async () => await RunDiscordAsync());
 
-            Console.WriteLine("Bot running.");
+            Console.WriteLine($"{DateTime.Now} - [Program] FlawsFightNight Bot running...");
             await Task.Delay(Timeout.Infinite);
         }
 
@@ -211,7 +210,7 @@ namespace FlawsFightNight.Bot
             _configManager.SetGuildIdProcess();
             await _interactionService.RegisterCommandsToGuildAsync(_configManager.GetGuildId());
 
-            Console.WriteLine($"{DateTime.Now} - Bot logged in as: {_client.CurrentUser}");
+            Console.WriteLine($"{DateTime.Now} [Discord] Bot logged in as: {_client.CurrentUser}");
         }
     }
 }
