@@ -110,7 +110,7 @@ namespace FlawsFightNight.Managers
 
         public void DeleteTournament(string tournamentId)
         {
-            _dataManager.RemoveTournamentBase(tournamentId);
+            _dataManager.RemoveTournament(tournamentId);
         }
 
         public void SetCanTeamsBeLocked(ITeamLocking tournament, bool canTeamsBeLocked)

@@ -43,6 +43,16 @@ namespace FlawsFightNight.Data.Handlers
             InitializeFile();
         }
 
+        public void DeleteFolderAndContents(string tournamentId)
+        {
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var folderPath = Path.Combine(baseDir, "Databases", tournamentId);
+            if (Directory.Exists(folderPath))
+            {
+                Directory.Delete(folderPath, true);
+            }
+        }
+
         public T Load()
         {
             var json = File.ReadAllText(_filePath);

@@ -39,7 +39,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _tournamentManager.DeleteTournament(tournament.Id);
 
             // Save and reload the database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            //_tournamentManager.SaveAndReloadTournamentsDatabase();
+            //_tournamentManager.SaveTournament(tournament);
+            _tournamentManager.LoadTournamentDataFiles();
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
