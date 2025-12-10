@@ -54,17 +54,31 @@ namespace FlawsFightNight.Managers
             _dataManager.AddNewTournament(tournament);
         }
 
+        public void LoadTournamentDataFiles()
+        {
+            _dataManager.LoadTournamentDataFiles();
+        }
+
         public bool IsTournamentNameUnique(string tournamentName)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            //List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            //foreach (Tournament tournament in tournaments)
+            //{
+            //    if (tournament.Name.Equals(tournamentName, StringComparison.OrdinalIgnoreCase))
+            //    {
+            //        return false;
+            //    }
+            //}
+            //return true; // Team name is unique across all tournaments
+
+            foreach (var dataFile in _dataManager.TournamentDataFiles)
             {
-                if (tournament.Name.Equals(tournamentName, StringComparison.OrdinalIgnoreCase))
+                if (dataFile.Tournament.Name.Equals(tournamentName, StringComparison.OrdinalIgnoreCase))
                 {
                     return false;
                 }
             }
-            return true; // Team name is unique across all tournaments
+            return true;
         }
 
         public Tournament CreateNewTournament(string name, TournamentType tournamentType, int teamSize, string? description = null)
@@ -108,14 +122,27 @@ namespace FlawsFightNight.Managers
         {
             if (isCaseSensitive)
             {
-                return _dataManager.TournamentsDatabaseFile.Tournaments
-                    .Any(t => t.Id.Equals(tournamentId));
+                //return _dataManager.TournamentsDatabaseFile.Tournaments
+                //    .Any(t => t.Id.Equals(tournamentId));
+                foreach (var dataFile in _dataManager.TournamentDataFiles)
+                {
+                    if (dataFile.Tournament.Id.Equals(tournamentId))
+                    {
+                        return true;
+                    }
+                }
             }
             else
             {
-                return _dataManager.TournamentsDatabaseFile.Tournaments
-                    .Any(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
+                foreach (var dataFile in _dataManager.TournamentDataFiles)
+                {
+                    if (dataFile.Tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
             }
+            return false;
         }
 
         public List<Tournament> GetAllTournaments()
@@ -162,8 +189,16 @@ namespace FlawsFightNight.Managers
 
         public Tournament? GetTournamentById(string tournamentId)
         {
-            return _dataManager.TournamentsDatabaseFile.Tournaments
-                .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
+            //return _dataManager.TournamentsDatabaseFile.Tournaments
+            //    .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
+            foreach (var dataFile in _dataManager.TournamentDataFiles)
+            {
+                if (dataFile.Tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return dataFile.Tournament;
+                }
+            }
+            return null;
         }
 
         public Tournament GetTournamentFromTeamName(string teamName)

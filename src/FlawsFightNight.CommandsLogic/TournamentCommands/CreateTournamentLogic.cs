@@ -43,13 +43,14 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // Add the tournament
-            _tournamentManager.AddTournament(tournament);
+            //_tournamentManager.AddTournament(tournament);
 
             // Save and reload the database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            //_tournamentManager.SaveAndReloadTournamentsDatabase();
 
             // New data system testing
             _tournamentManager.SaveTournament(tournament);
+            _tournamentManager.LoadTournamentDataFiles();
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

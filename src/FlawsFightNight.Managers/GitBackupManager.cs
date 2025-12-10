@@ -132,6 +132,7 @@ namespace FlawsFightNight.Managers
 
         public void CopyJsonFilesToBackupRepo()
         {
+            // TODO Needs to be updated for new data system separation
             try
             {
                 if (Directory.Exists(_databasesFolderPath))
