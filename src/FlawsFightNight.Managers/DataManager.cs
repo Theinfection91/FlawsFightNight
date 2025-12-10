@@ -36,8 +36,12 @@ namespace FlawsFightNight.Managers
         public TournamentsDatabaseFile TournamentsDatabaseFile { get; private set; }
         private readonly TournamentsDatabaseHandler _tournamentsDatabaseHandler;
 
+        // New Tournament System
+        public List<TournamentDataFile> TournamentDataFiles { get; private set; }
+        private readonly TournamentDataHandler _tournamentDataHandler;
+
         // Constructor is given each handler type for each specific JSON file
-        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentsDatabaseHandler tournamentsDatabaseHandler)
+        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentsDatabaseHandler tournamentsDatabaseHandler, TournamentDataHandler tournamentDataHandler)
         {
             DiscordClient = client;
 
@@ -52,6 +56,10 @@ namespace FlawsFightNight.Managers
 
             _tournamentsDatabaseHandler = tournamentsDatabaseHandler;
             LoadTournamentsDatabase();
+
+            // New Tournament System
+            _tournamentDataHandler = tournamentDataHandler;
+            LoadTournamentDataFiles();
         }
         #endregion
 
@@ -122,19 +130,16 @@ namespace FlawsFightNight.Managers
 
         public void SaveAndReloadTournamentsDatabase()
         {
-            // TODO Test, should work for new TournamentBase with no changes
             _tournamentsDatabaseHandler.Save(TournamentsDatabaseFile);
             LoadTournamentsDatabase();
         }
 
-        // New version
         public void AddTournament(Tournament tournament)
         {
             TournamentsDatabaseFile.Tournaments.Add(tournament);
             //SaveAndReloadTournamentsDatabase();
         }
 
-        // New version
         public void RemoveTournamentBase(string tournamentId)
         {
             var tournament = TournamentsDatabaseFile.Tournaments.FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
@@ -142,6 +147,29 @@ namespace FlawsFightNight.Managers
             {
                 TournamentsDatabaseFile.Tournaments.Remove(tournament);
             }
+        }
+        #endregion
+
+        #region New Tournament System
+        public void LoadTournamentDataFiles()
+        {
+            TournamentDataFiles = _tournamentDataHandler.LoadAll();
+        }
+
+        public void SaveTournamentDataFile(TournamentDataFile tournamentDataFile)
+        {
+            _tournamentDataHandler.SetFilePath(tournamentDataFile.Tournament.Id);
+            _tournamentDataHandler.Save(tournamentDataFile);
+        }
+
+        public void AddNewTournament(Tournament tournament)
+        {
+            var newTournamentDataFile = new TournamentDataFile
+            {
+                Tournament = tournament
+            };
+            TournamentDataFiles.Add(newTournamentDataFile);
+            SaveTournamentDataFile(newTournamentDataFile);
         }
         #endregion
     }

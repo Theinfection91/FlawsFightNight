@@ -39,6 +39,21 @@ namespace FlawsFightNight.Managers
             _dataManager.AddTournament(tournament);
         }
 
+        // New Data System
+        public void SaveTournament(Tournament tournament)
+        {
+            foreach (var tournamentData in _dataManager.TournamentDataFiles)
+            {
+                if (tournamentData.Tournament.Id.Equals(tournament.Id, StringComparison.OrdinalIgnoreCase))
+                {
+                    _dataManager.SaveTournamentDataFile(tournamentData);
+                    return;
+                }
+            }
+            // No existing tournament data file found, create a new one
+            _dataManager.AddNewTournament(tournament);
+        }
+
         public bool IsTournamentNameUnique(string tournamentName)
         {
             List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;

@@ -9,7 +9,7 @@ namespace FlawsFightNight.Data.Handlers
 {
     public class TournamentDataHandler : BaseFolderDataHandler<TournamentDataFile>
     {
-        public TournamentDataHandler(string tournamentId) : base(tournamentId)
+        public TournamentDataHandler() : base()
         {
 
         }

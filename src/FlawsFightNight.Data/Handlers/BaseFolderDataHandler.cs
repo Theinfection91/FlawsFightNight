@@ -6,26 +6,41 @@ namespace FlawsFightNight.Data.Handlers
 {
     public abstract class BaseFolderDataHandler<T> where T : new()
     {
-        protected readonly string _folderPath;
-        protected readonly string _filePath;
+        protected string _folderPath;
+        protected string _filePath;
 
-        protected BaseFolderDataHandler(string folderName, string fileName = "tournament.json")
+        //protected BaseFolderDataHandler(string folderName, string fileName = "tournament.json")
+        //{
+        //    string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        //    _folderPath = Path.Combine(baseDir, "Databases", folderName);
+
+        //    if (!Directory.Exists(_folderPath))
+        //        Directory.CreateDirectory(_folderPath);
+
+        //    _filePath = Path.Combine(_folderPath, fileName);
+
+        //    InitializeFile();
+        //}
+
+        protected BaseFolderDataHandler()
         {
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            _folderPath = Path.Combine(baseDir, "Databases", folderName);
-
-            if (!Directory.Exists(_folderPath))
-                Directory.CreateDirectory(_folderPath);
-
-            _filePath = Path.Combine(_folderPath, fileName);
-
-            InitializeFile();
+            
         }
 
         private void InitializeFile()
         {
             if (!File.Exists(_filePath))
                 Save(new T());
+        }
+
+        public void SetFilePath(string folderName, string fileName = "tournament.json")
+        {
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            _folderPath = Path.Combine(baseDir, "Databases", folderName);
+            if (!Directory.Exists(_folderPath))
+                Directory.CreateDirectory(_folderPath);
+            _filePath = Path.Combine(_folderPath, fileName);
+            InitializeFile();
         }
 
         public T Load()
@@ -44,8 +59,27 @@ namespace FlawsFightNight.Data.Handlers
                 {
                     TypeNameHandling = TypeNameHandling.Auto
                 });
-
             File.WriteAllText(_filePath, json);
+        }
+
+        public List<T> LoadAll()
+        {
+            // Get all JSON from each file in each folder
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var folderPath = Path.Combine(baseDir, "Databases");
+            var files = Directory.GetFiles(folderPath, "tournament.json", SearchOption.AllDirectories);
+            var list = new List<T>();
+            foreach (var file in files)
+            {
+                var json = File.ReadAllText(file);
+                var data = JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.Auto
+                });
+                if (data != null)
+                    list.Add(data);
+            }
+            return list;
         }
 
         // Optional: save extra files later

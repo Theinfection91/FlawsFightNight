@@ -153,6 +153,8 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<GitHubCredentialHandler>();
                     services.AddSingleton<PermissionsConfigHandler>();
                     services.AddSingleton<TournamentsDatabaseHandler>();
+                    // New Tournament System Data Handler
+                    services.AddSingleton<TournamentDataHandler>();
                 })
                 .Build();
 
