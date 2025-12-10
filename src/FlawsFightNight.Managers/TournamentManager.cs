@@ -147,13 +147,14 @@ namespace FlawsFightNight.Managers
 
         public List<Tournament> GetAllTournaments()
         {
-            return _dataManager.TournamentsDatabaseFile.Tournaments;
+            //return _dataManager.TournamentsDatabaseFile.Tournaments;
+            return _dataManager.TournamentDataFiles.Select(df => df.Tournament).ToList();
         }
 
         public List<Tournament> GetAllLadderTournaments()
         {
             List<Tournament> ladderTournaments = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
             {
                 if (tournament is NormalLadderTournament)
                 {
@@ -170,7 +171,7 @@ namespace FlawsFightNight.Managers
         public List<Tournament> GetAllRoundRobinTournaments()
         {
             List<Tournament> roundRobinTournaments = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
             {
                 if (tournament is NormalRoundRobinTournament || tournament is OpenRoundRobinTournament)
                 {

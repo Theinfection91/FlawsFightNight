@@ -64,7 +64,7 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllLadderTeams()
         {
             List<Team> ladderTeams = new List<Team>();
-            var tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            var tournaments = _dataManager.TournamentDataFiles.Select(df => df.Tournament);
             foreach (var tournament in tournaments)
             {
                 if (tournament is NormalLadderTournament)
@@ -82,7 +82,7 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllRoundBasedTeams()
         {
             List<Team> roundBasedTeams = new();
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            var tournaments = _dataManager.TournamentDataFiles.Select(df => df.Tournament);
             foreach (var tournament in tournaments)
             {
                 if (tournament is IRoundBased) // Will add elimination later
