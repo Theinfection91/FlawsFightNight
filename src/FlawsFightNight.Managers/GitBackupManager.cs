@@ -132,33 +132,37 @@ namespace FlawsFightNight.Managers
 
         public void CopyJsonFilesToBackupRepo()
         {
-            // TODO Needs to be updated for new data system separation
             try
             {
-                if (Directory.Exists(_databasesFolderPath))
+                if (!Directory.Exists(_databasesFolderPath))
+                    return;
+
+                // Get all .json files from all subdirectories
+                var jsonFiles = Directory.GetFiles(_databasesFolderPath, "*.json", SearchOption.AllDirectories);
+
+                foreach (var jsonFile in jsonFiles)
                 {
-                    // Get files from the Databases folder
-                    var jsonFiles = Directory.GetFiles(_databasesFolderPath, "*.json", SearchOption.TopDirectoryOnly);
+                    // Compute the relative path from Databases root
+                    string relativePath = Path.GetRelativePath(_databasesFolderPath, jsonFile);
 
-                    foreach (var jsonFile in jsonFiles)
+                    // Build the destination path inside the backup repo, preserving folders
+                    string destinationPath = Path.Combine(_repoPath, relativePath);
+
+                    // Ensure the destination directory exists
+                    Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+
+                    try
                     {
-                        // Set destination to be BackupRepo Folder
-                        string fileName = Path.GetFileName(jsonFile);
-                        string destinationPath = Path.Combine(_repoPath, fileName);
-
-                        try
+                        // Copy even if the source file is in use
+                        using (FileStream sourceStream = new FileStream(jsonFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        using (FileStream destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
                         {
-                            // Copy the file even if it's in use
-                            using (FileStream sourceStream = new FileStream(jsonFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                            using (FileStream destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
-                            {
-                                sourceStream.CopyTo(destinationStream);
-                            }
+                            sourceStream.CopyTo(destinationStream);
                         }
-                        catch (IOException ex)
-                        {
-                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error copying file {jsonFile}: {ex.Message}");
-                        }
+                    }
+                    catch (IOException ex)
+                    {
+                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error copying file {jsonFile}: {ex.Message}");
                     }
                 }
             }
@@ -172,30 +176,35 @@ namespace FlawsFightNight.Managers
         {
             try
             {
-                if (Directory.Exists(_repoPath))
+                if (!Directory.Exists(_repoPath))
+                    return;
+
+                // Get all .json files from all subdirectories in the BackupRepo
+                var jsonFiles = Directory.GetFiles(_repoPath, "*.json", SearchOption.AllDirectories);
+
+                foreach (var jsonFile in jsonFiles)
                 {
-                    // Get files from the BackupRepo folder
-                    var jsonFiles = Directory.GetFiles(_repoPath, "*.json", SearchOption.TopDirectoryOnly);
+                    // Compute the relative path from BackupRepo root
+                    string relativePath = Path.GetRelativePath(_repoPath, jsonFile);
 
-                    foreach (var jsonFile in jsonFiles)
+                    // Build the destination path inside the Databases folder, preserving folder structure
+                    string destinationPath = Path.Combine(_databasesFolderPath, relativePath);
+
+                    // Ensure the destination directory exists
+                    Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+
+                    try
                     {
-                        // Set destination to be Databases Folder
-                        string fileName = Path.GetFileName(jsonFile);
-                        string destinationPath = Path.Combine(_databasesFolderPath, fileName);
-
-                        try
+                        // Copy the file even if the source is in use
+                        using (FileStream sourceStream = new FileStream(jsonFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        using (FileStream destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
                         {
-                            // Copy the file even if it's in use
-                            using (FileStream sourceStream = new FileStream(jsonFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                            using (FileStream destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
-                            {
-                                sourceStream.CopyTo(destinationStream);
-                            }
+                            sourceStream.CopyTo(destinationStream);
                         }
-                        catch (IOException ex)
-                        {
-                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error copying file {jsonFile}: {ex.Message}");
-                        }
+                    }
+                    catch (IOException ex)
+                    {
+                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error copying file {jsonFile}: {ex.Message}");
                     }
                 }
             }
@@ -204,6 +213,7 @@ namespace FlawsFightNight.Managers
                 Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error while copying files from BackupRepo to Databases: {ex.Message}");
             }
         }
+
 
         public void BackupFiles()
         {
