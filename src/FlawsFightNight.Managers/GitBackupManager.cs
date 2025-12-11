@@ -101,7 +101,7 @@ namespace FlawsFightNight.Managers
                                     CopyFilesFromBackupRepoToDatabases();
 
                                     // Reload the newly cloned databases
-                                    _dataManager.LoadTournamentsDatabase();
+                                    _dataManager.LoadTournamentDataFiles();
                                     _dataManager.LoadPermissionsConfigFile();
 
                                     isQuestionProcessComplete = true;

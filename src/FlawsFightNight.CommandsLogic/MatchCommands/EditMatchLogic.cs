@@ -110,7 +110,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             tournament.AdjustRanks();
 
             // Save the database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git
             _gitBackupManager.CopyAndBackupFilesToGit();

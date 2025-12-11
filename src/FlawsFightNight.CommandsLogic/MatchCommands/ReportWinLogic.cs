@@ -33,7 +33,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 
         public Embed ReportWinProcess(SocketInteractionContext context, string matchId, string winningTeamName, int winningTeamScore, int losingTeamScore)
         {
-            _tournamentManager.LoadTournamentsDatabase();
             if (losingTeamScore > winningTeamScore)
             {
                 return _embedManager.ErrorEmbed(Name, "The losing team score cannot be greater than the winning team score.");
@@ -161,7 +160,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             tournament.AdjustRanks();
 
             // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

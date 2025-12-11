@@ -18,27 +18,6 @@ namespace FlawsFightNight.Managers
 
         }
 
-        public void LoadTournamentsDatabase()
-        {
-            _dataManager.LoadTournamentsDatabase();
-        }
-
-        public void SaveTournamentsDatabase()
-        {
-            _dataManager.SaveTournamentsDatabase();
-        }
-
-        public void SaveAndReloadTournamentsDatabase()
-        {
-            SaveTournamentsDatabase();
-            LoadTournamentsDatabase();
-        }
-
-        public void AddTournament(Tournament tournament)
-        {
-            _dataManager.AddTournament(tournament);
-        }
-
         // New Data System
         public void SaveTournament(Tournament tournament)
         {
@@ -210,7 +189,7 @@ namespace FlawsFightNight.Managers
 
         public Tournament GetTournamentFromTeamName(string teamName)
         {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.GetTournaments())
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
                 {
@@ -222,7 +201,7 @@ namespace FlawsFightNight.Managers
 
         public Tournament GetTournamentFromMatchId(string matchId)
         {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.GetTournaments())
             {
                 if (tournament.MatchLog.GetAllActiveMatches().Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
                 {

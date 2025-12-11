@@ -39,7 +39,7 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             tournament.TeamsMessageId = 0;
 
             // Save and reload the tournaments database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

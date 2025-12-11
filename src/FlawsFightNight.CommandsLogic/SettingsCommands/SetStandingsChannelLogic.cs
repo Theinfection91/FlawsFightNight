@@ -33,7 +33,7 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             tournament.StandingsChannelId = channel.Id;
 
             // Save and reload the tournaments database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

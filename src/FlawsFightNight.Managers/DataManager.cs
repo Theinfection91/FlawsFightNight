@@ -32,16 +32,12 @@ namespace FlawsFightNight.Managers
         public PermissionsConfigFile PermissionsConfigFile { get; private set; }
         private readonly PermissionsConfigHandler _permissionsConfigHandler;
 
-        // Tournaments Database
-        public TournamentsDatabaseFile TournamentsDatabaseFile { get; private set; }
-        private readonly TournamentsDatabaseHandler _tournamentsDatabaseHandler;
-
-        // New Tournament System
+        // Tournament Data Files - New Tournament System
         public List<TournamentDataFile> TournamentDataFiles { get; private set; }
         private readonly TournamentDataHandler _tournamentDataHandler;
 
         // Constructor is given each handler type for each specific JSON file
-        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentsDatabaseHandler tournamentsDatabaseHandler, TournamentDataHandler tournamentDataHandler)
+        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler)
         {
             DiscordClient = client;
 
@@ -53,9 +49,6 @@ namespace FlawsFightNight.Managers
 
             _permissionsConfigHandler = permissionsConfigHandler;
             LoadPermissionsConfigFile();
-
-            _tournamentsDatabaseHandler = tournamentsDatabaseHandler;
-            LoadTournamentsDatabase();
 
             // New Tournament System
             _tournamentDataHandler = tournamentDataHandler;
@@ -117,41 +110,6 @@ namespace FlawsFightNight.Managers
         }
         #endregion
 
-        #region Tournaments Data
-        public void LoadTournamentsDatabase()
-        {
-            TournamentsDatabaseFile = _tournamentsDatabaseHandler.Load();
-        }
-
-        public void SaveTournamentsDatabase()
-        {
-            _tournamentsDatabaseHandler.Save(TournamentsDatabaseFile);
-        }
-
-        public void SaveAndReloadTournamentsDatabase()
-        {
-            _tournamentsDatabaseHandler.Save(TournamentsDatabaseFile);
-            LoadTournamentsDatabase();
-        }
-
-        public void AddTournament(Tournament tournament)
-        {
-            TournamentsDatabaseFile.Tournaments.Add(tournament);
-            //SaveAndReloadTournamentsDatabase();
-        }
-
-        public void RemoveTournament(string tournamentId)
-        {
-            //var tournament = TournamentsDatabaseFile.Tournaments.FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
-            //if (tournament != null)
-            //{
-            //    TournamentsDatabaseFile.Tournaments.Remove(tournament);
-            //}
-            TournamentsDatabaseFile.Tournaments.RemoveAll(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
-            _tournamentDataHandler.DeleteFolderAndContents(tournamentId);
-        }
-        #endregion
-
         #region New Tournament System
         public void LoadTournamentDataFiles()
         {
@@ -164,6 +122,22 @@ namespace FlawsFightNight.Managers
             _tournamentDataHandler.Save(tournamentDataFile);
         }
 
+        public void SaveAndReloadTournamentDataFiles(Tournament tournament)
+        {
+            foreach (var tournamentData in TournamentDataFiles)
+            {
+                if (tournamentData.Tournament.Id.Equals(tournament.Id, StringComparison.OrdinalIgnoreCase))
+                {
+                    SaveTournamentDataFile(tournamentData);
+                    LoadTournamentDataFiles();
+                    return;
+                }
+            }
+            // No existing tournament data file found, create a new one
+            AddNewTournament(tournament);
+            LoadTournamentDataFiles();
+        }
+
         public void AddNewTournament(Tournament tournament)
         {
             var newTournamentDataFile = new TournamentDataFile
@@ -172,6 +146,20 @@ namespace FlawsFightNight.Managers
             };
             TournamentDataFiles.Add(newTournamentDataFile);
             SaveTournamentDataFile(newTournamentDataFile);
+        }
+
+        public void RemoveTournament(string tournamentId)
+        {
+            // Remove from in-memory list
+            TournamentDataFiles.RemoveAll(t => t.Tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
+
+            // Remove the actual folder and contents
+            _tournamentDataHandler.DeleteFolderAndContents(tournamentId);
+        }
+
+        public List<Tournament> GetTournaments()
+        {
+            return TournamentDataFiles.Select(t => t.Tournament).ToList();
         }
         #endregion
     }

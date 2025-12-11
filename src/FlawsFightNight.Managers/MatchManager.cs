@@ -63,7 +63,7 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool IsMatchIdInDatabase(string matchId)
         {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.GetTournaments())
             {
                 if (tournament.MatchLog.ContainsMatchId(matchId))
                 {

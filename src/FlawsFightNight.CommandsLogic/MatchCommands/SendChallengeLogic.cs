@@ -144,7 +144,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             _matchManager.SendChallengeSuccessNotificationProcess(tournament, newChallengeMatch, challengerTeam, challengedTeam);
 
             // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
