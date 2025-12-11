@@ -39,6 +39,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Handle Normal and Open Round Robin Tournaments
             if (tournament is ITieBreakerRankSystem tbTournament)
             {
+                // TODO So many repeated lines here, refactor later
                 if (_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog))
                 {
                     // Resolve tie breaker info
@@ -48,7 +49,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                     tournament.End();
 
                     // Save the updated tournament state
-                    _tournamentManager.SaveAndReloadTournamentsDatabase();
+                    _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                     // Backup to git repo
                     _gitBackupManager.CopyAndBackupFilesToGit();
@@ -61,7 +62,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                     tournament.End();
 
                     // Save the updated tournament state
-                    _tournamentManager.SaveAndReloadTournamentsDatabase();
+                    _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                     // Backup to git repo
                     _gitBackupManager.CopyAndBackupFilesToGit();
@@ -77,7 +78,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 ladderTournament.End();
 
                 // Save the updated tournament state
-                _tournamentManager.SaveAndReloadTournamentsDatabase();
+                _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                 // Backup to git repo
                 _gitBackupManager.CopyAndBackupFilesToGit();
@@ -92,7 +93,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 dsrTournament.End();
 
                 // Save the updated tournament state
-                _tournamentManager.SaveAndReloadTournamentsDatabase();
+                _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                 // Backup to git repo
                 _gitBackupManager.CopyAndBackupFilesToGit();

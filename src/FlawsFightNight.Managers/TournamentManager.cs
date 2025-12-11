@@ -59,6 +59,12 @@ namespace FlawsFightNight.Managers
             _dataManager.LoadTournamentDataFiles();
         }
 
+        public void SaveAndReloadTournamentDataFiles(Tournament tournament)
+        {
+            SaveTournament(tournament);
+            LoadTournamentDataFiles();
+        }
+
         public bool IsTournamentNameUnique(string tournamentName)
         {
             //List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
