@@ -284,55 +284,5 @@ namespace FlawsFightNight.Managers
                 Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during CopyAndBackupFilesToGit process: {ex.Message}");
             }
         }
-
-        public void ForceBackupFiles()
-        {
-            using (var repo = new Repository(_repoPath))
-            {
-                // Get all files in the repository directory
-                var files = Directory.GetFiles(_repoPath, "*", SearchOption.AllDirectories);
-
-                foreach (var file in files)
-                {
-                    // Skip Git metadata files
-                    if (file.Contains(".git")) continue;
-
-                    // Stage the file
-                    Commands.Stage(repo, file);
-                }
-
-                // Create a commit with the current timestamp
-                Signature author = new Signature("FlawsFightNight", "Mr.Flaw@bot.com", DateTimeOffset.Now);
-                try
-                {
-                    Commit commit = repo.Commit(
-                        $"Backup: Commit at {DateTime.Now}",
-                        author,
-                        author,
-                        new CommitOptions { AllowEmptyCommit = true } // Force empty commits
-                    );
-
-                    // Push changes to the remote repository
-                    var options = new PushOptions
-                    {
-                        CredentialsProvider = (_, _, _) => new UsernamePasswordCredentials
-                        {
-                            Username = "FlawsFightNight",
-                            Password = _token
-                        }
-                    };
-                    repo.Network.Push(repo.Branches["main"], options);
-                    Console.WriteLine($"{DateTime.Now} GitBackupManager - Automated Backup pushed successfully.");
-                }
-                catch (EmptyCommitException)
-                {
-                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - No changes; empty commit was skipped.");
-                }
-                catch (LibGit2SharpException ex)
-                {
-                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during push: {ex.Message}");
-                }
-            }
-        }
     }
 }
