@@ -32,14 +32,15 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 
             if (!tournament.CanDelete())
             {
+                // TODO Need to add ErrorReason object return here
                 return _embedManager.ErrorEmbed(Name, "Tournament cannot be deleted in its current state. Make sure it is not running and all teams are unlocked if applicable.");
             }
 
             // Delete the tournament
             _tournamentManager.DeleteTournament(tournament.Id);
 
-            // Save and reload the database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            // Load tournament data files again, now that one is deleted
+            _tournamentManager.LoadTournamentDataFiles();
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

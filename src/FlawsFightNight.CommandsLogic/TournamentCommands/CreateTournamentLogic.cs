@@ -42,11 +42,8 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 return _embedManager.ToDoEmbed("Sorry, but for now only DSR Ladder, Normal Ladder, and either Normal or Open Round Robin tournaments may be created and played. Please try again.");
             }
 
-            // Add the tournament
-            _tournamentManager.AddTournament(tournament);
-
             // Save and reload the database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

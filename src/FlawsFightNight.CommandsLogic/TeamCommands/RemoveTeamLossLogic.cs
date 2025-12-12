@@ -67,7 +67,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             team.LoseStreak = 0;
 
             // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

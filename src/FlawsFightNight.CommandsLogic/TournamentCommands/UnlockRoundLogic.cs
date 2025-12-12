@@ -61,7 +61,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 roundBasedTournament.UnlockRound();
 
                 // Save and reload the tournament database
-                _tournamentManager.SaveAndReloadTournamentsDatabase();
+                _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                 // Backup to git repo
                 _gitBackupManager.CopyAndBackupFilesToGit();

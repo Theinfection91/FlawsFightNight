@@ -96,7 +96,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             tournament.MatchLog.RemoveMatch(pendingMatch);
 
             // Save and reload the tournaments database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
             
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

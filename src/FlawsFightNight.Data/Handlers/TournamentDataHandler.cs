@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public class TournamentsDatabaseHandler : BaseDataHandler<TournamentsDatabaseFile>
+    public class TournamentDataHandler : BaseFolderDataHandler<TournamentDataFile>
     {
-        public TournamentsDatabaseHandler() : base("tournaments.json", "Databases")
+        public TournamentDataHandler() : base()
         {
 
         }

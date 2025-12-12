@@ -52,7 +52,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _matchManager.SendMatchSchedulesToTeamsResolver(tournament);
 
             // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

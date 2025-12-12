@@ -58,7 +58,7 @@ namespace FlawsFightNight.Managers
                 {
                     //Console.WriteLine($"{DateTime.Now} [LiveViewService] Heartbeat...");
 
-                    var tournaments = _dataManager.TournamentsDatabaseFile.Tournaments
+                    var tournaments = _dataManager.GetTournaments()
                         .Where(t => t != null)
                         .ToList();
 
@@ -101,7 +101,7 @@ namespace FlawsFightNight.Managers
             tournament.MatchesMessageId = newMsg.Id;
             await Task.Run(() =>
             {
-                _dataManager.SaveAndReloadTournamentsDatabase();
+                _dataManager.SaveAndReloadTournamentDataFiles(tournament);
                 _gitBackupManager.CopyAndBackupFilesToGit();
             });
         }
@@ -125,7 +125,7 @@ namespace FlawsFightNight.Managers
             tournament.StandingsMessageId = newMsg.Id;
             await Task.Run(() =>
             {
-                _dataManager.SaveAndReloadTournamentsDatabase();
+                _dataManager.SaveAndReloadTournamentDataFiles(tournament);
                 _gitBackupManager.CopyAndBackupFilesToGit();
             });
         }
@@ -149,7 +149,7 @@ namespace FlawsFightNight.Managers
             tournament.TeamsMessageId = newMsg.Id;
             await Task.Run(() =>
             {
-                _dataManager.SaveAndReloadTournamentsDatabase();
+                _dataManager.SaveAndReloadTournamentDataFiles(tournament);
                 _gitBackupManager.CopyAndBackupFilesToGit();
             });
         }

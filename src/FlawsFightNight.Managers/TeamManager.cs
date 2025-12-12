@@ -20,7 +20,7 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool DoesTeamExist(string teamName, bool isCaseSensitive = false)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            List<Tournament> tournaments = _dataManager.GetTournaments();
             foreach (Tournament tournament in tournaments)
             {
                 if (isCaseSensitive)
@@ -43,7 +43,7 @@ namespace FlawsFightNight.Managers
 
         public bool IsTeamNameUnique(string teamName)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            List<Tournament> tournaments = _dataManager.GetTournaments();
             foreach (Tournament tournament in tournaments)
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
@@ -64,7 +64,7 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllLadderTeams()
         {
             List<Team> ladderTeams = new List<Team>();
-            var tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            var tournaments = _dataManager.TournamentDataFiles.Select(df => df.Tournament);
             foreach (var tournament in tournaments)
             {
                 if (tournament is NormalLadderTournament)
@@ -82,7 +82,7 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllRoundBasedTeams()
         {
             List<Team> roundBasedTeams = new();
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            var tournaments = _dataManager.TournamentDataFiles.Select(df => df.Tournament);
             foreach (var tournament in tournaments)
             {
                 if (tournament is IRoundBased) // Will add elimination later
@@ -95,7 +95,7 @@ namespace FlawsFightNight.Managers
 
         public Team GetTeamByName(string teamName)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            List<Tournament> tournaments = _dataManager.GetTournaments();
             foreach (var tournament in tournaments)
             {
                 Team? team = tournament.Teams.FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));

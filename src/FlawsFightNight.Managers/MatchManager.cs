@@ -63,7 +63,7 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool IsMatchIdInDatabase(string matchId)
         {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.GetTournaments())
             {
                 if (tournament.MatchLog.ContainsMatchId(matchId))
                 {
@@ -133,7 +133,7 @@ namespace FlawsFightNight.Managers
         public List<Match> GetAllActiveMatches()
         {
             List<Match> allMatches = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
             {
                 allMatches.AddRange(tournament.MatchLog.GetAllActiveMatches());
             }
@@ -143,7 +143,7 @@ namespace FlawsFightNight.Managers
         public List<PostMatch> GetAllPostMatches()
         {
             List<PostMatch> allPostMatches = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
             {
                 allPostMatches.AddRange(tournament.MatchLog.GetAllPostMatches());
             }
@@ -153,7 +153,7 @@ namespace FlawsFightNight.Managers
         public List<PostMatch> GetAllRoundRobinPostMatches()
         {
             List<PostMatch> allPostMatches = new();
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
             {
                 if (tournament is NormalRoundRobinTournament || tournament is OpenRoundRobinTournament)
                 {
@@ -657,7 +657,7 @@ namespace FlawsFightNight.Managers
 
         public string GetTeamNameFromDiscordId(ulong discordId, string tournamentId)
         {
-            foreach (var tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
+            foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
             {
                 foreach (var team in tournament.Teams)
                 {
