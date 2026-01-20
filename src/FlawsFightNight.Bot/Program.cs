@@ -164,6 +164,10 @@ namespace FlawsFightNight.Bot
             _configManager.SetDiscordTokenProcess();
             _configManager.SetGitBackupProcess();
 
+            // Run interactive Git backup setup (clone/restore prompts)
+            var gitBackupManager = _services.GetRequiredService<GitBackupManager>();
+            gitBackupManager.RunInteractiveSetup();
+
             // Discord services
             _commands = _services.GetRequiredService<CommandService>();
             _interactionService = new InteractionService(_client);
