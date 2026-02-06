@@ -320,7 +320,10 @@ namespace FlawsFightNight.Managers
         public Embed StandingsLiveViewResolver(Tournament tournament)
         {
             // TODO Add DSR Tournament Embed
-
+            if (tournament is DSRLadderTournament)
+            {
+                return DSRStandingsLiveView(tournament);
+            }
             if (tournament is NormalLadderTournament)
             {
                 return LadderStandingsLiveView(tournament);
@@ -333,6 +336,34 @@ namespace FlawsFightNight.Managers
             {
                 return ToDoEmbed();
             }
+        }
+
+        public Embed DSRStandingsLiveView(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} DSR Ladder Tournament Standings")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Total Teams: {tournament.Teams.Count}**\n")
+                .WithColor(Color.Gold)
+                .WithCurrentTimestamp();
+            if (tournament.Teams.Count == 0)
+            {
+                embed.Description += "\n_No teams registered._";
+                return embed.Build();
+            }
+            foreach (var team in tournament.Teams.OrderBy(e => e.Rank))
+            {
+                var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndAgainst(team.Name);
+                embed.Description +=
+                    $"\n#{team.Rank} **{team.Name}**\n" +
+                    $"🏆 Rating: {team.Rating}\n" +
+                    $"✅ Wins: {team.Wins} | " +
+                    $"❌ Losses: {team.Losses} | " +
+                    $"{team.GetCorrectStreakEmoji()} W/L Streak: {team.GetFormattedStreakString()}\n" +
+                    //$"⭐ Points For: {pointsFor} | " +
+                    //$"🛡️ Points Against: {pointsAgainst}\n" +
+                    $"⚔️ Challenge Status: {team.GetFormattedChallengeStatus()}\n";
+            }
+            return embed.Build();
         }
 
         public Embed LadderStandingsLiveView(Tournament tournament)
@@ -447,6 +478,7 @@ namespace FlawsFightNight.Managers
 
         public Embed ReportWinSuccess(Tournament tournament, Match match, Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, bool isGuildAdminReporting)
         {
+            // TODO - There really should be more information here. Especially for new DSR Ladders that will have rating changes after each match, would be nice to show exact changes of rating and why.
             string reporterText = isGuildAdminReporting
                 ? "An **admin** reported this match result."
                 : "The match result was reported normally.";
