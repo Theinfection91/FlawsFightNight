@@ -114,6 +114,55 @@ namespace FlawsFightNight.Core.Models.Tournaments
             }
         }
 
+        public string GetRankTitle(int rating)
+        {
+            return rating switch
+            {
+                >= 2400 => "🏆 Grand Master",
+                >= 2200 => "💎 Diamond Warrior",
+                >= 2000 => "🥇 Gold Champion",
+                >= 1800 => "🥈 Silver Competitor",
+                >= 1600 => "🥉 Bronze Fighter",
+                _ => ":rock: Stone Scrapper"
+            };
+        }
+
+        public List<string> GetMatchAchievements(Team winner, Team loser, int winnerScore, int loserScore, int winnerRatingChange, int loserRatingChange)
+        {
+            var achievements = new List<string>();
+
+            // Hot streak
+            if (winner.WinStreak >= 5)
+                achievements.Add($"🔥 **ON FIRE** {winner.Name} has won {winner.WinStreak} in a row.");
+
+            // Massive upset
+            int ratingDiff = loser.Rating - winner.Rating + winnerRatingChange;
+            if (ratingDiff >= 300)
+                achievements.Add($"⚡ **GIANT KILLER** {winner.Name} took down a much stronger opponent.");
+
+            // Stomp
+            if (winnerScore - loserScore >= 5)
+                achievements.Add($"💀 **DOMINATION!** Absolutely destroyed by {winnerScore}-{loserScore}.");
+
+            // Big rating gain
+            if (winnerRatingChange >= 100)
+                achievements.Add($"📈 **HUGE GAINS** +{winnerRatingChange} rating in one match.");
+
+            // Promotion check
+            string oldTitle = GetRankTitle(winner.Rating - winnerRatingChange);
+            string newTitle = GetRankTitle(winner.Rating);
+            if (oldTitle != newTitle)
+                achievements.Add($"🎉 **PROMOTED!** {winner.Name} is now {newTitle}!");
+
+            // Demotion check (for drama!)
+            string oldLoserTitle = GetRankTitle(loser.Rating - loserRatingChange);
+            string newLoserTitle = GetRankTitle(loser.Rating);
+            if (oldLoserTitle != newLoserTitle)
+                achievements.Add($"⬇️ {loser.Name} has been demoted to {newLoserTitle}");
+
+            return achievements;
+        }
+
         public void HandleTeamRatingChange(Team winner, Team loser, int winnerScore, int loserScore, out int winnerRatingChange, out int loserRatingChange)
         {
             // Store initial ratings
