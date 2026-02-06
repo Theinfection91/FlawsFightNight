@@ -133,7 +133,7 @@ namespace FlawsFightNight.Managers
         public List<Tournament> GetAllTournaments()
         {
             //return _dataManager.TournamentsDatabaseFile.Tournaments;
-            return _dataManager.TournamentDataFiles.Select(df => df.Tournament).ToList();
+            return _dataManager.GetTournaments();
         }
 
         public List<Tournament> GetAllLadderTournaments()

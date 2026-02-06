@@ -1261,19 +1261,25 @@ namespace FlawsFightNight.Managers
 
             foreach (var tournament in tournaments.OrderByDescending(t => t.CreatedOn))
             {
+                var teamLocking = tournament as ITeamLocking;
+                var roundBased = tournament as IRoundBased;
+
                 string status = tournament.IsRunning ? "🟢 Running" : "🔴 Not Running";
-                string teamsLockedStatus = (tournament as ITeamLocking).IsTeamsLocked ? "🔒 Locked" : "🔓 Unlocked";
-                string roundInfo = (tournament as IRoundBased).TotalRounds.HasValue
-                    ? $"{(tournament as IRoundBased).CurrentRound}/{(tournament as IRoundBased).TotalRounds.Value}"
-                    : $"{(tournament as IRoundBased).CurrentRound}/N/A";
+                string teamsLockedStatus = teamLocking != null ? (teamLocking.IsTeamsLocked ? "🔒 Locked" : "🔓 Unlocked") : "N/A";
+                string roundInfo = roundBased != null
+                    ? (roundBased.TotalRounds.HasValue ? $"{roundBased.CurrentRound}/{roundBased.TotalRounds.Value}" : $"{roundBased.CurrentRound}/N/A")
+                    : "N/A";
+
+                int teamCount = tournament.Teams?.Count ?? 0;
+
                 string description = string.Join("\n", new[]
                 {
                     $"**Type:** {tournament.Type}",
                     $"**Status:** {status}",
-                    $"**Teams:** {tournament.Teams.Count} ({teamsLockedStatus})",
+                    $"**Teams:** {teamCount} ({teamsLockedStatus})",
                     $"**Round:** {roundInfo}",
                     $"**Created On:** {tournament.CreatedOn:yyyy-MM-dd}",
-                    tournament.Description != null ? $"**Description:** {tournament.Description}" : null
+                    !string.IsNullOrWhiteSpace(tournament.Description) ? $"**Description:** {tournament.Description}" : null
                 }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
                 embed.AddField($"{tournament.Name} (ID#: {tournament.Id})", description, false);
