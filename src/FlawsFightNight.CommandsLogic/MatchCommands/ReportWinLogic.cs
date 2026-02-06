@@ -122,10 +122,6 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Convert match to post-match
             tournament.MatchLog.ConvertMatchToPostMatch(tournament, match, winningTeam.Name, winningTeamScore, losingTeam.Name, losingTeamScore);
 
-            // Declare rating change variables BEFORE the if blocks
-            int winningTeamRatingChange = 0;
-            int losingTeamRatingChange = 0;
-
             // Handle normal ladder tournament challenge procedures
             if (tournament is NormalLadderTournament ladderTournament)
             {
@@ -144,6 +140,8 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // Handle DSR Ladder tournament procedures
+            int winningTeamRatingChange = 0;
+            int losingTeamRatingChange = 0;
             if (tournament is DSRLadderTournament dsrLadderTournament)
             {
                 // Run the calculator and output rating changes

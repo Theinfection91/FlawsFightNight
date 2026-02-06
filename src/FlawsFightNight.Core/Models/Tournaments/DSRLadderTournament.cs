@@ -132,17 +132,17 @@ namespace FlawsFightNight.Core.Models.Tournaments
             var achievements = new List<string>();
 
             // Hot streak
-            if (winner.WinStreak >= 5)
+            if (winner.WinStreak >= 3)
                 achievements.Add($"🔥 **ON FIRE** {winner.Name} has won {winner.WinStreak} in a row.");
 
             // Massive upset
             int ratingDiff = loser.Rating - winner.Rating + winnerRatingChange;
-            if (ratingDiff >= 300)
+            if (ratingDiff >= 250)
                 achievements.Add($"⚡ **GIANT KILLER** {winner.Name} took down a much stronger opponent.");
 
             // Stomp
             if (winnerScore - loserScore >= 5)
-                achievements.Add($"💀 **DOMINATION!** Absolutely destroyed by {winnerScore}-{loserScore}.");
+                achievements.Add($"💀 **DOMINATION!** Absolutely destroyed by {winnerScore} to {loserScore}.");
 
             // Big rating gain
             if (winnerRatingChange >= 100)
@@ -154,7 +154,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             if (oldTitle != newTitle)
                 achievements.Add($"🎉 **PROMOTED!** {winner.Name} is now {newTitle}!");
 
-            // Demotion check (for drama!)
+            // Demotion check
             string oldLoserTitle = GetRankTitle(loser.Rating - loserRatingChange);
             string newLoserTitle = GetRankTitle(loser.Rating);
             if (oldLoserTitle != newLoserTitle)
@@ -187,7 +187,8 @@ namespace FlawsFightNight.Core.Models.Tournaments
             // --- Streak bonuses ---
             // For every win in the winner's streak beyond the first, award 4 points up to a maximum of 20 points
             int winStreakBonus = Math.Min(20, Math.Max(0, winner.WinStreak - 1) * 4);
-            // For every loss in the loser's streak beyond the first, deduct 4 points up to a maximum of -20 points
+            
+            // For every loss in the loser's streak beyond the first, deduct 4 points up to a maximum of -20 points (Currently inactive)
             //int lossStreakPenalty = Math.Max(-20, Math.Min(0, -(loser.LoseStreak - 1) * 4));
 
             // --- Apply rating changes ---
@@ -198,7 +199,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             winner.Rating += finalWinnerChange;
             loser.Rating += finalLoserChange;
 
-            // Clamp ratings from dropping below 100 (optional)
+            // Clamp ratings from dropping below 100 (Currently inactive)
             //winner.Rating = Math.Max(100, winner.Rating);
             //loser.Rating = Math.Max(100, loser.Rating);
 
