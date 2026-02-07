@@ -51,7 +51,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override void Start()
         {
-            // TODO Test Open Round Robin specific start logic here
             IsRunning = true;
             CanTeamsBeLocked = false;
             CanTeamsBeUnlocked = false;
@@ -75,7 +74,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override void End()
         {
-            // TODO Test Open Round Robin specific end logic here
             IsRunning = false;
             IsTeamsLocked = false;
             CanTeamsBeUnlocked = false;
@@ -84,14 +82,15 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override string GetFormattedType() => "Open Round Robin";
 
-        public override bool CanDelete()
+        public override bool CanDelete(out ErrorReason errorReason)
         {
-            if (!IsRunning && !IsTeamsLocked)
+            if (IsRunning && IsTeamsLocked)
             {
-                return true;
+                errorReason = ErrorReasonGenerator.GenerateIsRunningAndTeamsLockedError();
+                return false;
             }
-
-            return false;
+            errorReason = null;
+            return true;
         }
 
         public override bool CanAcceptNewTeams()
@@ -166,8 +165,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public void SetRanksByTieBreakerLogic()
         {
-            // TODO Test Tie Breaker application logic here
-
             // Sort base order by W-L and total score for initial grouping
             Teams = Teams
                 .OrderByDescending(t => t.Wins)

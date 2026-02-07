@@ -30,10 +30,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Grab tournament, modal should have ensured it exists
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
-            if (!tournament.CanDelete())
+            if (!tournament.CanDelete(out var errorReason))
             {
-                // TODO Need to add ErrorReason object return here
-                return _embedManager.ErrorEmbed(Name, "Tournament cannot be deleted in its current state. Make sure it is not running and all teams are unlocked if applicable.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament {tournament.Name} cannot be deleted at this time: {errorReason.Info}");
             }
 
             // Delete the tournament

@@ -42,7 +42,6 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Check if teams can be locked
             if (!lockableTournament.CanLockTeams(out var errorReason))
             {
-                // TODO Implement new ErrorReason object with embed for better error handling
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be locked at this time: {errorReason.Info}");
             }
 

@@ -45,7 +45,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public abstract bool CanEnd(out ErrorReason errorReason);
         public abstract void End();
         public abstract string GetFormattedType();
-        public abstract bool CanDelete();
+        public abstract bool CanDelete(out ErrorReason errorReason);
         public abstract bool CanAcceptNewTeams();
         public abstract void AdjustRanks();
 
