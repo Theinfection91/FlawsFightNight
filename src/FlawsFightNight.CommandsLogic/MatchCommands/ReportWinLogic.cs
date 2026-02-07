@@ -140,17 +140,15 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             }
 
             // Handle DSR Ladder tournament procedures
+            int winningTeamRatingChange = 0;
+            int losingTeamRatingChange = 0;
             if (tournament is DSRLadderTournament dsrLadderTournament)
             {
                 // Run the calculator and output rating changes
-                dsrLadderTournament.HandleTeamRatingChange(winningTeam, losingTeam, winningTeamScore, losingTeamScore, out int winningTeamRatingChange, out int losingTeamRatingChange);
+                dsrLadderTournament.HandleTeamRatingChange(winningTeam, losingTeam, winningTeamScore, losingTeamScore, out winningTeamRatingChange, out losingTeamRatingChange);
 
                 // Grab the post match and record the rating change of teams
                 (tournament.MatchLog as DSRLadderMatchLog)?.RecordRatingChangeToPostMatch(matchId, winningTeamRatingChange, losingTeamRatingChange);
-
-                // Output rating change in console for now
-                //Console.WriteLine($"[DSR Rating Change] {winningTeam.Name} rating change: {winningTeamRatingChange}, new rating: {winningTeam.Rating}");
-                //Console.WriteLine($"[DSR Rating Change] {losingTeam.Name} rating change: {losingTeamRatingChange}, new rating: {losingTeam.Rating}");
             }
 
             winningTeam.IsChallengeable = true;
@@ -165,7 +163,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
-            return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin);
+            return _embedManager.ReportWinSuccess(tournament, match, winningTeam, winningTeamScore, losingTeam, losingTeamScore, isGuildAdmin, winningTeamRatingChange, losingTeamRatingChange);
         }
     }
 }

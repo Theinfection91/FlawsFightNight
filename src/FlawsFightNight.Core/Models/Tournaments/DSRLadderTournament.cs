@@ -73,7 +73,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             // Reset team stats to zero
             foreach (var team in Teams)
             {
-                team.Rating = 1800;
+                team.Rating = 1750;
                 team.ResetTeamToZero();
             }
         }
@@ -114,6 +114,55 @@ namespace FlawsFightNight.Core.Models.Tournaments
             }
         }
 
+        public string GetRankTitle(int rating)
+        {
+            return rating switch
+            {
+                >= 2300 => "🏆 Grand Master",
+                >= 2150 => "💎 Diamond Warrior",
+                >= 2000 => "🥇 Gold Champion",
+                >= 1800 => "🥈 Silver Competitor",
+                >= 1600 => "🥉 Bronze Fighter",
+                _ => ":rock: Stone Scrapper"
+            };
+        }
+
+        public List<string> GetMatchAchievements(Team winner, Team loser, int winnerScore, int loserScore, int winnerRatingChange, int loserRatingChange)
+        {
+            var achievements = new List<string>();
+
+            // Hot streak
+            if (winner.WinStreak >= 3)
+                achievements.Add($"🔥 **ON FIRE** {winner.Name} has won {winner.WinStreak} in a row.");
+
+            // Massive upset
+            int ratingDiff = loser.Rating - winner.Rating + winnerRatingChange;
+            if (ratingDiff >= 250)
+                achievements.Add($"⚡ **GIANT KILLER** {winner.Name} took down a much stronger opponent.");
+
+            // Stomp
+            if (winnerScore - loserScore >= 5)
+                achievements.Add($"💀 **DOMINATION!** Absolutely destroyed by {winnerScore} to {loserScore}.");
+
+            // Big rating gain
+            if (winnerRatingChange >= 100)
+                achievements.Add($"📈 **HUGE GAINS** +{winnerRatingChange} rating in one match.");
+
+            // Promotion check
+            string oldTitle = GetRankTitle(winner.Rating - winnerRatingChange);
+            string newTitle = GetRankTitle(winner.Rating);
+            if (oldTitle != newTitle)
+                achievements.Add($"⬆️ **PROMOTED!** {winner.Name} is now {newTitle}!");
+
+            // Demotion check
+            string oldLoserTitle = GetRankTitle(loser.Rating - loserRatingChange);
+            string newLoserTitle = GetRankTitle(loser.Rating);
+            if (oldLoserTitle != newLoserTitle)
+                achievements.Add($"⬇️ {loser.Name} has been demoted to {newLoserTitle}");
+
+            return achievements;
+        }
+
         public void HandleTeamRatingChange(Team winner, Team loser, int winnerScore, int loserScore, out int winnerRatingChange, out int loserRatingChange)
         {
             // Store initial ratings
@@ -138,7 +187,8 @@ namespace FlawsFightNight.Core.Models.Tournaments
             // --- Streak bonuses ---
             // For every win in the winner's streak beyond the first, award 4 points up to a maximum of 20 points
             int winStreakBonus = Math.Min(20, Math.Max(0, winner.WinStreak - 1) * 4);
-            // For every loss in the loser's streak beyond the first, deduct 4 points up to a maximum of -20 points
+            
+            // For every loss in the loser's streak beyond the first, deduct 4 points up to a maximum of -20 points (Currently inactive)
             //int lossStreakPenalty = Math.Max(-20, Math.Min(0, -(loser.LoseStreak - 1) * 4));
 
             // --- Apply rating changes ---
@@ -149,7 +199,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             winner.Rating += finalWinnerChange;
             loser.Rating += finalLoserChange;
 
-            // Clamp ratings from dropping below 100 (optional)
+            // Clamp ratings from dropping below 100 (Currently inactive)
             //winner.Rating = Math.Max(100, winner.Rating);
             //loser.Rating = Math.Max(100, loser.Rating);
 

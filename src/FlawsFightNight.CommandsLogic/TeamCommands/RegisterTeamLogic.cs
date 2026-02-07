@@ -84,7 +84,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 
             if (tournament is DSRLadderTournament)
             {
-                newTeam.Rating = 1800;
+                newTeam.Rating = 1750;
             }
 
             // Add new team to the tournament

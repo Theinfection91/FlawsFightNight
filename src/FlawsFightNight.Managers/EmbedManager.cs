@@ -320,7 +320,10 @@ namespace FlawsFightNight.Managers
         public Embed StandingsLiveViewResolver(Tournament tournament)
         {
             // TODO Add DSR Tournament Embed
-
+            if (tournament is DSRLadderTournament)
+            {
+                return DSRStandingsLiveView(tournament);
+            }
             if (tournament is NormalLadderTournament)
             {
                 return LadderStandingsLiveView(tournament);
@@ -333,6 +336,35 @@ namespace FlawsFightNight.Managers
             {
                 return ToDoEmbed();
             }
+        }
+
+        public Embed DSRStandingsLiveView(Tournament tournament)
+        {
+            DSRLadderTournament? dsrTournament = tournament as DSRLadderTournament;
+            var embed = new EmbedBuilder()
+                .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} DSR Ladder Tournament Standings")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Total Teams: {tournament.Teams.Count}**\n")
+                .WithColor(Color.Gold)
+                .WithCurrentTimestamp();
+            if (tournament.Teams.Count == 0)
+            {
+                embed.Description += "\n_No teams registered._";
+                return embed.Build();
+            }
+            foreach (var team in tournament.Teams.OrderBy(e => e.Rank))
+            {
+                var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndAgainst(team.Name);
+                embed.Description +=
+                    $"\n#{team.Rank} **{team.Name}**\n" +
+                    $"🏆 Rating: {team.Rating} - {dsrTournament.GetRankTitle(team.Rating)}\n" +
+                    $"✅ Wins: {team.Wins} | " +
+                    $"❌ Losses: {team.Losses} | " +
+                    $"{team.GetCorrectStreakEmoji()} W/L Streak: {team.GetFormattedStreakString()}\n" +
+                    //$"⭐ Points For: {pointsFor} | " +
+                    //$"🛡️ Points Against: {pointsAgainst}\n" +
+                    $"⚔️ Challenge Status: {team.GetFormattedChallengeStatus()}\n";
+            }
+            return embed.Build();
         }
 
         public Embed LadderStandingsLiveView(Tournament tournament)
@@ -445,16 +477,30 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        public Embed ReportWinSuccess(Tournament tournament, Match match, Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, bool isGuildAdminReporting)
+        public Embed ReportWinSuccess(Tournament tournament, Match match, Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, bool isGuildAdminReporting, int winningTeamRatingChange = 0, int losingTeamRatingChange = 0)
         {
+            List<string> dsrMatchAchievements = new();
+            if (tournament is DSRLadderTournament dsrTournament)
+            {
+                dsrMatchAchievements = dsrTournament.GetMatchAchievements(winningTeam, losingTeam, winningTeamScore, losingTeamScore, winningTeamRatingChange, losingTeamRatingChange);
+            }
+            
+            StringBuilder sb = new();
+            foreach (var achievement in dsrMatchAchievements)
+            {
+                sb.AppendLine(achievement);
+            }
+            
             string reporterText = isGuildAdminReporting
                 ? "An **admin** reported this match result."
                 : "The match result was reported normally.";
-
+                
+            string achievementsText = sb.Length > 0 ? $"**🎉 Highlights**\n{sb}\n" : "";
+            
             var embed = new EmbedBuilder()
                 .WithTitle("🏆 Match Result Reported")
                 .WithDescription(
-                    $"The match '**{match.TeamA} vs {match.TeamB}**' has been recorded in **{tournament.Name}**.\n\n{reporterText}"
+                    $"{achievementsText}The match '**{match.TeamA} vs {match.TeamB}**' has been recorded in **{tournament.Name}**.\n\n{reporterText}"
                 )
                 .AddField("Winning Team (Score)", $"{winningTeam.Name} ({winningTeamScore})", true)
                 .AddField("Losing Team (Score)", $"{losingTeam.Name} ({losingTeamScore})", true)
@@ -463,6 +509,18 @@ namespace FlawsFightNight.Managers
                 .WithColor(Color.Green)
                 .WithFooter("Match result reported successfully.")
                 .WithTimestamp(DateTimeOffset.Now);
+
+            // Add DSR rating info if applicable
+            if (tournament is DSRLadderTournament)
+            {
+                string winnerChange = winningTeamRatingChange >= 0 ? $"+{winningTeamRatingChange}" : $"{winningTeamRatingChange}";
+                string loserChange = losingTeamRatingChange >= 0 ? $"+{losingTeamRatingChange}" : $"{losingTeamRatingChange}";
+                
+                embed.AddField("⭐ Rating Changes", 
+                    $"**{winningTeam.Name}:** {winningTeam.Rating - winningTeamRatingChange} → {winningTeam.Rating} ({winnerChange})\n" +
+                    $"**{losingTeam.Name}:** {losingTeam.Rating - losingTeamRatingChange} → {losingTeam.Rating} ({loserChange})", 
+                    false);
+            }
 
             return embed.Build();
         }
