@@ -73,7 +73,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             // Reset team stats to zero
             foreach (var team in Teams)
             {
-                team.Rating = 1800;
+                team.Rating = 1750;
                 team.ResetTeamToZero();
             }
         }
@@ -118,8 +118,8 @@ namespace FlawsFightNight.Core.Models.Tournaments
         {
             return rating switch
             {
-                >= 2400 => "🏆 Grand Master",
-                >= 2200 => "💎 Diamond Warrior",
+                >= 2300 => "🏆 Grand Master",
+                >= 2150 => "💎 Diamond Warrior",
                 >= 2000 => "🥇 Gold Champion",
                 >= 1800 => "🥈 Silver Competitor",
                 >= 1600 => "🥉 Bronze Fighter",
@@ -152,7 +152,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             string oldTitle = GetRankTitle(winner.Rating - winnerRatingChange);
             string newTitle = GetRankTitle(winner.Rating);
             if (oldTitle != newTitle)
-                achievements.Add($"🎉 **PROMOTED!** {winner.Name} is now {newTitle}!");
+                achievements.Add($"⬆️ **PROMOTED!** {winner.Name} is now {newTitle}!");
 
             // Demotion check
             string oldLoserTitle = GetRankTitle(loser.Rating - loserRatingChange);
