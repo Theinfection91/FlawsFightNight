@@ -101,7 +101,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 
             if (tournament is DSRLadderTournament)
             {
-                // TODO: Add any DSR specific challenge rules here if needed, so far it uses same systems as Normal Ladder aside from the above rank checks
+                // Add any DSR specific challenge rules here if needed, so far it uses same systems as Normal Ladder aside from the above rank checks
             }
 
             // Check each teams challenge status, ensure neither are already in a challenge situation (Challenge sent or received and awaiting to be played)

@@ -94,7 +94,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override void End()
         {
-            // TODO Test Normal Round Robin specific End logic here
             IsRunning = false;
             IsTeamsLocked = false;
             CanTeamsBeUnlocked = false;
@@ -105,14 +104,15 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public override string GetFormattedType() => "Normal Round Robin";
 
-        public override bool CanDelete()
+        public override bool CanDelete(out ErrorReason errorReason)
         {
-            if (!IsRunning && !IsTeamsLocked)
+            if (IsRunning && IsTeamsLocked)
             {
-                return true;
+                errorReason = ErrorReasonGenerator.GenerateIsRunningAndTeamsLockedError();
+                return false;
             }
-
-            return false;
+            errorReason = null;
+            return true;
         }
 
         public override bool CanAcceptNewTeams()
@@ -236,11 +236,8 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public bool DoesRoundContainByeMatch()
         {
-            // TODO Test Normal RR DoesRoundContainByeMatch logic here
             if (MatchLog is NormalRoundRobinMatchLog rrLog)
             {
-                //var matchesThisRound = rrLog.GetAllActiveMatches().Where(m => m.RoundNumber == CurrentRound);
-                //return matchesThisRound.Any(m => m.IsByeMatch);
                 foreach (var match in rrLog.MatchesToPlayByRound[CurrentRound])
                 {
                     if (match.IsByeMatch)
@@ -259,8 +256,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
 
         public void SetRanksByTieBreakerLogic()
         {
-            // TODO Transfer Tie Breaker application logic here
-
             // Sort base order by W-L and total score for initial grouping
             Teams = Teams
                 .OrderByDescending(t => t.Wins)

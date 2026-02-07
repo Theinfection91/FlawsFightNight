@@ -70,12 +70,20 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public override void End()
         {
             IsRunning = false;
-            // TODO Add Ladder specific end logic here
         }
 
         public override string GetFormattedType() => "Normal Ladder";
 
-        public override bool CanDelete() => !IsRunning;
+        public override bool CanDelete(out ErrorReason errorReason)
+        {
+            if (IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsRunningError();
+                return false;
+            }
+            errorReason = null;
+            return true;
+        }
 
         public override bool CanAcceptNewTeams() => true;
 

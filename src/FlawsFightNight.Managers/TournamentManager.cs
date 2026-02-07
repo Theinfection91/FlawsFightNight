@@ -168,7 +168,7 @@ namespace FlawsFightNight.Managers
 
         public List<Tournament> GetAllEliminationTournaments()
         {
-            // TODO
+            // TODO For when elimination tournaments are finally added
 
             return null;
         }

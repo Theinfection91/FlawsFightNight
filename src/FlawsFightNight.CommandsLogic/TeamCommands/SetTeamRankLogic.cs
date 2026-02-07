@@ -35,11 +35,11 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Grab tournament from team name
             var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
 
-            // Check tournament type, only ladder tournaments can have ranks set manually
-            // TODO: Need to have DSR Tournaments support manual rank setting as well
+            // Check tournament type, only Normal Ladder tournaments can have ranks set manually
+            // Not even DSR Ladder can have rank set, as that uses ratings to determine spot in standings. Cant put the top rated guy in 3rd place.
             if (tournament is not NormalLadderTournament)
             {
-                return _embedManager.ErrorEmbed(Name, $"Ranks can only be set manually for teams in Normal Ladder tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
+                return _embedManager.ErrorEmbed(Name, $"Ranks can only be set manually for teams in **Normal Ladder** tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
             }
 
             // Grab team

@@ -86,6 +86,7 @@ namespace FlawsFightNight.Managers
             }
             else
             {
+                // Unknown tournament type handler - should never hit this
                 return ToDoEmbed();
             }
         }
@@ -319,7 +320,6 @@ namespace FlawsFightNight.Managers
 
         public Embed StandingsLiveViewResolver(Tournament tournament)
         {
-            // TODO Add DSR Tournament Embed
             if (tournament is DSRLadderTournament)
             {
                 return DSRStandingsLiveView(tournament);
@@ -334,6 +334,7 @@ namespace FlawsFightNight.Managers
             }
             else
             {
+                // Unknown tournament type handler - should never hit this
                 return ToDoEmbed();
             }
         }
@@ -717,6 +718,7 @@ namespace FlawsFightNight.Managers
             }
             else
             {
+                // Unknown tournament type handler - should never hit this
                 return ToDoEmbed();
             }
         }
@@ -733,6 +735,7 @@ namespace FlawsFightNight.Managers
             }
             else
             {
+                // Unknown tournament type handler - should never hit this
                 return ToDoEmbed();
             }
         }
@@ -970,14 +973,15 @@ namespace FlawsFightNight.Managers
             switch (tournament.Type)
             {
                 case TournamentType.DSRLadder:
-                    // TODO DSR Create Tournament Embed
-                    return ToDoEmbed("Need DSR Create Tournament Embed");
+                    return DSRLadderCreateTournamentSuccess((DSRLadderTournament)tournament);
                 case TournamentType.NormalLadder:
                     return NormalLadderCreateTournamentSuccess((NormalLadderTournament)tournament);
                 case TournamentType.NormalRoundRobin:
+                    return NormalRoundRobinCreateTournamentSuccess((NormalRoundRobinTournament)tournament);
                 case TournamentType.OpenRoundRobin:
-                    return RoundRobinCreateTournamentSuccess(tournament);
+                    return OpenRoundRobinCreateTournamentSuccess((OpenRoundRobinTournament)tournament);
                 default:
+                    // Unknown tournament type handler - should never hit this
                     return ToDoEmbed();
             }
         }
@@ -995,12 +999,37 @@ namespace FlawsFightNight.Managers
             return embed.Build();
         }
 
-        private Embed RoundRobinCreateTournamentSuccess(Tournament tournament)
+        private Embed NormalRoundRobinCreateTournamentSuccess(Tournament tournament)
         {
             var embed = new EmbedBuilder()
-                .WithTitle("🎉 Round Robin Tournament Created")
-                //.WithDescription($"A Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nDefault **Tie Breaker Rules** are *'Traditional'* meaning it looks at each of the following steps and if its a tie it checks the next: head to head matches, then point differential between tied teams, then total points scored vs tied teams, then total points overall, then least points against. If all is tied it comes down to a random 'coinflip' to determine the winner.\n\nDefault **Length** is **'Double Round Robin'** meaning every team plays twice.\n\nDefault **Match Type** is *'Normal'*, meaning there will be the classic round structure of having every team play their match before the round can be advanced.\nThere is also the **Match Type** of *Open* where there are no rounds or bye matches, and teams can report any of their matches at any time. This allows more flexibility in scheduling matches, allowing teams to play their two required matches back to back if need be.\n\nTo change any of these settings, use **/tournament setup_round_robin** anytime before starting the tournament. \n\n**After the tournament starts you may not change any of these settings.\nApply setting changes now to be safe.**")
-                .WithDescription("TODO: Fix this Create RR Tournament Embed")
+                .WithTitle("🎉 Normal Round Robin Tournament Created")
+                .WithDescription($"A Normal Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nWith this Round Robin being *'Normal'* that means there will be the classic round structure of having every team play their match before the round can be advanced, calculating total rounds played based on total teams playing and also if teams play each other once or twice.\nDefault **Tie Breaker Rules** are *'Traditional'* meaning it looks at each of the following steps and if its a tie it checks the next: head to head matches, then point differential between tied teams, then total points scored vs tied teams, then total points overall, then least points against. If all is tied it comes down to a random 'coinflip' to determine the winner.\n\nDefault **Length** is **'Double Round Robin'** meaning every team plays twice.\n\nTo change the tie breaker rules or length, use **/tournament setup_round_robin** anytime before starting the tournament. If you intended for an open round robin then delete this tournament and create a new one as the appropriate type.\n\n**After the tournament starts you may not change any of these settings.\nApply setting changes now to be safe.**")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .WithColor(Color.Green)
+                .WithFooter("Let's get some teams registered to this tournament now.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        private Embed OpenRoundRobinCreateTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🎉 Open Round Robin Tournament Created")
+                .WithDescription($"An Open Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nWith this Round Robin being *'Open'* that means there are no rounds or bye matches, and teams can report any of their matches at any time. This allows more flexibility in scheduling matches, allowing teams to play their two required matches back to back if need be.\n\nDefault **Tie Breaker Rules** are *'Traditional'* meaning it looks at each of the following steps and if its a tie it checks the next: head to head matches, then point differential between tied teams, then total points scored vs tied teams, then total points overall, then least points against. If all is tied it comes down to a random 'coinflip' to determine the winner.\n\nDefault **Length** is **'Double Round Robin'** meaning every team plays twice.\n\nTo change the tie breaker rules or length, use **/tournament setup_round_robin** anytime before starting the tournament. If you intended for a normal round robin then delete this tournament and create a new one as the appropriate type.\n\n**After the tournament starts you may not change any of these settings.\nApply setting changes now to be safe.**")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .WithColor(Color.Green)
+                .WithFooter("Let's get some teams registered to this tournament now.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        private Embed DSRLadderCreateTournamentSuccess(DSRLadderTournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🎉 DSR Ladder Tournament Created")
+                .WithDescription($"A DSR Ladder tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nDSR Ladders are *'Challenged Based'* and teams may challenge any other team that is in the tournament, as long as that team is not already involved in a challenge. Any rank can challenge any other rank, up or down. Instead of taking someone's position on win like a normal ladder tournament, DSR Ladders are rating based and are inspired by other elo-based systems. A team may only have one challenge sent out or be on the receiving end of a challenge, meaning if a team has been challenged they cannot be challenged again or send out their own challenge until the intial one is resolved.")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Match Format", tournament.TeamSizeFormat)
                 .WithColor(Color.Green)
@@ -1013,7 +1042,7 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle("🎉 Normal Ladder Tournament Created")
-                .WithDescription($"A Normal Ladder tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nLadders are *'Challenged Based'*, meaning teams send out challenges but can only challenge teams ranked 2 spots above them, and may not challenge below their current rank. A team may only have one challenge sent out or be on the receiving end of a challenge meaning if a team has been challenge they cannot be challenge again or send out their own challenge until the intial one is resolved.")
+                .WithDescription($"A Normal Ladder tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nLadders are *'Challenged Based'*, meaning teams send out challenges but can only challenge teams ranked 2 spots above them, and may not challenge below their current rank. A team may only have one challenge sent out or be on the receiving end of a challenge meaning if a team has been challenged they cannot be challenged again or send out their own challenge until the intial one is resolved.")
                 .AddField("Tournament ID", tournament.Id)
                 .AddField("Match Format", tournament.TeamSizeFormat)
                 .WithColor(Color.Green)

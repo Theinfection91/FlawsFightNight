@@ -19,6 +19,11 @@ namespace FlawsFightNight.Core.Helpers
             return new ErrorReason("Tournament is currently running.");
         }
 
+        public static ErrorReason GenerateIsRunningAndTeamsLockedError()
+        {
+            return new ErrorReason("Tournament is currently running and teams are locked.");
+        }
+
         public static ErrorReason GenerateIsNotRunningError()
         {
             return new ErrorReason("Tournament is not currently running.");

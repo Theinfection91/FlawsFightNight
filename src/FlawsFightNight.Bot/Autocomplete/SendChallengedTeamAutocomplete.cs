@@ -16,10 +16,10 @@ namespace FlawsFightNight.Bot.Autocomplete
             _cache = cache;
         }
         public override async Task<AutocompletionResult> GenerateSuggestionsAsync(
-    IInteractionContext context,
-    IAutocompleteInteraction autocompleteInteraction,
-    IParameterInfo parameter,
-    IServiceProvider services)
+            IInteractionContext context,
+            IAutocompleteInteraction autocompleteInteraction,
+            IParameterInfo parameter,
+            IServiceProvider services)
         {
             // TODO: Could add in rank filtering as well
 
