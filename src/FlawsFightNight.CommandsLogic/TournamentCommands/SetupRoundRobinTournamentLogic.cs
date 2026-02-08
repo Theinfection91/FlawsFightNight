@@ -42,7 +42,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // Ensure it is a form of round robin tournament
-            if (tournament is not NormalRoundRobinTournament or OpenRoundRobinTournament)
+            if (tournament is not NormalRoundRobinTournament and not OpenRoundRobinTournament)
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a Normal or Open Round Robin Tournament. This command can only be used for Round Robin tournaments.");
             }

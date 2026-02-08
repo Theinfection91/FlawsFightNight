@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FlawsFightNight.Managers
@@ -17,6 +18,7 @@ namespace FlawsFightNight.Managers
 
         private ConfigManager _configManager;
         private bool _isInitialized = false;
+        private readonly CancellationTokenSource _shutdownToken = new();
 
         public GitBackupManager(ConfigManager configManager, DataManager dataManager) : base("Git Backup Manager", dataManager)
         {
@@ -147,34 +149,48 @@ namespace FlawsFightNight.Managers
             Console.WriteLine("NOTE - This will overwrite data currently present in your JSON files in 'Databases'. This cannot be reversed.");
             Console.WriteLine("\nHINT: Enter Y if your backup repo is more up-to-date, N if your local 'Databases' folder is more current.");
 
+            // Add timeout to prevent indefinite blocking
+            var readTask = Task.Run(() => Console.ReadLine());
+            
             while (true)
             {
-                Console.WriteLine("Enter Y or N:");
-                string? userInput = Console.ReadLine();
-
-                if (string.IsNullOrWhiteSpace(userInput))
+                Console.WriteLine("Enter Y or N (timeout in 60 seconds):");
+                
+                if (readTask.Wait(TimeSpan.FromSeconds(60)))
                 {
-                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Invalid input. Please enter Y or N.");
-                    continue;
+                    string? userInput = readTask.Result;
+
+                    if (string.IsNullOrWhiteSpace(userInput))
+                    {
+                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Invalid input. Please enter Y or N.");
+                        readTask = Task.Run(() => Console.ReadLine());
+                        continue;
+                    }
+
+                    switch (userInput.ToLower().Trim())
+                    {
+                        case "y":
+                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Copying files from 'BackupRepo' to 'Databases'...");
+                            CopyFilesFromBackupRepoToDatabases();
+                            _dataManager.LoadTournamentDataFiles();
+                            _dataManager.LoadPermissionsConfigFile();
+                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Data restored successfully.");
+                            return;
+
+                        case "n":
+                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Skipped data restore. Local files will be used.");
+                            return;
+
+                        default:
+                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Invalid input: '{userInput}'. Please enter Y or N.");
+                            readTask = Task.Run(() => Console.ReadLine());
+                            break;
+                    }
                 }
-
-                switch (userInput.ToLower().Trim())
+                else
                 {
-                    case "y":
-                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Copying files from 'BackupRepo' to 'Databases'...");
-                        CopyFilesFromBackupRepoToDatabases();
-                        _dataManager.LoadTournamentDataFiles();
-                        _dataManager.LoadPermissionsConfigFile();
-                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Data restored successfully.");
-                        return;
-
-                    case "n":
-                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Skipped data restore. Local files will be used.");
-                        return;
-
-                    default:
-                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Invalid input: '{userInput}'. Please enter Y or N.");
-                        break;
+                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Input timeout. Defaulting to 'N' - keeping local files.");
+                    return;
                 }
             }
         }
@@ -183,6 +199,8 @@ namespace FlawsFightNight.Managers
         {
             try
             {
+                // Add timeout for file operations
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 using var sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 using var destinationStream = new FileStream(destination, FileMode.Create, FileAccess.Write);
                 sourceStream.CopyTo(destinationStream);
@@ -190,6 +208,10 @@ namespace FlawsFightNight.Managers
             catch (IOException ex)
             {
                 Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error copying file {source}: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Unexpected error copying {source}: {ex.Message}");
             }
         }
 
@@ -207,6 +229,9 @@ namespace FlawsFightNight.Managers
                 var rootJsonFiles = Directory.GetFiles(_databasesFolderPath, "*.json", SearchOption.TopDirectoryOnly);
                 foreach (var jsonFile in rootJsonFiles)
                 {
+                    if (_shutdownToken.Token.IsCancellationRequested)
+                        return;
+
                     string fileName = Path.GetFileName(jsonFile);
                     string destFilePath = Path.Combine(_repoPath, fileName);
                     CopyFileWithSharing(jsonFile, destFilePath);
@@ -216,6 +241,9 @@ namespace FlawsFightNight.Managers
                 var databaseSubdirectories = Directory.GetDirectories(_databasesFolderPath, "*", SearchOption.AllDirectories);
                 foreach (var subdirectory in databaseSubdirectories)
                 {
+                    if (_shutdownToken.Token.IsCancellationRequested)
+                        return;
+
                     string relativePath = Path.GetRelativePath(_databasesFolderPath, subdirectory);
                     string destinationPath = Path.Combine(_repoPath, relativePath);
                     Directory.CreateDirectory(destinationPath);
@@ -223,6 +251,9 @@ namespace FlawsFightNight.Managers
                     var jsonFiles = Directory.GetFiles(subdirectory, "*.json", SearchOption.TopDirectoryOnly);
                     foreach (var jsonFile in jsonFiles)
                     {
+                        if (_shutdownToken.Token.IsCancellationRequested)
+                            return;
+
                         string fileName = Path.GetFileName(jsonFile);
                         string destFilePath = Path.Combine(destinationPath, fileName);
                         CopyFileWithSharing(jsonFile, destFilePath);
@@ -250,6 +281,9 @@ namespace FlawsFightNight.Managers
                 var repoFiles = Directory.GetFiles(_repoPath, "*.json", SearchOption.AllDirectories);
                 foreach (var repoFile in repoFiles)
                 {
+                    if (_shutdownToken.Token.IsCancellationRequested)
+                        return;
+
                     // Skip .git folder
                     if (repoFile.Contains(Path.DirectorySeparatorChar + ".git" + Path.DirectorySeparatorChar))
                         continue;
@@ -259,8 +293,29 @@ namespace FlawsFightNight.Managers
 
                     if (!File.Exists(correspondingDbFile))
                     {
-                        File.Delete(repoFile);
-                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Deleted stale file: {relativePath}");
+                        try
+                        {
+                            // Add retry logic for locked files
+                            int retries = 3;
+                            while (retries > 0)
+                            {
+                                try
+                                {
+                                    File.Delete(repoFile);
+                                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Deleted stale file: {relativePath}");
+                                    break;
+                                }
+                                catch (IOException) when (retries > 1)
+                                {
+                                    retries--;
+                                    Thread.Sleep(100);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Failed to delete {relativePath}: {ex.Message}");
+                        }
                     }
                 }
 
@@ -270,6 +325,9 @@ namespace FlawsFightNight.Managers
 
                 foreach (var repoDir in repoDirectories)
                 {
+                    if (_shutdownToken.Token.IsCancellationRequested)
+                        return;
+
                     // Skip .git folder
                     if (repoDir.Contains(Path.DirectorySeparatorChar + ".git"))
                         continue;
@@ -281,8 +339,15 @@ namespace FlawsFightNight.Managers
                     if (!Directory.Exists(correspondingDbDir) ||
                         (!Directory.GetFiles(repoDir).Any() && !Directory.GetDirectories(repoDir).Any()))
                     {
-                        Directory.Delete(repoDir, recursive: false);
-                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Deleted stale folder: {relativePath}");
+                        try
+                        {
+                            Directory.Delete(repoDir, recursive: false);
+                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Deleted stale folder: {relativePath}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Failed to delete directory {relativePath}: {ex.Message}");
+                        }
                     }
                 }
             }
@@ -324,6 +389,9 @@ namespace FlawsFightNight.Managers
         {
             try
             {
+                if (_shutdownToken.Token.IsCancellationRequested)
+                    return;
+
                 using var repo = new Repository(_repoPath);
 
                 // Stage ALL changes including deletions
@@ -360,7 +428,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public void CopyAndBackupFilesToGit()
+        public async Task CopyAndBackupFilesToGitAsync()
         {
             try
             {
@@ -369,24 +437,48 @@ namespace FlawsFightNight.Managers
                     Console.WriteLine($"{DateTime.Now} - GitBackupManager - Git PAT Token not set. Git Backup Storage not enabled.");
                     return;
                 }
-                // Run backups asynchronously to avoid blocking main thread
-                Task.Run(() =>
+
+                // Run with proper async/await and cancellation support
+                await Task.Run(() =>
                 {
                     try
                     {
+                        if (_shutdownToken.Token.IsCancellationRequested)
+                            return;
+
                         CopyJsonFilesToBackupRepo();
+                        
+                        if (_shutdownToken.Token.IsCancellationRequested)
+                            return;
+                            
                         BackupFiles();
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during background backup: {ex.Message}");
                     }
-                });
+                }, _shutdownToken.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Backup operation cancelled.");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during CopyAndBackupFilesToGit: {ex.Message}");
             }
+        }
+
+        // Keep synchronous version for backwards compatibility
+        public void CopyAndBackupFilesToGit()
+        {
+            _ = CopyAndBackupFilesToGitAsync();
+        }
+
+        public void Shutdown()
+        {
+            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Shutting down...");
+            _shutdownToken.Cancel();
         }
     }
 }
