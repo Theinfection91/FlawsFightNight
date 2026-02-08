@@ -278,7 +278,7 @@ namespace FlawsFightNight.Managers
                     string correspondingDbDir = Path.Combine(_databasesFolderPath, relativePath);
 
                     // Delete if directory doesn't exist in Databases OR is empty
-                    if (!Directory.Exists(correspondingDbDir) || 
+                    if (!Directory.Exists(correspondingDbDir) ||
                         (!Directory.GetFiles(repoDir).Any() && !Directory.GetDirectories(repoDir).Any()))
                     {
                         Directory.Delete(repoDir, recursive: false);
@@ -369,9 +369,19 @@ namespace FlawsFightNight.Managers
                     Console.WriteLine($"{DateTime.Now} - GitBackupManager - Git PAT Token not set. Git Backup Storage not enabled.");
                     return;
                 }
-
-                CopyJsonFilesToBackupRepo();
-                BackupFiles();
+                // Run backups asynchronously to avoid blocking main thread
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        CopyJsonFilesToBackupRepo();
+                        BackupFiles();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during background backup: {ex.Message}");
+                    }
+                });
             }
             catch (Exception ex)
             {
