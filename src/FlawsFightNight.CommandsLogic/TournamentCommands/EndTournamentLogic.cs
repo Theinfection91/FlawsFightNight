@@ -107,11 +107,6 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             return _embedManager.ErrorEmbed(Name, "An error occurred while trying to end the tournament. Please try again later.");
         }
 
-        /// <summary>
-        /// Applies tie-breaker rankings to tied teams. The winner gets rank 1, 
-        /// and other tied teams are ranked sequentially based on their original order.
-        /// Non-tied teams keep their existing ranks.
-        /// </summary>
         private void ApplyTieBreakerRankings(Tournament tournament, List<string> tiedTeams, string winnerTeamName)
         {
             // Find the minimum rank among tied teams (should be 1 for first place tie)
@@ -122,7 +117,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             var winnerTeam = tiedTeamObjects.FirstOrDefault(t => t.Name.Equals(winnerTeamName, StringComparison.OrdinalIgnoreCase));
             if (winnerTeam == null)
             {
-                return; // Winner not found, abort
+                return; // Should not happen, but just in case
             }
 
             // Assign ranks: winner gets minRank, others get minRank + 1, minRank + 2, etc.
