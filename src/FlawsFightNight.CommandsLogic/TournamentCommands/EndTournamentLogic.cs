@@ -39,11 +39,14 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Handle Normal and Open Round Robin Tournaments
             if (tournament is ITieBreakerRankSystem tbTournament)
             {
-                // TODO So many repeated lines here, refactor later
                 if (_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog))
                 {
-                    // Resolve tie breaker info
-                    string tieBreakerInfo = tbTournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog), tournament.MatchLog).Item1;
+                    // Resolve tie breaker info and get the winner
+                    var tiedTeams = _matchManager.GetTiedTeams(tournament.MatchLog);
+                    var (tieBreakerInfo, winnerTeamName) = tbTournament.TieBreakerRule.ResolveTie(tiedTeams, tournament.MatchLog);
+
+                    // Apply tie-breaker rankings to the tied teams
+                    ApplyTieBreakerRankings(tournament, tiedTeams, winnerTeamName);
 
                     // End the tournament
                     tournament.End();
@@ -102,6 +105,49 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             return _embedManager.ErrorEmbed(Name, "An error occurred while trying to end the tournament. Please try again later.");
+        }
+
+        /// <summary>
+        /// Applies tie-breaker rankings to tied teams. The winner gets rank 1, 
+        /// and other tied teams are ranked sequentially based on their original order.
+        /// Non-tied teams keep their existing ranks.
+        /// </summary>
+        private void ApplyTieBreakerRankings(Tournament tournament, List<string> tiedTeams, string winnerTeamName)
+        {
+            // Find the minimum rank among tied teams (should be 1 for first place tie)
+            var tiedTeamObjects = tournament.Teams.Where(t => tiedTeams.Contains(t.Name, StringComparer.OrdinalIgnoreCase)).ToList();
+            int minRank = tiedTeamObjects.Min(t => t.Rank);
+
+            // Get the winner team
+            var winnerTeam = tiedTeamObjects.FirstOrDefault(t => t.Name.Equals(winnerTeamName, StringComparison.OrdinalIgnoreCase));
+            if (winnerTeam == null)
+            {
+                return; // Winner not found, abort
+            }
+
+            // Assign ranks: winner gets minRank, others get minRank + 1, minRank + 2, etc.
+            winnerTeam.Rank = minRank;
+
+            // Get the other tied teams (excluding the winner)
+            var otherTiedTeams = tiedTeamObjects.Where(t => !t.Name.Equals(winnerTeamName, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            // Assign sequential ranks to remaining tied teams
+            int currentRank = minRank + 1;
+            foreach (var team in otherTiedTeams)
+            {
+                team.Rank = currentRank;
+                currentRank++;
+            }
+
+            // Adjust ranks of teams that were below the tied teams
+            var teamsToShift = tournament.Teams
+                .Where(t => !tiedTeams.Contains(t.Name, StringComparer.OrdinalIgnoreCase) && t.Rank >= minRank)
+                .ToList();
+
+            foreach (var team in teamsToShift)
+            {
+                team.Rank += tiedTeams.Count - 1; // Shift by number of tied teams minus 1 (since one already had minRank)
+            }
         }
     }
 }
