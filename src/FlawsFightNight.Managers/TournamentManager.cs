@@ -235,5 +235,43 @@ namespace FlawsFightNight.Managers
             }
             return null;
         }
+
+        public void ApplyTieBreakerRankings(Tournament tournament, List<string> tiedTeams, string winnerTeamName)
+        {
+            // Find the minimum rank among tied teams (should be 1 for first place tie)
+            var tiedTeamObjects = tournament.Teams.Where(t => tiedTeams.Contains(t.Name, StringComparer.OrdinalIgnoreCase)).ToList();
+            int minRank = tiedTeamObjects.Min(t => t.Rank);
+
+            // Get the winner team
+            var winnerTeam = tiedTeamObjects.FirstOrDefault(t => t.Name.Equals(winnerTeamName, StringComparison.OrdinalIgnoreCase));
+            if (winnerTeam == null)
+            {
+                return; // Should not happen, but just in case
+            }
+
+            // Assign ranks: winner gets minRank, others get minRank + 1, minRank + 2, etc.
+            winnerTeam.Rank = minRank;
+
+            // Get the other tied teams (excluding the winner)
+            var otherTiedTeams = tiedTeamObjects.Where(t => !t.Name.Equals(winnerTeamName, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            // Assign sequential ranks to remaining tied teams
+            int currentRank = minRank + 1;
+            foreach (var team in otherTiedTeams)
+            {
+                team.Rank = currentRank;
+                currentRank++;
+            }
+
+            // Adjust ranks of teams that were below the tied teams
+            var teamsToShift = tournament.Teams
+                .Where(t => !tiedTeams.Contains(t.Name, StringComparer.OrdinalIgnoreCase) && t.Rank >= minRank)
+                .ToList();
+
+            foreach (var team in teamsToShift)
+            {
+                team.Rank += tiedTeams.Count - 1; // Shift by number of tied teams minus 1 (since one already had minRank)
+            }
+        }
     }
 }

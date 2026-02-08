@@ -2,6 +2,7 @@
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.MatchLogs;
 using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Managers;
 using System;
@@ -39,11 +40,26 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Handle Normal and Open Round Robin Tournaments
             if (tournament is ITieBreakerRankSystem tbTournament)
             {
-                // TODO So many repeated lines here, refactor later
+                // Convert any bye matches in Normal Round Robin if any
+                if (tournament is NormalRoundRobinTournament normalRRTournament)
+                {
+                    if (normalRRTournament.DoesRoundContainByeMatch())
+                    {
+                        if (normalRRTournament.MatchLog is NormalRoundRobinMatchLog normalRRMatchLog)
+                        {
+                            normalRRMatchLog.ConvertByeMatch(normalRRTournament.CurrentRound);
+                        }
+                    }
+                }
+                // Check if tie breaker is needed for first place
                 if (_matchManager.IsTieBreakerNeededForFirstPlace(tournament.MatchLog))
                 {
-                    // Resolve tie breaker info
-                    string tieBreakerInfo = tbTournament.TieBreakerRule.ResolveTie(_matchManager.GetTiedTeams(tournament.MatchLog), tournament.MatchLog).Item1;
+                    // Resolve tie breaker info and get the winner
+                    var tiedTeams = _matchManager.GetTiedTeams(tournament.MatchLog);
+                    var (tieBreakerInfo, winnerTeamName) = tbTournament.TieBreakerRule.ResolveTie(tiedTeams, tournament.MatchLog);
+
+                    // Apply tie-breaker rankings to the tied teams
+                    _tournamentManager.ApplyTieBreakerRankings(tournament, tiedTeams, winnerTeamName);
 
                     // End the tournament
                     tournament.End();

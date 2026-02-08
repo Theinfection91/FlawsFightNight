@@ -31,13 +31,6 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                                  tiedTeams.Contains(pm.Winner) &&
                                  tiedTeams.Contains(pm.Loser)));
             }
-            //if (log.OpenRoundRobinPostMatches.Count > 0)
-            //{
-            //    headToHead.AddRange(log.OpenRoundRobinPostMatches
-            //        .Where(pm => !pm.WasByeMatch &&
-            //                     tiedTeams.Contains(pm.Winner) &&
-            //                     tiedTeams.Contains(pm.Loser)));
-            //}
 
             tieBreakerLog.AppendLine($"Step 1: Head-to-head matches found: {headToHead.Count}");
             foreach (var pm in headToHead)
@@ -55,15 +48,19 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 return (tieBreakerLog.ToString(), leaders.First());
             }
 
-            // Step 2: Point differential
+            // Step 2: Point differential among remaining leaders only
             var pointDiff = leaders.ToDictionary(t => t, t => 0);
-            foreach (var pm in headToHead)
+            var headToHeadAmongLeaders = headToHead
+                .Where(pm => leaders.Contains(pm.Winner) && leaders.Contains(pm.Loser))
+                .ToList();
+
+            foreach (var pm in headToHeadAmongLeaders)
             {
-                if (pointDiff.ContainsKey(pm.Winner)) pointDiff[pm.Winner] += pm.WinnerScore - pm.LoserScore;
-                if (pointDiff.ContainsKey(pm.Loser)) pointDiff[pm.Loser] += pm.LoserScore - pm.WinnerScore;
+                pointDiff[pm.Winner] += pm.WinnerScore - pm.LoserScore;
+                pointDiff[pm.Loser] += pm.LoserScore - pm.WinnerScore;
             }
 
-            tieBreakerLog.AppendLine("\nStep 2: Point differentials among remaining tied teams:");
+            tieBreakerLog.AppendLine($"\nStep 2: Point differentials among remaining {leaders.Count} leaders:");
             foreach (var kvp in pointDiff)
                 tieBreakerLog.AppendLine($"  {kvp.Key}: {kvp.Value}");
 
@@ -76,15 +73,19 @@ namespace FlawsFightNight.Core.Models.TieBreakers
                 return (tieBreakerLog.ToString(), leadersByDiff.First());
             }
 
-            // Step 3: Total points scored vs tied teams
+            // Step 3: Total points scored vs remaining tied teams only
             var totalPointsVsTied = leadersByDiff.ToDictionary(t => t, t => 0);
-            foreach (var pm in headToHead)
+            var headToHeadAmongDiffLeaders = headToHead
+                .Where(pm => leadersByDiff.Contains(pm.Winner) && leadersByDiff.Contains(pm.Loser))
+                .ToList();
+
+            foreach (var pm in headToHeadAmongDiffLeaders)
             {
-                if (totalPointsVsTied.ContainsKey(pm.Winner)) totalPointsVsTied[pm.Winner] += pm.WinnerScore;
-                if (totalPointsVsTied.ContainsKey(pm.Loser)) totalPointsVsTied[pm.Loser] += pm.LoserScore;
+                totalPointsVsTied[pm.Winner] += pm.WinnerScore;
+                totalPointsVsTied[pm.Loser] += pm.LoserScore;
             }
 
-            tieBreakerLog.AppendLine("\nStep 3: Total points scored vs tied teams:");
+            tieBreakerLog.AppendLine($"\nStep 3: Total points scored vs remaining {leadersByDiff.Count} leaders:");
             foreach (var kvp in totalPointsVsTied)
                 tieBreakerLog.AppendLine($"  {kvp.Key}: {kvp.Value}");
 
@@ -150,5 +151,4 @@ namespace FlawsFightNight.Core.Models.TieBreakers
             return (tieBreakerLog.ToString(), chosen);
         }
     }
-
 }

@@ -29,6 +29,7 @@ namespace FlawsFightNight.Bot.Autocomplete
         private List<Tournament> _roundRobinTournaments = new();
         private List<Tournament> _eliminationTournaments = new();
         private List<Team> _ladderTeams = new();
+        private List<Team> _roundBasedTeams = new();
         private List<Team> _roundRobinTeams = new();
 
 
@@ -54,7 +55,8 @@ namespace FlawsFightNight.Bot.Autocomplete
             _roundRobinTournaments = _tournamentManager.GetAllRoundRobinTournaments();
             //_eliminationTournaments = _tournamentManager.GetAllEliminationTournaments();
             _ladderTeams = _teamManager.GetAllLadderTeams();
-            _roundRobinTeams = _teamManager.GetAllRoundBasedTeams();
+            _roundRobinTeams = _teamManager.GetAllRoundRobinTeams();
+            _roundBasedTeams = _teamManager.GetAllRoundBasedTeams();
         }
 
         public List<AutocompleteResult> GetMatchIdsMatchingInput(string input)
@@ -158,9 +160,9 @@ namespace FlawsFightNight.Bot.Autocomplete
             {
                 return new List<AutocompleteResult>();
             }
-            // Grab teams
-            var teamA = _ladderTeams.Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == match.TeamA);
-            var teamB = _ladderTeams.Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == match.TeamB);
+            // Grab teams - concat all team sources
+            var teamA = _ladderTeams.Concat(_roundBasedTeams).Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == match.TeamA);
+            var teamB = _ladderTeams.Concat(_roundBasedTeams).Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == match.TeamB);
 
             // Grab tournament
             var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches().Any(m => m.Id == match.Id));
@@ -184,9 +186,9 @@ namespace FlawsFightNight.Bot.Autocomplete
             {
                 return new List<AutocompleteResult>();
             }
-            // Grab teams
-            var originalWinner = _ladderTeams.Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == postMatch.Winner);
-            var originalLoser = _ladderTeams.Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == postMatch.Loser);
+            // Grab teams - concat all team sources
+            var originalWinner = _ladderTeams.Concat(_roundBasedTeams).Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == postMatch.Winner);
+            var originalLoser = _ladderTeams.Concat(_roundBasedTeams).Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == postMatch.Loser);
 
             // Grab tournament
             var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllPostMatches().Any(pm => pm.Id == postMatch.Id));

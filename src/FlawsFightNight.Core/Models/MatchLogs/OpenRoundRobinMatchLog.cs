@@ -46,7 +46,14 @@ namespace FlawsFightNight.Core.Models.MatchLogs
 
         public override void ConvertMatchToPostMatch(Tournament tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore)
         {
-            // TODO Open Round Robin Post Match Conversion Logic
+            // Create the PostMatch
+            PostMatch postMatch = new(match.Id, winningTeamName, winningTeamScore, losingTeamName, losingTeamScore, DateTime.UtcNow, match.IsByeMatch);
+
+            // Add to PostMatches list
+            PostMatches.Add(postMatch);
+
+            // Remove the match from MatchesToPlay
+            MatchesToPlay.Remove(match);
         }
     }
 }

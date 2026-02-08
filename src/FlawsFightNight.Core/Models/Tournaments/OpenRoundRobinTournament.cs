@@ -54,6 +54,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
             IsRunning = true;
             CanTeamsBeLocked = false;
             CanTeamsBeUnlocked = false;
+            MatchLog.ClearLog();
+            foreach (var team in Teams)
+            {
+                team.ResetTeamToZero();
+            }
         }
 
         public override bool CanEnd(out ErrorReason errorReason)

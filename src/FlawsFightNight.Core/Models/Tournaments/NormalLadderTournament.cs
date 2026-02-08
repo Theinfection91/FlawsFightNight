@@ -47,8 +47,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public override void Start()
         {
             IsRunning = true;
-
-            // Reset team stats to zero
+            MatchLog.ClearLog();
             foreach (var team in Teams)
             {
                 team.ResetTeamToZero();
