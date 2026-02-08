@@ -1,5 +1,7 @@
 ﻿using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +20,7 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool DoesTeamExist(string teamName, bool isCaseSensitive = false)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            List<Tournament> tournaments = _dataManager.GetTournaments();
             foreach (Tournament tournament in tournaments)
             {
                 if (isCaseSensitive)
@@ -41,7 +43,7 @@ namespace FlawsFightNight.Managers
 
         public bool IsTeamNameUnique(string teamName)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            List<Tournament> tournaments = _dataManager.GetTournaments();
             foreach (Tournament tournament in tournaments)
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
@@ -62,10 +64,14 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllLadderTeams()
         {
             List<Team> ladderTeams = new List<Team>();
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            var tournaments = _dataManager.TournamentDataFiles.Select(df => df.Tournament);
+            foreach (var tournament in tournaments)
             {
-                if (tournament.Type.Equals(TournamentType.Ladder))
+                if (tournament is NormalLadderTournament)
+                {
+                    ladderTeams.AddRange(tournament.Teams);
+                }
+                else if (tournament is DSRLadderTournament)
                 {
                     ladderTeams.AddRange(tournament.Teams);
                 }
@@ -76,10 +82,10 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllRoundBasedTeams()
         {
             List<Team> roundBasedTeams = new();
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            var tournaments = _dataManager.TournamentDataFiles.Select(df => df.Tournament);
+            foreach (var tournament in tournaments)
             {
-                if (tournament.Type.Equals(TournamentType.RoundRobin)) // Will add elimination later
+                if (tournament is IRoundBased) // Will add elimination later
                 {
                     roundBasedTeams.AddRange(tournament.Teams);
                 }
@@ -87,10 +93,24 @@ namespace FlawsFightNight.Managers
             return roundBasedTeams;
         }
 
+        public List<Team> GetAllRoundRobinTeams()
+        {
+            List<Team> roundRobinTeams = new();
+            var tournaments = _dataManager.TournamentDataFiles.Select(df => df.Tournament);
+            foreach (var tournament in tournaments)
+            {
+                if (tournament is NormalRoundRobinTournament || tournament is OpenRoundRobinTournament)
+                {
+                    roundRobinTeams.AddRange(tournament.Teams);
+                }
+            }
+            return roundRobinTeams;
+        }
+
         public Team GetTeamByName(string teamName)
         {
-            List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
-            foreach (Tournament tournament in tournaments)
+            List<Tournament> tournaments = _dataManager.GetTournaments();
+            foreach (var tournament in tournaments)
             {
                 Team? team = tournament.Teams.FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
                 if (team != null)
@@ -105,24 +125,6 @@ namespace FlawsFightNight.Managers
         {
             return tournament.Teams
                 .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
-        }
-        #endregion
-
-        #region Wins/Losses and Streaks
-        public void RecordTeamWin(Team team, int points = 0)
-        {
-            team.Wins++;
-            team.WinStreak++;
-            team.LoseStreak = 0; // Reset loss streak
-            team.TotalScore += points;
-        }
-
-        public void RecordTeamLoss(Team team, int points = 0)
-        {
-            team.Losses++;
-            team.LoseStreak++;
-            team.WinStreak = 0; // Reset win streak
-            team.TotalScore += points;
         }
         #endregion
 
@@ -162,20 +164,6 @@ namespace FlawsFightNight.Managers
                 Members = members,
                 Rank = rank
             };
-        }
-
-        public void DeleteTeamFromDatabase(string teamName)
-        {
-            foreach (Tournament tournament in _dataManager.TournamentsDatabaseFile.Tournaments)
-            {
-                Team? teamToRemove = tournament.Teams
-                    .FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
-                if (teamToRemove != null)
-                {
-                    tournament.Teams.Remove(teamToRemove);
-                    break; // Exit after removing the team
-                }
-            }
         }
     }
 }

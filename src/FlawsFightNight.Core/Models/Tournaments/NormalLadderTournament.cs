@@ -1,0 +1,135 @@
+﻿using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Helpers;
+using FlawsFightNight.Core.Interfaces;
+using FlawsFightNight.Core.Models.MatchLogs;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace FlawsFightNight.Core.Models.Tournaments
+{
+    public class NormalLadderTournament : Tournament, INormalLadderRankSystem
+    {
+        public override TournamentType Type { get; protected set; } = TournamentType.NormalLadder;
+
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
+        public override MatchLog MatchLog { get; protected set; }
+
+        [JsonConstructor]
+        protected NormalLadderTournament() : base() { }
+
+        public NormalLadderTournament(string id, string name, int teamSize) : base(id, name, teamSize)
+        {
+            MatchLog ??= new NormalLadderMatchLog();
+        }
+
+        public override bool CanStart(out ErrorReason errorReason)
+        {
+            // A ladder tournament cannot be started if it is already running
+            if (IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsRunningError();
+                return false;
+            }
+            // A ladder tournament requires at least 3 teams to function properly
+            if (Teams.Count < 3)
+            {
+                errorReason = ErrorReasonGenerator.GenerateInsufficientTeamsError();
+                return false;
+            }
+            errorReason = null;
+            return true;
+        }
+
+        public override void Start()
+        {
+            IsRunning = true;
+            MatchLog.ClearLog();
+            foreach (var team in Teams)
+            {
+                team.ResetTeamToZero();
+            }
+        }
+
+        public override bool CanEnd(out ErrorReason errorReason)
+        {
+            // If the tournament is running, it can be ended at any time
+            if (!IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsNotRunningError();
+                return false;
+            }
+            errorReason = null;
+            return true;
+        }
+
+        public override void End()
+        {
+            IsRunning = false;
+        }
+
+        public override string GetFormattedType() => "Normal Ladder";
+
+        public override bool CanDelete(out ErrorReason errorReason)
+        {
+            if (IsRunning)
+            {
+                errorReason = ErrorReasonGenerator.GenerateIsRunningError();
+                return false;
+            }
+            errorReason = null;
+            return true;
+        }
+
+        public override bool CanAcceptNewTeams() => true;
+
+        public override void AdjustRanks()
+        {
+            ReassignRanks();
+            (MatchLog as IChallengeLog)?.RunChallengeRankCorrection(GetAllChallengeTeams());
+        }
+
+        public void ReassignRanks()
+        {
+            // Sort teams by their current rank
+            Teams.Sort((a, b) => a.Rank.CompareTo(b.Rank));
+
+            // Reassign ranks sequentially starting from 1
+            for (int i = 0; i < Teams.Count; i++)
+            {
+                Teams[i].Rank = i + 1;
+            }
+        }
+
+        public List<Team> GetAllChallengeTeams()
+        {
+            var challengeTeams = new List<Team>();
+            foreach (var match in MatchLog.GetAllActiveMatches())
+            {
+                if (match.Challenge is not null)
+                {
+                    var challenger = Teams.FirstOrDefault(t => t.Name.Equals(match.Challenge.Challenger, StringComparison.OrdinalIgnoreCase));
+                    var challenged = Teams.FirstOrDefault(t => t.Name.Equals(match.Challenge.Challenged, StringComparison.OrdinalIgnoreCase));
+                    if (challenger != null && !challengeTeams.Any(t => t.Name.Equals(challenger.Name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        challengeTeams.Add(challenger);
+                    }
+                    if (challenged != null && !challengeTeams.Any(t => t.Name.Equals(challenged.Name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        challengeTeams.Add(challenged);
+                    }
+                }
+            }
+            return challengeTeams;
+        }
+
+        public bool IsChallengedTeamWithinRanks(Team challenger, Team challenged)
+        {
+            return (challenger.Rank - challenged.Rank) is >= 1 and <= 2;
+        }
+    }
+}
+

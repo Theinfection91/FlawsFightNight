@@ -23,8 +23,8 @@ namespace FlawsFightNight.Managers
             {
                 if (!IsValidBotTokenSet())
                 {
-                    Console.WriteLine($"{DateTime.Now} ConfigManager - Incorrect Bot Token found in Discord Credentials\\discord_credentials.json");
-                    Console.WriteLine($"{DateTime.Now} SettingsManager - Please enter your Bot Token now (This can be changed manually in Discord Credentials\\discord_credentials.json as well if entered incorrectly and a connection can not be established): ");
+                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Incorrect Bot Token found in Discord Credentials\\discord_credentials.json");
+                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Please enter your Bot Token now (This can be changed manually in Discord Credentials\\discord_credentials.json as well if entered incorrectly and a connection can not be established): ");
                     string? botToken = Console.ReadLine();
                     if (IsValidBotToken(botToken))
                     {
@@ -60,9 +60,9 @@ namespace FlawsFightNight.Managers
             {
                 if (!IsGuildIdSet())
                 {
-                    Console.WriteLine($"{DateTime.Now} ConfigManager - Incorrect Guild Id found in Discord Credentials\\discord_credentials.json");
-                    Console.WriteLine($"{DateTime.Now} ConfigManager - Please set a valid Guild ID for SlashCommands.");
-                    Console.WriteLine($"{DateTime.Now} ConfigManager - Select a guild from the list below: ");
+                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Incorrect Guild Id found in Discord Credentials\\discord_credentials.json");
+                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Please set a valid Guild ID for SlashCommands.");
+                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Select a guild from the list below: ");
                     foreach (var guild in _client.Guilds)
                     {
                         Console.WriteLine($"Guild: {guild.Name} (ID: {guild.Id})");
@@ -153,27 +153,27 @@ namespace FlawsFightNight.Managers
             {
                 if (!IsGitPatTokenSet())
                 {
-                    Console.WriteLine($"{DateTime.Now} SettingsManager - Enter your Git PAT Token now if you want to have online backup storage through a GitHub repo you control.\nIf you wish to skip this feature for now, enter 0 for the PAT token.\nRefer to documentation for more help with the Git Backup Storage.");
+                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter your Git PAT Token now if you want to have online backup storage through a GitHub repo you control.\nIf you wish to skip this feature for now, enter 0 for the PAT token.\nRefer to documentation for more help with the Git Backup Storage.");
                     string? gitPatToken = Console.ReadLine();
                     if (!gitPatToken.Equals("0") && gitPatToken.Length > 15)
                     {
                         _dataManager.GitHubCredentialFile.GitPatToken = gitPatToken;
-                        Console.WriteLine($"{DateTime.Now} SettingsManager - Git PAT Token accepted. Now give the https url path to your Git repo. It will look something like this: https://github.com/YourUsername/YourGitStorageRepo.git");
+                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Git PAT Token accepted. Now give the https url path to your Git repo. It will look something like this: https://github.com/YourUsername/YourGitStorageRepo.git");
                         string? gitUrlPath = Console.ReadLine();
                         _dataManager.GitHubCredentialFile.GitUrlPath = gitUrlPath;
-                        Console.WriteLine($"{DateTime.Now} SettingsManager - Repo Url set to: {gitUrlPath}\nYou can manually change your token and url path in the Credentials/github_credentials.json file as well.");
+                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Repo Url set to: {gitUrlPath}\nYou can manually change your token and url path in the Credentials/github_credentials.json file as well.");
                         _dataManager.SaveAndReloadGitHubCredentialFile();
                         IsGitBackupProcessComplete = true;
                     }
                     else
                     {
-                        Console.WriteLine($"{DateTime.Now} SettingsManager - Git Backup Storage was not set up. You can manually change your token and url path in the Credentials/github_credentials.json file.");
+                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Git Backup Storage was not set up. You can manually change your token and url path in the Credentials/github_credentials.json file.");
                         IsGitBackupProcessComplete = true;
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"{DateTime.Now} SettingsManager - Non-default value found for GitPatToken in Credentials/github_credentials.json file. Skipping backup setup process. If you entered in the token or url incorrectly, you can manually change it in the Credentials/github_credentials.json file for now.");
+                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Non-default value found for GitPatToken in Credentials/github_credentials.json file. Skipping backup setup process. If you entered in the token or url incorrectly, you can manually change it in the Credentials/github_credentials.json file for now.");
                     IsGitBackupProcessComplete = true;
                 }
             }

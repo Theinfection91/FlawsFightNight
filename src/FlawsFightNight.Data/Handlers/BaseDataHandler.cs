@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,12 +42,13 @@ namespace FlawsFightNight.Data.Handlers
             }
         }
 
+
         public T Load()
         {
             var json = File.ReadAllText(_filePath);
             return JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
             {
-                TypeNameHandling = TypeNameHandling.All
+                TypeNameHandling = TypeNameHandling.Auto
             }) ?? new T();
         }
 
@@ -54,7 +56,7 @@ namespace FlawsFightNight.Data.Handlers
         {
             var json = JsonConvert.SerializeObject(data, Formatting.Indented, new JsonSerializerSettings
             {
-                TypeNameHandling = TypeNameHandling.All
+                TypeNameHandling = TypeNameHandling.Auto
             });
             File.WriteAllText(_filePath, json);
         }

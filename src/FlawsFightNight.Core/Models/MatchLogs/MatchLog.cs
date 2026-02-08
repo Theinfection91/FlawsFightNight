@@ -1,0 +1,54 @@
+﻿using FlawsFightNight.Core.Interfaces;
+using FlawsFightNight.Core.Models.Tournaments;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace FlawsFightNight.Core.Models.MatchLogs
+{
+    public abstract class MatchLog : IMatchLog
+    {
+        public abstract void ClearLog();
+        public abstract List<Match> GetAllActiveMatches(int currentRound = 0);
+        public abstract List<PostMatch> GetAllPostMatches();
+        public virtual (int pointsFor, int pointsAgainst) GetPointsForAndAgainst(string teamName)
+        {
+            int pointsFor = 0;
+            int pointsAgainst = 0;
+            foreach (var pm in GetAllPostMatches())
+            {
+                if (pm.WasByeMatch) continue;
+                if (pm.Winner == teamName)
+                {
+                    pointsFor += pm.WinnerScore;
+                    pointsAgainst += pm.LoserScore;
+                }
+                else if (pm.Loser == teamName)
+                {
+                    pointsFor += pm.LoserScore;
+                    pointsAgainst += pm.WinnerScore;
+                }
+            }
+            return (pointsFor, pointsAgainst);
+        }
+        public abstract bool ContainsMatchId(string matchId);
+        public abstract Match? GetMatchById(string matchId);
+        public virtual Match? GetMatchByTeamName(string teamName)
+        {
+            foreach (var match in GetAllActiveMatches())
+            {
+                if (match.TeamA.Equals(teamName, StringComparison.OrdinalIgnoreCase) ||
+                    match.TeamB.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return match;
+                }
+            }
+            return null;
+        }
+        public abstract void AddMatch(Match match);
+        public abstract void RemoveMatch(Match match);
+        public abstract void ConvertMatchToPostMatch(Tournament tournament, Match match, string winningTeamName, int winningTeamScore, string losingTeamName, int losingTeamScore);
+    }
+}

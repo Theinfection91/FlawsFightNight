@@ -1,5 +1,6 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -13,15 +14,13 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
     {
         private EmbedManager _embedManager;
         private GitBackupManager _gitBackupManager;
-        private MatchManager _matchManager;
         private TeamManager _teamManager;
         private TournamentManager _tournamentManager;
 
-        public SetTeamRankLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Set Team Rank")
+        public SetTeamRankLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Set Team Rank")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
-            _matchManager = matchManager;
             _teamManager = teamManager;
             _tournamentManager = tournamentManager;
         }
@@ -36,14 +35,15 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Grab tournament from team name
             var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
 
-            // Check tournament type, only ladder tournaments can have ranks set manually
-            if (!tournament.Type.Equals(TournamentType.Ladder))
+            // Check tournament type, only Normal Ladder tournaments can have ranks set manually
+            // Not even DSR Ladder can have rank set, as that uses ratings to determine spot in standings. Cant put the top rated guy in 3rd place.
+            if (tournament is not NormalLadderTournament)
             {
-                return _embedManager.ErrorEmbed(Name, $"Ranks can only be set manually for teams in Ladder tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
+                return _embedManager.ErrorEmbed(Name, $"Ranks can only be set manually for teams in **Normal Ladder** tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
             }
 
             // Grab team
-            var team = _teamManager.GetTeamByName(teamName);
+            var team = tournament.GetTeam(teamName);
 
             // Check if new rank is valid
             if (newRank < 1 || newRank > tournament.Teams.Count)
@@ -83,13 +83,10 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             team.Rank = newRank;
 
             // Reassign ranks to ensure no duplicates or gaps
-            tournament.ReassignRanksInTournament();
-
-            // Run challenge rank comparison
-            _matchManager.ChallengeRankComparisonProcess(tournament);
+            tournament.AdjustRanks();
 
             // Save changes
-            _tournamentManager.SaveAndReloadTournamentsDatabase();
+            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

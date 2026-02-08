@@ -11,8 +11,10 @@ namespace FlawsFightNight.Core.Models
         public string Id { get; set; }
         public string Winner { get; set; }
         public int WinnerScore { get; set; }
+        public int WinnerRatingChange { get; set; }
         public string Loser { get; set; }
         public int LoserScore { get; set; }
+        public int LoserRatingChange { get; set; }
         public bool WasByeMatch { get; set; }
         public DateTime CreatedOn { get; set; }
         public DateTime CompletedOn { get; set; } = DateTime.UtcNow;
@@ -72,6 +74,16 @@ namespace FlawsFightNight.Core.Models
             {
                 return $"⏸️ {Winner} remains (#{Challenge.ChallengedRank}) - No rank change for {Loser}";
             }
+        }
+        #endregion
+
+        #region DSR Ladder Specific
+        public string GetRatingChangeText()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"{Winner} Rating Change: {(WinnerRatingChange >= 0 ? "+" : "")}{WinnerRatingChange}");
+            sb.AppendLine($"{Loser} Rating Change: {(LoserRatingChange >= 0 ? "+" : "")}{LoserRatingChange}");
+            return sb.ToString();
         }
         #endregion
     }

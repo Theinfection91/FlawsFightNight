@@ -21,6 +21,7 @@ namespace FlawsFightNight.Core.Models
 
         // Tournament Specific Fields
         #region Ladder
+        public int Rating { get; set; }
         public bool IsChallengeable { get; set; } = true;
         #endregion
 
@@ -80,6 +81,22 @@ namespace FlawsFightNight.Core.Models
         public string GetMembersAsString()
         {
             return string.Join(", ", Members.Select(m => m.DisplayName));
+        }
+
+        public void RecordWin(int points = 0)
+        {
+            Wins++;
+            WinStreak++;
+            LoseStreak = 0;
+            TotalScore += points;
+        }
+
+        public void RecordLoss(int points = 0)
+        {
+            Losses++;
+            LoseStreak++;
+            WinStreak = 0;
+            TotalScore += points;
         }
     }
 }

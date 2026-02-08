@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;

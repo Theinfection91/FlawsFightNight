@@ -1,6 +1,8 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -28,51 +30,21 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Grab tournament, modal should have ensured it exists
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
 
-            // Check if tournament is running
-            if (tournament.IsRunning)
+            if (!tournament.CanDelete(out var errorReason))
             {
-                return _embedManager.ErrorEmbed(Name, "Cannot delete a tournament that is currently running. End the tournament and try again.");
+                return _embedManager.ErrorEmbed(Name, $"The tournament {tournament.Name} cannot be deleted at this time: {errorReason.Info}");
             }
 
-            // Handle different tournament types
-            switch (tournament.Type)
-            {
-                case TournamentType.Ladder:
-                    return LadderDeleteTournamentProcess(tournament);
-                case TournamentType.RoundRobin:
-                    return RoundRobinDeleteTournament(tournament);
-                default:
-                    return _embedManager.ErrorEmbed(Name, "Tournament type not supported for deletion yet.");
-            }
-            return _embedManager.ErrorEmbed(Name, "Tournament type not supported for deletion yet.");
-        }
-
-        private Embed LadderDeleteTournamentProcess(Tournament tournament)
-        {
-            // As long as the tournament is not running, we can delete it. 
-
-            // Delete the tournament, this will also save and reload the database
+            // Delete the tournament
             _tournamentManager.DeleteTournament(tournament.Id);
+
+            // Load tournament data files again, now that one is deleted
+            _tournamentManager.LoadTournamentDataFiles();
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
 
-            return _embedManager.DeleteTournamentSuccess(tournament);
-        }
-
-        private Embed RoundRobinDeleteTournament(Tournament tournament)
-        {
-            if (!tournament.IsRunning && tournament.IsTeamsLocked)
-            {
-                return _embedManager.ErrorEmbed(Name, "Even though the tournament is not running, the teams are still locked. Unlock teams first if you want to delete this tournament. Once started, it cannot be deleted until it is ended.");
-            }
-
-            // Delete the tournament, this will also save and reload the database
-            _tournamentManager.DeleteTournament(tournament.Id);
-
-            // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
-
+            // Return success embed
             return _embedManager.DeleteTournamentSuccess(tournament);
         }
     }

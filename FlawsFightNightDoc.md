@@ -260,12 +260,18 @@ Extensive information and how to use the various commands in FlawsFightNight:
 
 **Description**:
 
-Create a new tournament of the given tournament type and given team size format. Upon success, it will give back a Tournament ID# that is used in commands to target it. Tournament names are unique, can not have two tournaments with the same name.
+Create a new tournament of the given tournament type and given team size format. Upon success, it will give back a Tournament ID# that is used in commands to target it. Tournament names are unique, can not have two tournaments with the same name. An optional description parameter can be provided for additional tournament details.
 
 **Usage**
 ```csharp
-/tournament create tournamentName:<string> tournamentType:<TournamentType> teamSize<int>
+/tournament create name:<string> type:<TournamentType> team_size:<int> description:<string> (optional)
 ```
+
+**Tournament Types Available**:
+- `DSRLadder` - Ladder tournament with DSR (Dynamic Skill Rating) mechanics
+- `NormalLadder` - Standard ladder tournament with team challenges
+- `NormalRoundRobin` - Traditional round-robin with locked rounds and tie-breaker rules
+- `OpenRoundRobin` - Flexible round-robin where teams can report matches without round gates
 
 ---
 
@@ -385,16 +391,36 @@ For a Ladder tournament, it may be ended at anytime.
 
 ---
 
+### Show All Tournaments (`/tournament show-all`)
+
+**Description**:
+
+Displays information on every tournament currently in the database, including their status, type, and key details.
+
+**Usage**
+```csharp
+/tournament show-all
+```
+
+---
+
 ### Setup Tournament (`/tournament setup_round_robin`)
 
 **Description**:
 
-All Round Robin Tournaments are created as default with Normal match type, Traditional tie breaker logic and is a Double round robin in length. To change any of these settings use this command any time before starting the tournament.
+All Round Robin Tournaments are created with Traditional tie breaker logic and as a Double round robin in length by default. To change these settings use this command any time before starting the tournament.
 
 **Usage**
 ```csharp
-/tournament setup tournamentId:<string> match_type:<RoundRobinMatchType> tie_breaker_ruleset:<TieBreakerLogic> length<RoundRobinLengthType>
+/tournament setup_round_robin tournament_id:<string> tie_breaker_ruleset:<TieBreakerType> length:<RoundRobinLengthType>
 ```
+
+**Tie Breaker Types**:
+- `Traditional` - Uses head-to-head, point differential, total points, and other factors
+
+**Length Types**:
+- `Double` - Teams play each other twice (default)
+- `Single` - Teams play each other once
 
 ---
 
@@ -404,11 +430,11 @@ All Round Robin Tournaments are created as default with Normal match type, Tradi
 
 **Description**:
 
-Using the tournament's ID#, create and register a new team to it. Team names are unique across all tournaments, so even if in different tournaments you may not have two team Alpha's. Can only register teams to tournaments where teams are unlocked where required like Round Robin. Up to 20 members may be added to a team currently. If a tournament is a 3v3, a team must be created with 3 members when giving the command. If any member is already on a team in the same tournament, the command will not proceed. Members can only be on one team per tournament, but be in as many tournaments as theyd like.
+Using the tournament's ID#, create and register a new team to it. Team names are unique across all tournaments, so even if in different tournaments you may not have two team Alpha's. Can only register teams to tournaments where teams are unlocked where required like Round Robin. Up to 20 members may be added to a team currently. If a tournament is a 3v3, a team must be created with 3 members when giving the command. If any member is already on a team in the same tournament, the command will not proceed. Members can only be on one team per tournament, but be in as many tournaments as they like.
 
 **Usage**
 ```csharp
-/team register team_name:<string> tournament_id:<string> member1:<IUser> member2:<IUser> member3<IUser> etc.
+/team register name:<string> tournament_id:<string> member1:<IUser> member2:<IUser> member3:<IUser> etc.
 ```
 
 ---
@@ -428,22 +454,37 @@ For a Ladder tournament, a team may be removed at any time.
 
 ---
 
-###  Set Team Rank(`/team set_rank`)
+###  Set Team Rank (`/team set_rank`)
 
 **Description**:
 
 **This command will only be used for Ladder tournaments.**
 
-Admin command to manually set a teams rank, and have all other ranks adjust accordingly
+Admin command to manually set a team's rank, and have all other ranks adjust accordingly.
 
 **Usage**
 ```csharp
- /team set_rank team_name:<str> new_rank:<int>
+/team set_rank team_name:<string> rank:<int>
 ```
 
 ---
 
-###  Add Win(s) To Team's Win Count(`/team add win`)
+###  Add Member To Team (`/team add member`)
+
+**Description**:
+
+Admin command to add a member to an existing team.
+
+**Usage**
+```csharp
+/team add member team_name:<string> member:<IUser>
+```
+
+**Note**: This feature is currently not yet implemented.
+
+---
+
+###  Add Win(s) To Team's Win Count (`/team add win`)
 
 **Description**:
 
@@ -453,12 +494,12 @@ An admin can manually add a number of wins to a team in case errors occur.
 
 **Usage**
 ```csharp
- /team add win team_name:<string> number_of_wins:<int>
+/team add win team_name:<string> number_of_wins:<int>
 ```
 
 ---
 
-###  Add Loss(es) To Team's Loss Count(`/team add loss`)
+###  Add Loss(es) To Team's Loss Count (`/team add loss`)
 
 **Description**:
 
@@ -468,12 +509,27 @@ An admin can manually add losses to a team in case errors occur.
 
 **Usage**
 ```csharp
- /team add loss team_name:<string> number_of_losses:<int>
+/team add loss team_name:<string> number_of_losses:<int>
 ```
 
 ---
 
-###  Remove Win(s) From Team's Win Count(`/team add win`)
+###  Remove Member From Team (`/team remove member`)
+
+**Description**:
+
+Admin command to remove a member from an existing team.
+
+**Usage**
+```csharp
+/team remove member team_name:<string> member:<IUser>
+```
+
+**Note**: This feature is currently not yet implemented.
+
+---
+
+###  Remove Win(s) From Team's Win Count (`/team remove win`)
 
 **Description**:
 
@@ -483,12 +539,12 @@ An admin can manually remove wins from a team, but only enough to bring them to 
 
 **Usage**
 ```csharp
- /team remove win team_name:<string> number_of_wins:<int>
+/team remove win team_name:<string> number_of_wins:<int>
 ```
 
 ---
 
-###  Remove Loss(es) From Team's Win Count(`/team add win`)
+###  Remove Loss(es) From Team's Loss Count (`/team remove loss`)
 
 **Description**:
 
@@ -498,27 +554,27 @@ An admin can manually remove losses from a team, but only enough to bring them t
 
 **Usage**
 ```csharp
- /team remove loss team_name:<string> number_of_losses:<int>
+/team remove loss team_name:<string> number_of_losses:<int>
 ```
 
 ---
 
 ## Match Commands
 
-## Report Round Robin Win For Match (`/match report-win`)
+### Report Round Robin Win For Match (`/match report-win`)
 
 **Description**:
 
-Using the Match ID, winning team name, as well as the score for winning team and losing team this will close out a match and turn it into a post match. This command is universal for admins and regular players. A player may only report wins for their team, but an admin can use this command and report for anyone. It also will accept a winner with a score of 0 to 0 in case a team forfeits or doesnt show that way the other team can win but also not gain any points. Will not accept losing team's score being higher than winning team's score.
+Using the Match ID, winning team name, as well as the score for winning team and losing team this will close out a match and turn it into a post match. This command is universal for admins and regular players. A player may only report wins for their team, but an admin can use this command and report for anyone. It also will accept a winner with a score of 0 to 0 in case a team forfeits or does not show that way the other team can win but also not gain any points. Will not accept losing team's score being higher than winning team's score.
 
 **Usage**
 ```csharp
-/match report-win matchId:<string> winning_team_name:<string> winning_team_score:<int> losing_team_score:<int>
+/match report-win match_id:<string> winning_team_name:<string> winning_team_score:<int> losing_team_score:<int>
 ```
 
 ---
 
-## Edit Post Match (`/match edit`)
+### Edit Post Match (`/match edit`)
 
 **Description**:
 
@@ -530,12 +586,12 @@ Currently not used for Ladder post matches, may change in the future.
 
 **Usage**
 ```csharp
-/match edit match_id:<string> winning_team_name:<string> winning_team_score:<int> losing_team_score:<int>
+/match edit post_match_id:<string> winning_team_name:<string> winning_team_score:<int> losing_team_score:<int>
 ```
 
 ---
 
-## Send Challenge (`/match challenge send`)
+### Send Challenge (`/match challenge send`)
 
 **Description**:
 
@@ -549,7 +605,7 @@ Sends a challenge from the challenger team to the challenged team. Can not send 
 
 ---
 
-## Cancel Challenge (`/match challenge cancel`)
+### Cancel Challenge (`/match challenge cancel`)
 
 **Description**:
 
@@ -559,18 +615,18 @@ Cancel a challenge that the challenger team has sent out. Only works if team is 
 
 **Usage**
 ```csharp
-/match challenge cancel challenger_team_name:<string>
+/match challenge cancel challenger_team:<string>
 ```
 
 ---
 
-### Settings Commands
+## Settings Commands
 
-## Set Matches Channel LiveView (`/settings matches_channel_id set`)
+### Set Matches Channel LiveView (`/settings matches_channel_id set`)
 
 **Description**:
 
-This command will take look for the given tournament ID and if found set the given discord channel to be the auto updating Match Log for that tournament. Once the tournament starts for Round Robin it will display all matches to be played for this round and then all previous matchs that have already been played with the result and match ID#.
+This command will look for the given tournament ID and if found set the given discord channel to be the auto updating Match Log for that tournament. Once the tournament starts for Round Robin it will display all matches to be played for this round and then all previous matches that have already been played with the result and match ID#.
 
 **Usage**
 ```csharp
@@ -579,11 +635,11 @@ This command will take look for the given tournament ID and if found set the giv
 
 ---
 
-## Remove Matches Channel LiveView (`/settings matches_channel_id remove`)
+### Remove Matches Channel LiveView (`/settings matches_channel_id remove`)
 
 **Description**:
 
-Stops the given tournament's task of sending the Matches LiveView to a channel
+Stops the given tournament's task of sending the Matches LiveView to a channel.
 
 **Usage**
 ```csharp
@@ -592,11 +648,11 @@ Stops the given tournament's task of sending the Matches LiveView to a channel
 
 ---
 
-## Set Standings Channel LiveView (`/settings standings_channel_id set`)
+### Set Standings Channel LiveView (`/settings standings_channel_id set`)
 
 **Description**:
 
-This command will take look for the given tournament ID and if found set the given discord channel to be the auto updating Standings for that tournament. Currently teams jump around when all at 0-0 because of tie breaker logic but will sort out when games are played. If two teams keep swapping ranks its cause they are equally tied and the logic is falling back to a coin flip of who would win. This will be patched out before I move on to Ladder tournaments.
+This command will look for the given tournament ID and if found set the given discord channel to be the auto updating Standings for that tournament. Teams will be ranked and sorted based on their performance in the tournament.
 
 **Usage**
 ```csharp
@@ -605,11 +661,11 @@ This command will take look for the given tournament ID and if found set the giv
 
 ---
 
-## Remove Standings Channel LiveView (`/settings standings_channel_id remove`)
+### Remove Standings Channel LiveView (`/settings standings_channel_id remove`)
 
 **Description**:
 
-Stops the given tournament's task of sending the Standings LiveView to a channel
+Stops the given tournament's task of sending the Standings LiveView to a channel.
 
 **Usage**
 ```csharp
@@ -618,11 +674,11 @@ Stops the given tournament's task of sending the Standings LiveView to a channel
 
 ---
 
-## Set Teams Channel LiveView (`/settings teams_channel_id set`)
+### Set Teams Channel LiveView (`/settings teams_channel_id set`)
 
 **Description**:
 
-This command will take look for the given tournament ID and if found set the given discord channel to be the auto updating Teams information for that tournament like all it's members and rank. Currently you'll see rank jumping when teams are equally tied like I mentioned in Standings LiveView. This will be patched out eventually.
+This command will look for the given tournament ID and if found set the given discord channel to be the auto updating Teams information for that tournament like all its members and rank.
 
 **Usage**
 ```csharp
@@ -631,11 +687,11 @@ This command will take look for the given tournament ID and if found set the giv
 
 ---
 
-## Remove Teams Channel LiveView (`/settings teams_channel_id remove`)
+### Remove Teams Channel LiveView (`/settings teams_channel_id remove`)
 
 **Description**:
 
-Stops the given tournament's task of sending the Teams LiveView to a channel
+Stops the given tournament's task of sending the Teams LiveView to a channel.
 
 **Usage**
 ```csharp
@@ -644,11 +700,11 @@ Stops the given tournament's task of sending the Teams LiveView to a channel
 
 ---
 
-## Add Debug Admin (`/settings add_debug_admin`)
+### Add Debug Admin (`/settings add_debug_admin`)
 
 **Description**:
 
-This is a nifty test command I use to bypass a player being on multiple teams within the same tournament. It could be useful for some people if they dont have enough people to fill a tournament and have someone play as two teams, or if admins just want to be nice and help me test sometime and give feedback.
+This is a test command that allows bypassing certain restrictions, such as a player being on multiple teams within the same tournament. It could be useful for testing scenarios or when there are not enough people to fill a tournament.
 
 **Usage**
 ```csharp
@@ -657,11 +713,11 @@ This is a nifty test command I use to bypass a player being on multiple teams wi
 
 ---
 
-## Remove Debug Admin (`/settings remove_debug_admin`)
+### Remove Debug Admin (`/settings remove_debug_admin`)
 
 **Description**:
 
-This just removes the given user from the debug admin list if they are on it.
+This removes the given user from the debug admin list if they are on it.
 
 **Usage**
 ```csharp
