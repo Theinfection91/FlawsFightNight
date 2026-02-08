@@ -173,7 +173,7 @@ namespace FlawsFightNight.Managers
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Open Round Robin Tournament Matches")
-                .WithDescription($"*ID#: {tournament.Id}*\n**")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Matches Remaining: {tournament.MatchLog.GetAllActiveMatches().Count}**\n")
                 .WithColor(Color.Orange)
                 .WithCurrentTimestamp();
 
