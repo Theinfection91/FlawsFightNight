@@ -268,7 +268,7 @@ Create a new tournament of the given tournament type and given team size format.
 ```
 
 **Tournament Types Available**:
-- `DSRLadder` - Ladder tournament with DSR (Demand Strength Rating) mechanics
+- `DSRLadder` - Ladder tournament with DSR (Dynamic Skill Rating) mechanics
 - `NormalLadder` - Standard ladder tournament with team challenges
 - `NormalRoundRobin` - Traditional round-robin with locked rounds and tie-breaker rules
 - `OpenRoundRobin` - Flexible round-robin where teams can report matches without round gates
