@@ -69,7 +69,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public override void Start()
         {
             IsRunning = true;
-
+            MatchLog.ClearLog();
             // Reset team stats to zero
             foreach (var team in Teams)
             {

@@ -58,6 +58,7 @@ namespace FlawsFightNight.Core.Models.Tournaments
             IsRunning = true;
             CanTeamsBeLocked = false;
             CanTeamsBeUnlocked = false;
+            MatchLog.ClearLog();
         }
 
         public override bool CanEnd(out ErrorReason errorReason)
