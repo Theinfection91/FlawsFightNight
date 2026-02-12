@@ -1,4 +1,4 @@
-# Flaw's Fight Night (v0.2.2)
+# Flaw's Fight Night (v0.2.3)
 
 **Flaw's Fight Night** is a powerful Discord bot designed to manage and automate competitive tournaments of multiple types — including **Normal Round Robin**, **Open Round Robin**, **Normal Ladder**, and **DSR (Dynamic Skill Rating) Ladder**. Built for flexibility, speed, and reliability, it provides a complete tournament lifecycle experience from registration to victory.
 
