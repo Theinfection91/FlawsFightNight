@@ -43,7 +43,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public void RunInteractiveSetup()
+        public async Task RunInteractiveSetup()
         {
             if (!_configManager.IsGitPatTokenSet() || _isInitialized)
                 return;
