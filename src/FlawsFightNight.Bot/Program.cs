@@ -24,6 +24,8 @@ namespace FlawsFightNight.Bot
         private InteractionService _interactionService;
         private ConfigManager _configManager;
 
+        private bool _gitBackupSetupComplete = false;
+
         public static async Task Main(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
@@ -166,11 +168,13 @@ namespace FlawsFightNight.Bot
 
             // Run interactive Git backup setup in background (clone/restore prompts)
             var gitBackupManager = _services.GetRequiredService<GitBackupManager>();
-            _ = Task.Run(async () =>
+            var configManager = _services.GetRequiredService<ConfigManager>();
+            while (!_gitBackupSetupComplete)
             {
-                await Task.Delay(2000);
-                gitBackupManager.RunInteractiveSetup();
-            });
+                await gitBackupManager.RunInteractiveSetup();
+                _gitBackupSetupComplete = configManager.IsGitPatTokenSet();
+            }
+            //await gitBackupManager.RunInteractiveSetup();
 
             // Discord services
             _commands = _services.GetRequiredService<CommandService>();

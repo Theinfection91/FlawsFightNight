@@ -26,10 +26,12 @@ namespace FlawsFightNight.Core.Interfaces
                         // Update the rank in the challenge
                         if (challengeMatch.Challenge.Challenger.Equals(team.Name, StringComparison.OrdinalIgnoreCase))
                         {
+                            Console.WriteLine($"Correcting rank for challenger team '{team.Name}' from {challengeMatch.Challenge.ChallengerRank} to {team.Rank}");
                             challengeMatch.Challenge.ChallengerRank = team.Rank;
                         }
                         else if (challengeMatch.Challenge.Challenged.Equals(team.Name, StringComparison.OrdinalIgnoreCase))
                         {
+                            Console.WriteLine($"Correcting rank for challenged team '{team.Name}' from {challengeMatch.Challenge.ChallengedRank} to {team.Rank}");
                             challengeMatch.Challenge.ChallengedRank = team.Rank;
                         }
                     }
