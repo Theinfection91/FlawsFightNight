@@ -1,5 +1,6 @@
 ﻿using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Helpers;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.MatchLogs;
 using Newtonsoft.Json;
 using System;
@@ -119,6 +120,31 @@ namespace FlawsFightNight.Core.Models.Tournaments
             {
                 Teams[i].Rank = i + 1;
             }
+
+            // Run challenge rank correction to ensure LiveView displays correct ranks as games play and change
+            (MatchLog as IChallengeLog)?.RunChallengeRankCorrection(GetAllChallengeTeams());
+        }
+
+        public List<Team> GetAllChallengeTeams()
+        {
+            var challengeTeams = new List<Team>();
+            foreach (var match in MatchLog.GetAllActiveMatches())
+            {
+                if (match.Challenge is not null)
+                {
+                    var challenger = Teams.FirstOrDefault(t => t.Name.Equals(match.Challenge.Challenger, StringComparison.OrdinalIgnoreCase));
+                    var challenged = Teams.FirstOrDefault(t => t.Name.Equals(match.Challenge.Challenged, StringComparison.OrdinalIgnoreCase));
+                    if (challenger != null && !challengeTeams.Any(t => t.Name.Equals(challenger.Name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        challengeTeams.Add(challenger);
+                    }
+                    if (challenged != null && !challengeTeams.Any(t => t.Name.Equals(challenged.Name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        challengeTeams.Add(challenged);
+                    }
+                }
+            }
+            return challengeTeams;
         }
 
         public string GetRankTitle(int rating)
