@@ -82,11 +82,6 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Create Team object
             Team newTeam = _teamManager.CreateTeam(teamName, convertedMembersList, tournament.Teams.Count + 1);
 
-            if (tournament is DSRLadderTournament)
-            {
-                newTeam.Rating = 1750;
-            }
-
             // Add new team to the tournament
             tournament.AddTeam(newTeam);
 
@@ -110,6 +105,13 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
                     // Adjust ranks of remaining teams
                     tiebreakerTournament.SetRanksByTieBreakerLogic();
                 }
+            }
+
+            // If DSR tournament, apply default ratings and adjust ranks
+            if (tournament is DSRLadderTournament)
+            {
+                newTeam.Rating = 1750;
+                tournament.AdjustRanks();
             }
 
             // Save and reload the tournament database
