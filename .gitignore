@@ -361,3 +361,14 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Exclude folders with sensitive data, such as connection strings, database files, and backup repositories
+**/Credentials/
+**/Databases/
+**/BackupRepo/
+*.json
+
+# Exception for project files
+!**/packages.json
+!**/project.json
+!**/.vscode/*.json
