@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using FluentFTP;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
@@ -11,11 +12,31 @@ namespace FlawsFightNight.Managers
 {
     public class FTPStatsService : BackgroundService
     {
-        private readonly DiscordSocketClient _client;
+        private readonly ConfigManager _configManager;
+        private readonly DiscordSocketClient _discordClient;
+        private AsyncFtpClient _ftpClient;
 
-        public FTPStatsService(DiscordSocketClient client)
+        public FTPStatsService(ConfigManager configManager, DiscordSocketClient client)
         {
-            _client = client;
+            _configManager = configManager;
+            _discordClient = client;
+            ConfigureFTPClients();
+            Console.WriteLine($"Connected = {_ftpClient.IsConnected}");
+        }
+
+        private void ConfigureFTPClients()
+        {
+            // TODO Implement pulling creds from ConfigManager once they are finally being saved
+            //var creds = _configManager.GetFTPCredentials();
+            //_ftpClient = new(host: creds.Host, user: creds.Username, pass: creds.Password, port: creds.Port);
+            _ftpClient = new(host: "127.0.0.1", user: "bot_test", pass: "password1", port: 21);
+
+            // Configure TLS/SSL settings BEFORE connecting
+            _ftpClient.Config.EncryptionMode = FtpEncryptionMode.Explicit; // or FtpEncryptionMode.Auto
+            _ftpClient.Config.ValidateAnyCertificate = true; // Accept self-signed certificates (for local dev)
+            _ftpClient.Config.SslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13;
+
+            _ftpClient.AutoConnect();
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -33,10 +54,9 @@ namespace FlawsFightNight.Managers
                 tcs.TrySetResult();
                 return Task.CompletedTask;
             }
-            _client.Ready += ReadyHandler;
-
+            _discordClient.Ready += ReadyHandler;
             await tcs.Task;
-            _client.Ready -= ReadyHandler;
+            _discordClient.Ready -= ReadyHandler;
 
             Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Starting service...");
 
@@ -44,8 +64,9 @@ namespace FlawsFightNight.Managers
             {
                 try
                 {
+                    Console.WriteLine($"Connected = {_ftpClient.IsConnected}");
                     Console.WriteLine($"{DateTime.Now} [FTPStatsService] Heartbeat...");
-                    await Task.Delay(TimeSpan.FromSeconds(60), token);
+                    await Task.Delay(TimeSpan.FromSeconds(5), token);
                 }
                 catch (TaskCanceledException)
                 {
