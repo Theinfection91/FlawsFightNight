@@ -147,7 +147,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<TeamManager>();
                     services.AddSingleton<TournamentManager>();
 
-                    // Hosted services
+                    // Hosted services 
                     services.AddHostedService<LiveViewService>();
                     services.AddHostedService<FTPStatsService>();
 
