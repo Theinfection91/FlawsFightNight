@@ -149,6 +149,7 @@ namespace FlawsFightNight.Bot
 
                     // Hosted services
                     services.AddHostedService<LiveViewService>();
+                    services.AddHostedService<FTPStatsService>();
 
                     // Data handlers
                     services.AddSingleton<DiscordCredentialHandler>();
