@@ -21,7 +21,6 @@ namespace FlawsFightNight.Managers
             _configManager = configManager;
             _discordClient = client;
             ConfigureFTPClients();
-            Console.WriteLine($"Connected = {_ftpClient.IsConnected}");
         }
 
         private void ConfigureFTPClients()
@@ -64,19 +63,34 @@ namespace FlawsFightNight.Managers
             {
                 try
                 {
-                    Console.WriteLine($"Connected = {_ftpClient.IsConnected}");
-                    Console.WriteLine($"{DateTime.Now} [FTPStatsService] Heartbeat...");
-                    await Task.Delay(TimeSpan.FromSeconds(5), token);
-                }
-                catch (TaskCanceledException)
-                {
-                    // Expected when the service is stopping, no action needed
+                    //Console.WriteLine($"Connected = {_ftpClient.IsConnected}");
+                    //Console.WriteLine($"{DateTime.Now} [FTPStatsService] Heartbeat...");
+
+                    // \placeholderDir\anotherDir\UserLogs
+                    await GetFileCountFromDirectoryLocation("/placeholderDir/anotherDir/UserLogs");
+
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Error: {ex}");
                 }
+
+                await Task.Delay(TimeSpan.FromSeconds(9999), token);
             }
+        }
+
+        private async Task GetFileCountFromDirectoryLocation(string directory)
+        {
+            var items = await _ftpClient.GetListing(directory);
+
+            foreach (var item in items)
+            {
+                Console.WriteLine($"{item.Name} - {item.Created}");
+            }
+
+            // Print total count of files in the directory
+            int fileCount = items.Count();
+            Console.WriteLine($"Total files in directory '{directory}': {fileCount}");
         }
     }
 }
