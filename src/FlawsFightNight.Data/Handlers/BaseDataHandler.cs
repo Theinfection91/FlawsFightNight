@@ -24,7 +24,7 @@ namespace FlawsFightNight.Data.Handlers
             string filePath = Path.Combine(appBaseDirectory, folderName, fileName);
 
             // Ensure the directory exists
-            string directory = Path.GetDirectoryName(filePath);
+            string? directory = Path.GetDirectoryName(filePath);
             if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);

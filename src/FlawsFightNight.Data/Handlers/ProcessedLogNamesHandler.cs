@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public class TournamentDataHandler : BaseFolderDataHandler<TournamentDataFile>
+    public class ProcessedLogNamesHandler : BaseDataHandler<ProcessedLogNamesFile>
     {
-        public TournamentDataHandler() : base()
+        public ProcessedLogNamesHandler() : base("processed_log_names.json", "Databases")
         {
-
         }
     }
 }

@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public class TournamentDataHandler : BaseFolderDataHandler<TournamentDataFile>
+    public class FTPCredentialHandler : BaseDataHandler<FTPCredentialFile>
     {
-        public TournamentDataHandler() : base()
+        public FTPCredentialHandler() : base("ftp_credentials.json", "Credentials")
         {
 
         }

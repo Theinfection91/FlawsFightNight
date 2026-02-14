@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Data.DataModels
+namespace FlawsFightNight.Data.Models
 {
     public class PermissionsConfigFile
     {

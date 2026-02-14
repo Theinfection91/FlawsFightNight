@@ -205,5 +205,9 @@ namespace FlawsFightNight.Managers
             _dataManager.SaveAndReloadPermissionsConfigFile();
         }
         #endregion
+
+        #region FTP Config
+
+        #endregion
     }
 }

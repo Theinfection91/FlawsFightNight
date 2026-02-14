@@ -8,6 +8,7 @@ using FlawsFightNight.CommandsLogic.SetCommands;
 using FlawsFightNight.CommandsLogic.SettingsCommands;
 using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
+using FlawsFightNight.Core.Helpers;
 using FlawsFightNight.Data.Handlers;
 using FlawsFightNight.Managers;
 using Microsoft.Extensions.DependencyInjection;
@@ -144,19 +145,23 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<GitBackupManager>();
                     services.AddSingleton<MatchManager>();
                     services.AddSingleton<MemberManager>();
+                    services.AddSingleton<UT2004StatsManager>();
                     services.AddSingleton<TeamManager>();
                     services.AddSingleton<TournamentManager>();
 
-                    // Hosted services
+                    // Hosted services 
                     services.AddHostedService<LiveViewService>();
+                    services.AddHostedService<FTPStatsService>();
 
                     // Data handlers
                     services.AddSingleton<DiscordCredentialHandler>();
                     services.AddSingleton<GitHubCredentialHandler>();
                     services.AddSingleton<PermissionsConfigHandler>();
-
-                    // New Tournament System Data Handler
+                    services.AddSingleton<ProcessedLogNamesHandler>();
                     services.AddSingleton<TournamentDataHandler>();
+
+                    // Parsers
+                    services.AddSingleton<UT2004LogParser>();
                 })
                 .Build();
 
