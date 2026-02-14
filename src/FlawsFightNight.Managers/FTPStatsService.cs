@@ -88,16 +88,16 @@ namespace FlawsFightNight.Managers
                         {
                             if (item.Name.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
                             {
-                                if (_ut2004StatsManager.IsLogFileProcessed(item.Name))
+                                if (await _ut2004StatsManager.IsLogFileProcessed(item.Name))
                                 {
-                                    Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Skipping already processed log: {item.Name}");
+                                    //Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Skipping already processed log: {item.Name}");
                                     continue;
                                 }
                                 else
                                 {
                                     Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Processing new log: {item.Name}");
                                     var fileStream = await _ftpClient.OpenRead(item.FullName);
-                                    _ut2004StatsManager.ProcessLogFile(fileStream);
+                                    await _ut2004StatsManager.ProcessLogFile(fileStream);
                                 }
                             }
                         }
@@ -122,7 +122,7 @@ namespace FlawsFightNight.Managers
                 {
                     if (item.Name.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (!_ut2004StatsManager.IsLogFileProcessed(item.Name))
+                        if (!await _ut2004StatsManager.IsLogFileProcessed(item.Name))
                         {
                             return true;
                         }
