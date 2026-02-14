@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.Stats
 {
-    public class PlayerStats
+    public abstract class StatLog
     {
-
+        public StatLog() { }
     }
 }
