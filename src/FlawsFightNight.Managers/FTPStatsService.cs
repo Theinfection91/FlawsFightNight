@@ -34,7 +34,7 @@ namespace FlawsFightNight.Managers
             _ftpClient.Config.EncryptionMode = FtpEncryptionMode.Explicit; // or FtpEncryptionMode.Auto
             _ftpClient.Config.ValidateAnyCertificate = true; // Accept self-signed certificates (for local dev)
             _ftpClient.Config.SslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13;
-            
+
             // Configure listing parser
             _ftpClient.Config.ListingParser = FtpParser.Machine;
 
@@ -94,6 +94,16 @@ namespace FlawsFightNight.Managers
                         Console.WriteLine($"{item.Name} is a directory.");
                         break;
                     case FtpObjectType.File:
+                        using (var stream = await _ftpClient.OpenRead(item.FullName))
+                        using (var reader = new StreamReader(stream))
+                        {
+                            // Print each line of the file to the console
+                            string? line;
+                            while ((line = await reader.ReadLineAsync()) != null)
+                            {
+                                Console.WriteLine(line);
+                            }
+                        }
                         Console.WriteLine($"{item.Name} - {item.GetHashCode()}");
                         break;
                     default:
