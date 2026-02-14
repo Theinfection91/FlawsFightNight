@@ -8,7 +8,7 @@ namespace FlawsFightNight.Data.Models
 {
     public class ProcessedLogNamesFile
     {
-        public HashSet<Dictionary<string, string>> ProcessedLogFiles { get; set; } = new();
+        public List<string> ProcessedLogFileNames { get; set; } = new();
 
         public ProcessedLogNamesFile() { }
     }

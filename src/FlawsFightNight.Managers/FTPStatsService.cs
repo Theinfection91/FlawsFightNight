@@ -13,12 +13,16 @@ namespace FlawsFightNight.Managers
     public class FTPStatsService : BackgroundService
     {
         private readonly ConfigManager _configManager;
-        private readonly DiscordSocketClient _discordClient;
-        private AsyncFtpClient _ftpClient;
+        private readonly UT2004StatsManager _ut2004StatsManager;
 
-        public FTPStatsService(ConfigManager configManager, DiscordSocketClient client)
+        private readonly DiscordSocketClient _discordClient;
+        private AsyncFtpClient? _ftpClient;
+
+        public FTPStatsService(ConfigManager configManager, DiscordSocketClient client, UT2004StatsManager uT2004StatsManager)
         {
             _configManager = configManager;
+            _ut2004StatsManager = uT2004StatsManager;
+
             _discordClient = client;
             ConfigureFTPClients();
         }
@@ -66,12 +70,34 @@ namespace FlawsFightNight.Managers
             {
                 try
                 {
+
                     //Console.WriteLine($"Connected = {_ftpClient.IsConnected}");
                     //Console.WriteLine($"{DateTime.Now} [FTPStatsService] Heartbeat...");
 
                     // Direct connect for now for testing - eventually will want to pull creds from ConfigManager and handle connection issues/retries more robustly
-                    await GetFileCountFromDirectoryLocation("/placeholderDir/anotherDir/UserLogs");
+                    //await GetFileCountFromDirectoryLocation("/placeholderDir/anotherDir/UserLogs");
 
+                    // Hardcoded magic word directory for now
+                    string magicDirectory = "/placeholderDir/anotherDir/UserLogs";
+                    if (await ContainsFreshLogs(magicDirectory))
+                    {
+                        Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Fresh logs found! Processing...");
+
+                        var items = await _ftpClient.GetListing(magicDirectory);
+                        foreach (var item in items)
+                        {
+                            if (_ut2004StatsManager.IsLogFileProcessed(item.Name))
+                            {
+                                Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Skipping already processed log: {item.Name}");
+                                continue;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Processing new log: {item.Name}");
+                                _ut2004StatsManager.AddProcessedLogFileName(item.Name);
+                            }
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -80,6 +106,26 @@ namespace FlawsFightNight.Managers
 
                 await Task.Delay(TimeSpan.FromSeconds(9999), token);
             }
+        }     
+
+        private async Task<bool> ContainsFreshLogs(string directory)
+        {
+            var items = await _ftpClient.GetListing(directory);
+
+            foreach (var item in items)
+            {
+                if (item.Type == FtpObjectType.File)
+                {
+                    if (item.Name.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!_ut2004StatsManager.IsLogFileProcessed(item.Name))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         private async Task GetFileCountFromDirectoryLocation(string directory)
@@ -94,17 +140,21 @@ namespace FlawsFightNight.Managers
                         Console.WriteLine($"{item.Name} is a directory.");
                         break;
                     case FtpObjectType.File:
-                        using (var stream = await _ftpClient.OpenRead(item.FullName))
-                        using (var reader = new StreamReader(stream))
+                        //using (var stream = await _ftpClient.OpenRead(item.FullName))
+                        //using (var reader = new StreamReader(stream))
+                        //{
+                        //    // Print each line of the file to the console
+                        //    string? line;
+                        //    while ((line = await reader.ReadLineAsync()) != null)
+                        //    {
+                        //        Console.WriteLine(line);
+                        //    }
+                        //}
+
+                        if (await ContainsFreshLogs(directory))
                         {
-                            // Print each line of the file to the console
-                            string? line;
-                            while ((line = await reader.ReadLineAsync()) != null)
-                            {
-                                Console.WriteLine(line);
-                            }
+
                         }
-                        Console.WriteLine($"{item.Name} - {item.GetHashCode()}");
                         break;
                     default:
                         Console.WriteLine($"{item.Name} is of unknown type.");

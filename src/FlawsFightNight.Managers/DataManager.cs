@@ -183,6 +183,11 @@ namespace FlawsFightNight.Managers
             _processedLogNamesHandler.Save(ProcessedLogNamesFile);
             LoadProcessedLogNamesFile();
         }
+
+        public ProcessedLogNamesFile GetProcessedLogNames()
+        {
+            return ProcessedLogNamesFile;
+        }
         #endregion
     }
 }

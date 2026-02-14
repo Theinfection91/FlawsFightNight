@@ -144,6 +144,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<GitBackupManager>();
                     services.AddSingleton<MatchManager>();
                     services.AddSingleton<MemberManager>();
+                    services.AddSingleton<UT2004StatsManager>();
                     services.AddSingleton<TeamManager>();
                     services.AddSingleton<TournamentManager>();
 
