@@ -8,6 +8,6 @@ namespace FlawsFightNight.Core.Interfaces
 {
     public interface ILogParser
     {
-        public T Parse<T>(string input);
+        public Task<T?> Parse<T>(Stream fileStream);
     }
 }

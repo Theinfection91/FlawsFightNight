@@ -1,4 +1,7 @@
-﻿using System;
+﻿using FlawsFightNight.Core.Helpers;
+using FlawsFightNight.Core.Models.Stats.UT2004;
+using FluentFTP;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,12 +11,13 @@ namespace FlawsFightNight.Managers
 {
     public class UT2004StatsManager : BaseDataDriven
     {
-        public UT2004StatsManager(DataManager dataManager) : base("UT2004StatsManager", dataManager)
+        private readonly UT2004LogParser _logParser;
+        public UT2004StatsManager(DataManager dataManager, UT2004LogParser logParser) : base("UT2004StatsManager", dataManager)
         {
-
+            _logParser = logParser;
         }
 
-        public bool IsLogFileProcessed(string fileName)
+        public async Task<bool> IsLogFileProcessed(string fileName)
         {
             var processedLogs = _dataManager.GetProcessedLogNames();
             foreach (var logName in processedLogs.ProcessedLogFileNames)
@@ -26,7 +30,12 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public void AddProcessedLogFileName(string fileName)
+        public async Task ProcessLogFile(Stream fileStream)
+        {
+            var statLog = await _logParser.Parse<UT2004StatLog>(fileStream);
+        }
+
+        public async Task MarkLogFileAsProcessed(string fileName)
         {
             var processedLogs = _dataManager.GetProcessedLogNames();
             if (!processedLogs.ProcessedLogFileNames.Contains(fileName))
@@ -37,4 +46,3 @@ namespace FlawsFightNight.Managers
         }
     }
 }
-    

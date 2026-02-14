@@ -86,15 +86,19 @@ namespace FlawsFightNight.Managers
                         var items = await _ftpClient.GetListing(magicDirectory);
                         foreach (var item in items)
                         {
-                            if (_ut2004StatsManager.IsLogFileProcessed(item.Name))
+                            if (item.Name.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
                             {
-                                Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Skipping already processed log: {item.Name}");
-                                continue;
-                            }
-                            else
-                            {
-                                Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Processing new log: {item.Name}");
-                                _ut2004StatsManager.AddProcessedLogFileName(item.Name);
+                                if (_ut2004StatsManager.IsLogFileProcessed(item.Name))
+                                {
+                                    Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Skipping already processed log: {item.Name}");
+                                    continue;
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Processing new log: {item.Name}");
+                                    var fileStream = await _ftpClient.OpenRead(item.FullName);
+                                    _ut2004StatsManager.ProcessLogFile(fileStream);
+                                }
                             }
                         }
                     }
@@ -140,16 +144,16 @@ namespace FlawsFightNight.Managers
                         Console.WriteLine($"{item.Name} is a directory.");
                         break;
                     case FtpObjectType.File:
-                        //using (var stream = await _ftpClient.OpenRead(item.FullName))
-                        //using (var reader = new StreamReader(stream))
-                        //{
-                        //    // Print each line of the file to the console
-                        //    string? line;
-                        //    while ((line = await reader.ReadLineAsync()) != null)
-                        //    {
-                        //        Console.WriteLine(line);
-                        //    }
-                        //}
+                        using (var stream = await _ftpClient.OpenRead(item.FullName))
+                        using (var reader = new StreamReader(stream))
+                        {
+                            // Print each line of the file to the console
+                            string? line;
+                            while ((line = await reader.ReadLineAsync()) != null)
+                            {
+                                Console.WriteLine(line);
+                            }
+                        }
 
                         if (await ContainsFreshLogs(directory))
                         {
