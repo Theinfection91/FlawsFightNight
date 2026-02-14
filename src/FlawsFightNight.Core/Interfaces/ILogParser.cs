@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Interfaces
 {
-    public interface IStatParser
+    public interface ILogParser
     {
         public T Parse<T>(string input);
     }

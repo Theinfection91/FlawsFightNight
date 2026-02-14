@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Helpers
 {
-    public class UT2004StatParser : IStatParser
+    public class UT2004LogParser : ILogParser
     {
         public T? Parse<T>(string input)
         {
