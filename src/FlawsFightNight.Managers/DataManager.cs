@@ -14,7 +14,6 @@ namespace FlawsFightNight.Managers
     public class DataManager
     {
         #region Fields and Constructor
-        //
         public string Name { get; set; } = "DataManager";
 
         // Discord Client
@@ -32,12 +31,15 @@ namespace FlawsFightNight.Managers
         public PermissionsConfigFile PermissionsConfigFile { get; private set; }
         private readonly PermissionsConfigHandler _permissionsConfigHandler;
 
-        // Tournament Data Files - New Tournament System
+        // Tournament Data System
         public List<TournamentDataFile> TournamentDataFiles { get; private set; }
         private readonly TournamentDataHandler _tournamentDataHandler;
 
+        public ProcessedLogNamesFile ProcessedLogNamesFile { get; private set; }
+        private readonly ProcessedLogNamesHandler _processedLogNamesHandler;
+
         // Constructor is given each handler type for each specific JSON file
-        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler)
+        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler)
         {
             DiscordClient = client;
 
@@ -50,13 +52,15 @@ namespace FlawsFightNight.Managers
             _permissionsConfigHandler = permissionsConfigHandler;
             LoadPermissionsConfigFile();
 
-            // New Tournament System
             _tournamentDataHandler = tournamentDataHandler;
             LoadTournamentDataFiles();
+
+            _processedLogNamesHandler = processedLogNamesHandler;
+            LoadProcessedLogNamesFile();
         }
         #endregion
 
-        #region Discord Credential File Data
+        #region Discord Credential File
         public void LoadDiscordCredentialFile()
         {
             DiscordCredentialFile = _discordCredentialHandler.Load();
@@ -74,7 +78,7 @@ namespace FlawsFightNight.Managers
         }
         #endregion
 
-        #region GitHub Credential File Data
+        #region GitHub Credential File
         public void LoadGitHubCredentialFile()
         {
             GitHubCredentialFile = _gitHubCredentialHandler.Load();
@@ -110,7 +114,7 @@ namespace FlawsFightNight.Managers
         }
         #endregion
 
-        #region New Tournament System
+        #region Tournament Data System
         public void LoadTournamentDataFiles()
         {
             TournamentDataFiles = _tournamentDataHandler.LoadAll();
@@ -160,6 +164,24 @@ namespace FlawsFightNight.Managers
         public List<Tournament> GetTournaments()
         {
             return TournamentDataFiles.Select(t => t.Tournament).ToList();
+        }
+        #endregion
+
+        #region Processed Log File
+        public void LoadProcessedLogNamesFile()
+        {
+            ProcessedLogNamesFile = _processedLogNamesHandler.Load();
+        }
+
+        public void SaveProcessedLogNamesFile()
+        {
+            _processedLogNamesHandler.Save(ProcessedLogNamesFile);
+        }
+
+        public void SaveAndReloadProcessedLogNamesFile()
+        {
+            _processedLogNamesHandler.Save(ProcessedLogNamesFile);
+            LoadProcessedLogNamesFile();
         }
         #endregion
     }

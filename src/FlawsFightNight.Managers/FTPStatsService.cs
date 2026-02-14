@@ -34,6 +34,9 @@ namespace FlawsFightNight.Managers
             _ftpClient.Config.EncryptionMode = FtpEncryptionMode.Explicit; // or FtpEncryptionMode.Auto
             _ftpClient.Config.ValidateAnyCertificate = true; // Accept self-signed certificates (for local dev)
             _ftpClient.Config.SslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13;
+            
+            // Configure listing parser
+            _ftpClient.Config.ListingParser = FtpParser.Machine;
 
             _ftpClient.AutoConnect();
         }
@@ -66,7 +69,7 @@ namespace FlawsFightNight.Managers
                     //Console.WriteLine($"Connected = {_ftpClient.IsConnected}");
                     //Console.WriteLine($"{DateTime.Now} [FTPStatsService] Heartbeat...");
 
-                    // \placeholderDir\anotherDir\UserLogs
+                    // Direct connect for now for testing - eventually will want to pull creds from ConfigManager and handle connection issues/retries more robustly
                     await GetFileCountFromDirectoryLocation("/placeholderDir/anotherDir/UserLogs");
 
                 }
@@ -85,9 +88,19 @@ namespace FlawsFightNight.Managers
 
             foreach (var item in items)
             {
-                Console.WriteLine($"{item.Name} - {item.Created}");
+                switch (item.Type)
+                {
+                    case FtpObjectType.Directory:
+                        Console.WriteLine($"{item.Name} is a directory.");
+                        break;
+                    case FtpObjectType.File:
+                        Console.WriteLine($"{item.Name} - {item.GetHashCode()}");
+                        break;
+                    default:
+                        Console.WriteLine($"{item.Name} is of unknown type.");
+                        break;
+                }
             }
-
             // Print total count of files in the directory
             int fileCount = items.Count();
             Console.WriteLine($"Total files in directory '{directory}': {fileCount}");
