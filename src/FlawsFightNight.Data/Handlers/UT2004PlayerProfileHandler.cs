@@ -1,19 +1,14 @@
 ﻿using FlawsFightNight.Data.Models;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public class StatLogMatchResultHandler : AsyncDataHandler<StatLogMatchResultsFile>
+    public class UT2004PlayerProfileHandler : AsyncDataHandler<UT2004PlayerProfileFile>
     {
-        public StatLogMatchResultHandler() : base()
-        {
-
-        }
+        public UT2004PlayerProfileHandler() { }
     }
 }
