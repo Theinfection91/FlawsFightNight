@@ -10,8 +10,13 @@ namespace FlawsFightNight.Core.Helpers
 {
     public class UT2004LogParser : ILogParser
     {
+        // Debug logging configuration - Toggle independently
+        private const bool _simpleDebugLogging = true;    // Match summary only
+        private const bool _expandedDebugLogging = false; // All parse events
+
         // State tracking for current match
         private Dictionary<int, UTPlayerMatchStats> _activePlayersBySeqNum = new();
+        private Dictionary<string, UTPlayerMatchStats> _activePlayersByGuid = new(); // Track by GUID for reconnects
         private Dictionary<int, int> _teamScores = new();
         private int? _winningTeam = null;
         private bool _gameStarted = false;
@@ -126,6 +131,7 @@ namespace FlawsFightNight.Core.Helpers
         private void ClearMatchState()
         {
             _activePlayersBySeqNum.Clear();
+            _activePlayersByGuid.Clear();
             _teamScores.Clear();
             _winningTeam = null;
             _gameStarted = false;
@@ -136,13 +142,15 @@ namespace FlawsFightNight.Core.Helpers
         {
             if (parts.Length < 6) return;
             // [Time] NG [DateTime] [Unknown] [MapID] [MapName] [Creator] [GameMode] [Params]
-            Console.WriteLine($"New Game Started: Map={parts[5]}, Mode={parts[7]}");
+            if (_expandedDebugLogging)
+                Console.WriteLine($"New Game Started: Map={parts[5]}, Mode={parts[7]}");
         }
 
         private void ParseServerInfo(string[] parts)
         {
             if (parts.Length < 3) return;
-            Console.WriteLine($"Server: {parts[2]}");
+            if (_expandedDebugLogging)
+                Console.WriteLine($"Server: {parts[2]}");
         }
 
         private void ParseStartGame(string[] parts, double timestamp)
@@ -150,7 +158,8 @@ namespace FlawsFightNight.Core.Helpers
             // [Time] SG
             _gameStarted = true;
             _gameStartTime = timestamp;
-            Console.WriteLine($"Game Started at {timestamp}");
+            if (_expandedDebugLogging)
+                Console.WriteLine($"Game Started at {timestamp}");
         }
 
         private void ParseConnection(string[] parts)
@@ -163,16 +172,32 @@ namespace FlawsFightNight.Core.Helpers
             string name = parts[4];
             bool hasKey = parts.Length >= 6 && !string.IsNullOrEmpty(parts[5]);
 
-            var player = new UTPlayerMatchStats
+            // Check if this player already exists (reconnect with different seq num)
+            if (_activePlayersByGuid.TryGetValue(guid, out var existingPlayer))
             {
-                Guid = guid,
-                LastKnownName = name,
-                IsBot = !hasKey
-            };
+                // Player reconnected - just remap the sequence number
+                _activePlayersBySeqNum[seqNum] = existingPlayer;
+                existingPlayer.LastKnownName = name; // Update name in case it changed
+                
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"Player Reconnected: {name} (SeqNum: {seqNum}, GUID: {guid}) - Remapped to existing player");
+            }
+            else
+            {
+                // New player
+                var player = new UTPlayerMatchStats
+                {
+                    Guid = guid,
+                    LastKnownName = name,
+                    IsBot = !hasKey
+                };
 
-            _activePlayersBySeqNum[seqNum] = player;
-            
-            Console.WriteLine($"Player Connected: {name} (SeqNum: {seqNum}, GUID: {guid}, Bot: {!hasKey})");
+                _activePlayersBySeqNum[seqNum] = player;
+                _activePlayersByGuid[guid] = player;
+                
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"Player Connected: {name} (SeqNum: {seqNum}, GUID: {guid}, Bot: {!hasKey})");
+            }
         }
 
         private void ParseDisconnect(string[] parts, double timestamp)
@@ -184,7 +209,12 @@ namespace FlawsFightNight.Core.Helpers
             
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
-                Console.WriteLine($"Player Disconnected: {player.LastKnownName} (SeqNum: {seqNum}) at {timestamp}");
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"Player Disconnected: {player.LastKnownName} (SeqNum: {seqNum}) at {timestamp}");
+                
+                // Remove from sequence number mapping but keep in GUID mapping
+                // (they might reconnect with a different seq num)
+                _activePlayersBySeqNum.Remove(seqNum);
             }
         }
 
@@ -198,7 +228,8 @@ namespace FlawsFightNight.Core.Helpers
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
                 player.IsBot = false;
-                Console.WriteLine($"Player {player.LastKnownName} (SeqNum: {seqNum}) confirmed as human player");
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"Player {player.LastKnownName} (SeqNum: {seqNum}) confirmed as human player");
             }
         }
 
@@ -212,7 +243,8 @@ namespace FlawsFightNight.Core.Helpers
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
-                Console.WriteLine($"Player {player.LastKnownName} ping: {ping}ms");
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"Player {player.LastKnownName} ping: {ping}ms");
             }
         }
 
@@ -227,7 +259,8 @@ namespace FlawsFightNight.Core.Helpers
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
-                Console.WriteLine($"Player {player.LastKnownName} {weapon} accuracy: {accuracy}%");
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"Player {player.LastKnownName} {weapon} accuracy: {accuracy}%");
             }
         }
 
@@ -242,7 +275,8 @@ namespace FlawsFightNight.Core.Helpers
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
                 player.IsBot = true;
-                Console.WriteLine($"Bot {player.LastKnownName} skill: {botSkill}");
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"Bot {player.LastKnownName} skill: {botSkill}");
             }
         }
 
@@ -261,7 +295,8 @@ namespace FlawsFightNight.Core.Helpers
                         if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
                         {
                             player.Team = int.Parse(parts[4]);
-                            Console.WriteLine($"{player.LastKnownName} changed to Team {player.Team}");
+                            if (_expandedDebugLogging)
+                                Console.WriteLine($"{player.LastKnownName} changed to Team {player.Team}");
                         }
                     }
                     break;
@@ -274,7 +309,8 @@ namespace FlawsFightNight.Core.Helpers
                         {
                             string oldName = player.LastKnownName;
                             player.LastKnownName = parts[4];
-                            Console.WriteLine($"Player (SeqNum: {seqNum}) changed name: {oldName} → {player.LastKnownName}");
+                            if (_expandedDebugLogging)
+                                Console.WriteLine($"Player (SeqNum: {seqNum}) changed name: {oldName} → {player.LastKnownName}");
                         }
                     }
                     break;
@@ -331,7 +367,8 @@ namespace FlawsFightNight.Core.Helpers
                 _teamScores[teamId] = 0;
 
             _teamScores[teamId] += (int)Math.Round(points);
-            Console.WriteLine($"Team {teamId} scored {points} points. Total: {_teamScores[teamId]}");
+            if (_expandedDebugLogging)
+                Console.WriteLine($"Team {teamId} scored {points} points. Total: {_teamScores[teamId]}");
         }
 
         private void ParseKill(string[] parts, double timestamp)
@@ -350,7 +387,8 @@ namespace FlawsFightNight.Core.Helpers
             if (killerSeqNum == -1 || killerSeqNum == victimSeqNum)
             {
                 victim.Suicides++;
-                Console.WriteLine($"{victim.LastKnownName} committed suicide");
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"{victim.LastKnownName} committed suicide");
                 return;
             }
 
@@ -365,7 +403,8 @@ namespace FlawsFightNight.Core.Helpers
                 killer.WeaponKills[weapon] = 0;
             killer.WeaponKills[weapon]++;
 
-            Console.WriteLine($"{killer.LastKnownName} killed {victim.LastKnownName} with {weapon}");
+            if (_expandedDebugLogging)
+                Console.WriteLine($"{killer.LastKnownName} killed {victim.LastKnownName} with {weapon}");
         }
 
         private void ParseScore(string[] parts)
@@ -431,11 +470,13 @@ namespace FlawsFightNight.Core.Helpers
 
                 // Unknown/Other scoring events - just log them
                 default:
-                    Console.WriteLine($"{player.LastKnownName} scored {points} for UNKNOWN event: {reason}");
+                    if (_expandedDebugLogging)
+                        Console.WriteLine($"{player.LastKnownName} scored {points} for UNKNOWN event: {reason}");
                     break;
             }
 
-            Console.WriteLine($"{player.LastKnownName} scored {points} for {reason}. Total: {player.Score}");
+            if (_expandedDebugLogging)
+                Console.WriteLine($"{player.LastKnownName} scored {points} for {reason}. Total: {player.Score}");
         }
 
         private void ParseSpecialEvent(string[] parts, double timestamp)
@@ -452,17 +493,20 @@ namespace FlawsFightNight.Core.Helpers
             {
                 int streakLevel = int.Parse(eventType.Replace("spree_", ""));
                 player.BestKillStreak = Math.Max(player.BestKillStreak, streakLevel);
-                Console.WriteLine($"{player.LastKnownName} achieved {eventType}!");
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"{player.LastKnownName} achieved {eventType}!");
             }
             else if (eventType.StartsWith("multikill_"))
             {
                 int multiLevel = int.Parse(eventType.Replace("multikill_", ""));
                 player.BestMultiKill = Math.Max(player.BestMultiKill, multiLevel);
-                Console.WriteLine($"{player.LastKnownName} achieved {eventType}!");
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"{player.LastKnownName} achieved {eventType}!");
             }
             else if (eventType == "first_blood")
             {
-                Console.WriteLine($"{player.LastKnownName} drew first blood!");
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"{player.LastKnownName} drew first blood!");
             }
         }
 
@@ -476,7 +520,8 @@ namespace FlawsFightNight.Core.Helpers
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
-                Console.WriteLine($"{player.LastKnownName} picked up {itemName}");
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"{player.LastKnownName} picked up {itemName}");
             }
         }
 
@@ -490,8 +535,11 @@ namespace FlawsFightNight.Core.Helpers
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
-                string chatType = isTeamChat ? "[TEAM]" : "[ALL]";
-                Console.WriteLine($"{chatType} {player.LastKnownName}: {message}");
+                if (_expandedDebugLogging)
+                {
+                    string chatType = isTeamChat ? "[TEAM]" : "[ALL]";
+                    Console.WriteLine($"{chatType} {player.LastKnownName}: {message}");
+                }
             }
         }
 
@@ -506,50 +554,50 @@ namespace FlawsFightNight.Core.Helpers
                 _winningTeam = _teamScores.OrderByDescending(kvp => kvp.Value).First().Key;
             }
 
-            Console.WriteLine($"Game Ended: {reason}, Winning Team: {_winningTeam}");
+            if (_expandedDebugLogging)
+                Console.WriteLine($"Game Ended: {reason}, Winning Team: {_winningTeam}");
         }
 
-        /// <summary>
-        /// Validates if the match is eligible for stat tracking.
-        /// Returns false if match should be discarded.
-        /// </summary>
         private bool ValidateMatchEligibility()
         {
-            var allPlayers = _activePlayersBySeqNum.Values.ToList();
-            var humanPlayers = allPlayers.Where(p => !p.IsBot).ToList();
-            var botPlayers = allPlayers.Where(p => p.IsBot).ToList();
+            // Use GUID dictionary to get unique players (handles reconnects)
+            var uniquePlayers = _activePlayersByGuid.Values.ToList();
+            var humanPlayers = uniquePlayers.Where(p => !p.IsBot).ToList();
+            var botPlayers = uniquePlayers.Where(p => p.IsBot).ToList();
 
             // Rule 1: No bots allowed
             if (botPlayers.Any())
             {
-                Console.WriteLine($"❌ Match INVALID: Contains {botPlayers.Count} bot(s). Bots: {string.Join(", ", botPlayers.Select(b => b.LastKnownName))}");
+                if (_simpleDebugLogging || _expandedDebugLogging)
+                    Console.WriteLine($"\nMatch INVALID: Contains {botPlayers.Count} bot(s). Bots: {string.Join(", ", botPlayers.Select(b => b.LastKnownName))}");
                 return false;
             }
 
             // Rule 2: Must have at least 2 human players
             if (humanPlayers.Count < 2)
             {
-                Console.WriteLine($"❌ Match INVALID: Only {humanPlayers.Count} human player(s). Need at least 2 players for valid stats.");
+                if (_simpleDebugLogging || _expandedDebugLogging)
+                    Console.WriteLine($"\nMatch INVALID: Only {humanPlayers.Count} human player(s). Need at least 2 players for valid stats.");
                 return false;
             }
 
-            Console.WriteLine($"✅ Match VALID: {humanPlayers.Count} human players, 0 bots");
+            if (_simpleDebugLogging || _expandedDebugLogging)
+                Console.WriteLine($"\nMatch VALID: {humanPlayers.Count} human players, 0 bots");
             return true;
         }
 
         private UT2004StatLog BuildStatLog()
         {
-            // Validate match eligibility FIRST
             if (!ValidateMatchEligibility())
             {
-                Console.WriteLine("⚠️  Match discarded - stats will not be saved or processed.");
+                if (_simpleDebugLogging || _expandedDebugLogging)
+                    Console.WriteLine("Match discarded - stats will not be saved or processed.\n");
                 return null; // Return null to indicate invalid match
             }
 
-            // Mark winners
             if (_winningTeam.HasValue)
             {
-                foreach (var player in _activePlayersBySeqNum.Values)
+                foreach (var player in _activePlayersByGuid.Values)
                 {
                     if (player.Team == _winningTeam.Value)
                     {
@@ -558,8 +606,8 @@ namespace FlawsFightNight.Core.Helpers
                 }
             }
 
-            // Calculate placement PER TEAM
-            var playersByTeam = _activePlayersBySeqNum.Values
+            // Calculate placement PER TEAM (using unique players from GUID dict)
+            var playersByTeam = _activePlayersByGuid.Values
                 .GroupBy(p => p.Team)
                 .ToList();
 
@@ -584,16 +632,24 @@ namespace FlawsFightNight.Core.Helpers
                 }
             }
 
-            // Build the log
+            // Build the log (using unique players from GUID dict)
             var statLog = new UT2004StatLog();
-            foreach (var player in _activePlayersBySeqNum.Values)
+            foreach (var player in _activePlayersByGuid.Values)
             {
                 statLog.Players.Add(new List<UTPlayerMatchStats> { player });
-                
-                Console.WriteLine($"Final Stats - {player.LastKnownName}: " +
-                    $"Team={player.Team}, Winner={player.IsWinner}, " +
-                    $"Placement={player.Placement} (on team), Score={player.Score}, " +
-                    $"K/D={player.Kills}/{player.Deaths}, Caps={player.FlagCaptures}");
+            }
+
+            // Simple Debug Output: Concise match summary
+            if (_simpleDebugLogging)
+            {
+                Console.WriteLine($"Match Completed | Players: {_activePlayersByGuid.Count} | Winning Team: {_winningTeam}");
+                foreach (var player in statLog.Players.SelectMany(p => p))
+                {
+                    Console.WriteLine($"  {player.LastKnownName}: Team={player.Team}, Winner={player.IsWinner}, " +
+                        $"Placement={player.Placement} (on team), Score={player.Score}, " +
+                        $"K/D={player.Kills}/{player.Deaths}, Caps={player.FlagCaptures}");
+                }
+                Console.WriteLine("\n");
             }
 
             return statLog;
