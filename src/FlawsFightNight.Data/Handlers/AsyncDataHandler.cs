@@ -9,12 +9,13 @@ using System.Threading.Tasks;
 namespace FlawsFightNight.Data.Handlers
 {
     public enum PathOption
-    { 
+    {
         Databases,
         TournamentSystem,
         StatLogs,
+        UT2004PlayerProfiles,
     }
-    
+
     public abstract class AsyncDataHandler<T> where T : new()
     {
         protected string _folderPath;
@@ -57,11 +58,14 @@ namespace FlawsFightNight.Data.Handlers
                 case PathOption.StatLogs:
                     _folderPath = Path.Combine(baseDir, "Databases", "StatLogs");
                     break;
+                case PathOption.UT2004PlayerProfiles:
+                    _folderPath = Path.Combine(baseDir, "Databases", "UT2004PlayerProfiles");
+                    break;
             }
-            
+
             if (!Directory.Exists(_folderPath))
                 Directory.CreateDirectory(_folderPath);
-            
+
             _filePath = Path.Combine(_folderPath, fileName);
             await InitializeFile();
         }
@@ -70,10 +74,10 @@ namespace FlawsFightNight.Data.Handlers
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             _folderPath = Path.Combine(baseDir, folderName);
-            
+
             if (!Directory.Exists(_folderPath))
                 Directory.CreateDirectory(_folderPath);
-            
+
             _filePath = Path.Combine(_folderPath, fileName);
             await InitializeFile();
         }
@@ -82,7 +86,7 @@ namespace FlawsFightNight.Data.Handlers
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             var folderPath = Path.Combine(baseDir, "Databases", tournamentId);
-            
+
             if (Directory.Exists(folderPath))
             {
                 await Task.Run(() => Directory.Delete(folderPath, true));
@@ -118,7 +122,7 @@ namespace FlawsFightNight.Data.Handlers
         private async Task<T> LoadWithRetryAsync(int maxRetries = 5, int delayMs = 200)
         {
             Exception lastException = null;
-            
+
             for (int i = 0; i < maxRetries; i++)
             {
                 try
@@ -135,14 +139,14 @@ namespace FlawsFightNight.Data.Handlers
                     await Task.Delay(delayMs * (i + 1)); // Exponential backoff: 200ms, 400ms, 600ms, 800ms, 1000ms
                 }
             }
-            
+
             throw new IOException($"Failed to read file '{_filePath}' after {maxRetries} attempts.", lastException);
         }
 
         private async Task SaveWithRetryAsync(T data, int maxRetries = 5, int delayMs = 200)
         {
             Exception lastException = null;
-            
+
             for (int i = 0; i < maxRetries; i++)
             {
                 try
@@ -152,12 +156,12 @@ namespace FlawsFightNight.Data.Handlers
                         {
                             TypeNameHandling = TypeNameHandling.Auto
                         });
-                    
+
                     // Write to temp file first, then move (atomic operation)
                     string tempFile = _filePath + ".tmp";
                     await File.WriteAllTextAsync(tempFile, json);
                     File.Move(tempFile, _filePath, true);
-                    
+
                     return; // Success!
                 }
                 catch (IOException ex) when (i < maxRetries - 1)
@@ -166,21 +170,23 @@ namespace FlawsFightNight.Data.Handlers
                     await Task.Delay(delayMs * (i + 1)); // Exponential backoff
                 }
             }
-            
+
             throw new IOException($"Failed to write file '{_filePath}' after {maxRetries} attempts.", lastException);
         }
 
-        public virtual async Task<List<T>> LoadAll(string searchPattern = "tournament.json")
+        public virtual async Task<List<T>> LoadAll(string searchPattern = "tournament.json", string folderName = null)
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var folderPath = Path.Combine(baseDir, "Databases");
-            
+            var folderPath = Path.Combine(baseDir, "Databases", folderName ?? string.Empty);
+
             if (!Directory.Exists(folderPath))
-                return new List<T>();
-            
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
             var files = Directory.GetFiles(folderPath, searchPattern, SearchOption.AllDirectories);
             var list = new List<T>();
-            
+
             foreach (var file in files)
             {
                 try
@@ -190,7 +196,7 @@ namespace FlawsFightNight.Data.Handlers
                     {
                         TypeNameHandling = TypeNameHandling.Auto
                     });
-                    
+
                     if (data != null)
                         list.Add(data);
                 }
@@ -199,7 +205,7 @@ namespace FlawsFightNight.Data.Handlers
                     Console.WriteLine($"Warning: Could not read file {file}: {ex.Message}");
                 }
             }
-            
+
             return list;
         }
     }

@@ -18,6 +18,11 @@ namespace FlawsFightNight.Managers
             _logParser = logParser;
         }
 
+        #region Player Profile Building
+
+        #endregion
+
+        #region Stat Log Processing
         public async Task<bool> IsLogFileProcessed(string fileName)
         {
             // Ensure the processed log names file is loaded
@@ -100,5 +105,6 @@ namespace FlawsFightNight.Managers
             var statLogFiles = await _dataManager.LoadAllStatLogMatchResultFiles();
             return statLogFiles.Select(file => file.StatLog).ToList();
         }
+        #endregion
     }
 }

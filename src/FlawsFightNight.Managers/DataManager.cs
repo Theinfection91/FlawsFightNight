@@ -44,8 +44,12 @@ namespace FlawsFightNight.Managers
         // Stat Log files are lazy loaded
         private readonly StatLogMatchResultHandler _statLogMatchResultsHandler;
 
+        // UT2004 Player Profile File
+        public List<UT2004PlayerProfileFile> UT2004PlayerProfileFiles { get; private set; }
+        private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
+
         // Constructor is given each handler type for each specific JSON file
-        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler)
+        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
         {
             DiscordClient = client;
 
@@ -62,10 +66,13 @@ namespace FlawsFightNight.Managers
             LoadTournamentDataFiles();
 
             _processedLogNamesHandler = processedLogNamesHandler;
-            LoadProcessedLogNamesFile();
+            LoadProcessedLogNamesFile().Wait();
 
             _statLogMatchResultsHandler = statLogMatchResultHandler;
             // Stat Log files will be lazy loaded when data is needed.
+
+            _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
+            LoadAllUT2004PlayerProfileFiles().Wait();
         }
         #endregion
 
@@ -206,7 +213,7 @@ namespace FlawsFightNight.Managers
         #region Valid Match Results File
         public async Task<List<StatLogMatchResultsFile>> LoadAllStatLogMatchResultFiles()
         {
-            return await _statLogMatchResultsHandler.LoadAll();
+            return await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs");
         }
 
         public async Task<StatLogMatchResultsFile> LoadStatLogMatchResultFile(string fileName)
@@ -223,6 +230,41 @@ namespace FlawsFightNight.Managers
             };
             await _statLogMatchResultsHandler.SetFilePath(PathOption.StatLogs, statLog.FileName);
             await _statLogMatchResultsHandler.Save(statLogMatchResultsFile);
+        }
+        #endregion
+
+        #region UT2004 Player Profile Files
+        public async Task LoadAllUT2004PlayerProfileFiles()
+        {
+            UT2004PlayerProfileFiles = await _ut2004PlayerProfileHandler.LoadAll("*.json", "UT2004PlayerProfiles");
+        }
+
+        public async Task<UT2004PlayerProfileFile> LoadUT2004PlayerProfileFile(string playerGuid)
+        {
+            await _ut2004PlayerProfileHandler.SetFilePath(PathOption.UT2004PlayerProfiles, $"{playerGuid}.json");
+            return await _ut2004PlayerProfileHandler.Load();
+        }
+        public async Task SaveUT2004PlayerProfileFile(UT2004PlayerProfile playerProfile)
+        {
+            var playerProfileFile = new UT2004PlayerProfileFile()
+            {
+                PlayerProfile = playerProfile
+            };
+            await _ut2004PlayerProfileHandler.SetFilePath(PathOption.UT2004PlayerProfiles, $"{playerProfile.Guid}.json");
+            await _ut2004PlayerProfileHandler.Save(playerProfileFile);
+        }
+
+        public async Task<UT2004PlayerProfileFile> GetUT2004PlayerProfile(string playerGuid)
+        {
+
+            foreach (var profileFile in UT2004PlayerProfileFiles)
+            {
+                if (profileFile.PlayerProfile.Guid.Equals(playerGuid, StringComparison.OrdinalIgnoreCase))
+                {
+                    return profileFile;
+                }
+            }
+            return null;
         }
         #endregion
     }
