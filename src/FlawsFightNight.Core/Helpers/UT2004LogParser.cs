@@ -10,10 +10,12 @@ namespace FlawsFightNight.Core.Helpers
 {
     public class UT2004LogParser : ILogParser
     {
-        // State tracking for current match (like Ruby's instance variables)
+        // State tracking for current match
         private Dictionary<int, UTPlayerMatchStats> _activePlayersBySeqNum = new();
         private Dictionary<int, int> _teamScores = new();
         private int? _winningTeam = null;
+        private bool _gameStarted = false;
+        private double _gameStartTime = 0;
 
         public async Task<T?> Parse<T>(Stream fileStream)
         {
@@ -50,12 +52,32 @@ namespace FlawsFightNight.Core.Helpers
                             ParseServerInfo(parts);
                             break;
 
+                        case "SG": // Start Game
+                            ParseStartGame(parts, timestamp);
+                            break;
+
                         case "C": // Connection
                             ParseConnection(parts);
                             break;
 
+                        case "D": // Disconnect
+                            ParseDisconnect(parts, timestamp);
+                            break;
+
                         case "PS": // Player String (additional info)
                             ParsePlayerString(parts);
+                            break;
+
+                        case "PP": // Player Ping
+                            ParsePlayerPing(parts);
+                            break;
+
+                        case "PA": // Player Accuracy
+                            ParsePlayerAccuracy(parts);
+                            break;
+
+                        case "BI": // Bot Info
+                            ParseBotInfo(parts);
                             break;
 
                         case "G": // Game Event
@@ -78,6 +100,19 @@ namespace FlawsFightNight.Core.Helpers
                             ParseSpecialEvent(parts, timestamp);
                             break;
 
+                        case "I": // Item Pickup
+                            ParseItemPickup(parts);
+                            break;
+
+                        case "V": // Chat
+                            ParseChat(parts, timestamp, false);
+                            break;
+
+                        case "TV": // Team Chat
+                        case "VT":
+                            ParseChat(parts, timestamp, true);
+                            break;
+
                         case "EG": // End Game
                             ParseEndGame(parts);
                             break;
@@ -93,6 +128,8 @@ namespace FlawsFightNight.Core.Helpers
             _activePlayersBySeqNum.Clear();
             _teamScores.Clear();
             _winningTeam = null;
+            _gameStarted = false;
+            _gameStartTime = 0;
         }
 
         private void ParseNewGame(string[] parts)
@@ -106,6 +143,14 @@ namespace FlawsFightNight.Core.Helpers
         {
             if (parts.Length < 3) return;
             Console.WriteLine($"Server: {parts[2]}");
+        }
+
+        private void ParseStartGame(string[] parts, double timestamp)
+        {
+            // [Time] SG
+            _gameStarted = true;
+            _gameStartTime = timestamp;
+            Console.WriteLine($"Game Started at {timestamp}");
         }
 
         private void ParseConnection(string[] parts)
@@ -122,12 +167,25 @@ namespace FlawsFightNight.Core.Helpers
             {
                 Guid = guid,
                 LastKnownName = name,
-                IsBot = !hasKey  // No CD-key = bot
+                IsBot = !hasKey
             };
 
             _activePlayersBySeqNum[seqNum] = player;
             
             Console.WriteLine($"Player Connected: {name} (SeqNum: {seqNum}, GUID: {guid}, Bot: {!hasKey})");
+        }
+
+        private void ParseDisconnect(string[] parts, double timestamp)
+        {
+            if (parts.Length < 3) return;
+
+            // [Time] D [SeqNum]
+            int seqNum = int.Parse(parts[2]);
+            
+            if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
+            {
+                Console.WriteLine($"Player Disconnected: {player.LastKnownName} (SeqNum: {seqNum}) at {timestamp}");
+            }
         }
 
         private void ParsePlayerString(string[] parts)
@@ -139,9 +197,52 @@ namespace FlawsFightNight.Core.Helpers
             
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
-                // Mark as confirmed human player (not bot)
                 player.IsBot = false;
                 Console.WriteLine($"Player {player.LastKnownName} (SeqNum: {seqNum}) confirmed as human player");
+            }
+        }
+
+        private void ParsePlayerPing(string[] parts)
+        {
+            if (parts.Length < 4) return;
+
+            // [Time] PP [SeqNum] [Ping]
+            int seqNum = int.Parse(parts[2]);
+            int ping = int.Parse(parts[3]);
+
+            if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
+            {
+                Console.WriteLine($"Player {player.LastKnownName} ping: {ping}ms");
+            }
+        }
+
+        private void ParsePlayerAccuracy(string[] parts)
+        {
+            if (parts.Length < 5) return;
+
+            // [Time] PA [SeqNum] [Weapon] [Accuracy%]
+            int seqNum = int.Parse(parts[2]);
+            string weapon = parts[3];
+            double accuracy = double.Parse(parts[4]);
+
+            if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
+            {
+                Console.WriteLine($"Player {player.LastKnownName} {weapon} accuracy: {accuracy}%");
+            }
+        }
+
+        private void ParseBotInfo(string[] parts)
+        {
+            if (parts.Length < 4) return;
+
+            // [Time] BI [SeqNum] [BotSkill]
+            int seqNum = int.Parse(parts[2]);
+            string botSkill = parts[3];
+
+            if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
+            {
+                player.IsBot = true;
+                Console.WriteLine($"Bot {player.LastKnownName} skill: {botSkill}");
             }
         }
 
@@ -214,7 +315,6 @@ namespace FlawsFightNight.Core.Helpers
                 case "flag_captured":
                 case "flag_returned":
                 case "flag_returned_timeout":
-                    // These are logged but final counts come from "S" lines
                     break;
             }
         }
@@ -246,7 +346,7 @@ namespace FlawsFightNight.Core.Helpers
             if (!_activePlayersBySeqNum.TryGetValue(victimSeqNum, out var victim))
                 return;
 
-            // Suicide or environment death (killer == -1 or killer == victim)
+            // Suicide or environment death
             if (killerSeqNum == -1 || killerSeqNum == victimSeqNum)
             {
                 victim.Suicides++;
@@ -261,7 +361,6 @@ namespace FlawsFightNight.Core.Helpers
             killer.Kills++;
             victim.Deaths++;
 
-            // Track weapon usage
             if (!killer.WeaponKills.ContainsKey(weapon))
                 killer.WeaponKills[weapon] = 0;
             killer.WeaponKills[weapon]++;
@@ -281,12 +380,13 @@ namespace FlawsFightNight.Core.Helpers
             if (!_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
                 return;
 
-            // Increment score (like Ruby's increment!)
+            // Always add score first
             player.Score += (int)Math.Round(points);
 
-            // Track specific events
+            // Track specific stat categories
             switch (reason)
             {
+                // Flag Capture Events
                 case "flag_cap_final":
                     player.FlagCaptures++;
                     break;
@@ -296,6 +396,8 @@ namespace FlawsFightNight.Core.Helpers
                 case "flag_cap_1st_touch":
                     player.FlagCaptureFirstTouch++;
                     break;
+
+                // Flag Return Events
                 case "flag_ret_enemy":
                     player.FlagReturnsEnemy++;
                     player.FlagReturns++;
@@ -304,6 +406,8 @@ namespace FlawsFightNight.Core.Helpers
                     player.FlagReturnsFriendly++;
                     player.FlagReturns++;
                     break;
+
+                // Defensive Events
                 case "flag_denial":
                     player.FlagDenials++;
                     break;
@@ -313,8 +417,21 @@ namespace FlawsFightNight.Core.Helpers
                 case "critical_frag":
                     player.CriticalFrags++;
                     break;
+
+                // Combat Events
                 case "headshot":
                     player.Headshots++;
+                    break;
+                case "frag":
+                    // Normal frag, already counted in Kills
+                    break;
+                case "self_frag":
+                    // Negative score from suicide, already counted in Suicides
+                    break;
+
+                // Unknown/Other scoring events - just log them
+                default:
+                    Console.WriteLine($"{player.LastKnownName} scored {points} for UNKNOWN event: {reason}");
                     break;
             }
 
@@ -325,14 +442,12 @@ namespace FlawsFightNight.Core.Helpers
         {
             if (parts.Length < 4) return;
 
-            // [Time] P [SeqNum] [EventType]
             int seqNum = int.Parse(parts[2]);
             string eventType = parts[3];
 
             if (!_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
                 return;
 
-            // Track kill streaks and multikills
             if (eventType.StartsWith("spree_"))
             {
                 int streakLevel = int.Parse(eventType.Replace("spree_", ""));
@@ -351,13 +466,41 @@ namespace FlawsFightNight.Core.Helpers
             }
         }
 
+        private void ParseItemPickup(string[] parts)
+        {
+            if (parts.Length < 4) return;
+
+            // [Time] I [SeqNum] [ItemName]
+            int seqNum = int.Parse(parts[2]);
+            string itemName = parts[3];
+
+            if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
+            {
+                Console.WriteLine($"{player.LastKnownName} picked up {itemName}");
+            }
+        }
+
+        private void ParseChat(string[] parts, double timestamp, bool isTeamChat)
+        {
+            if (parts.Length < 4) return;
+
+            // [Time] V/TV [SeqNum] [Message]
+            int seqNum = int.Parse(parts[2]);
+            string message = parts[3];
+
+            if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
+            {
+                string chatType = isTeamChat ? "[TEAM]" : "[ALL]";
+                Console.WriteLine($"{chatType} {player.LastKnownName}: {message}");
+            }
+        }
+
         private void ParseEndGame(string[] parts)
         {
             if (parts.Length < 3) return;
 
             string reason = parts[2];
 
-            // Determine winning team
             if (_teamScores.Count > 0)
             {
                 _winningTeam = _teamScores.OrderByDescending(kvp => kvp.Value).First().Key;
@@ -380,14 +523,13 @@ namespace FlawsFightNight.Core.Helpers
                 }
             }
 
-            // Calculate placement PER TEAM (not overall)
+            // Calculate placement PER TEAM
             var playersByTeam = _activePlayersBySeqNum.Values
                 .GroupBy(p => p.Team)
                 .ToList();
 
             foreach (var teamGroup in playersByTeam)
             {
-                // Rank players within their team
                 var rankedPlayers = teamGroup
                     .OrderByDescending(p => p.Score)
                     .ThenByDescending(p => p.Kills)
@@ -399,7 +541,6 @@ namespace FlawsFightNight.Core.Helpers
                 {
                     rankedPlayers[i].Placement = placement;
 
-                    // If next player has different score, increment placement
                     if (i + 1 < rankedPlayers.Count && 
                         rankedPlayers[i].Score != rankedPlayers[i + 1].Score)
                     {
