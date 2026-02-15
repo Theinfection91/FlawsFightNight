@@ -24,7 +24,9 @@ namespace FlawsFightNight.Core.Helpers
         {
             using (var reader = new StreamReader(fileStream))
             {
-                var activePlayers = new Dictionary<int, UTPlayerStats>();
+                var activePlayers = new Dictionary<int, UTPlayerMatchStats>();
+                var teamScores = new Dictionary<int, int>(); // Track team scores
+                int? winningTeam = null;
 
                 string line;
                 while ((line = await reader.ReadLineAsync()) != null)
@@ -39,7 +41,7 @@ namespace FlawsFightNight.Core.Helpers
                             if (parts.Length >= 5)
                             {
                                 int playerId = int.Parse(parts[2]);
-                                activePlayers[playerId] = new UTPlayerStats
+                                activePlayers[playerId] = new UTPlayerMatchStats
                                 {
                                     Guid = parts[3],
                                     LastKnownName = parts[4]
@@ -72,10 +74,30 @@ namespace FlawsFightNight.Core.Helpers
                             }
                             break;
 
+                        case "T": // Team Score: [Time] T [TeamID] [PointValue] [EventName]
+                            if (parts.Length >= 5)
+                            {
+                                int teamId = int.Parse(parts[2]);
+                                double pointValue = double.Parse(parts[3]);
+                                
+                                if (!teamScores.ContainsKey(teamId))
+                                    teamScores[teamId] = 0;
+                                
+                                teamScores[teamId] += (int)Math.Round(pointValue);
+                                Console.WriteLine($"Team {teamId} scored {pointValue} points. Total Team Score: {teamScores[teamId]}");
+                            }
+                            break;
+
                         case "EG": // End Game: [Time] EG [Reason] [WinnerIDs...]
                             if (parts.Length >= 3)
                             {
-                                Console.WriteLine($"Game Ended: Reason - {parts[2]}, Winners - {string.Join(", ", parts.Skip(3))}");
+                                // Determine winning team from team scores
+                                if (teamScores.Count > 0)
+                                {
+                                    winningTeam = teamScores.OrderByDescending(kvp => kvp.Value).First().Key;
+                                }
+                                
+                                Console.WriteLine($"Game Ended: Reason - {parts[2]}, Winning Team: {winningTeam}");
                             }
                             break;
 
@@ -118,14 +140,20 @@ namespace FlawsFightNight.Core.Helpers
                             if (parts.Length >= 5)
                             {
                                 int scorerId = int.Parse(parts[2]);
-                                string eventName = parts[4]; // Fixed: was parts[5], should be parts[4]
+                                double pointValue = double.Parse(parts[3]);
+                                string eventName = parts[4];
 
                                 if (activePlayers.ContainsKey(scorerId))
                                 {
+                                    // Add to total score
+                                    activePlayers[scorerId].Score += (int)Math.Round(pointValue);
+
+                                    // Track specific events
                                     if (eventName == "flag_cap_final") activePlayers[scorerId].FlagCaptures++;
                                     if (eventName.Contains("flag_ret")) activePlayers[scorerId].FlagReturns++;
                                     if (eventName == "headshot") activePlayers[scorerId].Headshots++;
-                                    Console.WriteLine($"Player {activePlayers[scorerId].LastKnownName} (ID: {scorerId}) scored {eventName} worth {parts[3]} points.");
+                                    
+                                    Console.WriteLine($"Player {activePlayers[scorerId].LastKnownName} (ID: {scorerId}) scored {eventName} worth {pointValue} points. Total Score: {activePlayers[scorerId].Score}");
                                 }
                             }
                             break;
@@ -143,8 +171,52 @@ namespace FlawsFightNight.Core.Helpers
                             break;
                     }
                 }
+
+                // Mark winners based on winning team
+                if (winningTeam.HasValue)
+                {
+                    foreach (var player in activePlayers.Values)
+                    {
+                        if (player.Team == winningTeam.Value)
+                        {
+                            player.IsWinner = true;
+                        }
+                    }
+                }
+
+                // Calculate placement by score (descending order)
+                var rankedPlayers = activePlayers.Values
+                    .OrderByDescending(p => p.Score)
+                    .ThenByDescending(p => p.Kills)
+                    .ThenBy(p => p.Deaths)
+                    .ToList();
+
+                int placement = 1;
+                for (int i = 0; i < rankedPlayers.Count; i++)
+                {
+                    rankedPlayers[i].Placement = placement;
+                    
+                    // If next player has different score, increment placement
+                    if (i + 1 < rankedPlayers.Count && rankedPlayers[i].Score != rankedPlayers[i + 1].Score)
+                    {
+                        placement = i + 2;
+                    }
+                }
+
+                Console.WriteLine($"Count of active players before model: {activePlayers.Count}");
+                UT2004StatLog statLog = new UT2004StatLog();
+                foreach (var value in activePlayers.Values)
+                {
+                    statLog.Players.Add(new List<UTPlayerMatchStats> { value });
+                }
+                
+                foreach (var player in statLog.Players.SelectMany(p => p))
+                {
+                    Console.WriteLine($"Player: {player.LastKnownName}, Team: {player.Team}, IsWinner: {player.IsWinner}, Placement: {player.Placement}, Score: {player.Score}, Kills: {player.Kills}, Deaths: {player.Deaths}, Flag Captures: {player.FlagCaptures}");
+                }
+
                 // Implementation for parsing UT2004StatLog
-                return new UT2004StatLog();
+                return statLog;
             }
         }
     }
