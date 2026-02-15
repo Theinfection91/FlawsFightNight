@@ -31,24 +31,48 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         /// </summary>
         public double Rating => Mu - (3 * Sigma);
 
-        // Cumulative Career Stats
+        // Cumulative Combat Stats
+        public int TotalScore { get; set; } = 0;
         public int TotalKills { get; set; } = 0;
         public int TotalDeaths { get; set; } = 0;
         public int TotalSuicides { get; set; } = 0;
         public int TotalHeadshots { get; set; } = 0;
-        public int TotalFlagCaptures { get; set; } = 0;
-        public int TotalFlagReturns { get; set; } = 0;
-        public int TotalScore { get; set; } = 0;
+
+        // Cumulative Flag Objective Stats - Primary Actions
+        public int TotalFlagCaptures { get; set; } = 0;          // flag_cap_final
+        public int TotalFlagGrabs { get; set; } = 0;             // flag_taken (picking up enemy flag from base)
+        public int TotalFlagPickups { get; set; } = 0;           // flag_pickup (picking up dropped flag)
+        public int TotalFlagDrops { get; set; } = 0;             // flag_dropped (dropping the flag)
+        
+        // Cumulative Flag Objective Stats - Defensive Actions
+        public int TotalFlagReturns { get; set; } = 0;           // Total flag returns (all types)
+        public int TotalFlagReturnsEnemy { get; set; } = 0;      // flag_ret_enemy
+        public int TotalFlagReturnsFriendly { get; set; } = 0;   // flag_ret_friendly
+        public int TotalFlagDenials { get; set; } = 0;           // flag_denial
+        
+        // Cumulative Flag Objective Stats - Support Actions
+        public int TotalFlagCaptureAssists { get; set; } = 0;    // flag_cap_assist
+        public int TotalFlagCaptureFirstTouch { get; set; } = 0; // flag_cap_1st_touch
+        public int TotalTeamProtectFrags { get; set; } = 0;      // team_protect_frag
+        public int TotalCriticalFrags { get; set; } = 0;         // critical_frag
 
         // Career Bests (for achievements/leaderboards)
         public int BestKillStreak { get; set; } = 0;
         public int BestMultiKill { get; set; } = 0;
         public int MostKillsInMatch { get; set; } = 0;
+        public int MostDeathsInMatch { get; set; } = 0;
         public int MostFlagCapsInMatch { get; set; } = 0;
+        public int MostFlagReturnsInMatch { get; set; } = 0;
+        public int HighestScoreInMatch { get; set; } = 0;
+
+        // Weapon Stats - Cumulative kills per weapon
+        public Dictionary<string, int> TotalWeaponKills { get; set; } = new Dictionary<string, int>();
 
         // Calculated Properties
         public double WinRate => TotalMatches > 0 ? (double)Wins / TotalMatches : 0;
         public double KDRatio => TotalDeaths > 0 ? (double)TotalKills / TotalDeaths : TotalKills;
+        public double AverageScorePerMatch => TotalMatches > 0 ? (double)TotalScore / TotalMatches : 0;
+        public double AverageCapturesPerMatch => TotalMatches > 0 ? (double)TotalFlagCaptures / TotalMatches : 0;
 
         public UT2004PlayerProfile() { }
 
@@ -68,19 +92,49 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
             if (matchStats.IsWinner) Wins++;
             else Losses++;
 
+            // Combat Stats
+            TotalScore += matchStats.Score;
             TotalKills += matchStats.Kills;
             TotalDeaths += matchStats.Deaths;
             TotalSuicides += matchStats.Suicides;
             TotalHeadshots += matchStats.Headshots;
+
+            // Flag Objective Stats - Primary Actions
             TotalFlagCaptures += matchStats.FlagCaptures;
+            TotalFlagGrabs += matchStats.FlagGrabs;
+            TotalFlagPickups += matchStats.FlagPickups;
+            TotalFlagDrops += matchStats.FlagDrops;
+
+            // Flag Objective Stats - Defensive Actions
             TotalFlagReturns += matchStats.FlagReturns;
-            TotalScore += matchStats.Score;
+            TotalFlagReturnsEnemy += matchStats.FlagReturnsEnemy;
+            TotalFlagReturnsFriendly += matchStats.FlagReturnsFriendly;
+            TotalFlagDenials += matchStats.FlagDenials;
+
+            // Flag Objective Stats - Support Actions
+            TotalFlagCaptureAssists += matchStats.FlagCaptureAssists;
+            TotalFlagCaptureFirstTouch += matchStats.FlagCaptureFirstTouch;
+            TotalTeamProtectFrags += matchStats.TeamProtectFrags;
+            TotalCriticalFrags += matchStats.CriticalFrags;
 
             // Update career bests
             BestKillStreak = Math.Max(BestKillStreak, matchStats.BestKillStreak);
             BestMultiKill = Math.Max(BestMultiKill, matchStats.BestMultiKill);
             MostKillsInMatch = Math.Max(MostKillsInMatch, matchStats.Kills);
+            MostDeathsInMatch = Math.Max(MostDeathsInMatch, matchStats.Deaths);
             MostFlagCapsInMatch = Math.Max(MostFlagCapsInMatch, matchStats.FlagCaptures);
+            MostFlagReturnsInMatch = Math.Max(MostFlagReturnsInMatch, matchStats.FlagReturns);
+            HighestScoreInMatch = Math.Max(HighestScoreInMatch, matchStats.Score);
+
+            // Update weapon kill totals
+            foreach (var weaponKill in matchStats.WeaponKills)
+            {
+                if (!TotalWeaponKills.ContainsKey(weaponKill.Key))
+                {
+                    TotalWeaponKills[weaponKill.Key] = 0;
+                }
+                TotalWeaponKills[weaponKill.Key] += weaponKill.Value;
+            }
 
             // Update name if changed
             if (!CurrentName.Equals(matchStats.LastKnownName, StringComparison.OrdinalIgnoreCase))
@@ -98,7 +152,7 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         /// <summary>
         /// Update skill rating after match
         /// </summary>
-        public void UpdateRating(double newMu, double newSigma)
+        public void UpdateSkillRating(double newMu, double newSigma)
         {
             Mu = newMu;
             Sigma = newSigma;
