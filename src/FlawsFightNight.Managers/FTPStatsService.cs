@@ -75,9 +75,6 @@ namespace FlawsFightNight.Managers
                     //Console.WriteLine($"{DateTime.Now} [FTPStatsService] Heartbeat...");
 
                     // Direct connect for now for testing - eventually will want to pull creds from ConfigManager and handle connection issues/retries more robustly
-                    //await GetFileCountFromDirectoryLocation("/placeholderDir/anotherDir/UserLogs");
-
-                    // Hardcoded magic word directory for now
                     string magicDirectory = "/placeholderDir/anotherDir/UserLogs";
                     if (await ContainsFreshLogs(magicDirectory))
                     {
@@ -130,44 +127,6 @@ namespace FlawsFightNight.Managers
                 }
             }
             return false;
-        }
-
-        private async Task GetFileCountFromDirectoryLocation(string directory)
-        {
-            var items = await _ftpClient.GetListing(directory);
-
-            foreach (var item in items)
-            {
-                switch (item.Type)
-                {
-                    case FtpObjectType.Directory:
-                        Console.WriteLine($"{item.Name} is a directory.");
-                        break;
-                    case FtpObjectType.File:
-                        using (var stream = await _ftpClient.OpenRead(item.FullName))
-                        using (var reader = new StreamReader(stream))
-                        {
-                            // Print each line of the file to the console
-                            string? line;
-                            while ((line = await reader.ReadLineAsync()) != null)
-                            {
-                                Console.WriteLine(line);
-                            }
-                        }
-
-                        if (await ContainsFreshLogs(directory))
-                        {
-
-                        }
-                        break;
-                    default:
-                        Console.WriteLine($"{item.Name} is of unknown type.");
-                        break;
-                }
-            }
-            // Print total count of files in the directory
-            int fileCount = items.Count();
-            Console.WriteLine($"Total files in directory '{directory}': {fileCount}");
         }
     }
 }
