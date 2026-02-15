@@ -177,20 +177,24 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Processed Log File
-        public void LoadProcessedLogNamesFile()
+        public async Task LoadProcessedLogNamesFile()
         {
-            ProcessedLogNamesFile = _processedLogNamesHandler.Load();
+            await _processedLogNamesHandler.SetFilePath(PathOption.Databases, "processed_log_names.json");
+            ProcessedLogNamesFile = await _processedLogNamesHandler.Load();
         }
 
-        public void SaveProcessedLogNamesFile()
+        public async Task SaveProcessedLogNamesFile()
         {
-            _processedLogNamesHandler.Save(ProcessedLogNamesFile);
+            //await _processedLogNamesHandler.Save(ProcessedLogNamesFile);
+            await _processedLogNamesHandler.SetFilePath(PathOption.Databases, "processed_log_names.json");
+            await _processedLogNamesHandler.Save(ProcessedLogNamesFile);
         }
 
-        public void SaveAndReloadProcessedLogNamesFile()
+        public async Task SaveAndReloadProcessedLogNamesFile()
         {
-            _processedLogNamesHandler.Save(ProcessedLogNamesFile);
-            LoadProcessedLogNamesFile();
+            await _processedLogNamesHandler.SetFilePath(PathOption.Databases, "processed_log_names.json");
+            await _processedLogNamesHandler.Save(ProcessedLogNamesFile);
+            await LoadProcessedLogNamesFile();
         }
 
         public ProcessedLogNamesFile GetProcessedLogNames()
@@ -202,7 +206,7 @@ namespace FlawsFightNight.Managers
         #region Valid Match Results File
         public async Task<StatLogMatchResultsFile> LoadStatLogMatchResultFile(string fileName)
         {
-            await _statLogMatchResultsHandler.SetFilePath(PathOptions.StatLogs, fileName);
+            await _statLogMatchResultsHandler.SetFilePath(PathOption.StatLogs, fileName);
             return await _statLogMatchResultsHandler.Load();
         }
 
@@ -212,7 +216,7 @@ namespace FlawsFightNight.Managers
             {
                 StatLog = statLog
             };
-            await _statLogMatchResultsHandler.SetFilePath(PathOptions.StatLogs, statLog.FileName);
+            await _statLogMatchResultsHandler.SetFilePath(PathOption.StatLogs, statLog.FileName);
             await _statLogMatchResultsHandler.Save(statLogMatchResultsFile);
         }
         #endregion

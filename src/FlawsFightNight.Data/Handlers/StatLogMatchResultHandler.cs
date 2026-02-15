@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public class StatLogMatchResultHandler : AsyncFolderDataHandler<StatLogMatchResultsFile>
+    public class StatLogMatchResultHandler : AsyncDataHandler<StatLogMatchResultsFile>
     {
         public StatLogMatchResultHandler() : base()
         {

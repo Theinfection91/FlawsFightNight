@@ -581,8 +581,21 @@ namespace FlawsFightNight.Core.Helpers
                 return false;
             }
 
+            // Rule 3: Players must be on different teams (at least 2 teams)
+            var teamIds = humanPlayers.Select(p => p.Team).Distinct().ToList();
+            if (teamIds.Count < 2)
+            {
+                if (_simpleDebugLogging || _expandedDebugLogging)
+                {
+                    Console.WriteLine($"\nMatch INVALID: All {humanPlayers.Count} players are on Team {teamIds.FirstOrDefault()}. " +
+                        $"Players: {string.Join(", ", humanPlayers.Select(p => p.LastKnownName))}");
+                }
+                return false;
+            }
+
             if (_simpleDebugLogging || _expandedDebugLogging)
-                Console.WriteLine($"\nMatch VALID: {humanPlayers.Count} human players, 0 bots");
+                Console.WriteLine($"\nMatch VALID: {humanPlayers.Count} human players across {teamIds.Count} teams, 0 bots");
+            
             return true;
         }
 
@@ -591,7 +604,7 @@ namespace FlawsFightNight.Core.Helpers
             if (!ValidateMatchEligibility())
             {
                 if (_simpleDebugLogging || _expandedDebugLogging)
-                    Console.WriteLine("Match discarded - stats will not be saved or processed.\n");
+                    //Console.WriteLine("Match discarded - stats will not be saved or processed.\n");
                 return null; // Return null to indicate invalid match
             }
 

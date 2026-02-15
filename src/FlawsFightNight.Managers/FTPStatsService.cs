@@ -94,7 +94,8 @@ namespace FlawsFightNight.Managers
                                 {
                                     Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Processing new log: {item.Name}");
                                     var fileStream = await _ftpClient.OpenRead(item.FullName);
-                                    await _ut2004StatsManager.ProcessLogFile(fileStream);
+                                    string fileName = item.Name;
+                                    await _ut2004StatsManager.ProcessLogFile(fileStream, fileName);
                                 }
                             }
                         }

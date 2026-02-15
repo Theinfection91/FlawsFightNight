@@ -30,9 +30,22 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public async Task ProcessLogFile(Stream fileStream)
+        public async Task ProcessLogFile(Stream fileStream, string fileName)
         {
             var statLog = await _logParser.Parse<UT2004StatLog>(fileStream);
+            if (statLog != null)
+            {
+                statLog.FileName = fileName;
+                // Sort players by team, then by score (descending)
+                statLog.Players = statLog.Players.Select(playerList =>
+                    playerList.OrderBy(p => p.Team)  // Changed to OrderBy for team 0, 1, 2...
+                              .ThenByDescending(p => p.Score)
+                              .ToList()
+                ).ToList();  // Changed from ToHashSet() to ToList()
+                
+                await _dataManager.SaveStatLogMatchResultFile(statLog);
+                await MarkLogFileAsProcessed(fileName);
+            }
         }
 
         public async Task MarkLogFileAsProcessed(string fileName)
@@ -41,7 +54,7 @@ namespace FlawsFightNight.Managers
             if (!processedLogs.ProcessedLogFileNames.Contains(fileName))
             {
                 processedLogs.ProcessedLogFileNames.Add(fileName);
-                _dataManager.SaveAndReloadProcessedLogNamesFile();
+                await _dataManager.SaveAndReloadProcessedLogNamesFile();
             }
         }
     }
