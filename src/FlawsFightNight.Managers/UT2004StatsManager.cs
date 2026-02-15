@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace FlawsFightNight.Managers
 {
@@ -42,13 +43,15 @@ namespace FlawsFightNight.Managers
             var statLog = await _logParser.Parse<UT2004StatLog>(fileStream);
             if (statLog != null)
             {
-                statLog.FileName = fileName;
+                // Change extension from .log to .json for saved file
+                statLog.FileName = Path.ChangeExtension(fileName, ".json");
+                
                 // Sort players by team, then by score (descending)
                 statLog.Players = statLog.Players.Select(playerList =>
-                    playerList.OrderBy(p => p.Team)  // Changed to OrderBy for team 0, 1, 2...
+                    playerList.OrderBy(p => p.Team)
                               .ThenByDescending(p => p.Score)
                               .ToList()
-                ).ToList();  // Changed from ToHashSet() to ToList()
+                ).ToList();
 
                 await _dataManager.SaveStatLogMatchResultFile(statLog);
                 await MarkLogFileAsProcessed(fileName);
