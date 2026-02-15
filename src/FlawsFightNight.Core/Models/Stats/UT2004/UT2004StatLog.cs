@@ -9,7 +9,7 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
     public class UT2004StatLog : StatLog
     {
         public string? FileName { get; set; }
-        public HashSet<List<UTPlayerStats>> Players { get; set; } = new();
+        public HashSet<List<UTPlayerMatchStats>> Players { get; set; } = new();
         
         public UT2004StatLog() { }
     }
