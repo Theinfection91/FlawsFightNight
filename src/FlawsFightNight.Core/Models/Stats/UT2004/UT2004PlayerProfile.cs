@@ -52,10 +52,9 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
 
         public UT2004PlayerProfile() { }
 
-        public UT2004PlayerProfile(string guid, string name)
+        public UT2004PlayerProfile(string guid)
         {
             Guid = guid;
-            CurrentName = name;
             FirstSeen = DateTime.UtcNow;
             LastPlayed = DateTime.UtcNow;
         }

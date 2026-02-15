@@ -19,7 +19,15 @@ namespace FlawsFightNight.Managers
         }
 
         #region Player Profile Building
-
+        public async Task SetupPlayerProfiles()
+        {
+            var allMatchStats = await GetAllProcessedStatLogs();
+            var allPlayerProfiles = await UT2004PlayerProfileBuilder.InitializeFreshDatabase(allMatchStats);
+            foreach (var profile in allPlayerProfiles )
+            {
+                await _dataManager.SaveUT2004PlayerProfileFile(profile);
+            }
+        }
         #endregion
 
         #region Stat Log Processing
