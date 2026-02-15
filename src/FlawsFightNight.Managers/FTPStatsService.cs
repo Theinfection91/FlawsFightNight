@@ -34,7 +34,7 @@ namespace FlawsFightNight.Managers
             //_ftpClient = new(host: creds.Host, user: creds.Username, pass: creds.Password, port: creds.Port);
             _ftpClient = new(host: "127.0.0.1", user: "bot_test", pass: "password1", port: 21);
 
-            // Configure TLS/SSL settings BEFORE connecting
+            // Configure TLS/SSL settings
             _ftpClient.Config.EncryptionMode = FtpEncryptionMode.Explicit; // or FtpEncryptionMode.Auto
             _ftpClient.Config.ValidateAnyCertificate = true; // Accept self-signed certificates (for local dev)
             _ftpClient.Config.SslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13;
