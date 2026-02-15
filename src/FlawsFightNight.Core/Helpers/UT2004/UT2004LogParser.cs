@@ -166,37 +166,57 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         {
             if (parts.Length < 5) return;
 
-            // [Time] C [SeqNum] [GUID] [Name] [CDKey?]
+            // [Time] C [SeqNum] [TempGUID] [Name] [CDKey?]
             int seqNum = int.Parse(parts[2]);
-            string guid = parts[3];
+            string tempGuid = parts[3]; // This is NOT the real GUID, just a temporary identifier
             string name = parts[4];
             bool hasKey = parts.Length >= 6 && !string.IsNullOrEmpty(parts[5]);
 
-            // Check if this player already exists (reconnect with different seq num)
-            if (_activePlayersByGuid.TryGetValue(guid, out var existingPlayer))
+            // Create player with temporary GUID - will be updated when PS line is parsed
+            var player = new UTPlayerMatchStats
             {
-                // Player reconnected - just remap the sequence number
-                _activePlayersBySeqNum[seqNum] = existingPlayer;
-                existingPlayer.LastKnownName = name; // Update name in case it changed
+                Guid = tempGuid, // Will be overwritten by PS line
+                LastKnownName = name,
+                IsBot = !hasKey
+            };
 
-                if (_expandedDebugLogging)
-                    Console.WriteLine($"Player Reconnected: {name} (SeqNum: {seqNum}, GUID: {guid}) - Remapped to existing player");
-            }
-            else
+            _activePlayersBySeqNum[seqNum] = player;
+            // Don't add to _activePlayersByGuid yet - wait for PS line with real GUID
+
+            if (_expandedDebugLogging)
+                Console.WriteLine($"Player Connected: {name} (SeqNum: {seqNum}, TempGUID: {tempGuid}, Bot: {!hasKey})");
+        }
+
+        private void ParsePlayerString(string[] parts)
+        {
+            if (parts.Length < 6) return;
+
+            // [Time] PS [SeqNum] [IP:Port] [NetSpeed] [ActualGUID]
+            int seqNum = int.Parse(parts[2]);
+            string actualGuid = parts[5]; // This is the REAL player GUID!
+
+            if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
-                // New player
-                var player = new UTPlayerMatchStats
+                // Check if this player already exists by GUID (reconnect scenario)
+                if (_activePlayersByGuid.TryGetValue(actualGuid, out var existingPlayer))
                 {
-                    Guid = guid,
-                    LastKnownName = name,
-                    IsBot = !hasKey
-                };
-
-                _activePlayersBySeqNum[seqNum] = player;
-                _activePlayersByGuid[guid] = player;
-
-                if (_expandedDebugLogging)
-                    Console.WriteLine($"Player Connected: {name} (SeqNum: {seqNum}, GUID: {guid}, Bot: {!hasKey})");
+                    // Player reconnected - remap to existing player stats
+                    _activePlayersBySeqNum[seqNum] = existingPlayer;
+                    existingPlayer.LastKnownName = player.LastKnownName; // Update name
+                    
+                    if (_expandedDebugLogging)
+                        Console.WriteLine($"Player Reconnected: {existingPlayer.LastKnownName} (SeqNum: {seqNum}, GUID: {actualGuid})");
+                }
+                else
+                {
+                    // First time seeing this GUID - update player and add to GUID dictionary
+                    player.Guid = actualGuid;
+                    player.IsBot = false; // PS line confirms human player
+                    _activePlayersByGuid[actualGuid] = player;
+                    
+                    if (_expandedDebugLogging)
+                        Console.WriteLine($"Player {player.LastKnownName} (SeqNum: {seqNum}) confirmed with GUID: {actualGuid}");
+                }
             }
         }
 
@@ -215,21 +235,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 // Remove from sequence number mapping but keep in GUID mapping
                 // (they might reconnect with a different seq num)
                 _activePlayersBySeqNum.Remove(seqNum);
-            }
-        }
-
-        private void ParsePlayerString(string[] parts)
-        {
-            if (parts.Length < 6) return;
-
-            // [Time] PS [SeqNum] [IP:Port] [NetSpeed] [OtherData]
-            int seqNum = int.Parse(parts[2]);
-
-            if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
-            {
-                player.IsBot = false;
-                if (_expandedDebugLogging)
-                    Console.WriteLine($"Player {player.LastKnownName} (SeqNum: {seqNum}) confirmed as human player");
             }
         }
 
