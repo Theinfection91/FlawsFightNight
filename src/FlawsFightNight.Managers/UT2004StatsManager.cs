@@ -1,5 +1,4 @@
-﻿using FlawsFightNight.Core.Helpers;
-using FlawsFightNight.Core.Models.Stats.UT2004;
+﻿using FlawsFightNight.Core.Models.Stats.UT2004;
 using FluentFTP;
 using System;
 using System.Collections.Generic;
@@ -7,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using FlawsFightNight.Core.Helpers.UT2004;
 
 namespace FlawsFightNight.Managers
 {

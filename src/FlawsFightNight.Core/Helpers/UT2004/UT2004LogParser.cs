@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Core.Helpers
+namespace FlawsFightNight.Core.Helpers.UT2004
 {
     public class UT2004LogParser : ILogParser
     {

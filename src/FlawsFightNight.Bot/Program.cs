@@ -8,7 +8,7 @@ using FlawsFightNight.CommandsLogic.SetCommands;
 using FlawsFightNight.CommandsLogic.SettingsCommands;
 using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
-using FlawsFightNight.Core.Helpers;
+using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.Data.Handlers;
 using FlawsFightNight.Managers;
 using Microsoft.Extensions.DependencyInjection;
