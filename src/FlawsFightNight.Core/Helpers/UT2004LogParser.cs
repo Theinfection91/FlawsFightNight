@@ -509,8 +509,43 @@ namespace FlawsFightNight.Core.Helpers
             Console.WriteLine($"Game Ended: {reason}, Winning Team: {_winningTeam}");
         }
 
+        /// <summary>
+        /// Validates if the match is eligible for stat tracking.
+        /// Returns false if match should be discarded.
+        /// </summary>
+        private bool ValidateMatchEligibility()
+        {
+            var allPlayers = _activePlayersBySeqNum.Values.ToList();
+            var humanPlayers = allPlayers.Where(p => !p.IsBot).ToList();
+            var botPlayers = allPlayers.Where(p => p.IsBot).ToList();
+
+            // Rule 1: No bots allowed
+            if (botPlayers.Any())
+            {
+                Console.WriteLine($"❌ Match INVALID: Contains {botPlayers.Count} bot(s). Bots: {string.Join(", ", botPlayers.Select(b => b.LastKnownName))}");
+                return false;
+            }
+
+            // Rule 2: Must have at least 2 human players
+            if (humanPlayers.Count < 2)
+            {
+                Console.WriteLine($"❌ Match INVALID: Only {humanPlayers.Count} human player(s). Need at least 2 players for valid stats.");
+                return false;
+            }
+
+            Console.WriteLine($"✅ Match VALID: {humanPlayers.Count} human players, 0 bots");
+            return true;
+        }
+
         private UT2004StatLog BuildStatLog()
         {
+            // Validate match eligibility FIRST
+            if (!ValidateMatchEligibility())
+            {
+                Console.WriteLine("⚠️  Match discarded - stats will not be saved or processed.");
+                return null; // Return null to indicate invalid match
+            }
+
             // Mark winners
             if (_winningTeam.HasValue)
             {
