@@ -11,6 +11,7 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public string? Guid { get; set; }
         public string? LastKnownName { get; set; }
         public int Team { get; set; } // 0 = Red, 1 = Blue
+        public bool IsBot { get; set; }
         public bool IsWinner { get; set; }
         public int Placement { get; set; }
 

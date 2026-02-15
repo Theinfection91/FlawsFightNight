@@ -22,7 +22,7 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public DateTime LastPlayed { get; set; }
         public DateTime FirstSeen { get; set; }
 
-        // Skill Rating (OpenSkillSharp - persistent across matches)
+        // Skill Rating
         public double Mu { get; set; } = 25.0;           // Skill estimate
         public double Sigma { get; set; } = 25.0 / 3.0;  // Uncertainty
         
