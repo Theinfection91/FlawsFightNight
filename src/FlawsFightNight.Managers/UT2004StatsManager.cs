@@ -27,6 +27,13 @@ namespace FlawsFightNight.Managers
                     return true;
                 }
             }
+            foreach (var logName in processedLogs.IgnoredLogFileNames)
+            {
+                if (logName == fileName)
+                {
+                    return true;
+                }
+            }
             return false;
         }
 
@@ -42,9 +49,13 @@ namespace FlawsFightNight.Managers
                               .ThenByDescending(p => p.Score)
                               .ToList()
                 ).ToList();  // Changed from ToHashSet() to ToList()
-                
+
                 await _dataManager.SaveStatLogMatchResultFile(statLog);
                 await MarkLogFileAsProcessed(fileName);
+            }
+            else
+            {
+                await MarkLogFileAsIgnored(fileName);
             }
         }
 
@@ -54,6 +65,16 @@ namespace FlawsFightNight.Managers
             if (!processedLogs.ProcessedLogFileNames.Contains(fileName))
             {
                 processedLogs.ProcessedLogFileNames.Add(fileName);
+                await _dataManager.SaveAndReloadProcessedLogNamesFile();
+            }
+        }
+
+        public async Task MarkLogFileAsIgnored(string fileName)
+        {
+            var processedLogs = _dataManager.GetProcessedLogNames();
+            if (!processedLogs.IgnoredLogFileNames.Contains(fileName))
+            {
+                processedLogs.IgnoredLogFileNames.Add(fileName);
                 await _dataManager.SaveAndReloadProcessedLogNamesFile();
             }
         }

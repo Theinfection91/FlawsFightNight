@@ -9,6 +9,7 @@ namespace FlawsFightNight.Data.Models
     public class ProcessedLogNamesFile
     {
         public List<string> ProcessedLogFileNames { get; set; } = new();
+        public List<string> IgnoredLogFileNames {  get; set; } = new();
 
         public ProcessedLogNamesFile() { }
     }
