@@ -158,6 +158,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<GitHubCredentialHandler>();
                     services.AddSingleton<PermissionsConfigHandler>();
                     services.AddSingleton<ProcessedLogNamesHandler>();
+                    services.AddSingleton<StatLogMatchResultHandler>();
                     services.AddSingleton<TournamentDataHandler>();
 
                     // Parsers

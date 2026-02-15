@@ -1,36 +1,54 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public abstract class BaseFolderDataHandler<T> where T : new()
+    public enum PathOptions
+    {
+        Databases,
+        StatLogs,
+    }
+    public class AsyncFolderDataHandler<T> where T : new()
     {
         protected string _folderPath;
         protected string _filePath;
 
-        protected BaseFolderDataHandler()
+        protected AsyncFolderDataHandler()
+
         {
-            
+
         }
 
-        private void InitializeFile()
+        private async Task InitializeFile()
         {
             if (!File.Exists(_filePath))
-                Save(new T());
+                await Save(new T());
         }
 
-        public void SetFilePath(string folderName, string fileName = "tournament.json")
+        public async Task SetFilePath(PathOptions pathOptions, string fileName = "tournament.json")
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            _folderPath = Path.Combine(baseDir, "Databases", folderName);
+            switch (pathOptions)
+            {
+                case PathOptions.Databases:
+                    _folderPath = Path.Combine(baseDir, "Databases");
+                    break;
+                case PathOptions.StatLogs:
+                    _folderPath = Path.Combine(baseDir, "Databases", "StatLogs");
+                    break;
+            }
             if (!Directory.Exists(_folderPath))
                 Directory.CreateDirectory(_folderPath);
             _filePath = Path.Combine(_folderPath, fileName);
-            InitializeFile();
+            await InitializeFile();
         }
 
-        public void DeleteFolderAndContents(string tournamentId)
+        public async Task DeleteFolderAndContents(string tournamentId)
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             var folderPath = Path.Combine(baseDir, "Databases", tournamentId);
@@ -40,26 +58,26 @@ namespace FlawsFightNight.Data.Handlers
             }
         }
 
-        public T Load()
+        public async Task<T> Load()
         {
-            var json = File.ReadAllText(_filePath);
+            var json = await File.ReadAllTextAsync(_filePath);
             return JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
             {
                 TypeNameHandling = TypeNameHandling.Auto
             }) ?? new T();
         }
 
-        public void Save(T data)
+        public async Task Save(T data)
         {
             var json = JsonConvert.SerializeObject(data, Formatting.Indented,
                 new JsonSerializerSettings
                 {
                     TypeNameHandling = TypeNameHandling.Auto
                 });
-            File.WriteAllText(_filePath, json);
+            await File.WriteAllTextAsync(_filePath, json);
         }
 
-        public List<T> LoadAll()
+        public async Task<List<T>> LoadAll()
         {
             // Get all JSON from each file in each folder
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
