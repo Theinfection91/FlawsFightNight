@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Core.Models.Stats.UT2004;
 
 namespace FlawsFightNight.Managers
 {
@@ -35,11 +36,16 @@ namespace FlawsFightNight.Managers
         public List<TournamentDataFile> TournamentDataFiles { get; private set; }
         private readonly TournamentDataHandler _tournamentDataHandler;
 
+        // Processed Log Names File
         public ProcessedLogNamesFile ProcessedLogNamesFile { get; private set; }
         private readonly ProcessedLogNamesHandler _processedLogNamesHandler;
 
+        // Stat Log Match Results File
+        // Stat Log files are lazy loaded
+        private readonly StatLogMatchResultHandler _statLogMatchResultsHandler;
+
         // Constructor is given each handler type for each specific JSON file
-        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler)
+        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler)
         {
             DiscordClient = client;
 
@@ -57,6 +63,9 @@ namespace FlawsFightNight.Managers
 
             _processedLogNamesHandler = processedLogNamesHandler;
             LoadProcessedLogNamesFile();
+
+            _statLogMatchResultsHandler = statLogMatchResultHandler;
+            // Stat Log files will be lazy loaded when data is needed.
         }
         #endregion
 
@@ -168,25 +177,52 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Processed Log File
-        public void LoadProcessedLogNamesFile()
+        public async Task LoadProcessedLogNamesFile()
         {
-            ProcessedLogNamesFile = _processedLogNamesHandler.Load();
+            await _processedLogNamesHandler.SetFilePath(PathOption.Databases, "processed_log_names.json");
+            ProcessedLogNamesFile = await _processedLogNamesHandler.Load();
         }
 
-        public void SaveProcessedLogNamesFile()
+        public async Task SaveProcessedLogNamesFile()
         {
-            _processedLogNamesHandler.Save(ProcessedLogNamesFile);
+            //await _processedLogNamesHandler.Save(ProcessedLogNamesFile);
+            await _processedLogNamesHandler.SetFilePath(PathOption.Databases, "processed_log_names.json");
+            await _processedLogNamesHandler.Save(ProcessedLogNamesFile);
         }
 
-        public void SaveAndReloadProcessedLogNamesFile()
+        public async Task SaveAndReloadProcessedLogNamesFile()
         {
-            _processedLogNamesHandler.Save(ProcessedLogNamesFile);
-            LoadProcessedLogNamesFile();
+            await _processedLogNamesHandler.SetFilePath(PathOption.Databases, "processed_log_names.json");
+            await _processedLogNamesHandler.Save(ProcessedLogNamesFile);
+            await LoadProcessedLogNamesFile();
         }
 
         public ProcessedLogNamesFile GetProcessedLogNames()
         {
             return ProcessedLogNamesFile;
+        }
+        #endregion
+
+        #region Valid Match Results File
+        public async Task<List<StatLogMatchResultsFile>> LoadAllStatLogMatchResultFiles()
+        {
+            return await _statLogMatchResultsHandler.LoadAll();
+        }
+
+        public async Task<StatLogMatchResultsFile> LoadStatLogMatchResultFile(string fileName)
+        {
+            await _statLogMatchResultsHandler.SetFilePath(PathOption.StatLogs, fileName);
+            return await _statLogMatchResultsHandler.Load();
+        }
+
+        public async Task SaveStatLogMatchResultFile(UT2004StatLog statLog)
+        {
+            var statLogMatchResultsFile = new StatLogMatchResultsFile()
+            {
+                StatLog = statLog
+            };
+            await _statLogMatchResultsHandler.SetFilePath(PathOption.StatLogs, statLog.FileName);
+            await _statLogMatchResultsHandler.Save(statLogMatchResultsFile);
         }
         #endregion
     }

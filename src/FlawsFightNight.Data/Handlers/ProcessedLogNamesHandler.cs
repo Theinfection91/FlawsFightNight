@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public class ProcessedLogNamesHandler : BaseDataHandler<ProcessedLogNamesFile>
+    public class ProcessedLogNamesHandler : AsyncDataHandler<ProcessedLogNamesFile>
     {
-        public ProcessedLogNamesHandler() : base("processed_log_names.json", "Databases")
+        public ProcessedLogNamesHandler() : base()
         {
         }
     }

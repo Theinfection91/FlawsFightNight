@@ -9,19 +9,6 @@ namespace FlawsFightNight.Data.Handlers
         protected string _folderPath;
         protected string _filePath;
 
-        //protected BaseFolderDataHandler(string folderName, string fileName = "tournament.json")
-        //{
-        //    string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        //    _folderPath = Path.Combine(baseDir, "Databases", folderName);
-
-        //    if (!Directory.Exists(_folderPath))
-        //        Directory.CreateDirectory(_folderPath);
-
-        //    _filePath = Path.Combine(_folderPath, fileName);
-
-        //    InitializeFile();
-        //}
-
         protected BaseFolderDataHandler()
         {
             
@@ -91,13 +78,5 @@ namespace FlawsFightNight.Data.Handlers
             }
             return list;
         }
-
-        // Optional: save extra files later
-        //protected void SaveOtherJson(string name, object data)
-        //{
-        //    var path = Path.Combine(_folderPath, name + ".json");
-        //    var json = JsonConvert.SerializeObject(data, Formatting.Indented);
-        //    File.WriteAllText(path, json);
-        //}
     }
 }

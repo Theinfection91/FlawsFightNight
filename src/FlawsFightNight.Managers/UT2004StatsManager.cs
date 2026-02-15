@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace FlawsFightNight.Managers
 {
@@ -19,30 +20,85 @@ namespace FlawsFightNight.Managers
 
         public async Task<bool> IsLogFileProcessed(string fileName)
         {
-            var processedLogs = _dataManager.GetProcessedLogNames();
-            foreach (var logName in processedLogs.ProcessedLogFileNames)
+            // Ensure the processed log names file is loaded
+            if (_dataManager.ProcessedLogNamesFile == null)
             {
-                if (logName == fileName)
-                {
-                    return true;
-                }
+                await _dataManager.LoadProcessedLogNamesFile();
             }
+
+            var processedLogs = _dataManager.GetProcessedLogNames();
+            
+            // Check if in processed list
+            if (processedLogs.ProcessedLogFileNames?.Contains(fileName) == true)
+            {
+                return true;
+            }
+            
+            // Check if in ignored list
+            if (processedLogs.IgnoredLogFileNames?.Contains(fileName) == true)
+            {
+                return true;
+            }
+            
             return false;
         }
 
-        public async Task ProcessLogFile(Stream fileStream)
+        public async Task<bool> ProcessLogFile(Stream fileStream, string fileName)
         {
             var statLog = await _logParser.Parse<UT2004StatLog>(fileStream);
+            if (statLog != null)
+            {
+                statLog.FileName = Path.ChangeExtension(fileName, ".json");
+
+                statLog.Players = statLog.Players.Select(playerList =>
+                    playerList.OrderBy(p => p.Team)
+                              .ThenByDescending(p => p.Score)
+                              .ToList()
+                ).ToList();
+
+                await _dataManager.SaveStatLogMatchResultFile(statLog);
+                await MarkLogFileAsProcessed(fileName);
+                return true;
+            }
+            else
+            {
+                await MarkLogFileAsIgnored(fileName);
+                return false;
+            }
         }
 
         public async Task MarkLogFileAsProcessed(string fileName)
         {
             var processedLogs = _dataManager.GetProcessedLogNames();
+            
+            // Ensure lists are initialized
+            processedLogs.ProcessedLogFileNames ??= new List<string>();
+            
             if (!processedLogs.ProcessedLogFileNames.Contains(fileName))
             {
                 processedLogs.ProcessedLogFileNames.Add(fileName);
-                _dataManager.SaveAndReloadProcessedLogNamesFile();
+                await _dataManager.SaveAndReloadProcessedLogNamesFile();
             }
+        }
+
+        public async Task MarkLogFileAsIgnored(string fileName)
+        {
+            var processedLogs = _dataManager.GetProcessedLogNames();
+            
+            // Ensure lists are initialized
+            processedLogs.IgnoredLogFileNames ??= new List<string>();
+            
+            if (!processedLogs.IgnoredLogFileNames.Contains(fileName))
+            {
+                processedLogs.IgnoredLogFileNames.Add(fileName);
+                await _dataManager.SaveAndReloadProcessedLogNamesFile();
+            }
+        }
+
+        public async Task<List<UT2004StatLog>> GetAllProcessedStatLogs()
+        {
+            var statLogFiles = await _dataManager.LoadAllStatLogMatchResultFiles();
+            return statLogFiles.Select(file => file.StatLog).ToList();
         }
     }
 }
