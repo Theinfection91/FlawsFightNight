@@ -204,6 +204,11 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Valid Match Results File
+        public async Task<List<StatLogMatchResultsFile>> LoadAllStatLogMatchResultFiles()
+        {
+            return await _statLogMatchResultsHandler.LoadAll();
+        }
+
         public async Task<StatLogMatchResultsFile> LoadStatLogMatchResultFile(string fileName)
         {
             await _statLogMatchResultsHandler.SetFilePath(PathOption.StatLogs, fileName);

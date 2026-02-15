@@ -15,7 +15,7 @@ namespace FlawsFightNight.Data.Handlers
         StatLogs,
     }
     
-    public class AsyncDataHandler<T> where T : new()
+    public abstract class AsyncDataHandler<T> where T : new()
     {
         protected string _folderPath;
         protected string _filePath;
@@ -170,7 +170,7 @@ namespace FlawsFightNight.Data.Handlers
             throw new IOException($"Failed to write file '{_filePath}' after {maxRetries} attempts.", lastException);
         }
 
-        public async Task<List<T>> LoadAll(string searchPattern = "tournament.json")
+        public virtual async Task<List<T>> LoadAll(string searchPattern = "tournament.json")
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             var folderPath = Path.Combine(baseDir, "Databases");
