@@ -99,6 +99,8 @@ namespace FlawsFightNight.Managers
                                 }
                             }
                         }
+                        var allStats = await _ut2004StatsManager.GetAllProcessedStatLogs();
+                        Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Total processed stat logs: {allStats.Count}");
                     }
                 }
                 catch (Exception ex)

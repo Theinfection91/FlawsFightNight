@@ -45,7 +45,7 @@ namespace FlawsFightNight.Managers
             {
                 // Change extension from .log to .json for saved file
                 statLog.FileName = Path.ChangeExtension(fileName, ".json");
-                
+
                 // Sort players by team, then by score (descending)
                 statLog.Players = statLog.Players.Select(playerList =>
                     playerList.OrderBy(p => p.Team)
@@ -80,6 +80,12 @@ namespace FlawsFightNight.Managers
                 processedLogs.IgnoredLogFileNames.Add(fileName);
                 await _dataManager.SaveAndReloadProcessedLogNamesFile();
             }
+        }
+
+        public async Task<List<UT2004StatLog>> GetAllProcessedStatLogs()
+        {
+            var statLogFiles = await _dataManager.LoadAllStatLogMatchResultFiles();
+            return statLogFiles.Select(file => file.StatLog).ToList();
         }
     }
 }
