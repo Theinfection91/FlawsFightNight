@@ -11,7 +11,7 @@ namespace FlawsFightNight.Core.Helpers
     public class UT2004LogParser : ILogParser
     {
         // Debug logging configuration - Toggle independently
-        private const bool _simpleDebugLogging = true;    // Match summary only
+        private const bool _simpleDebugLogging = false;    // Match summary only
         private const bool _expandedDebugLogging = false; // All parse events
 
         // State tracking for current match
@@ -35,7 +35,7 @@ namespace FlawsFightNight.Core.Helpers
         private async Task<UT2004StatLog> ParseUT2004StatLog(Stream fileStream)
         {
             ClearMatchState();
-            
+
             using (var reader = new StreamReader(fileStream))
             {
                 string? line;
@@ -165,7 +165,7 @@ namespace FlawsFightNight.Core.Helpers
         private void ParseConnection(string[] parts)
         {
             if (parts.Length < 5) return;
-            
+
             // [Time] C [SeqNum] [GUID] [Name] [CDKey?]
             int seqNum = int.Parse(parts[2]);
             string guid = parts[3];
@@ -178,7 +178,7 @@ namespace FlawsFightNight.Core.Helpers
                 // Player reconnected - just remap the sequence number
                 _activePlayersBySeqNum[seqNum] = existingPlayer;
                 existingPlayer.LastKnownName = name; // Update name in case it changed
-                
+
                 if (_expandedDebugLogging)
                     Console.WriteLine($"Player Reconnected: {name} (SeqNum: {seqNum}, GUID: {guid}) - Remapped to existing player");
             }
@@ -194,7 +194,7 @@ namespace FlawsFightNight.Core.Helpers
 
                 _activePlayersBySeqNum[seqNum] = player;
                 _activePlayersByGuid[guid] = player;
-                
+
                 if (_expandedDebugLogging)
                     Console.WriteLine($"Player Connected: {name} (SeqNum: {seqNum}, GUID: {guid}, Bot: {!hasKey})");
             }
@@ -206,12 +206,12 @@ namespace FlawsFightNight.Core.Helpers
 
             // [Time] D [SeqNum]
             int seqNum = int.Parse(parts[2]);
-            
+
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
                 if (_expandedDebugLogging)
                     Console.WriteLine($"Player Disconnected: {player.LastKnownName} (SeqNum: {seqNum}) at {timestamp}");
-                
+
                 // Remove from sequence number mapping but keep in GUID mapping
                 // (they might reconnect with a different seq num)
                 _activePlayersBySeqNum.Remove(seqNum);
@@ -221,10 +221,10 @@ namespace FlawsFightNight.Core.Helpers
         private void ParsePlayerString(string[] parts)
         {
             if (parts.Length < 6) return;
-            
+
             // [Time] PS [SeqNum] [IP:Port] [NetSpeed] [OtherData]
             int seqNum = int.Parse(parts[2]);
-            
+
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
                 player.IsBot = false;
@@ -285,7 +285,7 @@ namespace FlawsFightNight.Core.Helpers
             if (parts.Length < 4) return;
 
             string eventName = parts[2];
-            
+
             switch (eventName)
             {
                 case "TeamChange":
@@ -358,7 +358,7 @@ namespace FlawsFightNight.Core.Helpers
         private void ParseTeamScore(string[] parts)
         {
             if (parts.Length < 5) return;
-            
+
             // [Time] T [TeamID] [Points] [Reason]
             int teamId = int.Parse(parts[2]);
             double points = double.Parse(parts[3]);
@@ -595,7 +595,7 @@ namespace FlawsFightNight.Core.Helpers
 
             if (_simpleDebugLogging || _expandedDebugLogging)
                 Console.WriteLine($"\nMatch VALID: {humanPlayers.Count} human players across {teamIds.Count} teams, 0 bots");
-            
+
             return true;
         }
 
@@ -604,7 +604,9 @@ namespace FlawsFightNight.Core.Helpers
             if (!ValidateMatchEligibility())
             {
                 if (_simpleDebugLogging || _expandedDebugLogging)
+                {
                     //Console.WriteLine("Match discarded - stats will not be saved or processed.\n");
+                }
                 return null; // Return null to indicate invalid match
             }
 
@@ -637,7 +639,7 @@ namespace FlawsFightNight.Core.Helpers
                 {
                     rankedPlayers[i].Placement = placement;
 
-                    if (i + 1 < rankedPlayers.Count && 
+                    if (i + 1 < rankedPlayers.Count &&
                         rankedPlayers[i].Score != rankedPlayers[i + 1].Score)
                     {
                         placement = i + 2;
