@@ -68,9 +68,9 @@ namespace FlawsFightNight.Managers
             double fairShare = teamTotal / teamSize;
 
             // Ratio of player's contribution vs average teammate
-            // Clamped to [0.2, 1.8] to prevent extreme swings
+            // Clamped to [0.6, 1.4] to prevent extreme swings
             double weight = rawWeight / fairShare;
-            return Math.Clamp(weight, 0.2, 1.8);
+            return Math.Clamp(weight, 0.6, 1.4);  // Narrower range
         }
 
         /// <summary>
@@ -79,16 +79,16 @@ namespace FlawsFightNight.Managers
         private static double CalculateRawCTFScore(UTPlayerMatchStats player)
         {
             return
-                (player.FlagCaptures * 10.0) +
-                (player.FlagCaptureAssists * 6.0) +
-                (player.FlagGrabs * 2.0) +
-                (player.FlagPickups * 1.5) +
-                (player.FlagCaptureFirstTouch * 3.0) +
-                (player.FlagReturns * 3.0) +
-                (player.FlagDenials * 5.0) +
-                (player.TeamProtectFrags * 2.0) +
-                (player.CriticalFrags * 4.0) +
-                (player.Kills * 1.0) +
+                (player.FlagCaptures * 5.0) +
+                (player.FlagCaptureAssists * 3.0) +
+                (player.FlagGrabs * 1.0) +
+                (player.FlagPickups * 0.5) +
+                (player.FlagCaptureFirstTouch * 1.5) +
+                (player.FlagReturns * 1.5) +
+                (player.FlagDenials * 2.5) +
+                (player.TeamProtectFrags * 1.0) +
+                (player.CriticalFrags * 2.0) +
+                (player.Kills * 0.5) +
                 (player.Score * 0.1);
         }
 
