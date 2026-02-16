@@ -21,6 +21,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private int? _winningTeam = null;
         private bool _gameStarted = false;
         private double _gameStartTime = 0;
+        private DateTime _matchStartTime = DateTime.MinValue;
 
         public async Task<T?> Parse<T>(Stream fileStream)
         {
@@ -136,12 +137,32 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _winningTeam = null;
             _gameStarted = false;
             _gameStartTime = 0;
+            _matchStartTime = DateTime.MinValue;
         }
 
         private void ParseNewGame(string[] parts)
         {
             if (parts.Length < 6) return;
+
             // [Time] NG [DateTime] [Unknown] [MapID] [MapName] [Creator] [GameMode] [Params]
+            // Example: 0.00	NG	2025-2-9 0:34:56	0	CTF-2024-Morningwood ...
+
+            // Parse timestamp (format: YYYY-M-D H:mm:ss)
+            if (parts.Length >= 3 && !string.IsNullOrEmpty(parts[2]))
+            {
+                try
+                {
+                    _matchStartTime = DateTime.Parse(parts[2]);
+                    if (_expandedDebugLogging)
+                        Console.WriteLine($"Match Start Time: {_matchStartTime}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Warning: Failed to parse match timestamp '{parts[2]}': {ex.Message}");
+                    _matchStartTime = DateTime.UtcNow; // Fallback to current time
+                }
+            }
+
             if (_expandedDebugLogging)
                 Console.WriteLine($"New Game Started: Map={parts[5]}, Mode={parts[7]}");
         }
@@ -203,7 +224,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     // Player reconnected - remap to existing player stats
                     _activePlayersBySeqNum[seqNum] = existingPlayer;
                     existingPlayer.LastKnownName = player.LastKnownName; // Update name
-                    
+
                     if (_expandedDebugLogging)
                         Console.WriteLine($"Player Reconnected: {existingPlayer.LastKnownName} (SeqNum: {seqNum}, GUID: {actualGuid})");
                 }
@@ -213,7 +234,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     player.Guid = actualGuid;
                     player.IsBot = false; // PS line confirms human player
                     _activePlayersByGuid[actualGuid] = player;
-                    
+
                     if (_expandedDebugLogging)
                         Console.WriteLine($"Player {player.LastKnownName} (SeqNum: {seqNum}) confirmed with GUID: {actualGuid}");
                 }
@@ -671,6 +692,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 }
                 Console.WriteLine("\n");
             }
+
+            statLog.MatchDate = _matchStartTime != DateTime.MinValue ? _matchStartTime : DateTime.UtcNow;
 
             return statLog;
         }

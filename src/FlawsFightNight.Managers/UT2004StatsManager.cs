@@ -18,18 +18,6 @@ namespace FlawsFightNight.Managers
             _logParser = logParser;
         }
 
-        #region Player Profile Building
-        public async Task SetupPlayerProfiles()
-        {
-            var allMatchStats = await GetAllProcessedStatLogs();
-            var allPlayerProfiles = await UT2004PlayerProfileBuilder.InitializeFreshDatabase(allMatchStats);
-            foreach (var profile in allPlayerProfiles )
-            {
-                await _dataManager.SaveUT2004PlayerProfileFile(profile);
-            }
-        }
-        #endregion
-
         #region Stat Log Processing
         public async Task<bool> IsLogFileProcessed(string fileName)
         {
@@ -62,7 +50,6 @@ namespace FlawsFightNight.Managers
             if (statLog != null)
             {
                 statLog.FileName = Path.ChangeExtension(fileName, ".json");
-
                 statLog.Players = statLog.Players.Select(playerList =>
                     playerList.OrderBy(p => p.Team)
                               .ThenByDescending(p => p.Score)
@@ -112,6 +99,60 @@ namespace FlawsFightNight.Managers
         {
             var statLogFiles = await _dataManager.LoadAllStatLogMatchResultFiles();
             return statLogFiles.Select(file => file.StatLog).ToList();
+        }
+        #endregion
+
+        #region Player Profile Building with OpenSkill
+        public async Task SetupPlayerProfiles()
+        {
+            var allMatchStats = await GetAllProcessedStatLogs();
+            
+            // Sort matches chronologically using timestamps from log files
+            var chronologicalMatches = allMatchStats
+                .OrderBy(m => m.MatchDate)
+                .ToList();
+            
+            Console.WriteLine($"[UT2004StatsManager] Processing {chronologicalMatches.Count} matches chronologically...");
+            Console.WriteLine($"[UT2004StatsManager] Date range: {chronologicalMatches.First().MatchDate:yyyy-MM-dd} to {chronologicalMatches.Last().MatchDate:yyyy-MM-dd}");
+            
+            var profiles = new Dictionary<string, UT2004PlayerProfile>();
+            
+            int processedCount = 0;
+            foreach (var match in chronologicalMatches)
+            {
+                processedCount++;
+                
+                // Step 1: Update cumulative stats
+                foreach (var team in match.Players)
+                {
+                    foreach (var playerStats in team.Where(p => !p.IsBot))
+                    {
+                        if (!profiles.ContainsKey(playerStats.Guid))
+                        {
+                            profiles[playerStats.Guid] = new UT2004PlayerProfile(playerStats.Guid);
+                        }
+                        profiles[playerStats.Guid].UpdateStatsFromMatch(playerStats);
+                    }
+                }
+                
+                // Step 2: Calculate ratings for this match (will implement with OpenSkill)
+                // await _ratingService.UpdateRatingsForMatch(match, profiles);
+                
+                // Progress indicator every 100 matches
+                if (processedCount % 100 == 0)
+                {
+                    Console.WriteLine($"[UT2004StatsManager] Processed {processedCount}/{chronologicalMatches.Count} matches...");
+                }
+            }
+            
+            // Save all profiles
+            Console.WriteLine($"[UT2004StatsManager] Saving {profiles.Count} player profiles...");
+            foreach (var profile in profiles.Values)
+            {
+                await _dataManager.SaveUT2004PlayerProfileFile(profile);
+            }
+            
+            Console.WriteLine($"[UT2004StatsManager] Complete... Updated {profiles.Count} player profiles across {chronologicalMatches.Count} matches");
         }
         #endregion
     }
