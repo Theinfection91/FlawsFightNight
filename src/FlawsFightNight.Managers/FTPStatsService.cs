@@ -121,9 +121,11 @@ namespace FlawsFightNight.Managers
                         // Final summary on new line
                         Console.WriteLine();
                         Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Processing complete! Valid: {validCount}, Ignored: {ignoredCount}, Total: {totalFiles}");
-                        
-                        var allStats = await _ut2004StatsManager.GetAllProcessedStatLogs();
-                        Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Total stat logs in database: {allStats.Count}");
+
+                        //var allStats = await _ut2004StatsManager.GetAllProcessedStatLogs();
+                        //Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Total stat logs in database: {allStats.Count}");
+
+                        await _ut2004StatsManager.SetupPlayerProfiles();
                         
                         await _gitBackupManager.CopyAndBackupFilesToGitAsync();
                     }
