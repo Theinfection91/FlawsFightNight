@@ -254,14 +254,14 @@ namespace FlawsFightNight.Managers
             await _ut2004PlayerProfileHandler.Save(playerProfileFile);
         }
 
-        public async Task<UT2004PlayerProfileFile> GetUT2004PlayerProfile(string playerGuid)
+        public async Task<UT2004PlayerProfile> GetUT2004PlayerProfile(string playerGuid)
         {
 
             foreach (var profileFile in UT2004PlayerProfileFiles)
             {
                 if (profileFile.PlayerProfile.Guid.Equals(playerGuid, StringComparison.OrdinalIgnoreCase))
                 {
-                    return profileFile;
+                    return profileFile.PlayerProfile;
                 }
             }
             return null;

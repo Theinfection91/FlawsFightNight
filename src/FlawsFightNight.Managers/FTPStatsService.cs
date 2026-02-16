@@ -126,7 +126,6 @@ namespace FlawsFightNight.Managers
                         //Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Total stat logs in database: {allStats.Count}");
 
                         await _ut2004StatsManager.SetupPlayerProfiles();
-                        
                         await _gitBackupManager.CopyAndBackupFilesToGitAsync();
                     }
                 }
@@ -135,6 +134,7 @@ namespace FlawsFightNight.Managers
                     Console.WriteLine($"\n{DateTime.Now} - [FTPStatsService] Error: {ex}");
                 }
 
+                Console.WriteLine(await _ut2004StatsManager.PredictMatchOutcome());
                 await Task.Delay(TimeSpan.FromSeconds(5), token);
             }
         }     

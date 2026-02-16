@@ -158,5 +158,17 @@ namespace FlawsFightNight.Managers
             Console.WriteLine($"[UT2004StatsManager] Complete... Updated {profiles.Count} player profiles across {chronologicalMatches.Count} matches");
         }
         #endregion
+
+        public async Task<string> PredictMatchOutcome()
+        {
+            var teamA = new List<UT2004PlayerProfile>();
+            var teamB = new List<UT2004PlayerProfile>();
+            //teamA.Add(await _dataManager.GetUT2004PlayerProfile("f65f3f7e0496815de17a4713604e5016")); // Serge
+            teamA.Add(await _dataManager.GetUT2004PlayerProfile("cc64eb45e190de68c0deaf75231e1ab8")); // Relapse
+            teamB.Add(await _dataManager.GetUT2004PlayerProfile("f7fc75c7f7f3cf3cfc9b700b73925586")); // BloodBath
+
+            var winProbability = _ratingService.PredictWin(teamA, teamB);
+            return $"Team A win probability: {winProbability:P2}, Team B win probability: {1 - winProbability:P2}";
+        }
     }
 }

@@ -109,6 +109,7 @@ namespace FlawsFightNight.Managers
         /// </summary>
         public double PredictWin(List<UT2004PlayerProfile> teamA, List<UT2004PlayerProfile> teamB)
         {
+            // 
             var playersA = teamA.Select(p => (IRating)new Rating { Mu = p.Mu, Sigma = p.Sigma }).ToList();
             var playersB = teamB.Select(p => (IRating)new Rating { Mu = p.Mu, Sigma = p.Sigma }).ToList();
 
