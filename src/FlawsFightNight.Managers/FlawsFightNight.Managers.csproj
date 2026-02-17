@@ -19,6 +19,7 @@
     <PackageReference Include="FluentFTP" Version="53.0.2" />
     <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="OpenSkillSharp" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -147,6 +147,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             // [Time] NG [DateTime] [Unknown] [MapID] [MapName] [Creator] [GameMode] [Params]
             // Example: 0.00	NG	2025-2-9 0:34:56	0	CTF-2024-Morningwood ...
 
+            // Parse game mode and print to console if not Capture the Flag (CTF)
+                if (parts.Length >= 8 && !string.IsNullOrEmpty(parts[7]))
+                {
+                    string gameMode = parts[7];
+                    if (!gameMode.Contains("CTF"))
+                    {
+                        Console.WriteLine($"{gameMode}: {parts[2]}");
+                    }
+            }
+
             // Parse timestamp (format: YYYY-M-D H:mm:ss)
             if (parts.Length >= 3 && !string.IsNullOrEmpty(parts[2]))
             {

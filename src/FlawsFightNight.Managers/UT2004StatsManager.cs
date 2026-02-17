@@ -13,9 +13,12 @@ namespace FlawsFightNight.Managers
     public class UT2004StatsManager : BaseDataDriven
     {
         private readonly UT2004LogParser _logParser;
-        public UT2004StatsManager(DataManager dataManager, UT2004LogParser logParser) : base("UT2004StatsManager", dataManager)
+        private readonly OpenSkillRatingService _ratingService;
+
+        public UT2004StatsManager(DataManager dataManager, UT2004LogParser logParser, OpenSkillRatingService ratingService) : base("UT2004StatsManager", dataManager)
         {
             _logParser = logParser;
+            _ratingService = ratingService;
         }
 
         #region Stat Log Processing
@@ -135,8 +138,8 @@ namespace FlawsFightNight.Managers
                     }
                 }
                 
-                // Step 2: Calculate ratings for this match (will implement with OpenSkill)
-                // await _ratingService.UpdateRatingsForMatch(match, profiles);
+                // Step 2: Calculate OpenSkill ratings for this match
+                _ratingService.UpdateRatingsForMatch(match, profiles);
                 
                 // Progress indicator every 100 matches
                 if (processedCount % 100 == 0)
@@ -155,5 +158,17 @@ namespace FlawsFightNight.Managers
             Console.WriteLine($"[UT2004StatsManager] Complete... Updated {profiles.Count} player profiles across {chronologicalMatches.Count} matches");
         }
         #endregion
+
+        public async Task<string> PredictMatchOutcome()
+        {
+            var teamA = new List<UT2004PlayerProfile>();
+            var teamB = new List<UT2004PlayerProfile>();
+            //teamA.Add(await _dataManager.GetUT2004PlayerProfile("f65f3f7e0496815de17a4713604e5016")); // Serge
+            teamA.Add(await _dataManager.GetUT2004PlayerProfile("cc64eb45e190de68c0deaf75231e1ab8")); // Relapse
+            teamB.Add(await _dataManager.GetUT2004PlayerProfile("f7fc75c7f7f3cf3cfc9b700b73925586")); // BloodBath
+
+            var winProbability = _ratingService.PredictWin(teamA, teamB);
+            return $"Team A win probability: {winProbability:P2}, Team B win probability: {1 - winProbability:P2}";
+        }
     }
 }
