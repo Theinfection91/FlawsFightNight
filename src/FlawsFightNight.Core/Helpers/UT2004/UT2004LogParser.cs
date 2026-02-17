@@ -153,7 +153,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     string gameMode = parts[7];
                     if (!gameMode.Contains("CTF"))
                     {
-                        Console.WriteLine($"Warning: Detected non-CTF game mode: {gameMode}. This parser is optimized for CTF matches and may not capture all stats accurately.");
+                        Console.WriteLine($"{gameMode}: {parts[2]}");
                     }
             }
 
