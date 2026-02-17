@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using FluentFTP;
+using FluentFTP.Exceptions;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
@@ -34,7 +35,7 @@ namespace FlawsFightNight.Managers
             // TODO Implement pulling creds from ConfigManager once they are finally being saved
             //var creds = _configManager.GetFTPCredentials();
             //_ftpClient = new(host: creds.Host, user: creds.Username, pass: creds.Password, port: creds.Port);
-            _ftpClient = new(host: "127.0.0.1", user: "bot_test", pass: "password1", port: 21);
+            _ftpClient = new(host: "127.0.0.1", user: "sho_ny", pass: "password1", port: 21);
 
             // Configure TLS/SSL settings
             _ftpClient.Config.EncryptionMode = FtpEncryptionMode.Explicit; // or FtpEncryptionMode.Auto
@@ -43,6 +44,12 @@ namespace FlawsFightNight.Managers
 
             // Configure listing parser
             _ftpClient.Config.ListingParser = FtpParser.Machine;
+            
+            // Add data connection configuration to handle TLS properly
+            _ftpClient.Config.DataConnectionType = FtpDataConnectionType.AutoPassive;
+            _ftpClient.Config.ConnectTimeout = 15000; // 15 seconds
+            _ftpClient.Config.DataConnectionConnectTimeout = 15000;
+            _ftpClient.Config.DataConnectionReadTimeout = 15000;
 
             _ftpClient.AutoConnect();
         }
@@ -72,13 +79,32 @@ namespace FlawsFightNight.Managers
             {
                 try
                 {
-                    // Direct connect for now for testing - eventually will want to pull creds from ConfigManager and handle connection issues/retries more robustly
-                    string magicDirectory = "/placeholderDir/anotherDir/UserLogs";
-                    if (await ContainsFreshLogs(magicDirectory))
+                    // Ensure connection is alive
+                    if (!_ftpClient.IsConnected)
+                    {
+                        Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Reconnecting to FTP server...");
+                        await _ftpClient.Connect(token);
+                    }
+
+                    Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Connection status: {_ftpClient.IsConnected}");
+                    
+                    // TODO: Update this path to match your actual FTP directory structure
+                    string chiDir = "/placeholderDir/anotherDir/UserLogs";
+                    string nyDir = "/thisDir/anotherDir/oneMoreDir/UserLogs";
+
+                    // Verify directory exists before processing
+                    if (!await _ftpClient.DirectoryExists(nyDir, token))
+                    {
+                        Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Warning: Directory '{nyDir}' does not exist on FTP server. Skipping...");
+                        await Task.Delay(TimeSpan.FromSeconds(30), token); // Wait longer if directory doesn't exist
+                        continue;
+                    }
+
+                    if (await ContainsFreshLogs(nyDir, token))
                     {
                         Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Fresh logs found! Processing...");
 
-                        var items = await _ftpClient.GetListing(magicDirectory);
+                        var items = await _ftpClient.GetListing(nyDir, token);
                         var logFiles = items.Where(item => item.Name.EndsWith(".log", StringComparison.OrdinalIgnoreCase)).ToList();
                         
                         int totalFiles = logFiles.Count;
@@ -88,6 +114,8 @@ namespace FlawsFightNight.Managers
 
                         foreach (var item in logFiles)
                         {
+                            if (token.IsCancellationRequested) break;
+
                             processedCount++;
                             
                             if (await _ut2004StatsManager.IsLogFileProcessed(item.Name))
@@ -97,18 +125,21 @@ namespace FlawsFightNight.Managers
                                 continue;
                             }
 
-                            var fileStream = await _ftpClient.OpenRead(item.FullName);
-                            bool wasValid = await _ut2004StatsManager.ProcessLogFile(fileStream, item.Name);
-                            
-                            if (wasValid)
+                            // Properly dispose the stream after processing
+                            await using (var fileStream = await _ftpClient.OpenRead(item.FullName, token: token))
                             {
-                                validCount++;
-                                Console.Write($"\r[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}");
-                            }
-                            else
-                            {
-                                ignoredCount++;
-                                Console.Write($"\r[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}");
+                                bool wasValid = await _ut2004StatsManager.ProcessLogFile(fileStream, item.Name);
+                                
+                                if (wasValid)
+                                {
+                                    validCount++;
+                                    Console.Write($"\r[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}");
+                                }
+                                else
+                                {
+                                    ignoredCount++;
+                                    Console.Write($"\r[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}");
+                                }
                             }
 
                             // Every 50 files, add a newline for better readability
@@ -129,19 +160,35 @@ namespace FlawsFightNight.Managers
                         await _gitBackupManager.CopyAndBackupFilesToGitAsync();
                     }
                 }
+                catch (FtpCommandException ftpEx)
+                {
+                    Console.WriteLine($"\n{DateTime.Now} - [FTPStatsService] FTP Command Error: {ftpEx.Message} (Response: {ftpEx.Message})");
+                }
+                catch (FtpException ftpEx)
+                {
+                    Console.WriteLine($"\n{DateTime.Now} - [FTPStatsService] FTP Error: {ftpEx.Message}");
+                    // Try to reconnect on FTP errors
+                    try
+                    {
+                        if (_ftpClient.IsConnected)
+                        {
+                            await _ftpClient.Disconnect(token);
+                        }
+                    }
+                    catch { /* Ignore disconnect errors */ }
+                }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"\n{DateTime.Now} - [FTPStatsService] Error: {ex}");
                 }
 
-                Console.WriteLine(await _ut2004StatsManager.PredictMatchOutcome());
                 await Task.Delay(TimeSpan.FromSeconds(5), token);
             }
-        }     
+        }
 
-        private async Task<bool> ContainsFreshLogs(string directory)
+        private async Task<bool> ContainsFreshLogs(string directory, CancellationToken token)
         {
-            var items = await _ftpClient.GetListing(directory);
+            var items = await _ftpClient.GetListing(directory, token);
 
             foreach (var item in items)
             {
@@ -157,6 +204,26 @@ namespace FlawsFightNight.Managers
                 }
             }
             return false;
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Stopping service and closing FTP connection...");
+            
+            try
+            {
+                if (_ftpClient?.IsConnected == true)
+                {
+                    await _ftpClient.Disconnect(cancellationToken);
+                }
+                _ftpClient?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Error during shutdown: {ex.Message}");
+            }
+
+            await base.StopAsync(cancellationToken);
         }
     }
 }
