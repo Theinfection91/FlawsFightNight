@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Core.Models.Stats.UT2004;
+using FlawsFightNight.Core.Enums.UT2004;
 
 namespace FlawsFightNight.Managers
 {
@@ -218,17 +219,34 @@ namespace FlawsFightNight.Managers
 
         public async Task<StatLogMatchResultsFile> LoadStatLogMatchResultFile(string fileName)
         {
-            await _statLogMatchResultsHandler.SetFilePath(PathOption.StatLogs, fileName);
+            await _statLogMatchResultsHandler.SetFilePath(PathOption.CTFStatLogs, fileName);
             return await _statLogMatchResultsHandler.Load();
         }
 
         public async Task SaveStatLogMatchResultFile(UT2004StatLog statLog)
         {
+            switch (statLog.GameMode)
+            {
+                case UT2004GameMode.CaptureTheFlag:
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.CTFStatLogs, statLog.FileName);
+                    break;
+                case UT2004GameMode.ReTAM:
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.ReTAMStatLogs, statLog.FileName);
+                    break;
+                case UT2004GameMode.Deathmatch:
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.DMStatLogs, statLog.FileName);
+                    break;
+                case UT2004GameMode.BombingRun:
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.BRStatLogs, statLog.FileName);
+                    break;
+                default:
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.CTFStatLogs, statLog.FileName);
+                    break;
+            }
             var statLogMatchResultsFile = new StatLogMatchResultsFile()
             {
                 StatLog = statLog
             };
-            await _statLogMatchResultsHandler.SetFilePath(PathOption.StatLogs, statLog.FileName);
             await _statLogMatchResultsHandler.Save(statLogMatchResultsFile);
         }
         #endregion

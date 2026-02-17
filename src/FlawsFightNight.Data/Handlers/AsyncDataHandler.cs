@@ -12,7 +12,10 @@ namespace FlawsFightNight.Data.Handlers
     {
         Databases,
         TournamentSystem,
-        StatLogs,
+        CTFStatLogs,
+        ReTAMStatLogs,
+        DMStatLogs,
+        BRStatLogs,
         UT2004PlayerProfiles,
     }
 
@@ -55,8 +58,17 @@ namespace FlawsFightNight.Data.Handlers
                 case PathOption.TournamentSystem:
                     _folderPath = Path.Combine(baseDir, "Databases", "TournamentSystem");
                     break;
-                case PathOption.StatLogs:
-                    _folderPath = Path.Combine(baseDir, "Databases", "StatLogs");
+                case PathOption.CTFStatLogs:
+                    _folderPath = Path.Combine(baseDir, "Databases", "StatLogs", "CTF");
+                    break;
+                case PathOption.ReTAMStatLogs:
+                    _folderPath = Path.Combine(baseDir, "Databases", "StatLogs", "ReTAM");
+                    break;
+                case PathOption.DMStatLogs:
+                    _folderPath = Path.Combine(baseDir, "Databases", "StatLogs", "DeathMatch");
+                    break;
+                case PathOption.BRStatLogs:
+                    _folderPath = Path.Combine(baseDir, "Databases", "StatLogs", "BombingRun");
                     break;
                 case PathOption.UT2004PlayerProfiles:
                     _folderPath = Path.Combine(baseDir, "Databases", "UT2004PlayerProfiles");

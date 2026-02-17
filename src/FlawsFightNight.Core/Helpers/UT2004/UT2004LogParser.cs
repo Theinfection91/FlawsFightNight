@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Interfaces;
+﻿using FlawsFightNight.Core.Enums.UT2004;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.Stats.UT2004;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private bool _gameStarted = false;
         private double _gameStartTime = 0;
         private DateTime _matchStartTime = DateTime.MinValue;
+        private UT2004GameMode _currentGameMode = default;
 
         public async Task<T?> Parse<T>(Stream fileStream)
         {
@@ -138,6 +140,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _gameStarted = false;
             _gameStartTime = 0;
             _matchStartTime = DateTime.MinValue;
+            _currentGameMode = default;
         }
 
         private void ParseNewGame(string[] parts)
@@ -148,13 +151,33 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             // Example: 0.00	NG	2025-2-9 0:34:56	0	CTF-2024-Morningwood ...
 
             // Parse game mode and print to console if not Capture the Flag (CTF)
-                if (parts.Length >= 8 && !string.IsNullOrEmpty(parts[7]))
+            if (parts.Length >= 8 && !string.IsNullOrEmpty(parts[7]))
+            {
+                string gameMode = parts[7];
+                if (gameMode.Contains("CTF"))
                 {
-                    string gameMode = parts[7];
-                    if (!gameMode.Contains("CTF"))
+                    _currentGameMode = UT2004GameMode.CaptureTheFlag;
+                }
+                else if (gameMode.Contains("ReTAM"))
+                {
+                    _currentGameMode = UT2004GameMode.ReTAM;
+                }
+                else if (gameMode.Contains("DeathMatch"))
+                {
+                    _currentGameMode = UT2004GameMode.Deathmatch;
+                }
+                else if (gameMode.Contains("BombingRun"))
+                {
+                    _currentGameMode = UT2004GameMode.BombingRun;
+                }
+                else
+                {
+                    _currentGameMode = UT2004GameMode.Unknown;
+                    if (_expandedDebugLogging)
                     {
-                        Console.WriteLine($"{gameMode}: {parts[2]}");
+                        Console.WriteLine($"Unknown Game Mode: {gameMode}");
                     }
+                }
             }
 
             // Parse timestamp (format: YYYY-M-D H:mm:ss)
@@ -704,6 +727,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
 
             statLog.MatchDate = _matchStartTime != DateTime.MinValue ? _matchStartTime : DateTime.UtcNow;
+
+            statLog.GameMode = _currentGameMode;
 
             return statLog;
         }
