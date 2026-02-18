@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FlawsFightNight.Core.Enums.UT2004;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -14,7 +15,7 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public string Guid { get; set; } = string.Empty;
         public string CurrentName { get; set; } = string.Empty;
         public List<string> PreviousNames { get; set; } = new List<string>();
-        
+
         // Match History
         public int TotalMatches { get; set; } = 0;
         public int Wins { get; set; } = 0;
@@ -25,7 +26,7 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         // Skill Ratings
         public UT2004GameRating CaptureTheFlagRating { get; set; } = new(); // iCTF
         public UT2004GameRating TAMRating { get; set; } = new(); // TAM
-        public UT2004GameRating BombingRunRating{ get; set; } = new(); // iBR
+        public UT2004GameRating BombingRunRating { get; set; } = new(); // iBR
 
         public double CTFMu { get; set; } = 25.0;
         public double CTFSigma { get; set; } = 25.0 / 3.0;
@@ -45,13 +46,13 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public int TotalFlagGrabs { get; set; } = 0;             // flag_taken (picking up enemy flag from base)
         public int TotalFlagPickups { get; set; } = 0;           // flag_pickup (picking up dropped flag)
         public int TotalFlagDrops { get; set; } = 0;             // flag_dropped (dropping the flag)
-        
+
         // Cumulative Flag Objective Stats - Defensive Actions
         public int TotalFlagReturns { get; set; } = 0;           // Total flag returns (all types)
         public int TotalFlagReturnsEnemy { get; set; } = 0;      // flag_ret_enemy
         public int TotalFlagReturnsFriendly { get; set; } = 0;   // flag_ret_friendly
         public int TotalFlagDenials { get; set; } = 0;           // flag_denial
-        
+
         // Cumulative Flag Objective Stats - Support Actions
         public int TotalFlagCaptureAssists { get; set; } = 0;    // flag_cap_assist
         public int TotalFlagCaptureFirstTouch { get; set; } = 0; // flag_cap_1st_touch
@@ -151,13 +152,43 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
             LastPlayed = DateTime.UtcNow;
         }
 
-        /// <summary>
-        /// Update skill rating after match
-        /// </summary>
-        public void UpdateSkillRating(double newMu, double newSigma)
+        public void GetMuSigma(UT2004GameMode gameMode, out double mu, out double sigma)
         {
-            CTFMu = newMu;
-            CTFSigma = newSigma;
+            switch (gameMode)
+            {
+                case UT2004GameMode.iCTF:
+                    mu = CaptureTheFlagRating.Mu;
+                    sigma = CaptureTheFlagRating.Sigma;
+                    break;
+                case UT2004GameMode.TAM:
+                    mu = TAMRating.Mu;
+                    sigma = TAMRating.Sigma;
+                    break;
+                case UT2004GameMode.iBR:
+                    mu = BombingRunRating.Mu;
+                    sigma = BombingRunRating.Sigma;
+                    break;
+                default:
+                    mu = 25.0;
+                    sigma = 25.0 / 3.0;
+                    break;
+            }
+        }
+
+        public void UpdateSkillRating(UT2004GameMode gameMode, double newMu, double newSigma)
+        {
+            switch (gameMode)
+            {
+                case UT2004GameMode.iCTF:
+                    CaptureTheFlagRating.UpdateSkillRating(newMu, newSigma);
+                    break;
+                case UT2004GameMode.TAM:
+                    TAMRating.UpdateSkillRating(newMu, newSigma);
+                    break;
+                case UT2004GameMode.iBR:
+                    BombingRunRating.UpdateSkillRating(newMu, newSigma);
+                    break;
+            }
         }
     }
 }

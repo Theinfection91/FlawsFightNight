@@ -1,6 +1,7 @@
 using FlawsFightNight.Core.Models.Stats.UT2004;
 using OpenSkillSharp.Models;
 using OpenSkillSharp.Rating;
+using FlawsFightNight.Core.Enums.UT2004;
 
 namespace FlawsFightNight.Managers
 {
@@ -19,6 +20,21 @@ namespace FlawsFightNight.Managers
                 Mu = 25.0,
                 Sigma = 25.0 / 3.0
             };
+        }
+
+        private static double GetGameModeWeight(UT2004GameMode gameMode, UTPlayerMatchStats player, List<UTPlayerMatchStats> team)
+        {
+            switch (gameMode)
+            {
+                case UT2004GameMode.iCTF:
+                    return CalculateCTFWeight(player, team);
+                case UT2004GameMode.TAM:
+                    return CalculateTAMWeight(player, team);
+                case UT2004GameMode.iBR:
+                    return CalculateBRWeight(player, team);
+                default:
+                    return 0.0;
+            }
         }
 
         /// <summary>
@@ -70,7 +86,23 @@ namespace FlawsFightNight.Managers
             // Ratio of player's contribution vs average teammate
             // Clamped to [0.6, 1.4] to prevent extreme swings
             double weight = rawWeight / fairShare;
-            return Math.Clamp(weight, 0.6, 1.4);  // Narrower range
+            return Math.Clamp(weight, 0.6, 1.4);
+        }
+
+        private static double CalculateTAMWeight(UTPlayerMatchStats player, List<UTPlayerMatchStats> team)
+        {
+            // --- Contribution Categories ---
+
+            // 1. 
+            return 0;
+        }
+
+        private static double CalculateBRWeight(UTPlayerMatchStats player, List<UTPlayerMatchStats> team)
+        {
+            // --- Contribution Categories ---
+
+            // 1. 
+            return 0;
         }
 
         /// <summary>
@@ -79,16 +111,16 @@ namespace FlawsFightNight.Managers
         private static double CalculateRawCTFScore(UTPlayerMatchStats player)
         {
             return
-                (player.FlagCaptures * 5.0) +
-                (player.FlagCaptureAssists * 3.0) +
-                (player.FlagGrabs * 1.0) +
-                (player.FlagPickups * 0.5) +
-                (player.FlagCaptureFirstTouch * 1.5) +
-                (player.FlagReturns * 1.5) +
-                (player.FlagDenials * 2.5) +
-                (player.TeamProtectFrags * 1.0) +
-                (player.CriticalFrags * 2.0) +
-                (player.Kills * 0.5) +
+                (player.FlagCaptures * 10.0) +
+                (player.FlagCaptureAssists * 6.0) +
+                (player.FlagGrabs * 2.0) +
+                (player.FlagPickups * 1.5) +
+                (player.FlagCaptureFirstTouch * 3.0) +
+                (player.FlagReturns * 3.0) +
+                (player.FlagDenials * 5.0) +
+                (player.TeamProtectFrags * 2.0) +
+                (player.CriticalFrags * 4.0) +
+                (player.Kills * 1.0) +
                 (player.Score * 0.1);
         }
 
@@ -118,9 +150,10 @@ namespace FlawsFightNight.Managers
                 foreach (var player in humanPlayers)
                 {
                     var profile = profiles[player.Guid!];
-                    players.Add(new Rating { Mu = profile.CTFMu, Sigma = profile.CTFSigma });
+                    profile.GetMuSigma(match.GameMode, out double mu, out double sigma);
+                    players.Add(new Rating { Mu = mu, Sigma = sigma });
                     guids.Add(player.Guid!);
-                    weights.Add(CalculateCTFWeight(player, teamPlayers));
+                    weights.Add(GetGameModeWeight(match.GameMode, player, teamPlayers));
                 }
 
                 teams.Add(new Team { Players = players });
@@ -146,69 +179,45 @@ namespace FlawsFightNight.Managers
                 {
                     var guid = teamGuids[t][p];
                     var player = playersList[p];
-                    profiles[guid].UpdateSkillRating(player.Mu, player.Sigma);
+                    profiles[guid].UpdateSkillRating(match.GameMode, player.Mu, player.Sigma);
                 }
             }
         }
 
         /// <summary>
-        /// Gets the conservative display rating (mu - 3*sigma) for ordering leaderboards.
-        /// </summary>
-        public static double GetDisplayRating(UT2004PlayerProfile profile)
-        {
-            return profile.CTFRating;
-        }
-
-        /// <summary>
-        /// Gets a more optimistic display rating (mu - 1*sigma) for general display.
-        /// </summary>
-        public static double GetOptimisticRating(UT2004PlayerProfile profile)
-        {
-            return profile.CTFMu - profile.CTFSigma;
-        }
-
-        /// <summary>
-        /// Returns just Mu for a pure skill estimate (ignores uncertainty).
-        /// </summary>
-        public static double GetSkillEstimate(UT2004PlayerProfile profile)
-        {
-            return profile.CTFMu;
-        }
-
-        /// <summary>
         /// Returns the predicted win probability for teamA vs teamB.
         /// </summary>
-        public double PredictWin(List<UT2004PlayerProfile> teamA, List<UT2004PlayerProfile> teamB)
-        {
-            // Null checks
-            if (teamA == null || teamB == null)
-                throw new ArgumentNullException(teamA == null ? nameof(teamA) : nameof(teamB));
+        //public double PredictWin(List<UT2004PlayerProfile> teamA, List<UT2004PlayerProfile> teamB)
+        //{
+        //    // Null checks
+        //    if (teamA == null || teamB == null)
+        //        throw new ArgumentNullException(teamA == null ? nameof(teamA) : nameof(teamB));
 
-            if (teamA.Count == 0 || teamB.Count == 0)
-                throw new ArgumentException("Teams cannot be empty");
+        //    if (teamA.Count == 0 || teamB.Count == 0)
+        //        throw new ArgumentException("Teams cannot be empty");
 
-            // Filter out any null profiles and create ratings
-            var playersA = teamA
-                .Where(p => p != null)
-                .Select(p => (IRating)new Rating { Mu = p.CTFMu, Sigma = p.CTFSigma })
-                .ToList();
+        //    // Filter out any null profiles and create ratings
+        //    var playersA = teamA
+        //        .Where(p => p != null)
+        //        .Select(p => (IRating)new Rating { Mu = p.CTFMu, Sigma = p.CTFSigma })
+        //        .ToList();
 
-            var playersB = teamB
-                .Where(p => p != null)
-                .Select(p => (IRating)new Rating { Mu = p.CTFMu, Sigma = p.CTFSigma })
-                .ToList();
+        //    var playersB = teamB
+        //        .Where(p => p != null)
+        //        .Select(p => (IRating)new Rating { Mu = p.CTFMu, Sigma = p.CTFSigma })
+        //        .ToList();
 
-            if (playersA.Count == 0 || playersB.Count == 0)
-                throw new ArgumentException("Teams must have at least one valid player profile");
+        //    if (playersA.Count == 0 || playersB.Count == 0)
+        //        throw new ArgumentException("Teams must have at least one valid player profile");
 
-            var teams = new List<ITeam>
-            {
-                new Team { Players = playersA },
-                new Team { Players = playersB }
-            };
+        //    var teams = new List<ITeam>
+        //    {
+        //        new Team { Players = playersA },
+        //        new Team { Players = playersB }
+        //    };
 
-            var winProbabilities = _plModel.PredictWin(teams).ToList();
-            return winProbabilities[0];
-        }
+        //    var winProbabilities = _plModel.PredictWin(teams).ToList();
+        //    return winProbabilities[0];
+        //}
     }
 }
