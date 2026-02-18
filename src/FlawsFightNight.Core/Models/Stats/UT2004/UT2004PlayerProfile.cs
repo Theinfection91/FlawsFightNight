@@ -23,13 +23,10 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public DateTime FirstSeen { get; set; }
 
         // Skill Ratings
-        public UT2004GameRating CaptureTheFlagRating { get; set; } = new();
-        public UT2004GameRating ReTAMRating { get; set; } = new();
-        public UT2004GameRating BombingRunRating{ get; set; } = new();
+        public UT2004GameRating CaptureTheFlagRating { get; set; } = new(); // iCTF
+        public UT2004GameRating TAMRating { get; set; } = new(); // TAM
+        public UT2004GameRating BombingRunRating{ get; set; } = new(); // iBR
 
-        /// <summary>
-        /// Conservative CTF skill rating for display (Mu - 3*Sigma)
-        /// </summary>
         public double CTFMu { get; set; } = 25.0;
         public double CTFSigma { get; set; } = 25.0 / 3.0;
         public double CTFRating => CTFMu - (3 * CTFSigma);

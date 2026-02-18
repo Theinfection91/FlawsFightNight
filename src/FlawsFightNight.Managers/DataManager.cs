@@ -219,7 +219,7 @@ namespace FlawsFightNight.Managers
 
         public async Task<StatLogMatchResultsFile> LoadStatLogMatchResultFile(string fileName)
         {
-            await _statLogMatchResultsHandler.SetFilePath(PathOption.CTFStatLogs, fileName);
+            await _statLogMatchResultsHandler.SetFilePath(PathOption.iCTFStatLogs, fileName);
             return await _statLogMatchResultsHandler.Load();
         }
 
@@ -227,20 +227,17 @@ namespace FlawsFightNight.Managers
         {
             switch (statLog.GameMode)
             {
-                case UT2004GameMode.CaptureTheFlag:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.CTFStatLogs, statLog.FileName);
+                case UT2004GameMode.iCTF:
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.iCTFStatLogs, statLog.FileName);
                     break;
-                case UT2004GameMode.ReTAM:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.ReTAMStatLogs, statLog.FileName);
+                case UT2004GameMode.TAM:
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.TAMStatLogs, statLog.FileName);
                     break;
-                case UT2004GameMode.Deathmatch:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.DMStatLogs, statLog.FileName);
-                    break;
-                case UT2004GameMode.BombingRun:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.BRStatLogs, statLog.FileName);
+                case UT2004GameMode.iBR:
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.iBRStatLogs, statLog.FileName);
                     break;
                 default:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.CTFStatLogs, statLog.FileName);
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.iCTFStatLogs, statLog.FileName);
                     break;
             }
             var statLogMatchResultsFile = new StatLogMatchResultsFile()

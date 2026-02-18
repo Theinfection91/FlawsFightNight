@@ -13,5 +13,11 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public double Rating => Mu - (3 * Sigma);
 
         public UT2004GameRating() { }
+
+        public void UpdateSkillRating(double newMu, double newSigma)
+        {
+            Mu = newMu;
+            Sigma = newSigma;
+        }
     }
 }

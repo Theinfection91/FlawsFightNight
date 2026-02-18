@@ -156,19 +156,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 string gameMode = parts[7];
                 if (gameMode.Contains("CTF"))
                 {
-                    _currentGameMode = UT2004GameMode.CaptureTheFlag;
+                    _currentGameMode = UT2004GameMode.iCTF;
                 }
                 else if (gameMode.Contains("ReTAM"))
                 {
-                    _currentGameMode = UT2004GameMode.ReTAM;
-                }
-                else if (gameMode.Contains("DeathMatch"))
-                {
-                    _currentGameMode = UT2004GameMode.Deathmatch;
+                    _currentGameMode = UT2004GameMode.TAM;
                 }
                 else if (gameMode.Contains("BombingRun"))
                 {
-                    _currentGameMode = UT2004GameMode.BombingRun;
+                    _currentGameMode = UT2004GameMode.iBR;
                 }
                 else
                 {
@@ -642,7 +638,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             // Rule 3: Players must be on different teams (at least 2 teams)
             var teamIds = humanPlayers.Select(p => p.Team).Distinct().ToList();
-            if (teamIds.Count < 2 && _currentGameMode != UT2004GameMode.Deathmatch)
+            if (teamIds.Count < 2)
             {
                 if (_simpleDebugLogging || _expandedDebugLogging)
                 {

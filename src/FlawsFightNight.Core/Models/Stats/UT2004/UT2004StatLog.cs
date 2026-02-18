@@ -18,14 +18,12 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         {
             switch (GameMode)
             {
-                case UT2004GameMode.CaptureTheFlag:
-                    return "Capture The Flag";
-                case UT2004GameMode.ReTAM:
-                    return "ReTAM";
-                case UT2004GameMode.Deathmatch:
-                    return "Deathmatch";
-                case UT2004GameMode.BombingRun:
-                    return "Bombing Run";
+                case UT2004GameMode.iCTF:
+                    return "iCTF";
+                case UT2004GameMode.TAM:
+                    return "TAM";
+                case UT2004GameMode.iBR:
+                    return "iBR";
                 default:
                     return GameModeName ?? "Unknown";
             }
