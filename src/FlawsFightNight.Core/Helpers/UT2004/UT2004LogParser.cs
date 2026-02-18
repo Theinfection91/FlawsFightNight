@@ -642,7 +642,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             // Rule 3: Players must be on different teams (at least 2 teams)
             var teamIds = humanPlayers.Select(p => p.Team).Distinct().ToList();
-            if (teamIds.Count < 2)
+            if (teamIds.Count < 2 && _currentGameMode != UT2004GameMode.Deathmatch)
             {
                 if (_simpleDebugLogging || _expandedDebugLogging)
                 {

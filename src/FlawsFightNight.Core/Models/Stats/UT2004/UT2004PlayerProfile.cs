@@ -22,14 +22,19 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public DateTime LastPlayed { get; set; }
         public DateTime FirstSeen { get; set; }
 
-        // Skill Rating
-        public double Mu { get; set; } = 25.0;           // Skill estimate
-        public double Sigma { get; set; } = 25.0 / 3.0;  // Uncertainty
-        
+        // Skill Ratings
+        public UT2004GameRating CaptureTheFlagRating { get; set; } = new();
+        public UT2004GameRating ReTAMRating { get; set; } = new();
+        public UT2004GameRating BombingRunRating{ get; set; } = new();
+
         /// <summary>
-        /// Conservative skill rating for display (Mu - 3*Sigma)
+        /// Conservative CTF skill rating for display (Mu - 3*Sigma)
         /// </summary>
-        public double Rating => Mu - (3 * Sigma);
+        public double CTFMu { get; set; } = 25.0;
+        public double CTFSigma { get; set; } = 25.0 / 3.0;
+        public double CTFRating => CTFMu - (3 * CTFSigma);
+
+        // ReTAM Skill Rating
 
         // Cumulative Combat Stats
         public int TotalScore { get; set; } = 0;
@@ -154,8 +159,8 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         /// </summary>
         public void UpdateSkillRating(double newMu, double newSigma)
         {
-            Mu = newMu;
-            Sigma = newSigma;
+            CTFMu = newMu;
+            CTFSigma = newSigma;
         }
     }
 }

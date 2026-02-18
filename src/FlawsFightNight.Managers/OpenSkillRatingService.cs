@@ -118,7 +118,7 @@ namespace FlawsFightNight.Managers
                 foreach (var player in humanPlayers)
                 {
                     var profile = profiles[player.Guid!];
-                    players.Add(new Rating { Mu = profile.Mu, Sigma = profile.Sigma });
+                    players.Add(new Rating { Mu = profile.CTFMu, Sigma = profile.CTFSigma });
                     guids.Add(player.Guid!);
                     weights.Add(CalculateCTFWeight(player, teamPlayers));
                 }
@@ -156,7 +156,7 @@ namespace FlawsFightNight.Managers
         /// </summary>
         public static double GetDisplayRating(UT2004PlayerProfile profile)
         {
-            return profile.Rating;
+            return profile.CTFRating;
         }
 
         /// <summary>
@@ -164,7 +164,7 @@ namespace FlawsFightNight.Managers
         /// </summary>
         public static double GetOptimisticRating(UT2004PlayerProfile profile)
         {
-            return profile.Mu - profile.Sigma;
+            return profile.CTFMu - profile.CTFSigma;
         }
 
         /// <summary>
@@ -172,7 +172,7 @@ namespace FlawsFightNight.Managers
         /// </summary>
         public static double GetSkillEstimate(UT2004PlayerProfile profile)
         {
-            return profile.Mu;
+            return profile.CTFMu;
         }
 
         /// <summary>
@@ -190,12 +190,12 @@ namespace FlawsFightNight.Managers
             // Filter out any null profiles and create ratings
             var playersA = teamA
                 .Where(p => p != null)
-                .Select(p => (IRating)new Rating { Mu = p.Mu, Sigma = p.Sigma })
+                .Select(p => (IRating)new Rating { Mu = p.CTFMu, Sigma = p.CTFSigma })
                 .ToList();
 
             var playersB = teamB
                 .Where(p => p != null)
-                .Select(p => (IRating)new Rating { Mu = p.Mu, Sigma = p.Sigma })
+                .Select(p => (IRating)new Rating { Mu = p.CTFMu, Sigma = p.CTFSigma })
                 .ToList();
 
             if (playersA.Count == 0 || playersB.Count == 0)

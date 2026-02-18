@@ -181,9 +181,14 @@ namespace FlawsFightNight.Data.Handlers
                     lastException = ex;
                     await Task.Delay(delayMs * (i + 1)); // Exponential backoff
                 }
+                catch (UnauthorizedAccessException ex) when (i < maxRetries - 1)
+                {
+                    lastException = ex;
+                    await Task.Delay(delayMs * (i + 1)); // Exponential backoff
+                }
             }
 
-            throw new IOException($"Failed to write file '{_filePath}' after {maxRetries} attempts.", lastException);
+            throw new IOException($"Failed to save file '{_filePath}' after {maxRetries} attempts.", lastException);
         }
 
         public virtual async Task<List<T>> LoadAll(string searchPattern = "tournament.json", string folderName = null)

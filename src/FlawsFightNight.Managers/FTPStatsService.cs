@@ -120,8 +120,8 @@ namespace FlawsFightNight.Managers
                             
                             if (await _ut2004StatsManager.IsLogFileProcessed(item.Name))
                             {
-                                // Update progress on same line
-                                Console.Write($"\r[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Skipped (already processed)");
+                                string message = $"[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Skipped (already processed)";
+                                Console.Write($"\r{message.PadRight(100)}");
                                 continue;
                             }
 
@@ -130,16 +130,18 @@ namespace FlawsFightNight.Managers
                             {
                                 bool wasValid = await _ut2004StatsManager.ProcessLogFile(fileStream, item.Name);
                                 
+                                string message;
                                 if (wasValid)
                                 {
                                     validCount++;
-                                    Console.Write($"\r[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}");
+                                    message = $"[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}";
                                 }
                                 else
                                 {
                                     ignoredCount++;
-                                    Console.Write($"\r[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}");
+                                    message = $"[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}";
                                 }
+                                Console.Write($"\r{message.PadRight(100)}");
                             }
 
                             // Every 50 files, add a newline for better readability
