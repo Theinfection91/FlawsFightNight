@@ -134,7 +134,7 @@ namespace FlawsFightNight.Managers
                         {
                             profiles[playerStats.Guid] = new UT2004PlayerProfile(playerStats.Guid);
                         }
-                        profiles[playerStats.Guid].UpdateStatsFromMatch(playerStats);
+                        profiles[playerStats.Guid].UpdateStatsFromMatch(playerStats, match.GameMode);
                     }
                 }
 

@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Models.Stats.UT2004;
+﻿using FlawsFightNight.Core.Enums.UT2004;
+using FlawsFightNight.Core.Models.Stats.UT2004;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,12 +10,12 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 {
     public static class UT2004PlayerProfileBuilder
     {
-        public async static Task<UT2004PlayerProfile> BuildProfileFromMatchStats(UTPlayerMatchStats playerMatchStats, UT2004PlayerProfile? existingProfile = null)
+        public async static Task<UT2004PlayerProfile> BuildProfileFromMatchStats(UTPlayerMatchStats playerMatchStats, UT2004GameMode gameMode, UT2004PlayerProfile? existingProfile = null)
         {
             var profile = existingProfile ?? new UT2004PlayerProfile(playerMatchStats.Guid);
             
             // Use the profile's built-in method to update all stats
-            profile.UpdateStatsFromMatch(playerMatchStats);
+            profile.UpdateStatsFromMatch(playerMatchStats, gameMode);
             
             return profile;
         }
@@ -36,11 +37,11 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     {
                         if (!profiles.ContainsKey(playerStats.Guid))
                         {
-                            profiles[playerStats.Guid] = await BuildProfileFromMatchStats(playerStats);
+                            profiles[playerStats.Guid] = await BuildProfileFromMatchStats(playerStats, match.GameMode);
                         }
                         else
                         {
-                            profiles[playerStats.Guid] = await BuildProfileFromMatchStats(playerStats, profiles[playerStats.Guid]);
+                            profiles[playerStats.Guid] = await BuildProfileFromMatchStats(playerStats, match.GameMode, profiles[playerStats.Guid]);
                         }
                     }
                 }

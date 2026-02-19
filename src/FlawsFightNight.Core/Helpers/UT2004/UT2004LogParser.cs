@@ -25,6 +25,11 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private DateTime _matchStartTime = DateTime.MinValue;
         private UT2004GameMode _currentGameMode = default;
 
+        // TAM-specific tracking
+        private int _currentRoundNumber = 0;
+        private int? _lastKillerSeqNum = null;         // Track who got the last kill before round end
+        private Dictionary<int, int> _roundWinsByTeam = new(); // Track rounds won per team
+
         public async Task<T?> Parse<T>(Stream fileStream)
         {
             if (typeof(T) == typeof(UT2004StatLog))
@@ -141,6 +146,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _gameStartTime = 0;
             _matchStartTime = DateTime.MinValue;
             _currentGameMode = default;
+            _currentRoundNumber = 0;
+            _lastKillerSeqNum = null;
+            _roundWinsByTeam.Clear();
         }
 
         private void ParseNewGame(string[] parts)
@@ -279,6 +287,12 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
+                // Parse weapon stats if present (happens at disconnect in some logs)
+                if (parts.Length >= 7)
+                {
+                    ParsePlayerAccuracyStats(seqNum, parts);
+                }
+
                 if (_expandedDebugLogging)
                     Console.WriteLine($"Player Disconnected: {player.LastKnownName} (SeqNum: {seqNum}) at {timestamp}");
 
@@ -305,17 +319,39 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
         private void ParsePlayerAccuracy(string[] parts)
         {
-            if (parts.Length < 5) return;
+            if (parts.Length < 6) return;
 
-            // [Time] PA [SeqNum] [Weapon] [Accuracy%]
+            // [Time] PA [SeqNum] [Weapon] [ShotsFired] [Hits] [Damage]
+            // Example: 646.91	PA	2	NewNet_SniperRifle	41	19	1540
             int seqNum = int.Parse(parts[2]);
+
+            ParsePlayerAccuracyStats(seqNum, parts);
+        }
+
+        private void ParsePlayerAccuracyStats(int seqNum, string[] parts)
+        {
+            if (parts.Length < 6) return;
+
             string weapon = parts[3];
-            double accuracy = double.Parse(parts[4]);
+            int shotsFired = int.Parse(parts[4]);
+            int hits = int.Parse(parts[5]);
+            int damage = parts.Length >= 7 ? int.Parse(parts[6]) : 0;
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
+                player.WeaponStatistics[weapon] = new WeaponStats
+                {
+                    WeaponName = weapon,
+                    ShotsFired = shotsFired,
+                    Hits = hits,
+                    DamageDealt = damage
+                };
+
                 if (_expandedDebugLogging)
-                    Console.WriteLine($"Player {player.LastKnownName} {weapon} accuracy: {accuracy}%");
+                {
+                    double accuracy = shotsFired > 0 ? (double)hits / shotsFired * 100.0 : 0.0;
+                    Console.WriteLine($"Player {player.LastKnownName} {weapon}: {hits}/{shotsFired} ({accuracy:F1}%) = {damage} damage");
+                }
             }
         }
 
@@ -370,6 +406,14 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     }
                     break;
 
+                case "NewRound":
+                    // TAM round tracking
+                    if (_currentGameMode == UT2004GameMode.TAM)
+                    {
+                        HandleTAMNewRound(parts);
+                    }
+                    break;
+
                 case "flag_taken":
                     if (parts.Length >= 5)
                     {
@@ -410,6 +454,37 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
         }
 
+        private void HandleTAMNewRound(string[] parts)
+        {
+            // [Time] G NewRound -1 [RoundNumber]
+            // Example: 9.90	G	NewRound	-1	1
+            
+            if (parts.Length >= 5 && int.TryParse(parts[4], out int roundNum))
+            {
+                _currentRoundNumber = roundNum;
+
+                // Award round-ending kill to last killer
+                if (_lastKillerSeqNum.HasValue && _activePlayersBySeqNum.TryGetValue(_lastKillerSeqNum.Value, out var lastKiller))
+                {
+                    lastKiller.RoundEndingKills++;
+                    if (_expandedDebugLogging)
+                        Console.WriteLine($"{lastKiller.LastKnownName} ended round {_currentRoundNumber - 1}!");
+                }
+
+                // Increment RoundsPlayed for all active players
+                foreach (var player in _activePlayersBySeqNum.Values.Where(p => !p.IsBot))
+                {
+                    player.RoundsPlayed++;
+                }
+
+                // Reset for next round
+                _lastKillerSeqNum = null;
+
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"TAM Round {roundNum} starting...");
+            }
+        }
+
         private void ParseTeamScore(string[] parts)
         {
             if (parts.Length < 5) return;
@@ -417,11 +492,30 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             // [Time] T [TeamID] [Points] [Reason]
             int teamId = int.Parse(parts[2]);
             double points = double.Parse(parts[3]);
+            string reason = parts[4];
 
             if (!_teamScores.ContainsKey(teamId))
                 _teamScores[teamId] = 0;
 
             _teamScores[teamId] += (int)Math.Round(points);
+
+            // Track TAM round wins
+            if (_currentGameMode == UT2004GameMode.TAM && reason == "tdm_frag")
+            {
+                if (!_roundWinsByTeam.ContainsKey(teamId))
+                    _roundWinsByTeam[teamId] = 0;
+                _roundWinsByTeam[teamId]++;
+
+                // Award RoundsWon to all players on winning team
+                foreach (var player in _activePlayersBySeqNum.Values.Where(p => p.Team == teamId && !p.IsBot))
+                {
+                    player.RoundsWon++;
+                }
+
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"Team {teamId} won round {_currentRoundNumber}! Total rounds won: {_roundWinsByTeam[teamId]}");
+            }
+
             if (_expandedDebugLogging)
                 Console.WriteLine($"Team {teamId} scored {points} points. Total: {_teamScores[teamId]}");
         }
@@ -434,6 +528,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             int killerSeqNum = int.Parse(parts[2]);
             int victimSeqNum = int.Parse(parts[4]);
             string weapon = parts[5];
+            string damageType = parts[3];
 
             if (!_activePlayersBySeqNum.TryGetValue(victimSeqNum, out var victim))
                 return;
@@ -458,8 +553,20 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 killer.WeaponKills[weapon] = 0;
             killer.WeaponKills[weapon]++;
 
+            // Track headshots from damage type
+            if (damageType.Contains("HeadShot", StringComparison.OrdinalIgnoreCase))
+            {
+                killer.Headshots++;
+            }
+
+            // Track last killer for TAM round-ending kills
+            if (_currentGameMode == UT2004GameMode.TAM)
+            {
+                _lastKillerSeqNum = killerSeqNum;
+            }
+
             if (_expandedDebugLogging)
-                Console.WriteLine($"{killer.LastKnownName} killed {victim.LastKnownName} with {weapon}");
+                Console.WriteLine($"{killer.LastKnownName} killed {victim.LastKnownName} with {weapon} ({damageType})");
         }
 
         private void ParseScore(string[] parts)
@@ -480,6 +587,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             // Track specific stat categories
             switch (reason)
             {
+                // TAM Combat Tracking
+                case "EnemyDamage":
+                    player.TotalDamageDealt += (int)Math.Round(points);
+                    break;
+
+                case "FriendlyDamage":
+                    player.FriendlyFireDamage += (int)Math.Round(Math.Abs(points));
+                    break;
+
                 // Flag Capture Events
                 case "flag_cap_final":
                     player.FlagCaptures++;
@@ -523,6 +639,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     // Negative score from suicide, already counted in Suicides
                     break;
 
+                // TAM-specific scoring
+                case "tdm_frag":
+                    // Team got a frag point (round win in TAM)
+                    break;
+
+                case "ObjectiveScore":
+                    // TAM uses this for some scoring
+                    break;
+
                 // Unknown/Other scoring events - just log them
                 default:
                     if (_expandedDebugLogging)
@@ -562,6 +687,12 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             {
                 if (_expandedDebugLogging)
                     Console.WriteLine($"{player.LastKnownName} drew first blood!");
+            }
+            else if (eventType == "Overkill")
+            {
+                // TAM "Overkill" bonus for excessive damage
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"{player.LastKnownName} got Overkill!");
             }
         }
 
@@ -712,12 +843,13 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             // Simple Debug Output: Concise match summary
             if (_simpleDebugLogging)
             {
-                Console.WriteLine($"Match Completed | Players: {_activePlayersByGuid.Count} | Winning Team: {_winningTeam}");
+                Console.WriteLine($"Match Completed | Mode: {_currentGameMode} | Players: {_activePlayersByGuid.Count} | Winning Team: {_winningTeam}");
                 foreach (var player in statLog.Players.SelectMany(p => p))
                 {
                     Console.WriteLine($"  {player.LastKnownName}: Team={player.Team}, Winner={player.IsWinner}, " +
                         $"Placement={player.Placement} (on team), Score={player.Score}, " +
-                        $"K/D={player.Kills}/{player.Deaths}, Caps={player.FlagCaptures}");
+                        $"K/D={player.Kills}/{player.Deaths}, Caps={player.FlagCaptures}" +
+                        (_currentGameMode == UT2004GameMode.TAM ? $", Dmg={player.TotalDamageDealt}, Rounds={player.RoundsWon}/{player.RoundsPlayed}" : ""));
                 }
                 Console.WriteLine("\n");
             }

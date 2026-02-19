@@ -11,11 +11,18 @@ namespace FlawsFightNight.Managers
     /// </summary>
     public class OpenSkillRatingService
     {
-        private readonly PlackettLuce _plModel;
+        //private readonly PlackettLuce _model;
+        private readonly BradleyTerryFull _model;
+        private const double Tau = 0.083;
 
         public OpenSkillRatingService()
         {
-            _plModel = new PlackettLuce
+            //_model = new PlackettLuce
+            //{
+            //    Mu = 25.0,
+            //    Sigma = 25.0 / 3.0
+            //};
+            _model = new BradleyTerryFull
             {
                 Mu = 25.0,
                 Sigma = 25.0 / 3.0
@@ -91,10 +98,57 @@ namespace FlawsFightNight.Managers
 
         private static double CalculateTAMWeight(UTPlayerMatchStats player, List<UTPlayerMatchStats> team)
         {
-            // --- Contribution Categories ---
+            // TAM is round-based team elimination - players start fully equipped
+            // Focus on combat effectiveness, headshots, and damage contribution
 
-            // 1. 
-            return 0;
+            // 1. Combat efficiency - 40% of weight
+            //    K/D ratio matters but deaths are less punishing due to round resets
+            double killDeathRatio = player.Deaths > 0 
+                ? (double)player.Kills / player.Deaths 
+                : Math.Max(player.Kills, 1.0); // Avoid over-rewarding 0 deaths
+            
+            double efficiencyScore = 
+                (player.Kills * 3.0) +                  // Primary contribution
+                (killDeathRatio * 2.0) +                // Efficiency matters
+                (player.Score * 0.15);                  // Proxy for damage dealt
+
+            // 2. High-value kills - 35% of weight
+            //    Headshots and critical frags (round-winning kills, flag carrier kills, etc.)
+            double qualityScore =
+                (player.Headshots * 5.0) +              // ADMIN: Headshots should boost rating
+                (player.CriticalFrags * 3.0) +          // Important kills (could include round-enders)
+                (player.BestMultiKill * 2.0);           // Multi-kill ability in rounds
+
+            // 3. Round dominance - 25% of weight
+            //    Streaks indicate consistent performance across rounds
+            double dominanceScore =
+                (player.BestKillStreak * 3.0) +         // Sustained performance
+                (player.TeamProtectFrags * 2.0);        // Helping teammates survive rounds
+
+            // Penalty for suicides (wastes a round life)
+            double suicidePenalty = player.Suicides * 2.0;
+
+            // Combine with category weights
+            double rawWeight = (efficiencyScore * 0.40) + 
+                               (qualityScore * 0.35) + 
+                               (dominanceScore * 0.25) - 
+                               suicidePenalty;
+
+            // Normalize against team average
+            double teamTotal = team
+                .Where(p => !p.IsBot)
+                .Sum(p => CalculateRawTAMScore(p));
+
+            if (teamTotal <= 0)
+                return 1.0; // Fallback: equal weight
+
+            double teamSize = team.Count(p => !p.IsBot);
+            double fairShare = teamTotal / teamSize;
+
+            // Ratio of player's contribution vs average teammate
+            // Clamped to [0.6, 1.4] to prevent extreme swings
+            double weight = rawWeight / fairShare;
+            return Math.Clamp(weight, 0.6, 1.4);
         }
 
         private static double CalculateBRWeight(UTPlayerMatchStats player, List<UTPlayerMatchStats> team)
@@ -125,6 +179,26 @@ namespace FlawsFightNight.Managers
         }
 
         /// <summary>
+        /// Raw TAM score for normalization (same formula, no weighting between categories).
+        /// </summary>
+        private static double CalculateRawTAMScore(UTPlayerMatchStats player)
+        {
+            double killDeathRatio = player.Deaths > 0 
+                ? (double)player.Kills / player.Deaths 
+                : Math.Max(player.Kills, 1.0);
+            
+            return (player.Kills * 3.0) +
+                   (killDeathRatio * 2.0) +
+                   (player.Score * 0.15) +
+                   (player.Headshots * 5.0) +
+                   (player.CriticalFrags * 3.0) +
+                   (player.BestMultiKill * 2.0) +
+                   (player.BestKillStreak * 3.0) +
+                   (player.TeamProtectFrags * 2.0) -
+                   (player.Suicides * 2.0);
+        }
+
+        /// <summary>
         /// Updates Mu/Sigma on every non-bot player profile based on a single match result.
         /// Supports N teams with variable player counts.
         /// Weights players by CTF contribution so objective players gain more rating.
@@ -151,7 +225,7 @@ namespace FlawsFightNight.Managers
                 {
                     var profile = profiles[player.Guid!];
                     profile.GetMuSigma(match.GameMode, out double mu, out double sigma);
-                    players.Add(new Rating { Mu = mu, Sigma = sigma });
+                    players.Add(new Rating { Mu = mu, Sigma = sigma});
                     guids.Add(player.Guid!);
                     weights.Add(GetGameModeWeight(match.GameMode, player, teamPlayers));
                 }
@@ -169,7 +243,7 @@ namespace FlawsFightNight.Managers
                 return;
 
             // Run OpenSkill rating calculation with weights
-            var updatedTeams = _plModel.Rate(teams, teamRanks, null, teamWeights).ToList();
+            var updatedTeams = _model.Rate(teams, teamRanks, null, teamWeights, Tau).ToList();
 
             // Apply updated ratings back to profiles
             for (int t = 0; t < updatedTeams.Count; t++)

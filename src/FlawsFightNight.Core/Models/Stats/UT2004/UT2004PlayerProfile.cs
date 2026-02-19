@@ -28,12 +28,6 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public UT2004GameRating TAMRating { get; set; } = new(); // TAM
         public UT2004GameRating BombingRunRating { get; set; } = new(); // iBR
 
-        public double CTFMu { get; set; } = 25.0;
-        public double CTFSigma { get; set; } = 25.0 / 3.0;
-        public double CTFRating => CTFMu - (3 * CTFSigma);
-
-        // ReTAM Skill Rating
-
         // Cumulative Combat Stats
         public int TotalScore { get; set; } = 0;
         public int TotalKills { get; set; } = 0;
@@ -41,41 +35,76 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public int TotalSuicides { get; set; } = 0;
         public int TotalHeadshots { get; set; } = 0;
 
-        // Cumulative Flag Objective Stats - Primary Actions
-        public int TotalFlagCaptures { get; set; } = 0;          // flag_cap_final
-        public int TotalFlagGrabs { get; set; } = 0;             // flag_taken (picking up enemy flag from base)
-        public int TotalFlagPickups { get; set; } = 0;           // flag_pickup (picking up dropped flag)
-        public int TotalFlagDrops { get; set; } = 0;             // flag_dropped (dropping the flag)
-
-        // Cumulative Flag Objective Stats - Defensive Actions
-        public int TotalFlagReturns { get; set; } = 0;           // Total flag returns (all types)
-        public int TotalFlagReturnsEnemy { get; set; } = 0;      // flag_ret_enemy
-        public int TotalFlagReturnsFriendly { get; set; } = 0;   // flag_ret_friendly
-        public int TotalFlagDenials { get; set; } = 0;           // flag_denial
-
-        // Cumulative Flag Objective Stats - Support Actions
-        public int TotalFlagCaptureAssists { get; set; } = 0;    // flag_cap_assist
-        public int TotalFlagCaptureFirstTouch { get; set; } = 0; // flag_cap_1st_touch
-        public int TotalTeamProtectFrags { get; set; } = 0;      // team_protect_frag
-        public int TotalCriticalFrags { get; set; } = 0;         // critical_frag
-
         // Career Bests (for achievements/leaderboards)
         public int BestKillStreak { get; set; } = 0;
         public int BestMultiKill { get; set; } = 0;
         public int MostKillsInMatch { get; set; } = 0;
         public int MostDeathsInMatch { get; set; } = 0;
-        public int MostFlagCapsInMatch { get; set; } = 0;
-        public int MostFlagReturnsInMatch { get; set; } = 0;
         public int HighestScoreInMatch { get; set; } = 0;
 
-        // Weapon Stats - Cumulative kills per weapon
-        public Dictionary<string, int> TotalWeaponKills { get; set; } = new Dictionary<string, int>();
+        // Cumulative iCTF Stats
+        public int TotalFlagCaptures { get; set; } = 0;          // flag_cap_final
+        public int TotalFlagGrabs { get; set; } = 0;             // flag_taken (picking up enemy flag from base)
+        public int TotalFlagPickups { get; set; } = 0;           // flag_pickup (picking up dropped flag)
+        public int TotalFlagDrops { get; set; } = 0;             // flag_dropped (dropping the flag)
+        public int TotalFlagReturns { get; set; } = 0;           // Total flag returns (all types)
+        public int TotalFlagReturnsEnemy { get; set; } = 0;      // flag_ret_enemy
+        public int TotalFlagReturnsFriendly { get; set; } = 0;   // flag_ret_friendly
+        public int TotalFlagDenials { get; set; } = 0;           // flag_denial
+        public int TotalFlagCaptureAssists { get; set; } = 0;    // flag_cap_assist
+        public int TotalFlagCaptureFirstTouch { get; set; } = 0; // flag_cap_1st_touch
+        public int TotalTeamProtectFrags { get; set; } = 0;      // team_protect_frag
+        public int TotalCriticalFrags { get; set; } = 0;         // critical_frag
+        public int MostFlagCapsInMatch { get; set; } = 0;
+        public int MostFlagReturnsInMatch { get; set; } = 0;
 
-        // Calculated Properties
+        // Cumulative TAM Stats
+        public int TotalTAMMatches { get; set; } = 0;
+        public int TotalTAMWins { get; set; } = 0;
+        public int TotalTAMLosses { get; set; } = 0;
+        public int TotalDamageDealt { get; set; } = 0;           // Sum of all damage dealt to enemies
+        public int TotalDamageTaken { get; set; } = 0;           // Sum of all damage received
+        public int TotalFriendlyFireDamage { get; set; } = 0;    // Damage dealt to teammates
+        public int TotalRoundEndingKills { get; set; } = 0;      // Kills that ended a round
+        public int TotalRoundsWon { get; set; } = 0;             // Individual rounds won
+        public int TotalRoundsPlayed { get; set; } = 0;          // Total rounds participated in
+        public int MostDamageInMatch { get; set; } = 0;
+        public int MostRoundEndingKillsInMatch { get; set; } = 0;
+        public int MostRoundsWonInMatch { get; set; } = 0;
+
+        // Weapon Stats - Cumulative across all game modes
+        public Dictionary<string, int> TotalWeaponKills { get; set; } = new Dictionary<string, int>();
+        
+        // Weapon Stats - Detailed TAM accuracy tracking (cumulative)
+        public Dictionary<string, WeaponStats> TotalWeaponStatistics { get; set; } = new Dictionary<string, WeaponStats>();
+
+        // Cumulative iBR Stats
+        // TODO: Add when iBR is implemented
+
+        // Calculated Properties - General
         public double WinRate => TotalMatches > 0 ? (double)Wins / TotalMatches : 0;
         public double KDRatio => TotalDeaths > 0 ? (double)TotalKills / TotalDeaths : TotalKills;
         public double AverageScorePerMatch => TotalMatches > 0 ? (double)TotalScore / TotalMatches : 0;
+        
+        // Calculated Properties - iCTF
         public double AverageCapturesPerMatch => TotalMatches > 0 ? (double)TotalFlagCaptures / TotalMatches : 0;
+
+        // Calculated Properties - TAM
+        public double TAMWinRate => TotalTAMMatches > 0 ? (double)TotalTAMWins / TotalTAMMatches : 0;
+        public double TAMRoundWinRate => TotalRoundsPlayed > 0 ? (double)TotalRoundsWon / TotalRoundsPlayed : 0;
+        public double AverageDamagePerMatch => TotalTAMMatches > 0 ? (double)TotalDamageDealt / TotalTAMMatches : 0;
+        public double AverageDamagePerRound => TotalRoundsPlayed > 0 ? (double)TotalDamageDealt / TotalRoundsPlayed : 0;
+        public double AverageRoundsWonPerMatch => TotalTAMMatches > 0 ? (double)TotalRoundsWon / TotalTAMMatches : 0;
+        public double DamageEfficiency => TotalDamageTaken > 0 ? (double)TotalDamageDealt / TotalDamageTaken : TotalDamageDealt;
+        public double OverallWeaponAccuracy
+        {
+            get
+            {
+                int totalShots = TotalWeaponStatistics.Values.Sum(w => w.ShotsFired);
+                int totalHits = TotalWeaponStatistics.Values.Sum(w => w.Hits);
+                return totalShots > 0 ? (double)totalHits / totalShots * 100.0 : 0.0;
+            }
+        }
 
         public UT2004PlayerProfile() { }
 
@@ -89,7 +118,7 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         /// <summary>
         /// Update cumulative stats after a match
         /// </summary>
-        public void UpdateStatsFromMatch(UTPlayerMatchStats matchStats)
+        public void UpdateStatsFromMatch(UTPlayerMatchStats matchStats, UT2004GameMode gameMode)
         {
             TotalMatches++;
             if (matchStats.IsWinner) Wins++;
@@ -102,6 +131,69 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
             TotalSuicides += matchStats.Suicides;
             TotalHeadshots += matchStats.Headshots;
 
+            // Game Mode Specific Stats
+            if (gameMode == UT2004GameMode.iCTF)
+            {
+                UpdateCTFStats(matchStats);
+            }
+            else if (gameMode == UT2004GameMode.TAM)
+            {
+                UpdateTAMStats(matchStats);
+            }
+            else if (gameMode == UT2004GameMode.iBR)
+            {
+                UpdateBRStats(matchStats);
+            }
+
+            // Update career bests (general)
+            BestKillStreak = Math.Max(BestKillStreak, matchStats.BestKillStreak);
+            BestMultiKill = Math.Max(BestMultiKill, matchStats.BestMultiKill);
+            MostKillsInMatch = Math.Max(MostKillsInMatch, matchStats.Kills);
+            MostDeathsInMatch = Math.Max(MostDeathsInMatch, matchStats.Deaths);
+            HighestScoreInMatch = Math.Max(HighestScoreInMatch, matchStats.Score);
+
+            // Update weapon kill totals
+            foreach (var weaponKill in matchStats.WeaponKills)
+            {
+                if (!TotalWeaponKills.ContainsKey(weaponKill.Key))
+                {
+                    TotalWeaponKills[weaponKill.Key] = 0;
+                }
+                TotalWeaponKills[weaponKill.Key] += weaponKill.Value;
+            }
+
+            // Update weapon statistics (accuracy tracking)
+            foreach (var weaponStat in matchStats.WeaponStatistics)
+            {
+                if (!TotalWeaponStatistics.ContainsKey(weaponStat.Key))
+                {
+                    TotalWeaponStatistics[weaponStat.Key] = new WeaponStats
+                    {
+                        WeaponName = weaponStat.Key
+                    };
+                }
+
+                var totalStat = TotalWeaponStatistics[weaponStat.Key];
+                totalStat.ShotsFired += weaponStat.Value.ShotsFired;
+                totalStat.Hits += weaponStat.Value.Hits;
+                totalStat.DamageDealt += weaponStat.Value.DamageDealt;
+            }
+
+            // Update name if changed
+            if (!CurrentName.Equals(matchStats.LastKnownName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrEmpty(CurrentName) && !PreviousNames.Contains(CurrentName))
+                {
+                    PreviousNames.Add(CurrentName);
+                }
+                CurrentName = matchStats.LastKnownName ?? CurrentName;
+            }
+
+            LastPlayed = DateTime.UtcNow;
+        }
+
+        private void UpdateCTFStats(UTPlayerMatchStats matchStats)
+        {
             // Flag Objective Stats - Primary Actions
             TotalFlagCaptures += matchStats.FlagCaptures;
             TotalFlagGrabs += matchStats.FlagGrabs;
@@ -120,36 +212,40 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
             TotalTeamProtectFrags += matchStats.TeamProtectFrags;
             TotalCriticalFrags += matchStats.CriticalFrags;
 
-            // Update career bests
-            BestKillStreak = Math.Max(BestKillStreak, matchStats.BestKillStreak);
-            BestMultiKill = Math.Max(BestMultiKill, matchStats.BestMultiKill);
-            MostKillsInMatch = Math.Max(MostKillsInMatch, matchStats.Kills);
-            MostDeathsInMatch = Math.Max(MostDeathsInMatch, matchStats.Deaths);
+            // Career bests
             MostFlagCapsInMatch = Math.Max(MostFlagCapsInMatch, matchStats.FlagCaptures);
             MostFlagReturnsInMatch = Math.Max(MostFlagReturnsInMatch, matchStats.FlagReturns);
-            HighestScoreInMatch = Math.Max(HighestScoreInMatch, matchStats.Score);
+        }
 
-            // Update weapon kill totals
-            foreach (var weaponKill in matchStats.WeaponKills)
-            {
-                if (!TotalWeaponKills.ContainsKey(weaponKill.Key))
-                {
-                    TotalWeaponKills[weaponKill.Key] = 0;
-                }
-                TotalWeaponKills[weaponKill.Key] += weaponKill.Value;
-            }
+        private void UpdateTAMStats(UTPlayerMatchStats matchStats)
+        {
+            TotalTAMMatches++;
+            if (matchStats.IsWinner) TotalTAMWins++;
+            else TotalTAMLosses++;
 
-            // Update name if changed
-            if (!CurrentName.Equals(matchStats.LastKnownName, StringComparison.OrdinalIgnoreCase))
-            {
-                if (!string.IsNullOrEmpty(CurrentName) && !PreviousNames.Contains(CurrentName))
-                {
-                    PreviousNames.Add(CurrentName);
-                }
-                CurrentName = matchStats.LastKnownName ?? CurrentName;
-            }
+            // TAM Combat Stats
+            TotalDamageDealt += matchStats.TotalDamageDealt;
+            TotalDamageTaken += matchStats.TotalDamageTaken;
+            TotalFriendlyFireDamage += matchStats.FriendlyFireDamage;
+            
+            // TAM Round Stats
+            TotalRoundEndingKills += matchStats.RoundEndingKills;
+            TotalRoundsWon += matchStats.RoundsWon;
+            TotalRoundsPlayed += matchStats.RoundsPlayed;
 
-            LastPlayed = DateTime.UtcNow;
+            // TAM uses TeamProtectFrags and CriticalFrags too
+            TotalTeamProtectFrags += matchStats.TeamProtectFrags;
+            TotalCriticalFrags += matchStats.CriticalFrags;
+
+            // Career bests
+            MostDamageInMatch = Math.Max(MostDamageInMatch, matchStats.TotalDamageDealt);
+            MostRoundEndingKillsInMatch = Math.Max(MostRoundEndingKillsInMatch, matchStats.RoundEndingKills);
+            MostRoundsWonInMatch = Math.Max(MostRoundsWonInMatch, matchStats.RoundsWon);
+        }
+
+        private void UpdateBRStats(UTPlayerMatchStats matchStats)
+        {
+            // TODO: Implement when iBR stats are defined
         }
 
         public void GetMuSigma(UT2004GameMode gameMode, out double mu, out double sigma)
