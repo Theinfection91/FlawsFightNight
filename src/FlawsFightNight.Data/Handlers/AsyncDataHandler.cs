@@ -217,5 +217,39 @@ namespace FlawsFightNight.Data.Handlers
 
             return list;
         }
+
+        public async Task DeleteJsonFilesInFolder(PathOption pathOption)
+        {
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string folderPath = pathOption switch
+            {
+                PathOption.Databases => Path.Combine(baseDir, "Databases"),
+                PathOption.TournamentSystem => Path.Combine(baseDir, "Databases", "TournamentSystem"),
+                PathOption.iCTFStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "iCTF"),
+                PathOption.TAMStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "TAM"),
+                PathOption.iBRStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "iBR"),
+                PathOption.UT2004PlayerProfiles => Path.Combine(baseDir, "Databases", "UT2004PlayerProfiles"),
+                _ => throw new ArgumentException("Invalid path option")
+            };
+            if (Directory.Exists(folderPath))
+            {
+                var files = Directory.GetFiles(folderPath, "*.json*", SearchOption.AllDirectories);
+                foreach (var file in files)
+                {
+                    try
+                    {
+                        File.Delete(file);
+                    }
+                    catch (IOException ex)
+                    {
+                        Console.WriteLine($"Warning: Could not delete file {file}: {ex.Message}");
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        Console.WriteLine($"Warning: Could not delete file {file} due to access issues: {ex.Message}");
+                    }
+                }
+            }
+        }
     }
 }

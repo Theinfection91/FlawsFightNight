@@ -31,19 +31,19 @@ namespace FlawsFightNight.Managers
             }
 
             var processedLogs = _dataManager.GetProcessedLogNames();
-            
+
             // Check if in processed list
             if (processedLogs.ProcessedLogFileNames?.Contains(fileName) == true)
             {
                 return true;
             }
-            
+
             // Check if in ignored list
             if (processedLogs.IgnoredLogFileNames?.Contains(fileName) == true)
             {
                 return true;
             }
-            
+
             return false;
         }
 
@@ -73,10 +73,10 @@ namespace FlawsFightNight.Managers
         public async Task MarkLogFileAsProcessed(string fileName)
         {
             var processedLogs = _dataManager.GetProcessedLogNames();
-            
+
             // Ensure lists are initialized
             processedLogs.ProcessedLogFileNames ??= new List<string>();
-            
+
             if (!processedLogs.ProcessedLogFileNames.Contains(fileName))
             {
                 processedLogs.ProcessedLogFileNames.Add(fileName);
@@ -87,10 +87,10 @@ namespace FlawsFightNight.Managers
         public async Task MarkLogFileAsIgnored(string fileName)
         {
             var processedLogs = _dataManager.GetProcessedLogNames();
-            
+
             // Ensure lists are initialized
             processedLogs.IgnoredLogFileNames ??= new List<string>();
-            
+
             if (!processedLogs.IgnoredLogFileNames.Contains(fileName))
             {
                 processedLogs.IgnoredLogFileNames.Add(fileName);
@@ -109,22 +109,22 @@ namespace FlawsFightNight.Managers
         public async Task SetupPlayerProfiles()
         {
             var allMatchStats = await GetAllProcessedStatLogs();
-            
+
             // Sort matches chronologically using timestamps from log files
             var chronologicalMatches = allMatchStats
                 .OrderBy(m => m.MatchDate)
                 .ToList();
-            
+
             Console.WriteLine($"[UT2004StatsManager] Processing {chronologicalMatches.Count} matches chronologically...");
             Console.WriteLine($"[UT2004StatsManager] Date range: {chronologicalMatches.First().MatchDate:yyyy-MM-dd} to {chronologicalMatches.Last().MatchDate:yyyy-MM-dd}");
-            
+
             var profiles = new Dictionary<string, UT2004PlayerProfile>();
-            
+
             int processedCount = 0;
             foreach (var match in chronologicalMatches)
             {
                 processedCount++;
-                
+
                 // Step 1: Update cumulative stats
                 foreach (var team in match.Players)
                 {
@@ -137,38 +137,45 @@ namespace FlawsFightNight.Managers
                         profiles[playerStats.Guid].UpdateStatsFromMatch(playerStats);
                     }
                 }
-                
+
                 // Step 2: Calculate OpenSkill ratings for this match
                 _ratingService.UpdateRatingsForMatch(match, profiles);
-                
+
                 // Progress indicator every 100 matches
                 if (processedCount % 100 == 0)
                 {
                     Console.WriteLine($"[UT2004StatsManager] Processed {processedCount}/{chronologicalMatches.Count} matches...");
                 }
             }
-            
+
             // Save all profiles
             Console.WriteLine($"[UT2004StatsManager] Saving {profiles.Count} player profiles...");
             foreach (var profile in profiles.Values)
             {
                 await _dataManager.SaveUT2004PlayerProfileFile(profile);
             }
-            
+
             Console.WriteLine($"[UT2004StatsManager] Complete... Updated {profiles.Count} player profiles across {chronologicalMatches.Count} matches");
         }
+
+        public async Task RebuildPlayerProfiles()
+        {
+            Console.WriteLine($"[UT2004StatsManager] Rebuilding player profiles from scratch...");
+            await _dataManager.DeleteUT2004ProfilesDatabase();
+            await SetupPlayerProfiles();
         #endregion
 
-        public async Task<string> PredictMatchOutcome()
-        {
-            var teamA = new List<UT2004PlayerProfile>();
-            var teamB = new List<UT2004PlayerProfile>();
-            //teamA.Add(await _dataManager.GetUT2004PlayerProfile("f65f3f7e0496815de17a4713604e5016")); // Serge
-            teamA.Add(await _dataManager.GetUT2004PlayerProfile("cc64eb45e190de68c0deaf75231e1ab8")); // Relapse
-            teamB.Add(await _dataManager.GetUT2004PlayerProfile("f7fc75c7f7f3cf3cfc9b700b73925586")); // BloodBath
+            //public async Task<string> PredictMatchOutcome()
+            //{
+            //    var teamA = new List<UT2004PlayerProfile>();
+            //    var teamB = new List<UT2004PlayerProfile>();
+            //    //teamA.Add(await _dataManager.GetUT2004PlayerProfile("f65f3f7e0496815de17a4713604e5016")); // Serge
+            //    teamA.Add(await _dataManager.GetUT2004PlayerProfile("cc64eb45e190de68c0deaf75231e1ab8")); // Relapse
+            //    teamB.Add(await _dataManager.GetUT2004PlayerProfile("f7fc75c7f7f3cf3cfc9b700b73925586")); // BloodBath
 
-            var winProbability = _ratingService.PredictWin(teamA, teamB);
-            return $"Team A win probability: {winProbability:P2}, Team B win probability: {1 - winProbability:P2}";
+            //    var winProbability = _ratingService.PredictWin(teamA, teamB);
+            //    return $"Team A win probability: {winProbability:P2}, Team B win probability: {1 - winProbability:P2}";
+            //}
         }
     }
 }

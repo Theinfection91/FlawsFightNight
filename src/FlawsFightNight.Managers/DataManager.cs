@@ -281,6 +281,14 @@ namespace FlawsFightNight.Managers
             }
             return null;
         }
+
+        public async Task DeleteUT2004ProfilesDatabase()
+        {
+            // Clear in-memory list
+            UT2004PlayerProfileFiles.Clear();
+            // Delete all profile files from disk
+            await _ut2004PlayerProfileHandler.DeleteJsonFilesInFolder(PathOption.UT2004PlayerProfiles);
+        }
         #endregion
     }
 }

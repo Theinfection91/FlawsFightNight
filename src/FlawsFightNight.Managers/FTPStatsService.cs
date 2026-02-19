@@ -35,7 +35,7 @@ namespace FlawsFightNight.Managers
             // TODO Implement pulling creds from ConfigManager once they are finally being saved
             //var creds = _configManager.GetFTPCredentials();
             //_ftpClient = new(host: creds.Host, user: creds.Username, pass: creds.Password, port: creds.Port);
-            _ftpClient = new(host: "127.0.0.1", user: "sho_ny", pass: "password1", port: 21);
+            _ftpClient = new(host: "127.0.0.1", user: "sho_chi", pass: "password1", port: 21);
 
             // Configure TLS/SSL settings
             _ftpClient.Config.EncryptionMode = FtpEncryptionMode.Explicit; // or FtpEncryptionMode.Auto
@@ -93,18 +93,18 @@ namespace FlawsFightNight.Managers
                     string nyDir = "/thisDir/anotherDir/oneMoreDir/UserLogs";
 
                     // Verify directory exists before processing
-                    if (!await _ftpClient.DirectoryExists(nyDir, token))
+                    if (!await _ftpClient.DirectoryExists(chiDir, token))
                     {
                         Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Warning: Directory '{chiDir}' does not exist on FTP server. Skipping...");
                         await Task.Delay(TimeSpan.FromSeconds(30), token); // Wait longer if directory doesn't exist
                         continue;
                     }
 
-                    if (await ContainsFreshLogs(nyDir, token))
+                    if (await ContainsFreshLogs(chiDir, token))
                     {
                         Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Fresh logs found! Processing...");
 
-                        var items = await _ftpClient.GetListing(nyDir, token);
+                        var items = await _ftpClient.GetListing(chiDir, token);
                         var logFiles = items.Where(item => item.Name.EndsWith(".log", StringComparison.OrdinalIgnoreCase)).ToList();
                         
                         int totalFiles = logFiles.Count;
@@ -161,6 +161,11 @@ namespace FlawsFightNight.Managers
                         await _ut2004StatsManager.SetupPlayerProfiles();
                         await _gitBackupManager.CopyAndBackupFilesToGitAsync();
                     }
+                    else
+                    {
+                        // Testing
+                        //await _ut2004StatsManager.RebuildPlayerProfiles();
+                    }
                 }
                 catch (FtpCommandException ftpEx)
                 {
@@ -184,7 +189,7 @@ namespace FlawsFightNight.Managers
                     Console.WriteLine($"\n{DateTime.Now} - [FTPStatsService] Error: {ex}");
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(5), token);
+                await Task.Delay(TimeSpan.FromSeconds(9999), token);
             }
         }
 
