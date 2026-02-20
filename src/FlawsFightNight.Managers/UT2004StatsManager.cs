@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using FlawsFightNight.Core.Helpers.UT2004;
+using FlawsFightNight.Core.Enums.UT2004;
 
 namespace FlawsFightNight.Managers
 {
@@ -14,11 +15,15 @@ namespace FlawsFightNight.Managers
     {
         private readonly UT2004LogParser _logParser;
         private readonly OpenSkillRatingService _ratingService;
+        private int _iCTFStatLogIdCounter = 0;
+        private int _TAMStatLogIdCounter = 0;
+        private int _iBRStatLogIdCounter = 0;
 
         public UT2004StatsManager(DataManager dataManager, UT2004LogParser logParser, OpenSkillRatingService ratingService) : base("UT2004StatsManager", dataManager)
         {
             _logParser = logParser;
             _ratingService = ratingService;
+            GetStatLogCounts().Wait();
         }
 
         #region Stat Log Processing
@@ -58,7 +63,7 @@ namespace FlawsFightNight.Managers
                               .ThenByDescending(p => p.Score)
                               .ToList()
                 ).ToList();
-
+                statLog.Id = await GenerateStatLogId(statLog.GameMode);
                 await _dataManager.SaveStatLogMatchResultFile(statLog);
                 await MarkLogFileAsProcessed(fileName);
                 return true;
@@ -70,6 +75,40 @@ namespace FlawsFightNight.Managers
             }
         }
 
+        public async Task GetStatLogCounts()
+        {
+            _iCTFStatLogIdCounter = await _dataManager.GetStatLogCount(UT2004GameMode.iCTF);
+            _TAMStatLogIdCounter = await _dataManager.GetStatLogCount(UT2004GameMode.TAM);
+            _iBRStatLogIdCounter = await _dataManager.GetStatLogCount(UT2004GameMode.iBR);
+        }
+
+        public async Task<string> GenerateStatLogId(UT2004GameMode gameMode)
+        {
+            int count = gameMode switch
+            {
+                UT2004GameMode.iCTF => _iCTFStatLogIdCounter,
+                UT2004GameMode.TAM => _TAMStatLogIdCounter,
+                UT2004GameMode.iBR => _iBRStatLogIdCounter,
+                _ => 0
+            };
+
+            // Increment the appropriate counter
+            switch (gameMode)
+            {
+                case UT2004GameMode.iCTF:
+                    _iCTFStatLogIdCounter++;
+                    break;
+                case UT2004GameMode.TAM:
+                    _TAMStatLogIdCounter++;
+                    break;
+                case UT2004GameMode.iBR:
+                    _iBRStatLogIdCounter++;
+                    break;
+            }
+
+            return $"{gameMode}{count + 1:000000}";
+
+        }
         public async Task MarkLogFileAsProcessed(string fileName)
         {
             var processedLogs = _dataManager.GetProcessedLogNames();

@@ -246,6 +246,21 @@ namespace FlawsFightNight.Managers
             };
             await _statLogMatchResultsHandler.Save(statLogMatchResultsFile);
         }
+
+        public async Task<int> GetStatLogCount(UT2004GameMode gameMode)
+        {
+            switch (gameMode)
+            {
+                case UT2004GameMode.iCTF:
+                    return (await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iCTF")).Count;
+                case UT2004GameMode.TAM:
+                    return (await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/TAM")).Count;
+                case UT2004GameMode.iBR:
+                    return (await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iBR")).Count;
+                    default:
+                    return 0;
+            }
+        }
         #endregion
 
         #region UT2004 Player Profile Files

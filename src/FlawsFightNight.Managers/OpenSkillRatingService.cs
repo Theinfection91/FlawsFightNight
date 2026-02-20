@@ -11,18 +11,12 @@ namespace FlawsFightNight.Managers
     /// </summary>
     public class OpenSkillRatingService
     {
-        //private readonly PlackettLuce _model;
-        private readonly BradleyTerryFull _model;
+        private readonly PlackettLuce _model;
         private const double Tau = 0.083;
 
         public OpenSkillRatingService()
         {
-            //_model = new PlackettLuce
-            //{
-            //    Mu = 25.0,
-            //    Sigma = 25.0 / 3.0
-            //};
-            _model = new BradleyTerryFull
+            _model = new PlackettLuce
             {
                 Mu = 25.0,
                 Sigma = 25.0 / 3.0
@@ -91,9 +85,9 @@ namespace FlawsFightNight.Managers
             double fairShare = teamTotal / teamSize;
 
             // Ratio of player's contribution vs average teammate
-            // Clamped to [0.6, 1.4] to prevent extreme swings
+            // Clamped to [0.8, 1.4] to prevent extreme swings
             double weight = rawWeight / fairShare;
-            return Math.Clamp(weight, 0.6, 1.4);
+            return Math.Clamp(weight, 0.8, 1.2);
         }
 
         private static double CalculateTAMWeight(UTPlayerMatchStats player, List<UTPlayerMatchStats> team)
@@ -146,9 +140,9 @@ namespace FlawsFightNight.Managers
             double fairShare = teamTotal / teamSize;
 
             // Ratio of player's contribution vs average teammate
-            // Clamped to [0.6, 1.4] to prevent extreme swings
+            // Clamped to [0.8, 1.2] to prevent extreme swings
             double weight = rawWeight / fairShare;
-            return Math.Clamp(weight, 0.6, 1.4);
+            return Math.Clamp(weight, 0.8, 1.2);
         }
 
         private static double CalculateBRWeight(UTPlayerMatchStats player, List<UTPlayerMatchStats> team)
