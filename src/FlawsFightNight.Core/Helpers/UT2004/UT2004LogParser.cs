@@ -833,11 +833,11 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 }
             }
 
-            // Build the log (using unique players from GUID dict)
+            // FIX: Group players by team instead of adding each player as their own list
             var statLog = new UT2004StatLog();
-            foreach (var player in _activePlayersByGuid.Values)
+            foreach (var teamGroup in playersByTeam.OrderBy(g => g.Key))
             {
-                statLog.Players.Add(new List<UTPlayerMatchStats> { player });
+                statLog.Players.Add(teamGroup.ToList());
             }
 
             // Simple Debug Output: Concise match summary

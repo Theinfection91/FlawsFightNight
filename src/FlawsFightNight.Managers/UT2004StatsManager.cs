@@ -58,10 +58,10 @@ namespace FlawsFightNight.Managers
             if (statLog != null)
             {
                 statLog.FileName = Path.ChangeExtension(fileName, ".json");
-                statLog.Players = statLog.Players.Select(playerList =>
-                    playerList.OrderBy(p => p.Team)
-                              .ThenByDescending(p => p.Score)
-                              .ToList()
+                // Players are already grouped by team — just sort within each team
+                statLog.Players = statLog.Players.Select(teamList =>
+                    teamList.OrderByDescending(p => p.Score)
+                            .ToList()
                 ).ToList();
                 statLog.Id = await GenerateStatLogId(statLog.GameMode);
                 await _dataManager.SaveStatLogMatchResultFile(statLog);
@@ -194,7 +194,19 @@ namespace FlawsFightNight.Managers
                 await _dataManager.SaveUT2004PlayerProfileFile(profile);
             }
 
-            Console.WriteLine($"[UT2004StatsManager] Complete... Updated {profiles.Count} player profiles across {chronologicalMatches.Count} matches");
+            // Calculate statistics
+            int totalSkipped = _ratingService.SkippedImbalancedMatches + _ratingService.SkippedInsufficientPlayers;
+            int ratedMatches = chronologicalMatches.Count - totalSkipped;
+            double skipPercentage = (double)totalSkipped / chronologicalMatches.Count * 100;
+
+            Console.WriteLine($"\n[UT2004StatsManager] ===== RATING SUMMARY =====");
+            Console.WriteLine($"[UT2004StatsManager] Total matches processed: {chronologicalMatches.Count}");
+            Console.WriteLine($"[UT2004StatsManager] Matches rated: {ratedMatches}");
+            Console.WriteLine($"[UT2004StatsManager] Skipped (unequal team sizes): {_ratingService.SkippedImbalancedMatches}");
+            Console.WriteLine($"[UT2004StatsManager] Skipped (insufficient players): {_ratingService.SkippedInsufficientPlayers}");
+            Console.WriteLine($"[UT2004StatsManager] Total skipped: {totalSkipped} ({skipPercentage:F1}%)");
+            Console.WriteLine($"[UT2004StatsManager] Player profiles updated: {profiles.Count}");
+            Console.WriteLine($"[UT2004StatsManager] ==========================\n");
         }
 
         public async Task RebuildPlayerProfiles()

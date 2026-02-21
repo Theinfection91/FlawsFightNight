@@ -35,7 +35,7 @@ namespace FlawsFightNight.Managers
             // TODO Implement pulling creds from ConfigManager once they are finally being saved
             //var creds = _configManager.GetFTPCredentials();
             //_ftpClient = new(host: creds.Host, user: creds.Username, pass: creds.Password, port: creds.Port);
-            _ftpClient = new(host: "127.0.0.1", user: "sho_chi", pass: "password1", port: 21);
+            _ftpClient = new(host: "127.0.0.1", user: "sho_ny", pass: "password1", port: 21);
 
             // Configure TLS/SSL settings
             _ftpClient.Config.EncryptionMode = FtpEncryptionMode.Explicit; // or FtpEncryptionMode.Auto
@@ -91,7 +91,7 @@ namespace FlawsFightNight.Managers
                     // TODO: Update this path to match your actual FTP directory structure
                     string chiDir = "/placeholderDir/anotherDir/UserLogs";
                     string nyDir = "/thisDir/anotherDir/oneMoreDir/UserLogs";
-                    string magicDir = chiDir;
+                    string magicDir = nyDir;
 
                     // Verify directory exists before processing
                     if (!await _ftpClient.DirectoryExists(magicDir, token))
