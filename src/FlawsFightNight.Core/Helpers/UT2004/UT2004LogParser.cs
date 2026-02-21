@@ -30,6 +30,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private int? _lastKillerSeqNum = null;         // Track who got the last kill before round end
         private Dictionary<int, int> _roundWinsByTeam = new(); // Track rounds won per team
 
+        // iBR tracking - who last carried/picked the ball (bomb)
+        private int? _lastBallCarrierSeqNum = null;
+
         public async Task<T?> Parse<T>(Stream fileStream)
         {
             if (typeof(T) == typeof(UT2004StatLog))
@@ -149,6 +152,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _currentRoundNumber = 0;
             _lastKillerSeqNum = null;
             _roundWinsByTeam.Clear();
+            _lastBallCarrierSeqNum = null;
         }
 
         private void ParseNewGame(string[] parts)
@@ -162,15 +166,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (parts.Length >= 8 && !string.IsNullOrEmpty(parts[7]))
             {
                 string gameMode = parts[7];
-                if (gameMode.Contains("CTF"))
+                if (gameMode.Contains("CTF", StringComparison.OrdinalIgnoreCase))
                 {
                     _currentGameMode = UT2004GameMode.iCTF;
                 }
-                else if (gameMode.Contains("ReTAM"))
+                else if (gameMode.Contains("ReTAM", StringComparison.OrdinalIgnoreCase) || gameMode.Contains("TAM", StringComparison.OrdinalIgnoreCase))
                 {
                     _currentGameMode = UT2004GameMode.TAM;
                 }
-                else if (gameMode.Contains("BombingRun"))
+                else if (gameMode.Contains("BombingRun", StringComparison.OrdinalIgnoreCase) || gameMode.Contains("xBombingRun", StringComparison.OrdinalIgnoreCase))
                 {
                     _currentGameMode = UT2004GameMode.iBR;
                 }
@@ -299,6 +303,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 // Remove from sequence number mapping but keep in GUID mapping
                 // (they might reconnect with a different seq num)
                 _activePlayersBySeqNum.Remove(seqNum);
+
+                // If the disconnected player was last ball carrier, clear it
+                if (_lastBallCarrierSeqNum == seqNum)
+                    _lastBallCarrierSeqNum = null;
             }
         }
 
@@ -414,11 +422,11 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     }
                     break;
 
+                // Flag events (existing)
                 case "flag_taken":
-                    if (parts.Length >= 5)
+                    if (parts.Length >= 5 && int.TryParse(parts[3], out int ftSeq))
                     {
-                        int seqNum = int.Parse(parts[3]);
-                        if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
+                        if (_activePlayersBySeqNum.TryGetValue(ftSeq, out var player))
                         {
                             player.FlagGrabs++;
                         }
@@ -426,10 +434,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     break;
 
                 case "flag_pickup":
-                    if (parts.Length >= 5)
+                    if (parts.Length >= 5 && int.TryParse(parts[3], out int fpSeq))
                     {
-                        int seqNum = int.Parse(parts[3]);
-                        if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
+                        if (_activePlayersBySeqNum.TryGetValue(fpSeq, out var player))
                         {
                             player.FlagPickups++;
                         }
@@ -437,10 +444,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     break;
 
                 case "flag_dropped":
-                    if (parts.Length >= 5)
+                    if (parts.Length >= 5 && int.TryParse(parts[3], out int fdSeq))
                     {
-                        int seqNum = int.Parse(parts[3]);
-                        if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
+                        if (_activePlayersBySeqNum.TryGetValue(fdSeq, out var player))
                         {
                             player.FlagDrops++;
                         }
@@ -450,6 +456,84 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 case "flag_captured":
                 case "flag_returned":
                 case "flag_returned_timeout":
+                    break;
+
+                // BombingRun-specific events (iBR)
+                case "bomb_pickup":
+                    if (parts.Length >= 4 && int.TryParse(parts[3], out int bpSeq))
+                    {
+                        if (_activePlayersBySeqNum.TryGetValue(bpSeq, out var player))
+                        {
+                            player.BombPickups++;
+                            // track who is carrying the bomb (ball)
+                            _lastBallCarrierSeqNum = bpSeq;
+                            if (_expandedDebugLogging)
+                                Console.WriteLine($"{player.LastKnownName} picked up the bomb");
+                        }
+                    }
+                    break;
+
+                case "bomb_dropped":
+                    if (parts.Length >= 4 && int.TryParse(parts[3], out int bdSeq))
+                    {
+                        if (_activePlayersBySeqNum.TryGetValue(bdSeq, out var player))
+                        {
+                            player.BombDrops++;
+                            // droppping clears last carrier
+                            if (_lastBallCarrierSeqNum == bdSeq)
+                                _lastBallCarrierSeqNum = null;
+                            if (_expandedDebugLogging)
+                                Console.WriteLine($"{player.LastKnownName} dropped the bomb");
+                        }
+                    }
+                    break;
+
+                case "bomb_taken":
+                    if (parts.Length >= 4 && int.TryParse(parts[3], out int btSeq))
+                    {
+                        if (_activePlayersBySeqNum.TryGetValue(btSeq, out var player))
+                        {
+                            player.BombTaken++;
+                            _lastBallCarrierSeqNum = btSeq;
+                            if (_expandedDebugLogging)
+                                Console.WriteLine($"{player.LastKnownName} took the bomb");
+                        }
+                    }
+                    break;
+
+                case "bomb_returned_timeout":
+                    // often reported with seqnum -1; if attributable to a player (seqnum >= 0) record it
+                    if (parts.Length >= 4 && int.TryParse(parts[3], out int brtSeq) && brtSeq >= 0)
+                    {
+                        if (_activePlayersBySeqNum.TryGetValue(brtSeq, out var player))
+                        {
+                            player.BombReturnedTimeouts++;
+                            if (_expandedDebugLogging)
+                                Console.WriteLine($"{player.LastKnownName} had a bomb return timeout credited");
+                        }
+                    }
+                    break;
+
+                // Some servers may emit ball score events as G events; add safe handling
+                case "ball_cap_final":
+                case "ball_score_assist":
+                case "ball_thrown_final":
+                    if (parts.Length >= 4 && int.TryParse(parts[3], out int bSeq))
+                    {
+                        if (_activePlayersBySeqNum.TryGetValue(bSeq, out var p))
+                        {
+                            var en = eventName.ToLowerInvariant();
+                            if (en.Contains("cap"))
+                                p.BallCaptures++;
+                            else if (en.Contains("assist"))
+                                p.BallScoreAssists++;
+                            else if (en.Contains("thrown"))
+                                p.BallThrownFinals++;
+
+                            if (_expandedDebugLogging)
+                                Console.WriteLine($"{p.LastKnownName} event {eventName} recorded (G line).");
+                        }
+                    }
                     break;
             }
         }
@@ -498,6 +582,18 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 _teamScores[teamId] = 0;
 
             _teamScores[teamId] += (int)Math.Round(points);
+
+            // Special handling: team-level ball_carried duration - attribute to last ball carrier if available
+            if (reason.Equals("ball_carried", StringComparison.OrdinalIgnoreCase) && parts.Length >= 4)
+            {
+                // points often represent time carried; attribute if we have last carrier
+                if (_lastBallCarrierSeqNum.HasValue && _activePlayersBySeqNum.TryGetValue(_lastBallCarrierSeqNum.Value, out var carrier))
+                {
+                    // If you later add carry-time fields in UTPlayerMatchStats you can store points here.
+                    if (_expandedDebugLogging)
+                        Console.WriteLine($"{carrier.LastKnownName} carried ball for {points} seconds (team-level T event).");
+                }
+            }
 
             // Track TAM round wins
             if (_currentGameMode == UT2004GameMode.TAM && reason == "tdm_frag")
@@ -553,8 +649,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 killer.WeaponKills[weapon] = 0;
             killer.WeaponKills[weapon]++;
 
-            // Track headshots from damage type
-            if (damageType.Contains("HeadShot", StringComparison.OrdinalIgnoreCase))
+            // Track headshots from damage type (handle UTComp_SSRHeadshot and other variants)
+            if (damageType.IndexOf("headshot", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                damageType.IndexOf("UTComp_SSRHeadshot", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 killer.Headshots++;
             }
@@ -584,75 +681,89 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             // Always add score first
             player.Score += (int)Math.Round(points);
 
-            // Track specific stat categories
-            switch (reason)
+            // Normalize reason for robust matching
+            var reasonLower = reason.ToLowerInvariant();
+
+            // TAM Combat Tracking
+            if (reasonLower.Contains("enemydamage"))
             {
-                // TAM Combat Tracking
-                case "EnemyDamage":
-                    player.TotalDamageDealt += (int)Math.Round(points);
-                    break;
-
-                case "FriendlyDamage":
-                    player.FriendlyFireDamage += (int)Math.Round(Math.Abs(points));
-                    break;
-
-                // Flag Capture Events
-                case "flag_cap_final":
+                player.TotalDamageDealt += (int)Math.Round(points);
+            }
+            else if (reasonLower.Contains("friendlydamage"))
+            {
+                player.FriendlyFireDamage += (int)Math.Round(Math.Abs(points));
+            }
+            // Flag Capture Events
+            else if (reasonLower.Contains("flag_cap"))
+            {
+                if (reasonLower.Contains("final"))
                     player.FlagCaptures++;
-                    break;
-                case "flag_cap_assist":
+                else if (reasonLower.Contains("assist"))
                     player.FlagCaptureAssists++;
-                    break;
-                case "flag_cap_1st_touch":
+                else if (reasonLower.Contains("1st") || reasonLower.Contains("first") || reasonLower.Contains("1st_touch"))
                     player.FlagCaptureFirstTouch++;
-                    break;
-
-                // Flag Return Events
-                case "flag_ret_enemy":
+            }
+            // Flag Return Events
+            else if (reasonLower.Contains("flag_ret"))
+            {
+                player.FlagReturns++;
+                if (reasonLower.Contains("enemy"))
                     player.FlagReturnsEnemy++;
-                    player.FlagReturns++;
-                    break;
-                case "flag_ret_friendly":
+                else if (reasonLower.Contains("friendly"))
                     player.FlagReturnsFriendly++;
-                    player.FlagReturns++;
-                    break;
-
-                // Defensive Events
-                case "flag_denial":
-                    player.FlagDenials++;
-                    break;
-                case "team_protect_frag":
-                    player.TeamProtectFrags++;
-                    break;
-                case "critical_frag":
-                    player.CriticalFrags++;
-                    break;
-
-                // Combat Events
-                case "headshot":
-                    player.Headshots++;
-                    break;
-                case "frag":
-                    // Normal frag, already counted in Kills
-                    break;
-                case "self_frag":
-                    // Negative score from suicide, already counted in Suicides
-                    break;
-
-                // TAM-specific scoring
-                case "tdm_frag":
-                    // Team got a frag point (round win in TAM)
-                    break;
-
-                case "ObjectiveScore":
-                    // TAM uses this for some scoring
-                    break;
-
-                // Unknown/Other scoring events - just log them
-                default:
-                    if (_expandedDebugLogging)
-                        Console.WriteLine($"{player.LastKnownName} scored {points} for UNKNOWN event: {reason}");
-                    break;
+            }
+            // Defensive Events
+            else if (reasonLower.Contains("flag_denial"))
+            {
+                player.FlagDenials++;
+            }
+            else if (reasonLower.Contains("team_protect_frag"))
+            {
+                player.TeamProtectFrags++;
+            }
+            else if (reasonLower.Contains("critical_frag"))
+            {
+                player.CriticalFrags++;
+            }
+            // Combat Events
+            else if (reasonLower.Contains("headshot"))
+            {
+                player.Headshots++;
+            }
+            else if (reasonLower.Contains("self_frag"))
+            {
+                // Suicide already handled in K parsing; keep for completeness
+            }
+            // BombingRun / iBR scoring (ball events)
+            else if (reasonLower.Contains("ball_cap_final") || reasonLower.Contains("ball_cap"))
+            {
+                player.BallCaptures++;
+                // if we tracked a carrier, clear it (ball scored)
+                if (_lastBallCarrierSeqNum == seqNum)
+                    _lastBallCarrierSeqNum = null;
+            }
+            else if (reasonLower.Contains("ball_score_assist") || reasonLower.Contains("ball_score"))
+            {
+                player.BallScoreAssists++;
+            }
+            else if (reasonLower.Contains("ball_thrown_final") || reasonLower.Contains("ball_thrown"))
+            {
+                player.BallThrownFinals++;
+            }
+            // Other TAM-specific scoring
+            else if (reasonLower.Contains("tdm_frag"))
+            {
+                // Team got a frag point (round win in TAM)
+            }
+            else if (reasonLower.Contains("objectivescore"))
+            {
+                // TAM uses this for some scoring
+            }
+            else
+            {
+                // Unknown/Other scoring events - just log them when debugging
+                if (_expandedDebugLogging)
+                    Console.WriteLine($"{player.LastKnownName} scored {points} for UNKNOWN event: {reason}");
             }
 
             if (_expandedDebugLogging)

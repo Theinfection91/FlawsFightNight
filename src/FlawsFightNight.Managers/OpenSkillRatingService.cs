@@ -13,7 +13,7 @@ namespace FlawsFightNight.Managers
     {
         private readonly PlackettLuce _model;
         private const double Tau = 0.0083;
-        private const int MinHumansPerTeam = 2;
+        private const int MinHumansPerTeam = 1;
 
         public int SkippedImbalancedMatches { get; private set; }
         public int SkippedInsufficientPlayers { get; private set; }
@@ -30,7 +30,6 @@ namespace FlawsFightNight.Managers
         /// <summary>
         /// Updates Mu/Sigma on every non-bot player profile based on a single match result.
         /// Only rates matches where teams were structurally balanced (same total team size).
-        /// Uses pure win/loss - no performance weights.
         /// </summary>
         public void UpdateRatingsForMatch(UT2004StatLog match, Dictionary<string, UT2004PlayerProfile> profiles)
         {

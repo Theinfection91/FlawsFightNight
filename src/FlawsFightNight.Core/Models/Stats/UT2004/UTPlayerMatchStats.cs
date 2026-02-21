@@ -46,13 +46,23 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public int FlagPickups { get; set; }           // flag_pickup (picking up dropped flag)
         public int FlagDrops { get; set; }             // flag_dropped (dropping the flag)
         public int FlagReturns { get; set; }           // Total flag returns (all types)
-        public int FlagReturnsEnemy { get; set; }      // flag_ret_enemy ??
-        public int FlagReturnsFriendly { get; set; }   // flag_ret_friendly ??
+        public int FlagReturnsEnemy { get; set; }      // flag_ret_enemy ?? 
+        public int FlagReturnsFriendly { get; set; }   // flag_ret_friendly ?? 
         public int FlagDenials { get; set; }           // flag_denial ??
         public int FlagCaptureAssists { get; set; }    // flag_cap_assist
         public int FlagCaptureFirstTouch { get; set; } // flag_cap_1st_touch
         public int TeamProtectFrags { get; set; }      // team_protect_frag ??
         public int CriticalFrags { get; set; }         // critical_frag ??
+
+        // iBR / BombingRun Stats
+        public int BallCaptures { get; set; }          // ball_cap_final
+        public int BallScoreAssists { get; set; }      // ball_score_assist
+        public int BallThrownFinals { get; set; }      // ball_thrown_final
+
+        public int BombPickups { get; set; }           // bomb_pickup (BombingRun)
+        public int BombDrops { get; set; }             // bomb_dropped
+        public int BombTaken { get; set; }             // bomb_taken
+        public int BombReturnedTimeouts { get; set; }  // bomb_returned_timeout (if attributable)
 
         public UTPlayerMatchStats() { }
 

@@ -23,10 +23,15 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public DateTime LastPlayed { get; set; }
         public DateTime FirstSeen { get; set; }
 
-        // Skill Ratings
-        public UT2004GameRating CaptureTheFlagRating { get; set; } = new(); // iCTF
-        public UT2004GameRating TAMRating { get; set; } = new(); // TAM
-        public UT2004GameRating BombingRunRating { get; set; } = new(); // iBR
+        // OpenSkill Ratings
+        public UT2004OpenSkillRating CaptureTheFlagRating { get; set; } = new(); // iCTF
+        public UT2004OpenSkillRating TAMRating { get; set; } = new(); // TAM
+        public UT2004OpenSkillRating BombingRunRating { get; set; } = new(); // iBR
+
+        // Calculated Properties - General
+        public double WinRate => TotalMatches > 0 ? (double)Wins / TotalMatches : 0;
+        public double KDRatio => TotalDeaths > 0 ? (double)TotalKills / TotalDeaths : TotalKills;
+        public double AverageScorePerMatch => TotalMatches > 0 ? (double)TotalScore / TotalMatches : 0;
 
         // Cumulative Combat Stats
         public int TotalScore { get; set; } = 0;
@@ -42,7 +47,40 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public int MostDeathsInMatch { get; set; } = 0;
         public int HighestScoreInMatch { get; set; } = 0;
 
+        // Cumulative iBR Stats
+        public int TotalBRMatches { get; set; } = 0;
+        public int TotalBRWins { get; set; } = 0;
+        public int TotalBRLosses { get; set; } = 0;
+        public int TotalBRScore { get; set; } = 0;
+        public int TotalBRKills { get; set; } = 0;
+        public int TotalBRDeaths { get; set; } = 0;
+        public int TotalBRSuicides { get; set; } = 0;
+        public int TotalBRHeadshots { get; set; } = 0;
+        public int TotalBallCaptures { get; set; } = 0;         // ball_cap_final
+        public int TotalBallScoreAssists { get; set; } = 0;     // ball_score_assist
+        public int TotalBallThrownFinals { get; set; } = 0;     // ball_thrown_final
+        public int TotalBombPickups { get; set; } = 0;          // bomb_pickup
+        public int TotalBombDrops { get; set; } = 0;            // bomb_dropped
+        public int TotalBombTaken { get; set; } = 0;            // bomb_taken
+        public int TotalBombReturnedTimeouts { get; set; } = 0; // bomb_returned_timeout (attributable)
+        public int MostBallCapsInMatch { get; set; } = 0;
+        public int MostBombPickupsInMatch { get; set; } = 0;
+        public int MostBombTakenInMatch { get; set; } = 0;
+
+        public double BRWinRate => TotalBRMatches > 0 ? (double)TotalBRWins / TotalBRMatches : 0;
+        public double BRKDRatio => TotalBRDeaths > 0 ? (double)TotalBRKills / TotalBRDeaths : TotalBRKills;
+        public double AverageBallCapsPerBRMatch => TotalBRMatches > 0 ? (double)TotalBallCaptures / TotalBRMatches : 0;
+        public double AverageBombPickupsPerBRMatch => TotalBRMatches > 0 ? (double)TotalBombPickups / TotalBRMatches : 0;
+
         // Cumulative iCTF Stats
+        public int TotalCTFMatches { get; set; } = 0;
+        public int TotalCTFWins { get; set; } = 0;
+        public int TotalCTFLosses { get; set; } = 0;
+        public int TotalCTFScore { get; set; } = 0;
+        public int TotalCTFKills { get; set; } = 0;
+        public int TotalCTFDeaths { get; set; } = 0;
+        public int TotalCTFSuicides { get; set; } = 0;
+        public int TotalCTFHeadshots { get; set; } = 0;
         public int TotalFlagCaptures { get; set; } = 0;          // flag_cap_final
         public int TotalFlagGrabs { get; set; } = 0;             // flag_taken (picking up enemy flag from base)
         public int TotalFlagPickups { get; set; } = 0;           // flag_pickup (picking up dropped flag)
@@ -57,11 +95,21 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public int TotalCriticalFrags { get; set; } = 0;         // critical_frag
         public int MostFlagCapsInMatch { get; set; } = 0;
         public int MostFlagReturnsInMatch { get; set; } = 0;
+        public double CTFWinRate => TotalCTFMatches > 0 ? (double)TotalCTFWins / TotalCTFMatches : 0;
+        public double AverageScorePerCTFMatch => TotalCTFMatches > 0 ? (double)TotalCTFScore / TotalCTFMatches : 0;
+        public double AverageKillsPerCTFMatch => TotalCTFMatches > 0 ? (double)TotalCTFKills / TotalCTFMatches : 0;
+        public double CTFKDRatio => TotalCTFDeaths > 0 ? (double)TotalCTFKills / TotalCTFDeaths : TotalCTFKills;
+        public double AverageCapturesPerMatch => TotalCTFMatches > 0 ? (double)TotalFlagCaptures / TotalCTFMatches : 0;
 
         // Cumulative TAM Stats
         public int TotalTAMMatches { get; set; } = 0;
         public int TotalTAMWins { get; set; } = 0;
         public int TotalTAMLosses { get; set; } = 0;
+        public int TotalTAMScore { get; set; } = 0;
+        public int TotalTAMKills { get; set; } = 0;
+        public int TotalTAMDeaths { get; set; } = 0;
+        public int TotalTAMSuicides { get; set; } = 0;
+        public int TotalTAMHeadshots { get; set; } = 0;
         public int TotalDamageDealt { get; set; } = 0;           // Sum of all damage dealt to enemies
         public int TotalDamageTaken { get; set; } = 0;           // Sum of all damage received
         public int TotalFriendlyFireDamage { get; set; } = 0;    // Damage dealt to teammates
@@ -71,27 +119,9 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public int MostDamageInMatch { get; set; } = 0;
         public int MostRoundEndingKillsInMatch { get; set; } = 0;
         public int MostRoundsWonInMatch { get; set; } = 0;
-
-        // Weapon Stats - Cumulative across all game modes
-        public Dictionary<string, int> TotalWeaponKills { get; set; } = new Dictionary<string, int>();
-        
-        // Weapon Stats - Detailed TAM accuracy tracking (cumulative)
-        public Dictionary<string, WeaponStats> TotalWeaponStatistics { get; set; } = new Dictionary<string, WeaponStats>();
-
-        // Cumulative iBR Stats
-        // TODO: Add when iBR is implemented
-
-        // Calculated Properties - General
-        public double WinRate => TotalMatches > 0 ? (double)Wins / TotalMatches : 0;
-        public double KDRatio => TotalDeaths > 0 ? (double)TotalKills / TotalDeaths : TotalKills;
-        public double AverageScorePerMatch => TotalMatches > 0 ? (double)TotalScore / TotalMatches : 0;
-        
-        // Calculated Properties - iCTF
-        public double AverageCapturesPerMatch => TotalMatches > 0 ? (double)TotalFlagCaptures / TotalMatches : 0;
-
-        // Calculated Properties - TAM
         public double TAMWinRate => TotalTAMMatches > 0 ? (double)TotalTAMWins / TotalTAMMatches : 0;
         public double TAMRoundWinRate => TotalRoundsPlayed > 0 ? (double)TotalRoundsWon / TotalRoundsPlayed : 0;
+        public double TAMKDRatio => TotalTAMDeaths > 0 ? (double)TotalTAMKills / TotalTAMDeaths : TotalTAMKills;
         public double AverageDamagePerMatch => TotalTAMMatches > 0 ? (double)TotalDamageDealt / TotalTAMMatches : 0;
         public double AverageDamagePerRound => TotalRoundsPlayed > 0 ? (double)TotalDamageDealt / TotalRoundsPlayed : 0;
         public double AverageRoundsWonPerMatch => TotalTAMMatches > 0 ? (double)TotalRoundsWon / TotalTAMMatches : 0;
@@ -105,6 +135,11 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
                 return totalShots > 0 ? (double)totalHits / totalShots * 100.0 : 0.0;
             }
         }
+        // Weapon Stats - Cumulative across all game modes
+        public Dictionary<string, int> TotalWeaponKills { get; set; } = new Dictionary<string, int>();
+
+        // Weapon Stats - Detailed TAM accuracy tracking (cumulative)
+        public Dictionary<string, WeaponStats> TotalWeaponStatistics { get; set; } = new Dictionary<string, WeaponStats>();
 
         public UT2004PlayerProfile() { }
 
@@ -124,7 +159,7 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
             if (matchStats.IsWinner) Wins++;
             else Losses++;
 
-            // Combat Stats
+            // Combat Stats (overall)
             TotalScore += matchStats.Score;
             TotalKills += matchStats.Kills;
             TotalDeaths += matchStats.Deaths;
@@ -194,6 +229,18 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
 
         private void UpdateCTFStats(UTPlayerMatchStats matchStats)
         {
+            // Aggregate match count and W/L for iCTF
+            TotalCTFMatches++;
+            if (matchStats.IsWinner) TotalCTFWins++;
+            else TotalCTFLosses++;
+
+            // Per-mode combat aggregation
+            TotalCTFScore += matchStats.Score;
+            TotalCTFKills += matchStats.Kills;
+            TotalCTFDeaths += matchStats.Deaths;
+            TotalCTFSuicides += matchStats.Suicides;
+            TotalCTFHeadshots += matchStats.Headshots;
+
             // Flag Objective Stats - Primary Actions
             TotalFlagCaptures += matchStats.FlagCaptures;
             TotalFlagGrabs += matchStats.FlagGrabs;
@@ -223,6 +270,13 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
             if (matchStats.IsWinner) TotalTAMWins++;
             else TotalTAMLosses++;
 
+            // Per-mode combat aggregation
+            TotalTAMScore += matchStats.Score;
+            TotalTAMKills += matchStats.Kills;
+            TotalTAMDeaths += matchStats.Deaths;
+            TotalTAMSuicides += matchStats.Suicides;
+            TotalTAMHeadshots += matchStats.Headshots;
+
             // TAM Combat Stats
             TotalDamageDealt += matchStats.TotalDamageDealt;
             TotalDamageTaken += matchStats.TotalDamageTaken;
@@ -245,7 +299,33 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
 
         private void UpdateBRStats(UTPlayerMatchStats matchStats)
         {
-            // TODO: Implement when iBR stats are defined
+            // Aggregate match count and W/L
+            TotalBRMatches++;
+            if (matchStats.IsWinner) TotalBRWins++;
+            else TotalBRLosses++;
+
+            // Per-mode combat aggregation
+            TotalBRScore += matchStats.Score;
+            TotalBRKills += matchStats.Kills;
+            TotalBRDeaths += matchStats.Deaths;
+            TotalBRSuicides += matchStats.Suicides;
+            TotalBRHeadshots += matchStats.Headshots;
+
+            // Objective aggregation
+            TotalBallCaptures += matchStats.BallCaptures;
+            TotalBallScoreAssists += matchStats.BallScoreAssists;
+            TotalBallThrownFinals += matchStats.BallThrownFinals;
+
+            // Bomb events
+            TotalBombPickups += matchStats.BombPickups;
+            TotalBombDrops += matchStats.BombDrops;
+            TotalBombTaken += matchStats.BombTaken;
+            TotalBombReturnedTimeouts += matchStats.BombReturnedTimeouts;
+
+            // Career bests for iBR
+            MostBallCapsInMatch = Math.Max(MostBallCapsInMatch, matchStats.BallCaptures);
+            MostBombPickupsInMatch = Math.Max(MostBombPickupsInMatch, matchStats.BombPickups);
+            MostBombTakenInMatch = Math.Max(MostBombTakenInMatch, matchStats.BombTaken);
         }
 
         public void GetMuSigma(UT2004GameMode gameMode, out double mu, out double sigma)
