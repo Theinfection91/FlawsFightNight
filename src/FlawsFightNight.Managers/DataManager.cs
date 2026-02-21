@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Core.Models.Stats.UT2004;
+using FlawsFightNight.Core.Enums.UT2004;
 
 namespace FlawsFightNight.Managers
 {
@@ -218,18 +219,47 @@ namespace FlawsFightNight.Managers
 
         public async Task<StatLogMatchResultsFile> LoadStatLogMatchResultFile(string fileName)
         {
-            await _statLogMatchResultsHandler.SetFilePath(PathOption.StatLogs, fileName);
+            await _statLogMatchResultsHandler.SetFilePath(PathOption.iCTFStatLogs, fileName);
             return await _statLogMatchResultsHandler.Load();
         }
 
         public async Task SaveStatLogMatchResultFile(UT2004StatLog statLog)
         {
+            switch (statLog.GameMode)
+            {
+                case UT2004GameMode.iCTF:
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.iCTFStatLogs, statLog.FileName);
+                    break;
+                case UT2004GameMode.TAM:
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.TAMStatLogs, statLog.FileName);
+                    break;
+                case UT2004GameMode.iBR:
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.iBRStatLogs, statLog.FileName);
+                    break;
+                default:
+                    await _statLogMatchResultsHandler.SetFilePath(PathOption.iCTFStatLogs, statLog.FileName);
+                    break;
+            }
             var statLogMatchResultsFile = new StatLogMatchResultsFile()
             {
                 StatLog = statLog
             };
-            await _statLogMatchResultsHandler.SetFilePath(PathOption.StatLogs, statLog.FileName);
             await _statLogMatchResultsHandler.Save(statLogMatchResultsFile);
+        }
+
+        public async Task<int> GetStatLogCount(UT2004GameMode gameMode)
+        {
+            switch (gameMode)
+            {
+                case UT2004GameMode.iCTF:
+                    return (await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iCTF")).Count;
+                case UT2004GameMode.TAM:
+                    return (await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/TAM")).Count;
+                case UT2004GameMode.iBR:
+                    return (await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iBR")).Count;
+                    default:
+                    return 0;
+            }
         }
         #endregion
 
@@ -265,6 +295,14 @@ namespace FlawsFightNight.Managers
                 }
             }
             return null;
+        }
+
+        public async Task DeleteUT2004ProfilesDatabase()
+        {
+            // Clear in-memory list
+            UT2004PlayerProfileFiles.Clear();
+            // Delete all profile files from disk
+            await _ut2004PlayerProfileHandler.DeleteJsonFilesInFolder(PathOption.UT2004PlayerProfiles);
         }
         #endregion
     }

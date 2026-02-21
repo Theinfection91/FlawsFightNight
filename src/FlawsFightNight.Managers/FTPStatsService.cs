@@ -35,7 +35,7 @@ namespace FlawsFightNight.Managers
             // TODO Implement pulling creds from ConfigManager once they are finally being saved
             //var creds = _configManager.GetFTPCredentials();
             //_ftpClient = new(host: creds.Host, user: creds.Username, pass: creds.Password, port: creds.Port);
-            _ftpClient = new(host: "127.0.0.1", user: "sho_chi", pass: "password1", port: 21);
+            _ftpClient = new(host: "127.0.0.1", user: "sho_ny", pass: "password1", port: 21);
 
             // Configure TLS/SSL settings
             _ftpClient.Config.EncryptionMode = FtpEncryptionMode.Explicit; // or FtpEncryptionMode.Auto
@@ -91,20 +91,21 @@ namespace FlawsFightNight.Managers
                     // TODO: Update this path to match your actual FTP directory structure
                     string chiDir = "/placeholderDir/anotherDir/UserLogs";
                     string nyDir = "/thisDir/anotherDir/oneMoreDir/UserLogs";
+                    string magicDir = nyDir;
 
                     // Verify directory exists before processing
-                    if (!await _ftpClient.DirectoryExists(chiDir, token))
+                    if (!await _ftpClient.DirectoryExists(magicDir, token))
                     {
-                        Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Warning: Directory '{chiDir}' does not exist on FTP server. Skipping...");
+                        Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Warning: Directory '{magicDir}' does not exist on FTP server. Skipping...");
                         await Task.Delay(TimeSpan.FromSeconds(30), token); // Wait longer if directory doesn't exist
                         continue;
                     }
 
-                    if (await ContainsFreshLogs(chiDir, token))
+                    if (await ContainsFreshLogs(magicDir, token))
                     {
                         Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Fresh logs found! Processing...");
 
-                        var items = await _ftpClient.GetListing(chiDir, token);
+                        var items = await _ftpClient.GetListing(magicDir, token);
                         var logFiles = items.Where(item => item.Name.EndsWith(".log", StringComparison.OrdinalIgnoreCase)).ToList();
                         
                         int totalFiles = logFiles.Count;
@@ -120,8 +121,8 @@ namespace FlawsFightNight.Managers
                             
                             if (await _ut2004StatsManager.IsLogFileProcessed(item.Name))
                             {
-                                // Update progress on same line
-                                Console.Write($"\r[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Skipped (already processed)");
+                                string message = $"[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Skipped (already processed)";
+                                Console.Write($"\r{message.PadRight(100)}");
                                 continue;
                             }
 
@@ -130,16 +131,18 @@ namespace FlawsFightNight.Managers
                             {
                                 bool wasValid = await _ut2004StatsManager.ProcessLogFile(fileStream, item.Name);
                                 
+                                string message;
                                 if (wasValid)
                                 {
                                     validCount++;
-                                    Console.Write($"\r[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}");
+                                    message = $"[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}";
                                 }
                                 else
                                 {
                                     ignoredCount++;
-                                    Console.Write($"\r[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}");
+                                    message = $"[FTPStatsService] Progress: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}";
                                 }
+                                Console.Write($"\r{message.PadRight(100)}");
                             }
 
                             // Every 50 files, add a newline for better readability
@@ -158,6 +161,11 @@ namespace FlawsFightNight.Managers
 
                         await _ut2004StatsManager.SetupPlayerProfiles();
                         await _gitBackupManager.CopyAndBackupFilesToGitAsync();
+                    }
+                    else
+                    {
+                        // Testing
+                        await _ut2004StatsManager.RebuildPlayerProfiles();
                     }
                 }
                 catch (FtpCommandException ftpEx)
@@ -182,7 +190,7 @@ namespace FlawsFightNight.Managers
                     Console.WriteLine($"\n{DateTime.Now} - [FTPStatsService] Error: {ex}");
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(5), token);
+                await Task.Delay(TimeSpan.FromSeconds(999999999), token);
             }
         }
 

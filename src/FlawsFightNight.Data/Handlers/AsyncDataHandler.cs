@@ -12,7 +12,9 @@ namespace FlawsFightNight.Data.Handlers
     {
         Databases,
         TournamentSystem,
-        StatLogs,
+        iCTFStatLogs,
+        TAMStatLogs,
+        iBRStatLogs,
         UT2004PlayerProfiles,
     }
 
@@ -22,17 +24,13 @@ namespace FlawsFightNight.Data.Handlers
         protected string _filePath;
         private readonly SemaphoreSlim _fileLock = new SemaphoreSlim(1, 1);
 
-        protected AsyncDataHandler()
-        {
-        }
+        protected AsyncDataHandler() { }
 
-        // Constructor with PathOption
         protected AsyncDataHandler(PathOption pathOption, string fileName)
         {
             SetFilePath(pathOption, fileName).Wait();
         }
 
-        // Constructor with custom folder
         protected AsyncDataHandler(string fileName, string folderName)
         {
             SetFilePathCustom(fileName, folderName).Wait();
@@ -55,8 +53,14 @@ namespace FlawsFightNight.Data.Handlers
                 case PathOption.TournamentSystem:
                     _folderPath = Path.Combine(baseDir, "Databases", "TournamentSystem");
                     break;
-                case PathOption.StatLogs:
-                    _folderPath = Path.Combine(baseDir, "Databases", "StatLogs");
+                case PathOption.iCTFStatLogs:
+                    _folderPath = Path.Combine(baseDir, "Databases", "StatLogs", "iCTF");
+                    break;
+                case PathOption.TAMStatLogs:
+                    _folderPath = Path.Combine(baseDir, "Databases", "StatLogs", "TAM");
+                    break;
+                case PathOption.iBRStatLogs:
+                    _folderPath = Path.Combine(baseDir, "Databases", "StatLogs", "iBR");
                     break;
                 case PathOption.UT2004PlayerProfiles:
                     _folderPath = Path.Combine(baseDir, "Databases", "UT2004PlayerProfiles");
@@ -169,9 +173,14 @@ namespace FlawsFightNight.Data.Handlers
                     lastException = ex;
                     await Task.Delay(delayMs * (i + 1)); // Exponential backoff
                 }
+                catch (UnauthorizedAccessException ex) when (i < maxRetries - 1)
+                {
+                    lastException = ex;
+                    await Task.Delay(delayMs * (i + 1)); // Exponential backoff
+                }
             }
 
-            throw new IOException($"Failed to write file '{_filePath}' after {maxRetries} attempts.", lastException);
+            throw new IOException($"Failed to save file '{_filePath}' after {maxRetries} attempts.", lastException);
         }
 
         public virtual async Task<List<T>> LoadAll(string searchPattern = "tournament.json", string folderName = null)
@@ -207,6 +216,40 @@ namespace FlawsFightNight.Data.Handlers
             }
 
             return list;
+        }
+
+        public async Task DeleteJsonFilesInFolder(PathOption pathOption)
+        {
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string folderPath = pathOption switch
+            {
+                PathOption.Databases => Path.Combine(baseDir, "Databases"),
+                PathOption.TournamentSystem => Path.Combine(baseDir, "Databases", "TournamentSystem"),
+                PathOption.iCTFStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "iCTF"),
+                PathOption.TAMStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "TAM"),
+                PathOption.iBRStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "iBR"),
+                PathOption.UT2004PlayerProfiles => Path.Combine(baseDir, "Databases", "UT2004PlayerProfiles"),
+                _ => throw new ArgumentException("Invalid path option")
+            };
+            if (Directory.Exists(folderPath))
+            {
+                var files = Directory.GetFiles(folderPath, "*.json*", SearchOption.AllDirectories);
+                foreach (var file in files)
+                {
+                    try
+                    {
+                        File.Delete(file);
+                    }
+                    catch (IOException ex)
+                    {
+                        Console.WriteLine($"Warning: Could not delete file {file}: {ex.Message}");
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        Console.WriteLine($"Warning: Could not delete file {file} due to access issues: {ex.Message}");
+                    }
+                }
+            }
         }
     }
 }
