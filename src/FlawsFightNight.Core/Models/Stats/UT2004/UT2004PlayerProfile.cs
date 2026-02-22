@@ -23,8 +23,10 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public DateTime LastPlayed { get; set; }
         public DateTime FirstSeen { get; set; }
 
-        // Elo Ratings
-        public UT2004EloRatings EloRatings { get; set; } = new();
+        // ELO Ratings (UTStatsDB-style)
+        public UT2004EloRating CaptureTheFlagElo { get; set; } = new();
+        public UT2004EloRating TAMElo { get; set; } = new();
+        public UT2004EloRating BombingRunElo { get; set; } = new();
 
         // OpenSkill Ratings
         public UT2004OpenSkillRating CaptureTheFlagRating { get; set; } = new(); // iCTF

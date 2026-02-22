@@ -15,8 +15,8 @@ namespace FlawsFightNight.Managers
         private const double Tau = 0.0083;
         private const int MinHumansPerTeam = 1;
 
-        public int SkippedImbalancedMatches { get; private set; }
-        public int SkippedInsufficientPlayers { get; private set; }
+        public int SkippedImbalancedMatches { get; set; }
+        public int SkippedInsufficientPlayers { get; set; }
 
         public OpenSkillRatingService()
         {

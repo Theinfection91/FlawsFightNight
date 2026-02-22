@@ -15,6 +15,7 @@ namespace FlawsFightNight.Managers
     {
         private readonly UT2004LogParser _logParser;
         private readonly OpenSkillRatingService _ratingService;
+        private readonly UTStatsEloRatingService _eloService;
         private int _iCTFStatLogIdCounter = 0;
         private int _TAMStatLogIdCounter = 0;
         private int _iBRStatLogIdCounter = 0;
@@ -23,6 +24,11 @@ namespace FlawsFightNight.Managers
         {
             _logParser = logParser;
             _ratingService = ratingService;
+            _eloService = new UTStatsEloRatingService(
+                rankBots: false,
+                minRankTime: 0,
+                minRankMatches: 0
+            );
             GetStatLogCounts().Wait();
         }
 
@@ -144,7 +150,7 @@ namespace FlawsFightNight.Managers
         }
         #endregion
 
-        #region Player Profile Building with OpenSkill
+        #region Player Profile Building with OpenSkill and ELO
         public async Task SetupPlayerProfiles()
         {
             var allMatchStats = await GetAllProcessedStatLogs();
@@ -180,6 +186,24 @@ namespace FlawsFightNight.Managers
                 // Step 2: Calculate OpenSkill ratings for this match
                 _ratingService.UpdateRatingsForMatch(match, profiles);
 
+                // Step 3: Calculate UTStatsDB ELO ratings for this match
+                _eloService.UpdateRatingsForMatch(match, profiles);
+
+                // Step 4: Update peak ELO ratings
+                foreach (var team in match.Players)
+                {
+                    foreach (var playerStats in team.Where(p => !p.IsBot))
+                    {
+                        if (profiles.ContainsKey(playerStats.Guid))
+                        {
+                            var profile = profiles[playerStats.Guid];
+                            profile.CaptureTheFlagElo.UpdatePeak(match.MatchDate);
+                            profile.TAMElo.UpdatePeak(match.MatchDate);
+                            profile.BombingRunElo.UpdatePeak(match.MatchDate);
+                        }
+                    }
+                }
+
                 // Progress indicator every 100 matches
                 if (processedCount % 100 == 0)
                 {
@@ -195,38 +219,36 @@ namespace FlawsFightNight.Managers
             }
 
             // Calculate statistics
-            int totalSkipped = _ratingService.SkippedImbalancedMatches + _ratingService.SkippedInsufficientPlayers;
-            int ratedMatches = chronologicalMatches.Count - totalSkipped;
-            double skipPercentage = (double)totalSkipped / chronologicalMatches.Count * 100;
+            int openSkillSkipped = _ratingService.SkippedImbalancedMatches + _ratingService.SkippedInsufficientPlayers;
+            int openSkillRated = chronologicalMatches.Count - openSkillSkipped;
+            double openSkillSkipPercentage = (double)openSkillSkipped / chronologicalMatches.Count * 100;
 
             Console.WriteLine($"\n[UT2004StatsManager] ===== RATING SUMMARY =====");
             Console.WriteLine($"[UT2004StatsManager] Total matches processed: {chronologicalMatches.Count}");
-            Console.WriteLine($"[UT2004StatsManager] Matches rated: {ratedMatches}");
+            Console.WriteLine($"\n[UT2004StatsManager] --- OpenSkill Ratings ---");
+            Console.WriteLine($"[UT2004StatsManager] Matches rated: {openSkillRated}");
             Console.WriteLine($"[UT2004StatsManager] Skipped (unequal team sizes): {_ratingService.SkippedImbalancedMatches}");
             Console.WriteLine($"[UT2004StatsManager] Skipped (insufficient players): {_ratingService.SkippedInsufficientPlayers}");
-            Console.WriteLine($"[UT2004StatsManager] Total skipped: {totalSkipped} ({skipPercentage:F1}%)");
-            Console.WriteLine($"[UT2004StatsManager] Player profiles updated: {profiles.Count}");
+            Console.WriteLine($"[UT2004StatsManager] Total skipped: {openSkillSkipped} ({openSkillSkipPercentage:F1}%)");
+            Console.WriteLine($"\n[UT2004StatsManager] --- UTStatsDB ELO Ratings ---");
+            Console.WriteLine($"[UT2004StatsManager] Matches rated: {chronologicalMatches.Count}"); // ELO rates all team games
+            Console.WriteLine($"[UT2004StatsManager] Skipped (young players): {_eloService.SkippedYoungPlayers}");
+            Console.WriteLine($"\n[UT2004StatsManager] Player profiles updated: {profiles.Count}");
             Console.WriteLine($"[UT2004StatsManager] ==========================\n");
         }
 
         public async Task RebuildPlayerProfiles()
         {
             Console.WriteLine($"[UT2004StatsManager] Rebuilding player profiles from scratch...");
+
+            // Reset ELO service statistics
+            _eloService.SkippedYoungPlayers = 0;
+            _ratingService.SkippedImbalancedMatches = 0;
+            _ratingService.SkippedInsufficientPlayers = 0;
+
             await _dataManager.DeleteUT2004ProfilesDatabase();
             await SetupPlayerProfiles();
-        #endregion
-
-            //public async Task<string> PredictMatchOutcome()
-            //{
-            //    var teamA = new List<UT2004PlayerProfile>();
-            //    var teamB = new List<UT2004PlayerProfile>();
-            //    //teamA.Add(await _dataManager.GetUT2004PlayerProfile("f65f3f7e0496815de17a4713604e5016")); // Serge
-            //    teamA.Add(await _dataManager.GetUT2004PlayerProfile("cc64eb45e190de68c0deaf75231e1ab8")); // Relapse
-            //    teamB.Add(await _dataManager.GetUT2004PlayerProfile("f7fc75c7f7f3cf3cfc9b700b73925586")); // BloodBath
-
-            //    var winProbability = _ratingService.PredictWin(teamA, teamB);
-            //    return $"Team A win probability: {winProbability:P2}, Team B win probability: {1 - winProbability:P2}";
-            //}
         }
+        #endregion
     }
 }
