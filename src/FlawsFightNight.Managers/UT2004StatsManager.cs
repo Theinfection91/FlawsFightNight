@@ -20,6 +20,10 @@ namespace FlawsFightNight.Managers
         private int _TAMStatLogIdCounter = 0;
         private int _iBRStatLogIdCounter = 0;
 
+        // Minimum matches in a game mode before its ELO peak can be recorded.
+        // Prevents the calibration phase (everyone starting at 0) from locking in inflated peaks.
+        private const int MinMatchesBeforePeak = 20;
+
         public UT2004StatsManager(DataManager dataManager, UT2004LogParser logParser, OpenSkillRatingService ratingService) : base("UT2004StatsManager", dataManager)
         {
             _logParser = logParser;
@@ -113,8 +117,8 @@ namespace FlawsFightNight.Managers
             }
 
             return $"{gameMode}{count + 1:000000}";
-
         }
+
         public async Task MarkLogFileAsProcessed(string fileName)
         {
             var processedLogs = _dataManager.GetProcessedLogNames();
@@ -148,6 +152,7 @@ namespace FlawsFightNight.Managers
             var statLogFiles = await _dataManager.LoadAllStatLogMatchResultFiles();
             return statLogFiles.Select(file => file.StatLog).ToList();
         }
+
         #endregion
 
         #region Player Profile Building with OpenSkill and ELO
@@ -189,17 +194,29 @@ namespace FlawsFightNight.Managers
                 // Step 3: Calculate UTStatsDB ELO ratings for this match
                 _eloService.UpdateRatingsForMatch(match, profiles);
 
-                // Step 4: Update peak ELO ratings
+                // Step 4: Update peak ELO rating only for the game mode that was just played,
+                // and only once the player has enough matches in that mode to be past calibration.
                 foreach (var team in match.Players)
                 {
                     foreach (var playerStats in team.Where(p => !p.IsBot))
                     {
-                        if (profiles.ContainsKey(playerStats.Guid))
+                        if (!profiles.TryGetValue(playerStats.Guid, out var profile))
+                            continue;
+
+                        switch (match.GameMode)
                         {
-                            var profile = profiles[playerStats.Guid];
-                            profile.CaptureTheFlagElo.UpdatePeak(match.MatchDate);
-                            profile.TAMElo.UpdatePeak(match.MatchDate);
-                            profile.BombingRunElo.UpdatePeak(match.MatchDate);
+                            case UT2004GameMode.iCTF:
+                                if (profile.TotalCTFMatches >= MinMatchesBeforePeak)
+                                    profile.CaptureTheFlagElo.UpdatePeak(match.MatchDate);
+                                break;
+                            case UT2004GameMode.TAM:
+                                if (profile.TotalTAMMatches >= MinMatchesBeforePeak)
+                                    profile.TAMElo.UpdatePeak(match.MatchDate);
+                                break;
+                            case UT2004GameMode.iBR:
+                                if (profile.TotalBRMatches >= MinMatchesBeforePeak)
+                                    profile.BombingRunElo.UpdatePeak(match.MatchDate);
+                                break;
                         }
                     }
                 }
@@ -231,8 +248,9 @@ namespace FlawsFightNight.Managers
             Console.WriteLine($"[UT2004StatsManager] Skipped (insufficient players): {_ratingService.SkippedInsufficientPlayers}");
             Console.WriteLine($"[UT2004StatsManager] Total skipped: {openSkillSkipped} ({openSkillSkipPercentage:F1}%)");
             Console.WriteLine($"\n[UT2004StatsManager] --- UTStatsDB ELO Ratings ---");
-            Console.WriteLine($"[UT2004StatsManager] Matches rated: {chronologicalMatches.Count}"); // ELO rates all team games
+            Console.WriteLine($"[UT2004StatsManager] Matches rated: {chronologicalMatches.Count}");
             Console.WriteLine($"[UT2004StatsManager] Skipped (young players): {_eloService.SkippedYoungPlayers}");
+            Console.WriteLine($"[UT2004StatsManager] Peak guard (min matches before peak): {MinMatchesBeforePeak}");
             Console.WriteLine($"\n[UT2004StatsManager] Player profiles updated: {profiles.Count}");
             Console.WriteLine($"[UT2004StatsManager] ==========================\n");
         }

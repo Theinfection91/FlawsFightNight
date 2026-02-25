@@ -14,6 +14,8 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public bool IsBot { get; set; }
         public bool IsWinner { get; set; }
         public int Placement { get; set; }
+        public int TotalTimeSeconds { get; set; } = 0;
+        internal double LastActiveTimestamp { get; set; } = -1.0;
 
         // Combat Stats
         public int Score { get; set; }
@@ -25,6 +27,8 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         // Kill Streaks & Multikills
         public int BestKillStreak { get; set; }
         public int BestMultiKill { get; set; }
+        public int[] SpreeCounts { get; set; } = new int[6];
+        public int[] MultiCounts { get; set; } = new int[7];
 
         // TAM-Specific Stats
         public int TotalDamageDealt { get; set; }        // Sum of all 'S EnemyDamage' events
