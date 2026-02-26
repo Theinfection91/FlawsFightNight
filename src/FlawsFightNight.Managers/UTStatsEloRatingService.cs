@@ -18,8 +18,8 @@ namespace FlawsFightNight.Managers
     public class UTStatsEloRatingService
     {
         public bool RankBots { get; set; } = false;
-        public int MinRankTime { get; set; } = 0;
-        public int MinRankMatches { get; set; } = 0;
+        public int MinRankTime { get; set; } = 60;
+        public int MinRankMatches { get; set; } = 5;
         public int SkippedYoungPlayers { get; set; } = 0;
 
         // Team multiplier applied after RankCalc (K=16 inside RankCalc)
@@ -37,7 +37,7 @@ namespace FlawsFightNight.Managers
         // If set, only log entries for this GUID (helps reduce noise)
         public string? VerbosePlayerGuid { get; set; } = "cc64eb45e190de68c0deaf75231e1ab8";
 
-        public UTStatsEloRatingService(bool rankBots = false, int minRankTime = 0, int minRankMatches = 0)
+        public UTStatsEloRatingService(bool rankBots = false, int minRankTime = 60, int minRankMatches = 5)
         {
             RankBots = rankBots;
             MinRankTime = minRankTime;
@@ -209,7 +209,23 @@ namespace FlawsFightNight.Managers
                 Console.WriteLine($"  FinalChange={rc:F6} NewRank={Math.Max(0.0, currentRank + rc):F6}");
             }
 
+            // Apply rating change
             SetEloRating(profile, gameMode, currentRank + rc, rc);
+
+            // Update peak if player meets configured minimums. ProcessPlayerRankChange already enforced
+            // MinRankMatches/MinRankTime above, so this is safe and keeps peak-update logic local.
+            // If you want peaks only after a minimum number of matches per-mode, that is respected by GetTotalMatches.
+            if (MinRankMatches <= 0 || GetTotalMatches(profile, gameMode) >= MinRankMatches)
+            {
+                var elo = gameMode switch
+                {
+                    UT2004GameMode.iCTF => profile.CaptureTheFlagElo,
+                    UT2004GameMode.iBR  => profile.BombingRunElo,
+                    UT2004GameMode.TAM  => profile.TAMElo,
+                    _                   => null
+                };
+                elo?.UpdatePeak(matchDate);
+            }
         }
 
         private double GetCurrentEloRating(UT2004PlayerProfile profile, UT2004GameMode gameMode)

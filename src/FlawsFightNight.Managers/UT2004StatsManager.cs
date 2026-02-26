@@ -32,11 +32,7 @@ namespace FlawsFightNight.Managers
         {
             _logParser = logParser;
             _ratingService = ratingService;
-            _eloService = new UTStatsEloRatingService(
-                rankBots: false,
-                minRankTime: 0,
-                minRankMatches: 0
-            );
+            _eloService = new UTStatsEloRatingService();
             GetStatLogCounts().Wait();
         }
 
