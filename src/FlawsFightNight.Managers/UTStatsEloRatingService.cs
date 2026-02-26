@@ -33,7 +33,7 @@ namespace FlawsFightNight.Managers
         public double MaxSingleMatchRatingChange { get; set; } = 100.0;
 
         // Debugging helpers (off by default)
-        public bool VerboseLogging { get; set; } = true;
+        public bool VerboseLogging { get; set; } = false;
         // If set, only log entries for this GUID (helps reduce noise)
         public string? VerbosePlayerGuid { get; set; } = "cc64eb45e190de68c0deaf75231e1ab8";
 
@@ -76,6 +76,17 @@ namespace FlawsFightNight.Managers
             var team1 = match.Players[1].Where(p => RankBots || !p.IsBot).ToList();
 
             if (!team0.Any() || !team1.Any()) return;
+
+            foreach (var player in match.Players)
+            {
+                foreach (var playerStats in player)
+                {
+                    if (playerStats.FlagReturns > 1000)
+                    {
+                        Console.WriteLine($"[DEBUG] Player {playerStats.LastKnownName} ({playerStats.Guid}) has unusually high FlagReturns: {playerStats.FlagReturns} on {match.MatchDate}");
+                    }
+                }
+            }
 
             double avgRank0 = team0
                 .Select(p => profiles.TryGetValue(p.Guid, out var pr) ? GetCurrentEloRating(pr, match.GameMode) : (double?)null)

@@ -14,7 +14,7 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         // Identity
         public string Guid { get; set; } = string.Empty;
         public string CurrentName { get; set; } = string.Empty;
-        public List<string> PreviousNames { get; set; } = new List<string>();
+        public List<string> PreviousNames { get; set; } = new();
 
         // Match History
         public int TotalMatches { get; set; } = 0;
