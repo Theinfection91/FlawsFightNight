@@ -1,6 +1,6 @@
 using System;
 
-namespace FlawsFightNight.Core.Models.Stats.UT2004
+namespace FlawsFightNight.Core.Models.UT2004
 {
     /// <summary>
     /// UTStatsDB ELO rating holder.

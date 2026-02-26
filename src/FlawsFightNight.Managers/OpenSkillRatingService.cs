@@ -1,7 +1,7 @@
-using FlawsFightNight.Core.Models.Stats.UT2004;
 using OpenSkillSharp.Models;
 using OpenSkillSharp.Rating;
 using FlawsFightNight.Core.Enums.UT2004;
+using FlawsFightNight.Core.Models.UT2004;
 
 namespace FlawsFightNight.Managers
 {

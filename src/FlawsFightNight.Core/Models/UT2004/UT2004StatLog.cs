@@ -1,8 +1,9 @@
 ﻿using FlawsFightNight.Core.Enums.UT2004;
+using FlawsFightNight.Core.Models.Stats;
 using System;
 using System.Collections.Generic;
 
-namespace FlawsFightNight.Core.Models.Stats.UT2004
+namespace FlawsFightNight.Core.Models.UT2004
 {
     public class UT2004StatLog : StatLog
     {

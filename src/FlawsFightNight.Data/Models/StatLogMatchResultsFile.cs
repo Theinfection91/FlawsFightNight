@@ -1,4 +1,4 @@
-﻿using FlawsFightNight.Core.Models.Stats.UT2004;
+﻿using FlawsFightNight.Core.Models.UT2004;
 using System;
 using System.Collections.Generic;
 using System.Linq;

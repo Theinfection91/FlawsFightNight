@@ -1,5 +1,7 @@
 using FlawsFightNight.Core.Enums.UT2004;
-using FlawsFightNight.Core.Models.Stats.UT2004;
+using FlawsFightNight.Core.Helpers.UT2004;
+using FlawsFightNight.Core.Interfaces.UT2004;
+using FlawsFightNight.Core.Models.UT2004;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,31 +23,36 @@ namespace FlawsFightNight.Managers
         public int MinRankTime { get; set; } = 60;
         public int MinRankMatches { get; set; } = 5;
         public int SkippedYoungPlayers { get; set; } = 0;
-
-        private const int KFactor = 16;
-
-        // Team multiplier applied after RankCalc (K=16 inside RankCalc)
-        // Changed to 8.0 to match UTStatsDB team-branch multiplier
         public double TeamGameMultiplier { get; set; } = 8.0;
-
-        // Safety caps for time-scaling
         private const double MaxTimeScaleRatio = 1.0;
         private const double MinPlayerTimeForScaling = 60.0;
-
-        // Conservative: maximum rating change allowed from a single match (prevents extreme spikes)
         public double MaxSingleMatchRatingChange { get; set; } = 100.0;
+        private const int KFactor = 16;
 
-        // Debugging helpers (off by default)
-        public bool VerboseLogging { get; set; } = true;
-        // If set, only log entries for this GUID (helps reduce noise)
+        // Debugging helpers
+        public bool VerboseLogging { get; set; } = false;
         public string? VerbosePlayerGuid { get; set; } = "f65f3f7e0496815de17a4713604e5016";
+
+        // Game Mode weighters for objective-specific score adjustments (CTF/BR/TAM)
+        private readonly Dictionary<UT2004GameMode, IUTGameModeWeight> _weighters;
 
         public UTStatsDBEloRatingService(bool rankBots = false, int minRankTime = 60, int minRankMatches = 5)
         {
             RankBots = rankBots;
             MinRankTime = minRankTime;
             MinRankMatches = minRankMatches;
+
+            // Defaults - replace or extend by injecting your own IGameModeScoreWeighter if desired
+            _weighters = new Dictionary<UT2004GameMode, IUTGameModeWeight>
+            {
+                [UT2004GameMode.iCTF] = new CTFScoreWeighter(),
+                [UT2004GameMode.TAM] = new TAMScoreWeighter(),
+                [UT2004GameMode.iBR]  = new BRScoreWeighter()
+            };
         }
+
+        private IUTGameModeWeight GetWeighter(UT2004GameMode mode)
+            => _weighters.TryGetValue(mode, out var w) ? w : _weighters[UT2004GameMode.iCTF];
 
         // RankCalc implements UTStatsDB core: change = round(KFactor * (actual - expected), 8)
         private double RankCalc(double rank1, double rank2, double score1, double score2)
@@ -65,11 +72,11 @@ namespace FlawsFightNight.Managers
         {
             foreach (var stat in  playerStats)
             {
-                if (stat.FlagReturns > 1000)
+                if (stat.FlagReturns > 100)
                 {
                     Console.WriteLine($"[DEBUG] Player {stat.LastKnownName} ({stat.Guid}) has unusually high FlagReturns: {stat.FlagReturns} on {match.MatchDate}");
                 }
-                if (stat.Deaths > 150)
+                if (stat.Deaths > 200)
                 {
                     Console.WriteLine($"[DEBUG] Player {stat.LastKnownName} ({stat.Guid}) has unusually high Deaths: {stat.Deaths} on {match.MatchDate}");
                 }
@@ -134,37 +141,59 @@ namespace FlawsFightNight.Managers
                         if (score_pq == 0 && score_qp == 0) continue;
 
                         // Build adjusted scores with spree & multi bonuses (UTStatsDB rules)
+                        double spreeContributionP = 0.0;
+                        double multiContributionP = 0.0;
                         double adjustedScoreP = score_pq;
-                        if (profiles.TryGetValue(p.Guid, out var prP))
+                        if (p.SpreeCounts != null)
                         {
-                            if (p.SpreeCounts != null)
+                            for (int i = 0; i < p.SpreeCounts.Length && i < 6; i++)
                             {
-                                for (int i = 0; i < p.SpreeCounts.Length && i < 6; i++)
-                                    adjustedScoreP += p.SpreeCounts[i] * (i + 1);
+                                var c = p.SpreeCounts[i] * (i + 1);
+                                spreeContributionP += c;
+                                adjustedScoreP += c;
                             }
-                            if (p.MultiCounts != null)
+                        }
+                        if (p.MultiCounts != null)
+                        {
+                            for (int i = 0; i < p.MultiCounts.Length && i < 7; i++)
                             {
-                                for (int i = 0; i < p.MultiCounts.Length && i < 7; i++)
-                                    adjustedScoreP += p.MultiCounts[i] * (i + 1);
+                                var c = p.MultiCounts[i] * (i + 1);
+                                multiContributionP += c;
+                                adjustedScoreP += c;
                             }
                         }
 
+                        double spreeContributionQ = 0.0;
+                        double multiContributionQ = 0.0;
                         double adjustedScoreQ = score_qp;
-                        if (profiles.TryGetValue(q.Guid, out var prQ))
+                        if (q.SpreeCounts != null)
                         {
-                            if (q.SpreeCounts != null)
+                            for (int i = 0; i < q.SpreeCounts.Length && i < 6; i++)
                             {
-                                for (int i = 0; i < q.SpreeCounts.Length && i < 6; i++)
-                                    adjustedScoreQ += q.SpreeCounts[i] * (i + 1);
-                            }
-                            if (q.MultiCounts != null)
-                            {
-                                for (int i = 0; i < q.MultiCounts.Length && i < 7; i++)
-                                    adjustedScoreQ += q.MultiCounts[i] * (i + 1);
+                                var c = q.SpreeCounts[i] * (i + 1);
+                                spreeContributionQ += c;
+                                adjustedScoreQ += c;
                             }
                         }
+                        if (q.MultiCounts != null)
+                        {
+                            for (int i = 0; i < q.MultiCounts.Length && i < 7; i++)
+                            {
+                                var c = q.MultiCounts[i] * (i + 1);
+                                multiContributionQ += c;
+                                adjustedScoreQ += c;
+                            }
+                        }
+
+                        // Apply objective-specific weights (CTF/BR/TAM) - pairwise we can consider opponent context
+                        var weighter = GetWeighter(match.GameMode);
+                        double objectiveAddP = weighter.ApplyObjectiveWeights(p, adjustedScoreP, q);
+                        double objectiveAddQ = weighter.ApplyObjectiveWeights(q, adjustedScoreQ, p);
+                        adjustedScoreP += objectiveAddP;
+                        adjustedScoreQ += objectiveAddQ;
 
                         // Suicide adjustment (as described by UTStatsDB): suicr = suicides / (kills+deaths)
+                        double suicideDeductP = 0.0;
                         if (p.Suicides > 0)
                         {
                             int skirm = p.Kills + p.Deaths;
@@ -173,9 +202,11 @@ namespace FlawsFightNight.Managers
                                 double suicr = (double)p.Suicides / skirm;
                                 double as1 = Math.Ceiling(suicr * (adjustedScoreP + adjustedScoreQ));
                                 if (as1 < 1) as1 = 1;
+                                suicideDeductP = as1;
                                 adjustedScoreP -= as1;
                             }
                         }
+                        double suicideDeductQ = 0.0;
                         if (q.Suicides > 0)
                         {
                             int skirm = q.Kills + q.Deaths;
@@ -184,6 +215,7 @@ namespace FlawsFightNight.Managers
                                 double suicr = (double)q.Suicides / skirm;
                                 double as1 = Math.Ceiling(suicr * (adjustedScoreP + adjustedScoreQ));
                                 if (as1 < 1) as1 = 1;
+                                suicideDeductQ = as1;
                                 adjustedScoreQ -= as1;
                             }
                         }
@@ -198,6 +230,18 @@ namespace FlawsFightNight.Managers
 
                         // Compute rank change for this pair (no team multiplier here; UTStatsDB used KFactor inside and *1 pairwise)
                         double rc = RankCalc(rankP, rankQ, adjustedScoreP, adjustedScoreQ);
+
+                        // Verbose per-pair breakdown
+                        if (VerboseLogging && (VerbosePlayerGuid == null || VerbosePlayerGuid == p.Guid || VerbosePlayerGuid == q.Guid))
+                        {
+                            Console.WriteLine($"[ELO TRACE - PAIRWISE] MatchDate={match.MatchDate:yyyy-MM-dd} Mode={match.GameMode}");
+                            Console.WriteLine($"  Pair: {p.LastKnownName} ({p.Guid}) vs {q.LastKnownName} ({q.Guid})");
+                            Console.WriteLine($"  Ranks: {rankP:F4} vs {rankQ:F4}");
+                            Console.WriteLine($"  RawKills: {score_pq} vs {score_qp}");
+                            Console.WriteLine($"  Spree(+): {spreeContributionP:F2}  Multi(+): {multiContributionP:F2}  Objective(+): {objectiveAddP:F2}  Suicide(-): {suicideDeductP:F2}");
+                            Console.WriteLine($"  => AdjustedScores: {adjustedScoreP:F2} vs {adjustedScoreQ:F2}");
+                            Console.WriteLine($"  RankCalc(before*K): {rc:F6} (K={KFactor})");
+                        }
 
                         // Apply gating/unbalanced checks same as original:
                         // For p
@@ -227,18 +271,22 @@ namespace FlawsFightNight.Managers
                     double currentRank = GetCurrentEloRating(profile, match.GameMode);
 
                     // Clamp per-match rating change
+                    bool clamped = false;
+                    double preClamp = totalChange;
                     if (!double.IsNaN(MaxSingleMatchRatingChange) && MaxSingleMatchRatingChange > 0.0)
                     {
                         totalChange = Math.Max(-MaxSingleMatchRatingChange, Math.Min(MaxSingleMatchRatingChange, totalChange));
+                        clamped = Math.Abs(totalChange - preClamp) > double.Epsilon;
                     }
 
                     // Floor at 0
                     if (totalChange < 0.0 && (currentRank + totalChange) < 0.0) totalChange = -currentRank;
 
-                    // Verbose trace for players we touch
+                    // Verbose trace for players we touch (aggregate)
                     if (VerboseLogging && (VerbosePlayerGuid == null || VerbosePlayerGuid == guid))
                     {
-                        Console.WriteLine($"[ELO TRACE - PAIRWISE] GUID={guid} Mode={match.GameMode} CurrRank={currentRank:F4} TotalChange={totalChange:F6} NewRank={Math.Max(0.0, currentRank + totalChange):F6}");
+                        Console.WriteLine($"[ELO TRACE - PAIRWISE APPLY] GUID={guid} Mode={match.GameMode} CurrRank={currentRank:F4}");
+                        Console.WriteLine($"  AggregateChange(beforeClamp)={preClamp:F6} afterClamp={totalChange:F6} NewRank={Math.Max(0.0, currentRank + totalChange):F6} Clamped={clamped}");
                     }
 
                     // Apply
@@ -333,6 +381,8 @@ namespace FlawsFightNight.Managers
             double playerScore = Math.Max(0.0, playerStats.Score);
 
             // Apply UTStatsDB-style spree & multi bonuses (spree[0]*1, spree[1]*2, ..., multi[0]*1, ...)
+            double spreeContribution = 0.0;
+            double multiContribution = 0.0;
             double adjustedPlayerScore = playerScore;
 
             if (playerStats.SpreeCounts != null)
@@ -340,7 +390,9 @@ namespace FlawsFightNight.Managers
                 // SpreeCounts length is expected 6; add weights 1..6
                 for (int i = 0; i < playerStats.SpreeCounts.Length && i < 6; i++)
                 {
-                    adjustedPlayerScore += playerStats.SpreeCounts[i] * (i + 1);
+                    var c = playerStats.SpreeCounts[i] * (i + 1);
+                    spreeContribution += c;
+                    adjustedPlayerScore += c;
                 }
             }
 
@@ -349,14 +401,22 @@ namespace FlawsFightNight.Managers
                 // MultiCounts length is expected 7; add weights 1..7
                 for (int i = 0; i < playerStats.MultiCounts.Length && i < 7; i++)
                 {
-                    adjustedPlayerScore += playerStats.MultiCounts[i] * (i + 1);
+                    var c = playerStats.MultiCounts[i] * (i + 1);
+                    multiContribution += c;
+                    adjustedPlayerScore += c;
                 }
             }
+
+            // Apply objective weights per game mode (CTF/BR/TAM)
+            var weighter = GetWeighter(gameMode);
+            double objectiveContribution = weighter.ApplyObjectiveWeights(playerStats, adjustedPlayerScore, null);
+            adjustedPlayerScore += objectiveContribution;
 
             // Ensure opponentAvgScore respects the conservative minimum
             opponentAvgScore = Math.Max(1.0, opponentAvgScore);
 
             // Suicide adjustment: approximate suicr = suicides / (kills + deaths), then subtract ceil(suicr * (score + oppScore))
+            double suicideDeduct = 0.0;
             if (playerStats.Suicides > 0)
             {
                 int skirm = playerStats.Kills + playerStats.Deaths;
@@ -364,6 +424,7 @@ namespace FlawsFightNight.Managers
                 {
                     double suicr = (double)playerStats.Suicides / skirm;
                     double as1 = Math.Ceiling(suicr * (adjustedPlayerScore + opponentAvgScore));
+                    suicideDeduct = as1;
                     adjustedPlayerScore -= as1;
                 }
             }
@@ -388,10 +449,12 @@ namespace FlawsFightNight.Managers
             }
 
             // Clamp per-match rating change to avoid extreme single-match spikes
+            double preClampRc = rc;
             if (!double.IsNaN(MaxSingleMatchRatingChange) && MaxSingleMatchRatingChange > 0.0)
             {
                 rc = Math.Max(-MaxSingleMatchRatingChange, Math.Min(MaxSingleMatchRatingChange, rc));
             }
+            bool wasClamped = Math.Abs(rc - preClampRc) > double.Epsilon;
 
             // Unbalanced-rank gating
             bool shouldApply = false;
@@ -406,13 +469,15 @@ namespace FlawsFightNight.Managers
             // Floor at 0
             if (rc < 0.0 && (currentRank + rc) < 0.0) rc = -currentRank;
 
-            // Verbose trace (filtered)
+            // Verbose trace (filtered) - extended breakdown
             if (VerboseLogging && (VerbosePlayerGuid == null || VerbosePlayerGuid == profile.Guid))
             {
                 Console.WriteLine($"[ELO TRACE] MatchDate={matchDate:yyyy-MM-dd} GUID={profile.Guid} Name={profile.CurrentName}");
-                Console.WriteLine($"  Mode={gameMode} CurrRank={currentRank:F4} PlayerScore={playerScore:F2} AdjustedScore={adjustedPlayerScore:F2} OppAvgScore={opponentAvgScore:F2} OppAvgRank={opponentAvgRank:F4}");
+                Console.WriteLine($"  Mode={gameMode} CurrRank={currentRank:F4}");
+                Console.WriteLine($"  RawScore={playerScore:F2} Spree+={spreeContribution:F2} Multi+={multiContribution:F2} Objective+={objectiveContribution:F2} Suicide-={suicideDeduct:F2}");
+                Console.WriteLine($"  AdjustedScore={adjustedPlayerScore:F2} OppAvgScore={opponentAvgScore:F2} OppAvgRank={opponentAvgRank:F4}");
                 Console.WriteLine($"  RankCalc(before*K)={rcBefore:F6} TeamK={TeamGameMultiplier} rcRaw={rcBefore * TeamGameMultiplier:F6}");
-                Console.WriteLine($"  PlayerTime={playerTime}s AvgTime={avgMatchTimeSeconds}s AppliedScale={appliedScale:F4} rcAfterScale={rc:F6}");
+                Console.WriteLine($"  AppliedScale={appliedScale:F4} rcAfterScale={preClampRc:F6} rcAfterClamp={rc:F6} Clamped={wasClamped}");
                 Console.WriteLine($"  FinalChange={rc:F6} NewRank={Math.Max(0.0, currentRank + rc):F6}");
             }
 

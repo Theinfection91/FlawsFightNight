@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FlawsFightNight.Core.Models.Stats.UT2004
+namespace FlawsFightNight.Core.Models.UT2004
 {
     /// <summary>
     /// Represents a player's persistent profile across all UT2004 matches.

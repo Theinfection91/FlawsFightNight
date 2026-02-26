@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Core.Models.Stats.UT2004
+namespace FlawsFightNight.Core.Models.UT2004
 {
     public class UTPlayerMatchStats
     {
