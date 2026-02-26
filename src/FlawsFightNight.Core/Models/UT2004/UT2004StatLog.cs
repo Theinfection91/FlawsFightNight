@@ -1,8 +1,9 @@
 ﻿using FlawsFightNight.Core.Enums.UT2004;
+using FlawsFightNight.Core.Models.Stats;
 using System;
 using System.Collections.Generic;
 
-namespace FlawsFightNight.Core.Models.Stats.UT2004
+namespace FlawsFightNight.Core.Models.UT2004
 {
     public class UT2004StatLog : StatLog
     {
@@ -12,7 +13,9 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public UT2004GameMode GameMode { get; set; }
         public string GameModeName => GetCorrectGameModeName();
         public List<List<UTPlayerMatchStats>> Players { get; set; } = new();
-        
+        public Dictionary<string, Dictionary<string, int>> KillMatch { get; set; } = new();
+        public string? MatchSummary { get; set; }
+
         public UT2004StatLog() { }
 
         public string GetCorrectGameModeName()

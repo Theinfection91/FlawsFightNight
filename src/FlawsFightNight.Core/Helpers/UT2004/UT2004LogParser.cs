@@ -1,6 +1,6 @@
 ﻿using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Interfaces;
-using FlawsFightNight.Core.Models.Stats.UT2004;
+using FlawsFightNight.Core.Models.UT2004;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +25,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private DateTime _matchStartTime = DateTime.MinValue;
         private UT2004GameMode _currentGameMode = default;
 
+        // Track last seen timestamp (seconds) for end-of-file flush
+        private double _lastEventTimestamp = 0.0;
+
         // TAM-specific tracking
         private int _currentRoundNumber = 0;
         private int? _lastKillerSeqNum = null;         // Track who got the last kill before round end
@@ -32,6 +35,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
         // iBR tracking - who last carried/picked the ball (bomb)
         private int? _lastBallCarrierSeqNum = null;
+
+        // Kill matrix: killerGuid -> (victimGuid -> count)
+        private Dictionary<string, Dictionary<string, int>> _killMatch = new();
 
         public async Task<T?> Parse<T>(Stream fileStream)
         {
@@ -55,7 +61,11 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     var parts = line.Split('\t');
                     if (parts.Length < 2) continue;
 
-                    double timestamp = double.Parse(parts[0]);
+                    double timestamp;
+                    if (!double.TryParse(parts[0], out timestamp))
+                        continue;
+
+                    _lastEventTimestamp = timestamp; // update last seen timestamp
                     string eventType = parts[1];
 
                     switch (eventType)
@@ -73,7 +83,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                             break;
 
                         case "C": // Connection
-                            ParseConnection(parts);
+                            ParseConnection(parts, timestamp);
                             break;
 
                         case "D": // Disconnect
@@ -81,7 +91,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                             break;
 
                         case "PS": // Player String (additional info)
-                            ParsePlayerString(parts);
+                            ParsePlayerString(parts, timestamp);
                             break;
 
                         case "PP": // Player Ping
@@ -130,7 +140,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                             break;
 
                         case "EG": // End Game
-                            ParseEndGame(parts);
+                            ParseEndGame(parts, timestamp);
                             break;
                     }
                 }
@@ -153,6 +163,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _lastKillerSeqNum = null;
             _roundWinsByTeam.Clear();
             _lastBallCarrierSeqNum = null;
+            _lastEventTimestamp = 0.0;
+            _killMatch.Clear();
         }
 
         private void ParseNewGame(string[] parts)
@@ -160,9 +172,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (parts.Length < 6) return;
 
             // [Time] NG [DateTime] [Unknown] [MapID] [MapName] [Creator] [GameMode] [Params]
-            // Example: 0.00	NG	2025-2-9 0:34:56	0	CTF-2024-Morningwood ...
-
-            // Parse game mode and print to console if not Capture the Flag (CTF)
             if (parts.Length >= 8 && !string.IsNullOrEmpty(parts[7]))
             {
                 string gameMode = parts[7];
@@ -224,12 +233,14 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 Console.WriteLine($"Game Started at {timestamp}");
         }
 
-        private void ParseConnection(string[] parts)
+        private void ParseConnection(string[] parts, double timestamp)
         {
             if (parts.Length < 5) return;
 
             // [Time] C [SeqNum] [TempGUID] [Name] [CDKey?]
-            int seqNum = int.Parse(parts[2]);
+            if (!int.TryParse(parts[2], out int seqNum))
+                return;
+
             string tempGuid = parts[3]; // This is NOT the real GUID, just a temporary identifier
             string name = parts[4];
             bool hasKey = parts.Length >= 6 && !string.IsNullOrEmpty(parts[5]);
@@ -242,19 +253,23 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 IsBot = !hasKey
             };
 
+            // Start active time tracking at this timestamp
+            player.LastActiveTimestamp = timestamp;
+            player.TotalTimeSeconds = 0;
+
             _activePlayersBySeqNum[seqNum] = player;
-            // Don't add to _activePlayersByGuid yet - wait for PS line with real GUID
 
             if (_expandedDebugLogging)
                 Console.WriteLine($"Player Connected: {name} (SeqNum: {seqNum}, TempGUID: {tempGuid}, Bot: {!hasKey})");
         }
 
-        private void ParsePlayerString(string[] parts)
+        private void ParsePlayerString(string[] parts, double timestamp)
         {
             if (parts.Length < 6) return;
 
-            // [Time] PS [SeqNum] [IP:Port] [NetSpeed] [ActualGUID]
-            int seqNum = int.Parse(parts[2]);
+            if (!int.TryParse(parts[2], out int seqNum))
+                return;
+
             string actualGuid = parts[5]; // This is the REAL player GUID!
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
@@ -266,6 +281,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     _activePlayersBySeqNum[seqNum] = existingPlayer;
                     existingPlayer.LastKnownName = player.LastKnownName; // Update name
 
+                    // Start a new active period for the existing profile
+                    existingPlayer.LastActiveTimestamp = timestamp;
+
                     if (_expandedDebugLogging)
                         Console.WriteLine($"Player Reconnected: {existingPlayer.LastKnownName} (SeqNum: {seqNum}, GUID: {actualGuid})");
                 }
@@ -274,6 +292,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     // First time seeing this GUID - update player and add to GUID dictionary
                     player.Guid = actualGuid;
                     player.IsBot = false; // PS line confirms human player
+                    // Ensure LastActiveTimestamp is set (connection may have happened earlier)
+                    if (player.LastActiveTimestamp < 0)
+                        player.LastActiveTimestamp = timestamp;
                     _activePlayersByGuid[actualGuid] = player;
 
                     if (_expandedDebugLogging)
@@ -285,9 +306,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private void ParseDisconnect(string[] parts, double timestamp)
         {
             if (parts.Length < 3) return;
-
-            // [Time] D [SeqNum]
-            int seqNum = int.Parse(parts[2]);
+            if (!int.TryParse(parts[2], out int seqNum))
+                return;
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
@@ -300,8 +320,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 if (_expandedDebugLogging)
                     Console.WriteLine($"Player Disconnected: {player.LastKnownName} (SeqNum: {seqNum}) at {timestamp}");
 
+                // Add active time for this connected period
+                if (player.LastActiveTimestamp >= 0)
+                {
+                    double delta = timestamp - player.LastActiveTimestamp;
+                    if (delta > 0)
+                        player.TotalTimeSeconds += (int)Math.Round(delta);
+                    player.LastActiveTimestamp = -1.0;
+                }
+
                 // Remove from sequence number mapping but keep in GUID mapping
-                // (they might reconnect with a different seq num)
                 _activePlayersBySeqNum.Remove(seqNum);
 
                 // If the disconnected player was last ball carrier, clear it
@@ -314,8 +342,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         {
             if (parts.Length < 4) return;
 
-            // [Time] PP [SeqNum] [Ping]
-            int seqNum = int.Parse(parts[2]);
+            if (!int.TryParse(parts[2], out int seqNum))
+                return;
+
             int ping = int.Parse(parts[3]);
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
@@ -329,9 +358,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         {
             if (parts.Length < 6) return;
 
-            // [Time] PA [SeqNum] [Weapon] [ShotsFired] [Hits] [Damage]
-            // Example: 646.91	PA	2	NewNet_SniperRifle	41	19	1540
-            int seqNum = int.Parse(parts[2]);
+            if (!int.TryParse(parts[2], out int seqNum))
+                return;
 
             ParsePlayerAccuracyStats(seqNum, parts);
         }
@@ -341,9 +369,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (parts.Length < 6) return;
 
             string weapon = parts[3];
-            int shotsFired = int.Parse(parts[4]);
-            int hits = int.Parse(parts[5]);
-            int damage = parts.Length >= 7 ? int.Parse(parts[6]) : 0;
+            if (!int.TryParse(parts[4], out int shotsFired)) shotsFired = 0;
+            if (!int.TryParse(parts[5], out int hits)) hits = 0;
+            int damage = parts.Length >= 7 && int.TryParse(parts[6], out int d) ? d : 0;
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
@@ -366,9 +394,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private void ParseBotInfo(string[] parts)
         {
             if (parts.Length < 4) return;
+            if (!int.TryParse(parts[2], out int seqNum))
+                return;
 
-            // [Time] BI [SeqNum] [BotSkill]
-            int seqNum = int.Parse(parts[2]);
             string botSkill = parts[3];
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
@@ -388,10 +416,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             switch (eventName)
             {
                 case "TeamChange":
-                    if (parts.Length >= 5)
+                    if (parts.Length >= 5 && int.TryParse(parts[3], out int seqTc))
                     {
-                        int seqNum = int.Parse(parts[3]);
-                        if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
+                        if (_activePlayersBySeqNum.TryGetValue(seqTc, out var player))
                         {
                             player.Team = int.Parse(parts[4]);
                             if (_expandedDebugLogging)
@@ -401,35 +428,30 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     break;
 
                 case "NameChange":
-                    if (parts.Length >= 5)
+                    if (parts.Length >= 5 && int.TryParse(parts[3], out int seqNc))
                     {
-                        int seqNum = int.Parse(parts[3]);
-                        if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
+                        if (_activePlayersBySeqNum.TryGetValue(seqNc, out var player))
                         {
                             string oldName = player.LastKnownName;
                             player.LastKnownName = parts[4];
                             if (_expandedDebugLogging)
-                                Console.WriteLine($"Player (SeqNum: {seqNum}) changed name: {oldName} → {player.LastKnownName}");
+                                Console.WriteLine($"Player (SeqNum: {seqNc}) changed name: {oldName} → {player.LastKnownName}");
                         }
                     }
                     break;
 
                 case "NewRound":
-                    // TAM round tracking
                     if (_currentGameMode == UT2004GameMode.TAM)
                     {
                         HandleTAMNewRound(parts);
                     }
                     break;
 
-                // Flag events (existing)
                 case "flag_taken":
                     if (parts.Length >= 5 && int.TryParse(parts[3], out int ftSeq))
                     {
                         if (_activePlayersBySeqNum.TryGetValue(ftSeq, out var player))
-                        {
                             player.FlagGrabs++;
-                        }
                     }
                     break;
 
@@ -437,9 +459,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     if (parts.Length >= 5 && int.TryParse(parts[3], out int fpSeq))
                     {
                         if (_activePlayersBySeqNum.TryGetValue(fpSeq, out var player))
-                        {
                             player.FlagPickups++;
-                        }
                     }
                     break;
 
@@ -447,9 +467,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     if (parts.Length >= 5 && int.TryParse(parts[3], out int fdSeq))
                     {
                         if (_activePlayersBySeqNum.TryGetValue(fdSeq, out var player))
-                        {
                             player.FlagDrops++;
-                        }
                     }
                     break;
 
@@ -458,14 +476,12 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 case "flag_returned_timeout":
                     break;
 
-                // BombingRun-specific events (iBR)
                 case "bomb_pickup":
                     if (parts.Length >= 4 && int.TryParse(parts[3], out int bpSeq))
                     {
                         if (_activePlayersBySeqNum.TryGetValue(bpSeq, out var player))
                         {
                             player.BombPickups++;
-                            // track who is carrying the bomb (ball)
                             _lastBallCarrierSeqNum = bpSeq;
                             if (_expandedDebugLogging)
                                 Console.WriteLine($"{player.LastKnownName} picked up the bomb");
@@ -479,7 +495,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                         if (_activePlayersBySeqNum.TryGetValue(bdSeq, out var player))
                         {
                             player.BombDrops++;
-                            // droppping clears last carrier
                             if (_lastBallCarrierSeqNum == bdSeq)
                                 _lastBallCarrierSeqNum = null;
                             if (_expandedDebugLogging)
@@ -502,7 +517,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     break;
 
                 case "bomb_returned_timeout":
-                    // often reported with seqnum -1; if attributable to a player (seqnum >= 0) record it
                     if (parts.Length >= 4 && int.TryParse(parts[3], out int brtSeq) && brtSeq >= 0)
                     {
                         if (_activePlayersBySeqNum.TryGetValue(brtSeq, out var player))
@@ -514,7 +528,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     }
                     break;
 
-                // Some servers may emit ball score events as G events; add safe handling
                 case "ball_cap_final":
                 case "ball_score_assist":
                 case "ball_thrown_final":
@@ -540,14 +553,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
         private void HandleTAMNewRound(string[] parts)
         {
-            // [Time] G NewRound -1 [RoundNumber]
-            // Example: 9.90	G	NewRound	-1	1
-            
             if (parts.Length >= 5 && int.TryParse(parts[4], out int roundNum))
             {
                 _currentRoundNumber = roundNum;
 
-                // Award round-ending kill to last killer
                 if (_lastKillerSeqNum.HasValue && _activePlayersBySeqNum.TryGetValue(_lastKillerSeqNum.Value, out var lastKiller))
                 {
                     lastKiller.RoundEndingKills++;
@@ -555,13 +564,11 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                         Console.WriteLine($"{lastKiller.LastKnownName} ended round {_currentRoundNumber - 1}!");
                 }
 
-                // Increment RoundsPlayed for all active players
                 foreach (var player in _activePlayersBySeqNum.Values.Where(p => !p.IsBot))
                 {
                     player.RoundsPlayed++;
                 }
 
-                // Reset for next round
                 _lastKillerSeqNum = null;
 
                 if (_expandedDebugLogging)
@@ -572,10 +579,12 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private void ParseTeamScore(string[] parts)
         {
             if (parts.Length < 5) return;
+            if (!int.TryParse(parts[2], out int teamId))
+                return;
 
-            // [Time] T [TeamID] [Points] [Reason]
-            int teamId = int.Parse(parts[2]);
-            double points = double.Parse(parts[3]);
+            if (!double.TryParse(parts[3], out double points))
+                points = 0.0;
+
             string reason = parts[4];
 
             if (!_teamScores.ContainsKey(teamId))
@@ -583,26 +592,21 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             _teamScores[teamId] += (int)Math.Round(points);
 
-            // Special handling: team-level ball_carried duration - attribute to last ball carrier if available
             if (reason.Equals("ball_carried", StringComparison.OrdinalIgnoreCase) && parts.Length >= 4)
             {
-                // points often represent time carried; attribute if we have last carrier
                 if (_lastBallCarrierSeqNum.HasValue && _activePlayersBySeqNum.TryGetValue(_lastBallCarrierSeqNum.Value, out var carrier))
                 {
-                    // If you later add carry-time fields in UTPlayerMatchStats you can store points here.
                     if (_expandedDebugLogging)
                         Console.WriteLine($"{carrier.LastKnownName} carried ball for {points} seconds (team-level T event).");
                 }
             }
 
-            // Track TAM round wins
             if (_currentGameMode == UT2004GameMode.TAM && reason == "tdm_frag")
             {
                 if (!_roundWinsByTeam.ContainsKey(teamId))
                     _roundWinsByTeam[teamId] = 0;
                 _roundWinsByTeam[teamId]++;
 
-                // Award RoundsWon to all players on winning team
                 foreach (var player in _activePlayersBySeqNum.Values.Where(p => p.Team == teamId && !p.IsBot))
                 {
                     player.RoundsWon++;
@@ -619,17 +623,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private void ParseKill(string[] parts, double timestamp)
         {
             if (parts.Length < 6) return;
+            if (!int.TryParse(parts[2], out int killerSeqNum)) return;
+            if (!int.TryParse(parts[4], out int victimSeqNum)) return;
 
-            // [Time] K [KillerSeqNum] [DamageType] [VictimSeqNum] [Weapon]
-            int killerSeqNum = int.Parse(parts[2]);
-            int victimSeqNum = int.Parse(parts[4]);
             string weapon = parts[5];
             string damageType = parts[3];
 
             if (!_activePlayersBySeqNum.TryGetValue(victimSeqNum, out var victim))
                 return;
 
-            // Suicide or environment death
             if (killerSeqNum == -1 || killerSeqNum == victimSeqNum)
             {
                 victim.Suicides++;
@@ -641,7 +643,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (!_activePlayersBySeqNum.TryGetValue(killerSeqNum, out var killer))
                 return;
 
-            // Normal kill
             killer.Kills++;
             victim.Deaths++;
 
@@ -649,17 +650,31 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 killer.WeaponKills[weapon] = 0;
             killer.WeaponKills[weapon]++;
 
-            // Track headshots from damage type (handle UTComp_SSRHeadshot and other variants)
             if (damageType.IndexOf("headshot", StringComparison.OrdinalIgnoreCase) >= 0 ||
                 damageType.IndexOf("UTComp_SSRHeadshot", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 killer.Headshots++;
             }
 
-            // Track last killer for TAM round-ending kills
             if (_currentGameMode == UT2004GameMode.TAM)
             {
                 _lastKillerSeqNum = killerSeqNum;
+            }
+
+            // Register into kill matrix (use current GUIDs if available)
+            string killerGuid = killer.Guid ?? string.Empty;
+            string victimGuid = victim.Guid ?? string.Empty;
+            if (!string.IsNullOrEmpty(killerGuid) && !string.IsNullOrEmpty(victimGuid))
+            {
+                if (!_killMatch.TryGetValue(killerGuid, out var inner))
+                {
+                    inner = new Dictionary<string, int>();
+                    _killMatch[killerGuid] = inner;
+                }
+
+                if (!inner.TryGetValue(victimGuid, out var cnt))
+                    cnt = 0;
+                inner[victimGuid] = cnt + 1;
             }
 
             if (_expandedDebugLogging)
@@ -669,19 +684,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private void ParseScore(string[] parts)
         {
             if (parts.Length < 5) return;
-
-            // [Time] S [SeqNum] [Points] [Reason]
-            int seqNum = int.Parse(parts[2]);
-            double points = double.Parse(parts[3]);
+            if (!int.TryParse(parts[2], out int seqNum)) return;
+            if (!double.TryParse(parts[3], out double points)) points = 0.0;
             string reason = parts[4];
 
             if (!_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
                 return;
 
-            // Always add score first
             player.Score += (int)Math.Round(points);
 
-            // Normalize reason for robust matching
             var reasonLower = reason.ToLowerInvariant();
 
             // TAM Combat Tracking
@@ -703,8 +714,11 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 else if (reasonLower.Contains("1st") || reasonLower.Contains("first") || reasonLower.Contains("1st_touch"))
                     player.FlagCaptureFirstTouch++;
             }
-            // Flag Return Events
-            else if (reasonLower.Contains("flag_ret"))
+            // Flag Return Events — use exact prefix matching to avoid matching
+            // "flag_returned_timeout" which is a team/server event, not a player return.
+            else if (reasonLower == "flag_ret_enemy" ||
+                     reasonLower == "flag_ret_friendly" ||
+                     reasonLower == "flag_ret")
             {
                 player.FlagReturns++;
                 if (reasonLower.Contains("enemy"))
@@ -732,13 +746,12 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
             else if (reasonLower.Contains("self_frag"))
             {
-                // Suicide already handled in K parsing; keep for completeness
+                // Suicide already handled in K parsing
             }
-            // BombingRun / iBR scoring (ball events)
+            // BombingRun scoring
             else if (reasonLower.Contains("ball_cap_final") || reasonLower.Contains("ball_cap"))
             {
                 player.BallCaptures++;
-                // if we tracked a carrier, clear it (ball scored)
                 if (_lastBallCarrierSeqNum == seqNum)
                     _lastBallCarrierSeqNum = null;
             }
@@ -750,18 +763,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             {
                 player.BallThrownFinals++;
             }
-            // Other TAM-specific scoring
             else if (reasonLower.Contains("tdm_frag"))
             {
-                // Team got a frag point (round win in TAM)
+                // Team frag point (round win in TAM)
             }
             else if (reasonLower.Contains("objectivescore"))
             {
-                // TAM uses this for some scoring
+                // TAM objective scoring
             }
             else
             {
-                // Unknown/Other scoring events - just log them when debugging
                 if (_expandedDebugLogging)
                     Console.WriteLine($"{player.LastKnownName} scored {points} for UNKNOWN event: {reason}");
             }
@@ -773,26 +784,46 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private void ParseSpecialEvent(string[] parts, double timestamp)
         {
             if (parts.Length < 4) return;
+            if (!int.TryParse(parts[2], out int seqNum)) return;
 
-            int seqNum = int.Parse(parts[2]);
             string eventType = parts[3];
 
             if (!_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
                 return;
 
+            // Canonical UTStatsDB behavior: count occurrences of spree and multikill levels.
             if (eventType.StartsWith("spree_"))
             {
-                int streakLevel = int.Parse(eventType.Replace("spree_", ""));
+                if (int.TryParse(eventType.Substring("spree_".Length), out int streakLevel))
                 player.BestKillStreak = Math.Max(player.BestKillStreak, streakLevel);
+
+                // Map absolute streak to spree index used by UTStatsDB:
+                // 5-9 -> index 0, 10-14 -> index 1, ..., 30+ -> index 5
+                if (streakLevel >= 5)
+                {
+                    int spreeIndex = Math.Min((streakLevel - 5) / 5, 5);
+                    player.SpreeCounts[spreeIndex]++;
+                }
+
                 if (_expandedDebugLogging)
-                    Console.WriteLine($"{player.LastKnownName} achieved {eventType}!");
+                    Console.WriteLine($"{player.LastKnownName} achieved {eventType} (spree index recorded).");
             }
             else if (eventType.StartsWith("multikill_"))
             {
-                int multiLevel = int.Parse(eventType.Replace("multikill_", ""));
-                player.BestMultiKill = Math.Max(player.BestMultiKill, multiLevel);
-                if (_expandedDebugLogging)
-                    Console.WriteLine($"{player.LastKnownName} achieved {eventType}!");
+                if (int.TryParse(eventType.Substring("multikill_".Length), out int multiLevel))
+                {
+                    player.BestMultiKill = Math.Max(player.BestMultiKill, multiLevel);
+
+                    // Map multi to index: 2->0, 3->1, ..., 8+ -> 6
+                    if (multiLevel >= 2)
+                    {
+                        int multiIndex = Math.Min(multiLevel - 2, 6);
+                        player.MultiCounts[multiIndex]++;
+                    }
+
+                    if (_expandedDebugLogging)
+                        Console.WriteLine($"{player.LastKnownName} achieved {eventType} (multi index recorded).");
+                }
             }
             else if (eventType == "first_blood")
             {
@@ -801,7 +832,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
             else if (eventType == "Overkill")
             {
-                // TAM "Overkill" bonus for excessive damage
                 if (_expandedDebugLogging)
                     Console.WriteLine($"{player.LastKnownName} got Overkill!");
             }
@@ -810,9 +840,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private void ParseItemPickup(string[] parts)
         {
             if (parts.Length < 4) return;
-
-            // [Time] I [SeqNum] [ItemName]
-            int seqNum = int.Parse(parts[2]);
+            if (!int.TryParse(parts[2], out int seqNum)) return;
             string itemName = parts[3];
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
@@ -825,9 +853,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private void ParseChat(string[] parts, double timestamp, bool isTeamChat)
         {
             if (parts.Length < 4) return;
-
-            // [Time] V/TV [SeqNum] [Message]
-            int seqNum = int.Parse(parts[2]);
+            if (!int.TryParse(parts[2], out int seqNum)) return;
             string message = parts[3];
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
@@ -840,7 +866,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
         }
 
-        private void ParseEndGame(string[] parts)
+        private void ParseEndGame(string[] parts, double timestamp)
         {
             if (parts.Length < 3) return;
 
@@ -853,10 +879,38 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             if (_expandedDebugLogging)
                 Console.WriteLine($"Game Ended: {reason}, Winning Team: {_winningTeam}");
+
+            // Flush active time for everyone still marked active using this timestamp
+            foreach (var player in _activePlayersByGuid.Values)
+            {
+                if (player.LastActiveTimestamp >= 0)
+                {
+                    double delta = timestamp - player.LastActiveTimestamp;
+                    if (delta > 0)
+                        player.TotalTimeSeconds += (int)Math.Round(delta);
+                    player.LastActiveTimestamp = -1.0;
+                }
+            }
         }
 
         private bool ValidateMatchEligibility()
         {
+            // Before validating, if parser reached EOF without EG we still need to flush active time
+            // using the last seen event timestamp.
+            if (_lastEventTimestamp > 0)
+            {
+                foreach (var player in _activePlayersByGuid.Values)
+                {
+                    if (player.LastActiveTimestamp >= 0)
+                    {
+                        double delta = _lastEventTimestamp - player.LastActiveTimestamp;
+                        if (delta > 0)
+                            player.TotalTimeSeconds += (int)Math.Round(delta);
+                        player.LastActiveTimestamp = -1.0;
+                    }
+                }
+            }
+
             // Use GUID dictionary to get unique players (handles reconnects)
             var uniquePlayers = _activePlayersByGuid.Values.ToList();
             var humanPlayers = uniquePlayers.Where(p => !p.IsBot).ToList();
@@ -900,10 +954,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         {
             if (!ValidateMatchEligibility())
             {
-                if (_simpleDebugLogging || _expandedDebugLogging)
-                {
-                    //Console.WriteLine("Match discarded - stats will not be saved or processed.\n");
-                }
                 return null; // Return null to indicate invalid match
             }
 
@@ -944,14 +994,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 }
             }
 
-            // FIX: Group players by team instead of adding each player as their own list
             var statLog = new UT2004StatLog();
             foreach (var teamGroup in playersByTeam.OrderBy(g => g.Key))
             {
                 statLog.Players.Add(teamGroup.ToList());
             }
 
-            // Simple Debug Output: Concise match summary
+            // Expose the collected kill matrix
+            statLog.KillMatch = _killMatch;
+
             if (_simpleDebugLogging)
             {
                 Console.WriteLine($"Match Completed | Mode: {_currentGameMode} | Players: {_activePlayersByGuid.Count} | Winning Team: {_winningTeam}");
@@ -966,7 +1017,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
 
             statLog.MatchDate = _matchStartTime != DateTime.MinValue ? _matchStartTime : DateTime.UtcNow;
-
             statLog.GameMode = _currentGameMode;
 
             return statLog;

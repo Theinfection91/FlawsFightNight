@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FlawsFightNight.Core.Models.Stats.UT2004
+namespace FlawsFightNight.Core.Models.UT2004
 {
     /// <summary>
     /// Represents a player's persistent profile across all UT2004 matches.
@@ -14,7 +14,7 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         // Identity
         public string Guid { get; set; } = string.Empty;
         public string CurrentName { get; set; } = string.Empty;
-        public List<string> PreviousNames { get; set; } = new List<string>();
+        public List<string> PreviousNames { get; set; } = new();
 
         // Match History
         public int TotalMatches { get; set; } = 0;
@@ -22,6 +22,11 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public int Losses { get; set; } = 0;
         public DateTime LastPlayed { get; set; }
         public DateTime FirstSeen { get; set; }
+
+        // ELO Ratings (UTStatsDB-style)
+        public UT2004EloRating CaptureTheFlagElo { get; set; } = new();
+        public UT2004EloRating TAMElo { get; set; } = new();
+        public UT2004EloRating BombingRunElo { get; set; } = new();
 
         // OpenSkill Ratings
         public UT2004OpenSkillRating CaptureTheFlagRating { get; set; } = new(); // iCTF

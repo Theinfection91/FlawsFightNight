@@ -8,8 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FlawsFightNight.Core.Models.Stats.UT2004;
 using FlawsFightNight.Core.Enums.UT2004;
+using FlawsFightNight.Core.Models.UT2004;
 
 namespace FlawsFightNight.Managers
 {
