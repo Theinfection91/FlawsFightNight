@@ -15,7 +15,7 @@ namespace FlawsFightNight.Managers
     {
         private readonly UT2004LogParser _logParser;
         private readonly OpenSkillRatingService _ratingService;
-        private readonly UTStatsEloRatingService _eloService;
+        private readonly UTStatsDBEloRatingService _eloService;
         private int _iCTFStatLogIdCounter = 0;
         private int _TAMStatLogIdCounter = 0;
         private int _iBRStatLogIdCounter = 0;
@@ -32,7 +32,7 @@ namespace FlawsFightNight.Managers
         {
             _logParser = logParser;
             _ratingService = ratingService;
-            _eloService = new UTStatsEloRatingService();
+            _eloService = new UTStatsDBEloRatingService();
             GetStatLogCounts().Wait();
         }
 

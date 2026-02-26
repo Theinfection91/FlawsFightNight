@@ -36,6 +36,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         // iBR tracking - who last carried/picked the ball (bomb)
         private int? _lastBallCarrierSeqNum = null;
 
+        // Kill matrix: killerGuid -> (victimGuid -> count)
+        private Dictionary<string, Dictionary<string, int>> _killMatch = new();
+
         public async Task<T?> Parse<T>(Stream fileStream)
         {
             if (typeof(T) == typeof(UT2004StatLog))
@@ -161,6 +164,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _roundWinsByTeam.Clear();
             _lastBallCarrierSeqNum = null;
             _lastEventTimestamp = 0.0;
+            _killMatch.Clear();
         }
 
         private void ParseNewGame(string[] parts)
@@ -657,6 +661,22 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 _lastKillerSeqNum = killerSeqNum;
             }
 
+            // Register into kill matrix (use current GUIDs if available)
+            string killerGuid = killer.Guid ?? string.Empty;
+            string victimGuid = victim.Guid ?? string.Empty;
+            if (!string.IsNullOrEmpty(killerGuid) && !string.IsNullOrEmpty(victimGuid))
+            {
+                if (!_killMatch.TryGetValue(killerGuid, out var inner))
+                {
+                    inner = new Dictionary<string, int>();
+                    _killMatch[killerGuid] = inner;
+                }
+
+                if (!inner.TryGetValue(victimGuid, out var cnt))
+                    cnt = 0;
+                inner[victimGuid] = cnt + 1;
+            }
+
             if (_expandedDebugLogging)
                 Console.WriteLine($"{killer.LastKnownName} killed {victim.LastKnownName} with {weapon} ({damageType})");
         }
@@ -979,6 +999,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             {
                 statLog.Players.Add(teamGroup.ToList());
             }
+
+            // Expose the collected kill matrix
+            statLog.KillMatch = _killMatch;
 
             if (_simpleDebugLogging)
             {

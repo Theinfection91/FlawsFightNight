@@ -12,7 +12,8 @@ namespace FlawsFightNight.Core.Models.Stats.UT2004
         public UT2004GameMode GameMode { get; set; }
         public string GameModeName => GetCorrectGameModeName();
         public List<List<UTPlayerMatchStats>> Players { get; set; } = new();
-        
+        public Dictionary<string, Dictionary<string, int>> KillMatch { get; set; } = new();
+
         public UT2004StatLog() { }
 
         public string GetCorrectGameModeName()
