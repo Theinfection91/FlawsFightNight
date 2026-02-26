@@ -675,6 +675,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             var reasonLower = reason.ToLowerInvariant();
 
+            // TAM Combat Tracking
             if (reasonLower.Contains("enemydamage"))
             {
                 player.TotalDamageDealt += (int)Math.Round(points);
@@ -683,6 +684,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             {
                 player.FriendlyFireDamage += (int)Math.Round(Math.Abs(points));
             }
+            // Flag Capture Events
             else if (reasonLower.Contains("flag_cap"))
             {
                 if (reasonLower.Contains("final"))
@@ -692,7 +694,11 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 else if (reasonLower.Contains("1st") || reasonLower.Contains("first") || reasonLower.Contains("1st_touch"))
                     player.FlagCaptureFirstTouch++;
             }
-            else if (reasonLower.Contains("flag_ret"))
+            // Flag Return Events — use exact prefix matching to avoid matching
+            // "flag_returned_timeout" which is a team/server event, not a player return.
+            else if (reasonLower == "flag_ret_enemy" ||
+                     reasonLower == "flag_ret_friendly" ||
+                     reasonLower == "flag_ret")
             {
                 player.FlagReturns++;
                 if (reasonLower.Contains("enemy"))
@@ -700,6 +706,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 else if (reasonLower.Contains("friendly"))
                     player.FlagReturnsFriendly++;
             }
+            // Defensive Events
             else if (reasonLower.Contains("flag_denial"))
             {
                 player.FlagDenials++;
@@ -712,10 +719,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             {
                 player.CriticalFrags++;
             }
+            // Combat Events
             else if (reasonLower.Contains("headshot"))
             {
                 player.Headshots++;
             }
+            else if (reasonLower.Contains("self_frag"))
+            {
+                // Suicide already handled in K parsing
+            }
+            // BombingRun scoring
             else if (reasonLower.Contains("ball_cap_final") || reasonLower.Contains("ball_cap"))
             {
                 player.BallCaptures++;
@@ -729,6 +742,14 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             else if (reasonLower.Contains("ball_thrown_final") || reasonLower.Contains("ball_thrown"))
             {
                 player.BallThrownFinals++;
+            }
+            else if (reasonLower.Contains("tdm_frag"))
+            {
+                // Team frag point (round win in TAM)
+            }
+            else if (reasonLower.Contains("objectivescore"))
+            {
+                // TAM objective scoring
             }
             else
             {

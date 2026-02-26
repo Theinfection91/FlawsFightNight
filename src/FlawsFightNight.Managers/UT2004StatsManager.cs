@@ -20,9 +20,13 @@ namespace FlawsFightNight.Managers
         private int _TAMStatLogIdCounter = 0;
         private int _iBRStatLogIdCounter = 0;
 
-        // Minimum matches in a game mode before its ELO peak can be recorded.
-        // Prevents the calibration phase (everyone starting at 0) from locking in inflated peaks.
-        private const int MinMatchesBeforePeak = 20;
+        // Minimum matches in a given mode before its ELO peak starts being recorded.
+        // Prevents the very first 1-2 matches from locking in a permanent peak.
+        // Kept low for TAM/BR since many players never reach 20 matches in those modes,
+        // which was causing Peak=0.0 while Rating>0 (misleading display bug).
+        private const int MinCTFMatchesBeforePeak = 10;
+        private const int MinTAMMatchesBeforePeak = 3;
+        private const int MinBRMatchesBeforePeak = 3;
 
         public UT2004StatsManager(DataManager dataManager, UT2004LogParser logParser, OpenSkillRatingService ratingService) : base("UT2004StatsManager", dataManager)
         {
@@ -39,7 +43,6 @@ namespace FlawsFightNight.Managers
         #region Stat Log Processing
         public async Task<bool> IsLogFileProcessed(string fileName)
         {
-            // Ensure the processed log names file is loaded
             if (_dataManager.ProcessedLogNamesFile == null)
             {
                 await _dataManager.LoadProcessedLogNamesFile();
@@ -47,17 +50,11 @@ namespace FlawsFightNight.Managers
 
             var processedLogs = _dataManager.GetProcessedLogNames();
 
-            // Check if in processed list
             if (processedLogs.ProcessedLogFileNames?.Contains(fileName) == true)
-            {
                 return true;
-            }
 
-            // Check if in ignored list
             if (processedLogs.IgnoredLogFileNames?.Contains(fileName) == true)
-            {
                 return true;
-            }
 
             return false;
         }
@@ -68,10 +65,8 @@ namespace FlawsFightNight.Managers
             if (statLog != null)
             {
                 statLog.FileName = Path.ChangeExtension(fileName, ".json");
-                // Players are already grouped by team — just sort within each team
                 statLog.Players = statLog.Players.Select(teamList =>
-                    teamList.OrderByDescending(p => p.Score)
-                            .ToList()
+                    teamList.OrderByDescending(p => p.Score).ToList()
                 ).ToList();
                 statLog.Id = await GenerateStatLogId(statLog.GameMode);
                 await _dataManager.SaveStatLogMatchResultFile(statLog);
@@ -102,18 +97,11 @@ namespace FlawsFightNight.Managers
                 _ => 0
             };
 
-            // Increment the appropriate counter
             switch (gameMode)
             {
-                case UT2004GameMode.iCTF:
-                    _iCTFStatLogIdCounter++;
-                    break;
-                case UT2004GameMode.TAM:
-                    _TAMStatLogIdCounter++;
-                    break;
-                case UT2004GameMode.iBR:
-                    _iBRStatLogIdCounter++;
-                    break;
+                case UT2004GameMode.iCTF: _iCTFStatLogIdCounter++; break;
+                case UT2004GameMode.TAM: _TAMStatLogIdCounter++; break;
+                case UT2004GameMode.iBR: _iBRStatLogIdCounter++; break;
             }
 
             return $"{gameMode}{count + 1:000000}";
@@ -122,8 +110,6 @@ namespace FlawsFightNight.Managers
         public async Task MarkLogFileAsProcessed(string fileName)
         {
             var processedLogs = _dataManager.GetProcessedLogNames();
-
-            // Ensure lists are initialized
             processedLogs.ProcessedLogFileNames ??= new List<string>();
 
             if (!processedLogs.ProcessedLogFileNames.Contains(fileName))
@@ -136,8 +122,6 @@ namespace FlawsFightNight.Managers
         public async Task MarkLogFileAsIgnored(string fileName)
         {
             var processedLogs = _dataManager.GetProcessedLogNames();
-
-            // Ensure lists are initialized
             processedLogs.IgnoredLogFileNames ??= new List<string>();
 
             if (!processedLogs.IgnoredLogFileNames.Contains(fileName))
@@ -160,7 +144,6 @@ namespace FlawsFightNight.Managers
         {
             var allMatchStats = await GetAllProcessedStatLogs();
 
-            // Sort matches chronologically using timestamps from log files
             var chronologicalMatches = allMatchStats
                 .OrderBy(m => m.MatchDate)
                 .ToList();
@@ -181,21 +164,21 @@ namespace FlawsFightNight.Managers
                     foreach (var playerStats in team.Where(p => !p.IsBot))
                     {
                         if (!profiles.ContainsKey(playerStats.Guid))
-                        {
                             profiles[playerStats.Guid] = new UT2004PlayerProfile(playerStats.Guid);
-                        }
+
                         profiles[playerStats.Guid].UpdateStatsFromMatch(playerStats, match.GameMode);
                     }
                 }
 
-                // Step 2: Calculate OpenSkill ratings for this match
+                // Step 2: OpenSkill ratings
                 _ratingService.UpdateRatingsForMatch(match, profiles);
 
-                // Step 3: Calculate UTStatsDB ELO ratings for this match
+                // Step 3: UTStatsDB ELO ratings
                 _eloService.UpdateRatingsForMatch(match, profiles);
 
-                // Step 4: Update peak ELO rating only for the game mode that was just played,
-                // and only once the player has enough matches in that mode to be past calibration.
+                // Step 4: Update ELO peak for the mode just played.
+                // Uses mode-specific thresholds so TAM/BR players (who often have few matches)
+                // still get peaks recorded rather than showing Peak=0.0 with a non-zero Rating.
                 foreach (var team in match.Players)
                 {
                     foreach (var playerStats in team.Where(p => !p.IsBot))
@@ -206,66 +189,78 @@ namespace FlawsFightNight.Managers
                         switch (match.GameMode)
                         {
                             case UT2004GameMode.iCTF:
-                                if (profile.TotalCTFMatches >= MinMatchesBeforePeak)
+                                if (profile.TotalCTFMatches >= MinCTFMatchesBeforePeak)
                                     profile.CaptureTheFlagElo.UpdatePeak(match.MatchDate);
                                 break;
                             case UT2004GameMode.TAM:
-                                if (profile.TotalTAMMatches >= MinMatchesBeforePeak)
+                                if (profile.TotalTAMMatches >= MinTAMMatchesBeforePeak)
                                     profile.TAMElo.UpdatePeak(match.MatchDate);
                                 break;
                             case UT2004GameMode.iBR:
-                                if (profile.TotalBRMatches >= MinMatchesBeforePeak)
+                                if (profile.TotalBRMatches >= MinBRMatchesBeforePeak)
                                     profile.BombingRunElo.UpdatePeak(match.MatchDate);
                                 break;
                         }
                     }
                 }
 
-                // Progress indicator every 100 matches
                 if (processedCount % 100 == 0)
-                {
                     Console.WriteLine($"[UT2004StatsManager] Processed {processedCount}/{chronologicalMatches.Count} matches...");
-                }
             }
 
-            // Save all profiles
             Console.WriteLine($"[UT2004StatsManager] Saving {profiles.Count} player profiles...");
             foreach (var profile in profiles.Values)
-            {
                 await _dataManager.SaveUT2004PlayerProfileFile(profile);
-            }
 
-            // Calculate statistics
+            await _dataManager.LoadAllUT2004PlayerProfileFiles();
+
             int openSkillSkipped = _ratingService.SkippedImbalancedMatches + _ratingService.SkippedInsufficientPlayers;
             int openSkillRated = chronologicalMatches.Count - openSkillSkipped;
-            double openSkillSkipPercentage = (double)openSkillSkipped / chronologicalMatches.Count * 100;
+            double openSkillSkipPct = (double)openSkillSkipped / chronologicalMatches.Count * 100;
 
-            Console.WriteLine($"\n[UT2004StatsManager] ===== RATING SUMMARY =====");
-            Console.WriteLine($"[UT2004StatsManager] Total matches processed: {chronologicalMatches.Count}");
-            Console.WriteLine($"\n[UT2004StatsManager] --- OpenSkill Ratings ---");
-            Console.WriteLine($"[UT2004StatsManager] Matches rated: {openSkillRated}");
-            Console.WriteLine($"[UT2004StatsManager] Skipped (unequal team sizes): {_ratingService.SkippedImbalancedMatches}");
-            Console.WriteLine($"[UT2004StatsManager] Skipped (insufficient players): {_ratingService.SkippedInsufficientPlayers}");
-            Console.WriteLine($"[UT2004StatsManager] Total skipped: {openSkillSkipped} ({openSkillSkipPercentage:F1}%)");
-            Console.WriteLine($"\n[UT2004StatsManager] --- UTStatsDB ELO Ratings ---");
-            Console.WriteLine($"[UT2004StatsManager] Matches rated: {chronologicalMatches.Count}");
-            Console.WriteLine($"[UT2004StatsManager] Skipped (young players): {_eloService.SkippedYoungPlayers}");
-            Console.WriteLine($"[UT2004StatsManager] Peak guard (min matches before peak): {MinMatchesBeforePeak}");
-            Console.WriteLine($"\n[UT2004StatsManager] Player profiles updated: {profiles.Count}");
-            Console.WriteLine($"[UT2004StatsManager] ==========================\n");
+            //Console.WriteLine($"\n[UT2004StatsManager] ===== RATING SUMMARY =====");
+            //Console.WriteLine($"[UT2004StatsManager] Total matches processed: {chronologicalMatches.Count}");
+            //Console.WriteLine($"\n[UT2004StatsManager] --- OpenSkill Ratings ---");
+            //Console.WriteLine($"[UT2004StatsManager] Matches rated:              {openSkillRated}");
+            //Console.WriteLine($"[UT2004StatsManager] Skipped (unequal teams):    {_ratingService.SkippedImbalancedMatches}");
+            //Console.WriteLine($"[UT2004StatsManager] Skipped (not enough players): {_ratingService.SkippedInsufficientPlayers}");
+            //Console.WriteLine($"[UT2004StatsManager] Total skipped:              {openSkillSkipped} ({openSkillSkipPct:F1}%)");
+            //Console.WriteLine($"\n[UT2004StatsManager] --- UTStatsDB ELO Ratings ---");
+            //Console.WriteLine($"[UT2004StatsManager] Matches rated:              {chronologicalMatches.Count}");
+            //Console.WriteLine($"[UT2004StatsManager] Skipped (young players):    {_eloService.SkippedYoungPlayers}");
+            //Console.WriteLine($"[UT2004StatsManager] Peak thresholds — CTF: {MinCTFMatchesBeforePeak}, TAM: {MinTAMMatchesBeforePeak}, BR: {MinBRMatchesBeforePeak}");
+            //Console.WriteLine($"\n[UT2004StatsManager] Player profiles updated:   {profiles.Count}");
+            //Console.WriteLine($"[UT2004StatsManager] ==========================\n");
+
+            //await PrintAllPlayerRatings();
         }
 
         public async Task RebuildPlayerProfiles()
         {
             Console.WriteLine($"[UT2004StatsManager] Rebuilding player profiles from scratch...");
 
-            // Reset ELO service statistics
             _eloService.SkippedYoungPlayers = 0;
             _ratingService.SkippedImbalancedMatches = 0;
             _ratingService.SkippedInsufficientPlayers = 0;
 
             await _dataManager.DeleteUT2004ProfilesDatabase();
             await SetupPlayerProfiles();
+        }
+
+        public async Task PrintAllPlayerRatings()
+        {
+            // Make temp list and sort by most total matches across all modes
+            List<UT2004PlayerProfile> tempList = new List<UT2004PlayerProfile>(_dataManager.UT2004PlayerProfileFiles.Select(f => f.PlayerProfile));
+            tempList = tempList.OrderByDescending(p => p.TotalMatches).ToList();
+            foreach (var profile in tempList)
+            {
+                Console.WriteLine($"Player: {profile.Guid}");
+                Console.WriteLine($"  CTF ELO: {profile.CaptureTheFlagElo.Rating:F1} (Change: {profile.CaptureTheFlagElo.Change:+0.0;-0.0}, Peak: {profile.CaptureTheFlagElo.Peak:F1} on {profile.CaptureTheFlagElo.PeakDate:yyyy-MM-dd})");
+                Console.WriteLine($"  TAM ELO: {profile.TAMElo.Rating:F1} (Change: {profile.TAMElo.Change:+0.0;-0.0}, Peak: {profile.TAMElo.Peak:F1} on {profile.TAMElo.PeakDate:yyyy-MM-dd})");
+                Console.WriteLine($"  BR ELO: {profile.BombingRunElo.Rating:F1} (Change: {profile.BombingRunElo.Change:+0.0;-0.0}, Peak: {profile.BombingRunElo.Peak:F1} on {profile.BombingRunElo.PeakDate:yyyy-MM-dd})");
+                Console.WriteLine($"  Total Matches - CTF: {profile.TotalCTFMatches}, TAM: {profile.TotalTAMMatches}, BR: {profile.TotalBRMatches}");
+                Console.WriteLine();
+            }
         }
         #endregion
     }
