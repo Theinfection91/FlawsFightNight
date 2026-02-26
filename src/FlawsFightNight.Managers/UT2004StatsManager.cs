@@ -173,8 +173,6 @@ namespace FlawsFightNight.Managers
                 _eloService.UpdateRatingsForMatch(match, profiles);
 
                 // Step 4: Update ELO peak for the mode just played.
-                // Uses mode-specific thresholds so TAM/BR players (who often have few matches)
-                // still get peaks recorded rather than showing Peak=0.0 with a non-zero Rating.
                 foreach (var team in match.Players)
                 {
                     foreach (var playerStats in team.Where(p => !p.IsBot))
@@ -200,20 +198,58 @@ namespace FlawsFightNight.Managers
                     }
                 }
 
+                // NEW: build per-player ELO changes for this match and persist a generated summary on the match
+                try
+                {
+                    var eloChanges = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var team in match.Players)
+                    {
+                        foreach (var playerStats in team.Where(p => !p.IsBot))
+                        {
+                            if (string.IsNullOrEmpty(playerStats.Guid)) continue;
+                            if (!profiles.TryGetValue(playerStats.Guid, out var profile)) continue;
+
+                            double change = match.GameMode switch
+                            {
+                                UT2004GameMode.iCTF => profile.CaptureTheFlagElo.Change,
+                                UT2004GameMode.TAM  => profile.TAMElo.Change,
+                                UT2004GameMode.iBR  => profile.BombingRunElo.Change,
+                                _ => 0.0
+                            };
+
+                            if (!eloChanges.ContainsKey(playerStats.Guid))
+                                eloChanges[playerStats.Guid] = change;
+                        }
+                    }
+
+                    // Generate and store the summary on the stat log (RuleBasedMatchSummarizer sets match.MatchSummary too)
+                    var summarizer = new RuleBasedMatchSummarizer();
+                    summarizer.Summarize(match, profiles, eloChanges);
+
+                    // Persist the updated stat log (with MatchSummary) back to disk
+                    await _dataManager.SaveStatLogMatchResultFile(match);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[UT2004StatsManager] Error while generating/saving match summary for {match.FileName} on {match.MatchDate:yyyy-MM-dd}: {ex.Message}");
+                }
+
                 if (processedCount % 100 == 0)
                     Console.WriteLine($"[UT2004StatsManager] Processed {processedCount}/{chronologicalMatches.Count} matches...");
             }
 
             Console.WriteLine($"[UT2004StatsManager] Saving {profiles.Count} player profiles...");
+
+            await GenerateAndPersistMatchSummaries();
+
             foreach (var profile in profiles.Values)
                 await _dataManager.SaveUT2004PlayerProfileFile(profile);
 
             await _dataManager.LoadAllUT2004PlayerProfileFiles();
-
-            int openSkillSkipped = _ratingService.SkippedImbalancedMatches + _ratingService.SkippedInsufficientPlayers;
-            int openSkillRated = chronologicalMatches.Count - openSkillSkipped;
-            double openSkillSkipPct = (double)openSkillSkipped / chronologicalMatches.Count * 100;
-
+            //int openSkillSkipped = _ratingService.SkippedImbalancedMatches + _ratingService.SkippedInsufficientPlayers;
+            //int openSkillRated = chronologicalMatches.Count - openSkillSkipped;
+            //double openSkillSkipPct = (double)openSkillSkipped / chronologicalMatches.Count * 100;
             //Console.WriteLine($"\n[UT2004StatsManager] ===== RATING SUMMARY =====");
             //Console.WriteLine($"[UT2004StatsManager] Total matches processed: {chronologicalMatches.Count}");
             //Console.WriteLine($"\n[UT2004StatsManager] --- OpenSkill Ratings ---");
@@ -241,6 +277,77 @@ namespace FlawsFightNight.Managers
 
             await _dataManager.DeleteUT2004ProfilesDatabase();
             await SetupPlayerProfiles();
+        }
+
+        public async Task GenerateAndPersistMatchSummaries(bool overwrite = false)
+        {
+            // Ensure profiles are loaded
+            await _dataManager.LoadAllUT2004PlayerProfileFiles();
+
+            var profiles = _dataManager.UT2004PlayerProfileFiles?
+                .Where(f => f?.PlayerProfile != null)
+                .ToDictionary(f => f.PlayerProfile.Guid, f => f.PlayerProfile, StringComparer.OrdinalIgnoreCase)
+                ?? new Dictionary<string, UT2004PlayerProfile>(StringComparer.OrdinalIgnoreCase);
+
+            var allMatches = await GetAllProcessedStatLogs();
+            if (allMatches == null || allMatches.Count == 0)
+            {
+                Console.WriteLine("[UT2004StatsManager] No processed stat logs found.");
+                return;
+            }
+
+            var summarizer = new RuleBasedMatchSummarizer();
+            int updated = 0;
+            int skipped = 0;
+
+            Console.WriteLine($"[UT2004StatsManager] Generating summaries for {allMatches.Count} matches...");
+
+            foreach (var match in allMatches.OrderBy(m => m.MatchDate))
+            {
+                try
+                {
+                    if (!overwrite && !string.IsNullOrWhiteSpace(match.MatchSummary))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    // Build eloChanges from profiles (mode-specific Change fields)
+                    var eloChanges = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var team in match.Players)
+                    {
+                        foreach (var p in team.Where(x => x != null && !x.IsBot))
+                        {
+                            if (string.IsNullOrEmpty(p.Guid)) continue;
+                            if (!profiles.TryGetValue(p.Guid, out var prof)) continue;
+
+                            double change = match.GameMode switch
+                            {
+                                UT2004GameMode.iCTF => prof.CaptureTheFlagElo.Change,
+                                UT2004GameMode.TAM => prof.TAMElo.Change,
+                                UT2004GameMode.iBR => prof.BombingRunElo.Change,
+                                _ => 0.0
+                            };
+
+                            eloChanges[p.Guid] = change;
+                        }
+                    }
+
+                    // Summarize and persist
+                    summarizer.Summarize(match, profiles, eloChanges);
+                    await _dataManager.SaveStatLogMatchResultFile(match);
+
+                    updated++;
+                    if (updated % 100 == 0)
+                        Console.WriteLine($"[UT2004StatsManager] Summaries updated: {updated}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[UT2004StatsManager] Error saving summary for {match.FileName} ({match.MatchDate:yyyy-MM-dd}): {ex.Message}");
+                }
+            }
+
+            Console.WriteLine($"[UT2004StatsManager] Done. Updated: {updated}, Skipped (already present): {skipped}");
         }
 
         public async Task PrintAllPlayerRatings()
