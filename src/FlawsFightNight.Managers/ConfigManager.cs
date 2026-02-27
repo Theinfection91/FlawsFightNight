@@ -17,8 +17,8 @@ namespace FlawsFightNight.Managers
         {
             _client = client;
 
-            AddFTPCredential(CreateFTPCredential("Chicago Server", "127.0.0.1", 21, "sho_chi", "password1", "/placeholderDir/anotherDir/UserLogs")?.Result)?.Wait();
-            AddFTPCredential(CreateFTPCredential("New York Server", "127.0.0.1", 21, "sho_ny", "password1", "/thisDir/anotherDir/oneMoreDir/UserLogs")?.Result)?.Wait();  
+            //AddFTPCredential(CreateFTPCredential("Chicago Server", "127.0.0.1", 21, "sho_chi", "password1", "/placeholderDir/anotherDir/UserLogs")?.Result)?.Wait();
+            //AddFTPCredential(CreateFTPCredential("New York Server", "127.0.0.1", 21, "sho_ny", "password1", "/thisDir/anotherDir/oneMoreDir/UserLogs")?.Result)?.Wait();  
         }
 
         #region Discord Config
@@ -256,6 +256,56 @@ namespace FlawsFightNight.Managers
         {
             return _dataManager.FTPCredentialFile.FTPCredentials;
         }
+
+        public async Task FTPSetupProcess()
+        {
+            if (!IsFTPCredentialsSet())
+            {
+                Console.WriteLine($"{DateTime.Now} - [ConfigManager] No FTP credentials found in Credentials/ftp_credentials.json file. If you want to use FTP features, please enter in your FTP credential information now.");
+                Console.WriteLine($"{DateTime.Now} - [ConfigManager] If you want to skip this for now, simply enter 0 for the server name when prompted.");
+                bool IsFTPSetupComplete = false;
+                while (!IsFTPSetupComplete)
+                {
+                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter a server name for this FTP credential (This is just a name to identify the credential, it does not have to match anything on the actual FTP server): ");
+                    string? serverName = Console.ReadLine();
+                    if (serverName != null && serverName.Equals("0"))
+                    {
+                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup skipped. You can manually add your FTP credentials later by editing the Credentials/ftp_credentials.json file or by using the AddFTPCredential method in this ConfigManager class.");
+                        IsFTPSetupComplete = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the IP address for this FTP credential (This should be the actual IP address of the FTP server): ");
+                        string? ipAddress = Console.ReadLine();
+                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the port number for this FTP credential (This should be the actual port number of the FTP server, default is usually 21): ");
+                        int port = int.Parse(Console.ReadLine() ?? "21");
+                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the username for this FTP credential (This should be the actual username for the FTP server): ");
+                        string? username = Console.ReadLine();
+                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the password for this FTP credential (This should be the actual password for the FTP server): ");
+                        string? password = Console.ReadLine();
+                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the user logs directory path for this FTP credential (This should be the directory path on the FTP server where user logs are stored): ");
+                        string? userLogsDirectoryPath = Console.ReadLine();
+                        var newCredential = await CreateFTPCredential(serverName, ipAddress, port, username, password, userLogsDirectoryPath);
+                        if (newCredential != null)
+                        {
+                            await AddFTPCredential(newCredential);
+                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP credential for server '{serverName}' added successfully.");
+                        }
+                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Do you want to add another FTP credential? (y/n): ");
+                        string? addAnother = Console.ReadLine();
+                        if (addAnother != null && addAnother.Equals("y", StringComparison.OrdinalIgnoreCase))
+                        {
+                            IsFTPSetupComplete = false;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup complete. You can always add more credentials later by running the FTP Setup Discord Command then come back to the console.");
+                            IsFTPSetupComplete = true;
+                        }
+                    }
         #endregion
+                }
+            }
+        }
     }
 }
