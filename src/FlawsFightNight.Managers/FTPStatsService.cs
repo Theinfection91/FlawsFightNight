@@ -165,7 +165,7 @@ namespace FlawsFightNight.Managers
                         }
                     }
                     // Testing
-                    //await _ut2004StatsManager.RebuildPlayerProfiles();
+                    await _ut2004StatsManager.RebuildPlayerProfiles();
                 }
                 catch (FtpCommandException ftpEx)
                 {

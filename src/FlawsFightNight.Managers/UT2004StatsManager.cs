@@ -162,7 +162,8 @@ namespace FlawsFightNight.Managers
                         if (!profiles.ContainsKey(playerStats.Guid))
                             profiles[playerStats.Guid] = new UT2004PlayerProfile(playerStats.Guid);
 
-                        profiles[playerStats.Guid].UpdateStatsFromMatch(playerStats, match.GameMode);
+                        // UPDATED: pass match date so FirstSeen/LastPlayed are recorded correctly
+                        profiles[playerStats.Guid].UpdateStatsFromMatch(playerStats, match.GameMode, match.MatchDate);
                     }
                 }
 

@@ -944,14 +944,14 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 return false;
             }
 
-            // Rule 4: At least one kill must be recorded from each team (to prevent matches where players just connect and do nothing)
+            // Rule 4: At least 3 kills must be recorded from each team (to prevent matches where players just connect and do nothing)
             foreach ( var teamId in teamIds )
             {
-                if (!humanPlayers.Any(p => p.Team == teamId && p.Kills > 0))
+                if (!humanPlayers.Any(p => p.Team == teamId && p.Kills >= 3))
                 {
                     if (_simpleDebugLogging || _expandedDebugLogging)
                     {
-                        Console.WriteLine($"\nMatch INVALID: Team {teamId} has no kills recorded. " +
+                        Console.WriteLine($"\nMatch INVALID: Team {teamId} doesn't have at least 3 kills recorded. " +
                             $"Players on this team: {string.Join(", ", humanPlayers.Where(p => p.Team == teamId).Select(p => p.LastKnownName))}");
                     }
                     return false;

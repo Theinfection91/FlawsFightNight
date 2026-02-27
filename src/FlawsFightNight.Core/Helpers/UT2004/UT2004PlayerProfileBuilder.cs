@@ -10,13 +10,13 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 {
     public static class UT2004PlayerProfileBuilder
     {
-        public async static Task<UT2004PlayerProfile> BuildProfileFromMatchStats(UTPlayerMatchStats playerMatchStats, UT2004GameMode gameMode, UT2004PlayerProfile? existingProfile = null)
+        public async static Task<UT2004PlayerProfile> BuildProfileFromMatchStats(UTPlayerMatchStats playerMatchStats, UT2004GameMode gameMode, DateTime matchDate, UT2004PlayerProfile? existingProfile = null)
         {
             var profile = existingProfile ?? new UT2004PlayerProfile(playerMatchStats.Guid);
-            
-            // Use the profile's built-in method to update all stats
-            profile.UpdateStatsFromMatch(playerMatchStats, gameMode);
-            
+
+            // Use the profile's built-in method to update all stats and record match timestamps
+            profile.UpdateStatsFromMatch(playerMatchStats, gameMode, matchDate);
+
             return profile;
         }
 
@@ -28,25 +28,28 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         public static async Task<List<UT2004PlayerProfile>> InitializeFreshDatabase(List<UT2004StatLog> allMatchStats)
         {
             var profiles = new Dictionary<string, UT2004PlayerProfile>();
-            
+
             foreach (var match in allMatchStats)
             {
                 foreach (var team in match.Players)
                 {
                     foreach (var playerStats in team)
                     {
+                        if (string.IsNullOrEmpty(playerStats.Guid))
+                            continue;
+
                         if (!profiles.ContainsKey(playerStats.Guid))
                         {
-                            profiles[playerStats.Guid] = await BuildProfileFromMatchStats(playerStats, match.GameMode);
+                            profiles[playerStats.Guid] = await BuildProfileFromMatchStats(playerStats, match.GameMode, match.MatchDate);
                         }
                         else
                         {
-                            profiles[playerStats.Guid] = await BuildProfileFromMatchStats(playerStats, match.GameMode, profiles[playerStats.Guid]);
+                            profiles[playerStats.Guid] = await BuildProfileFromMatchStats(playerStats, match.GameMode, match.MatchDate, profiles[playerStats.Guid]);
                         }
                     }
                 }
             }
-            
+
             return profiles.Values.ToList();
         }
     }

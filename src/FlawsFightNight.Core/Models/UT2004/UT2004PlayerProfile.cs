@@ -146,20 +146,32 @@ namespace FlawsFightNight.Core.Models.UT2004
         // Weapon Stats - Detailed TAM accuracy tracking (cumulative)
         public Dictionary<string, WeaponStats> TotalWeaponStatistics { get; set; } = new Dictionary<string, WeaponStats>();
 
-        public UT2004PlayerProfile() { }
+        public UT2004PlayerProfile() 
+        { 
+            // Keep default dates unset — they'll be set from match data during rebuild.
+            FirstSeen = DateTime.MinValue;
+            LastPlayed = DateTime.MinValue;
+        }
 
         public UT2004PlayerProfile(string guid)
         {
             Guid = guid;
-            FirstSeen = DateTime.UtcNow;
-            LastPlayed = DateTime.UtcNow;
+            FirstSeen = DateTime.MinValue;
+            LastPlayed = DateTime.MinValue;
         }
 
         /// <summary>
         /// Update cumulative stats after a match
         /// </summary>
-        public void UpdateStatsFromMatch(UTPlayerMatchStats matchStats, UT2004GameMode gameMode)
+        public void UpdateStatsFromMatch(UTPlayerMatchStats matchStats, UT2004GameMode gameMode, DateTime matchDate)
         {
+            // Set first-seen on first update
+            if (FirstSeen == DateTime.MinValue)
+                FirstSeen = matchDate;
+
+            // Update LastPlayed to the match date
+            LastPlayed = matchDate;
+
             TotalMatches++;
             if (matchStats.IsWinner) Wins++;
             else Losses++;
@@ -228,8 +240,6 @@ namespace FlawsFightNight.Core.Models.UT2004
                 }
                 CurrentName = matchStats.LastKnownName ?? CurrentName;
             }
-
-            LastPlayed = DateTime.UtcNow;
         }
 
         private void UpdateCTFStats(UTPlayerMatchStats matchStats)
