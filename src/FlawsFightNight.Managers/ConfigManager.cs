@@ -12,12 +12,13 @@ namespace FlawsFightNight.Managers
     {
         private DiscordSocketClient _client;
 
-        private bool _ftpDebugMode = false;
+        private bool _ftpDebugMode = true;
         public ConfigManager(DiscordSocketClient client, DataManager dataManager) : base("ConfigManager", dataManager)
         {
             _client = client;
 
-            CreateFTPCredential("Default Server", "127.0.0.1", "sho_ny", "password1")?.Wait();
+            AddFTPCredential(CreateFTPCredential("Chicago Server", "127.0.0.1", 21, "sho_chi", "password1", "/placeholderDir/anotherDir/UserLogs")?.Result)?.Wait();
+            AddFTPCredential(CreateFTPCredential("New York Server", "127.0.0.1", 21, "sho_ny", "password1", "/thisDir/anotherDir/oneMoreDir/UserLogs")?.Result)?.Wait();  
         }
 
         #region Discord Config
@@ -236,23 +237,24 @@ namespace FlawsFightNight.Managers
             await _dataManager.SaveAndReloadFTPCredentialFile();
         }
 
-        public async Task<FTPCredential>? CreateFTPCredential(string serverName, string? ipAddress, string? username, string? password)
+        public async Task<FTPCredential>? CreateFTPCredential(string serverName, string? ipAddress, int port, string? username, string? password, string? userLogsDirectoryPath)
         {
-            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Password: {password}");
-            if (string.IsNullOrEmpty(serverName))
+            var newCredential = new FTPCredential()
             {
-                Console.WriteLine($"{DateTime.Now} - [ConfigManager] Server name is required to create an FTP credential.");
-                return null;
-            }
-            var newCredential = new FTPCredential(serverName)
-            {
+                Id = _dataManager.FTPCredentialFile.FTPCredentials.Count + 1,
+                ServerName = serverName,
                 IPAddress = ipAddress,
+                Port = port,
                 Username = username,
-                Password = password
+                Password = password,
+                UserLogsDirectoryPath = userLogsDirectoryPath
             };
-            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Created FTP credential with password: {newCredential.EncryptedPassword}");
-            await AddFTPCredential(newCredential);
             return newCredential;
+        }
+
+        public List<FTPCredential>? GetFTPCredentials()
+        {
+            return _dataManager.FTPCredentialFile.FTPCredentials;
         }
         #endregion
     }

@@ -14,6 +14,7 @@ namespace FlawsFightNight.Data.Models
         public int Id { get; set; }
         public string ServerName { get; set; }
         public string? IPAddress { get; set; }
+        public int Port { get; set; }
         public string? Username { get; set; }
 
         private string? _encryptedPassword;
@@ -32,11 +33,8 @@ namespace FlawsFightNight.Data.Models
             set => _encryptedPassword = value;
         }
 
-        public string? UserLogsDirectory { get; set; }
+        public string? UserLogsDirectoryPath { get; set; }
 
-        public FTPCredential(string serverName)
-        {
-            ServerName = serverName;
-        }
+        public FTPCredential() { }
     }
 }
