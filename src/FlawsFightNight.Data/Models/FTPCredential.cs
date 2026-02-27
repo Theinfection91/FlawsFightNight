@@ -11,6 +11,8 @@ namespace FlawsFightNight.Data.Models
 {
     public class FTPCredential : IEncryptable
     {
+        public int Id { get; set; }
+        public string ServerName { get; set; }
         public string? IPAddress { get; set; }
         public string? Username { get; set; }
 
@@ -32,6 +34,9 @@ namespace FlawsFightNight.Data.Models
 
         public string? UserLogsDirectory { get; set; }
 
-        public FTPCredential() { }
+        public FTPCredential(string serverName)
+        {
+            ServerName = serverName;
+        }
     }
 }
