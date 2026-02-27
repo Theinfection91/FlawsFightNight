@@ -4,15 +4,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.WebSocket;
+using FlawsFightNight.Data.Models;
 
 namespace FlawsFightNight.Managers
 {
     public class ConfigManager : BaseDataDriven
     {
         private DiscordSocketClient _client;
+
+        private bool _ftpDebugMode = false;
         public ConfigManager(DiscordSocketClient client, DataManager dataManager) : base("ConfigManager", dataManager)
         {
             _client = client;
+
+            CreateFTPCredential("Default Server", "127.0.0.1", "sho_ny", "password1")?.Wait();
         }
 
         #region Discord Config
@@ -207,7 +212,48 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region FTP Config
+        public bool IsFTPCredentialsSet()
+        {
+            return _dataManager.FTPCredentialFile.FTPCredentials.Count > 0;
+        }
 
+        public async Task AddFTPCredential(FTPCredential credential)
+        {
+            foreach (var existingCredential in _dataManager.FTPCredentialFile.FTPCredentials)
+            {
+                if (existingCredential.ServerName.Equals(credential.ServerName, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] An FTP credential with the server name '{credential.ServerName}' already exists. Please choose a different server name.");
+                    return;
+                }
+                if (existingCredential.IPAddress != null && credential.IPAddress != null && existingCredential.IPAddress.Equals(credential.IPAddress, StringComparison.OrdinalIgnoreCase) && _ftpDebugMode == false)
+                {
+                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] An FTP credential with the IP address '{credential.IPAddress}' already exists. Please choose a different IP address.");
+                    return;
+                }
+            }
+            _dataManager.FTPCredentialFile.FTPCredentials.Add(credential);
+            await _dataManager.SaveAndReloadFTPCredentialFile();
+        }
+
+        public async Task<FTPCredential>? CreateFTPCredential(string serverName, string? ipAddress, string? username, string? password)
+        {
+            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Password: {password}");
+            if (string.IsNullOrEmpty(serverName))
+            {
+                Console.WriteLine($"{DateTime.Now} - [ConfigManager] Server name is required to create an FTP credential.");
+                return null;
+            }
+            var newCredential = new FTPCredential(serverName)
+            {
+                IPAddress = ipAddress,
+                Username = username,
+                Password = password
+            };
+            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Created FTP credential with password: {newCredential.EncryptedPassword}");
+            await AddFTPCredential(newCredential);
+            return newCredential;
+        }
         #endregion
     }
 }

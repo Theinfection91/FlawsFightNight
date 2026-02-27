@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using FlawsFightNight.Data.Models;
 using FluentFTP;
 using FluentFTP.Exceptions;
 using Microsoft.Extensions.Hosting;
@@ -19,6 +20,7 @@ namespace FlawsFightNight.Managers
 
         private readonly DiscordSocketClient _discordClient;
         private AsyncFtpClient? _ftpClient;
+        private Dictionary<FTPCredential, AsyncFtpClient> _ftpClients;
 
         public FTPStatsService(ConfigManager configManager, DiscordSocketClient client, GitBackupManager gitBackupManager, UT2004StatsManager uT2004StatsManager)
         {
@@ -79,6 +81,13 @@ namespace FlawsFightNight.Managers
             {
                 try
                 {
+                    if (!_configManager.IsFTPCredentialsSet())
+                    {
+                        Console.WriteLine($"{DateTime.Now} - [FTPStatsService] FTP credentials are not set. Skipping FTP processing...");
+                        await Task.Delay(TimeSpan.FromSeconds(30), token);
+                        continue;
+                    }
+
                     // Ensure connection is alive
                     if (!_ftpClient.IsConnected)
                     {

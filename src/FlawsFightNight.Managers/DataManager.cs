@@ -313,7 +313,7 @@ namespace FlawsFightNight.Managers
         }
         #endregion
 
-        #region FTP Credential Files
+        #region FTP Credential File
         public async Task LoadFTPCredentialFiles()
         {
             FTPCredentialFile = await _ftpCredentialHandler.Load();
@@ -324,9 +324,9 @@ namespace FlawsFightNight.Managers
             await _ftpCredentialHandler.Save(ftpCredentialFile);
         }
 
-        public async Task SaveAndReloadFTPCredentialFile(FTPCredentialFile ftpCredentialFile)
+        public async Task SaveAndReloadFTPCredentialFile()
         {
-            await _ftpCredentialHandler.Save(ftpCredentialFile);
+            await _ftpCredentialHandler.Save(FTPCredentialFile);
             await LoadFTPCredentialFiles();
         }
         #endregion
