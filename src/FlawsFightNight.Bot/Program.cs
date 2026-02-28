@@ -164,12 +164,19 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<ProcessedLogNamesHandler>();
                     services.AddSingleton<StatLogMatchResultHandler>();
                     services.AddSingleton<TournamentDataHandler>();
+                    services.AddSingleton<UserProfileHandler>();
                     services.AddSingleton<UT2004PlayerProfileHandler>();
 
                     // Parsers
                     services.AddSingleton<UT2004LogParser>();
                 })
                 .Build();
+
+            using (var scope = host.Services.CreateScope())
+            {
+                var dataManager = scope.ServiceProvider.GetRequiredService<DataManager>();
+                await dataManager.InitializeAsync();
+            }
 
             // Prep config
             _services = host.Services;

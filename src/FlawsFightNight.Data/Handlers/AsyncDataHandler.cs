@@ -16,7 +16,8 @@ namespace FlawsFightNight.Data.Handlers
         TAMStatLogs,
         iBRStatLogs,
         UT2004PlayerProfiles,
-        Credentials
+        Credentials,
+        UserProfiles
     }
 
     public abstract class AsyncDataHandler<T> where T : new()
@@ -25,16 +26,52 @@ namespace FlawsFightNight.Data.Handlers
         protected string _filePath;
         private readonly SemaphoreSlim _fileLock = new SemaphoreSlim(1, 1);
 
+        private bool _hasPendingPath = false;
+        private bool _hasPendingCustomPath = false;
+        private PathOption? _pendingPathOption;
+        private string? _pendingFileName;
+        private string? _pendingCustomFolderName;
+
+        private static readonly JsonSerializerSettings _safeJsonSettings = new()
+        {
+            TypeNameHandling = TypeNameHandling.Auto,
+            SerializationBinder = new SafeSerializationBinder(),
+            Formatting = Formatting.Indented
+        };
+
         protected AsyncDataHandler() { }
 
         protected AsyncDataHandler(PathOption pathOption, string fileName)
         {
-            SetFilePath(pathOption, fileName).Wait();
+            _hasPendingPath = true;
+            _pendingPathOption = pathOption;
+            _pendingFileName = fileName;
         }
 
         protected AsyncDataHandler(string fileName, string folderName)
         {
-            SetFilePathCustom(fileName, folderName).Wait();
+            _hasPendingCustomPath = true;
+            _pendingFileName = fileName;
+            _pendingCustomFolderName = folderName;
+        }
+
+        public async Task InitializePendingPathAsync()
+        {
+            if (_hasPendingPath && _pendingPathOption.HasValue && !string.IsNullOrEmpty(_pendingFileName))
+            {
+                await SetFilePath(_pendingPathOption.Value, _pendingFileName);
+                _hasPendingPath = false;
+                _pendingPathOption = null;
+                _pendingFileName = null;
+            }
+
+            if (_hasPendingCustomPath && !string.IsNullOrEmpty(_pendingFileName) && !string.IsNullOrEmpty(_pendingCustomFolderName))
+            {
+                await SetFilePathCustom(_pendingFileName, _pendingCustomFolderName);
+                _hasPendingCustomPath = false;
+                _pendingFileName = null;
+                _pendingCustomFolderName = null;
+            }
         }
 
         private async Task InitializeFile()
@@ -68,6 +105,9 @@ namespace FlawsFightNight.Data.Handlers
                     break;
                 case PathOption.Credentials:
                     _folderPath = Path.Combine(baseDir, "Credentials");
+                    break;
+                case PathOption.UserProfiles:
+                    _folderPath = Path.Combine(baseDir, "Databases", "UserProfiles");
                     break;
             }
 
@@ -136,15 +176,12 @@ namespace FlawsFightNight.Data.Handlers
                 try
                 {
                     var json = await File.ReadAllTextAsync(_filePath);
-                    return JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
-                    {
-                        TypeNameHandling = TypeNameHandling.Auto
-                    }) ?? new T();
+                    return JsonConvert.DeserializeObject<T>(json, _safeJsonSettings) ?? new T();
                 }
                 catch (IOException ex) when (i < maxRetries - 1)
                 {
                     lastException = ex;
-                    await Task.Delay(delayMs * (i + 1)); // Exponential backoff: 200ms, 400ms, 600ms, 800ms, 1000ms
+                    await Task.Delay(delayMs * (i + 1));
                 }
             }
 
@@ -159,13 +196,9 @@ namespace FlawsFightNight.Data.Handlers
             {
                 try
                 {
-                    var json = JsonConvert.SerializeObject(data, Formatting.Indented,
-                        new JsonSerializerSettings
-                        {
-                            TypeNameHandling = TypeNameHandling.Auto
-                        });
+                    var json = JsonConvert.SerializeObject(data, _safeJsonSettings);
 
-                    // Write to temp file first, then move (atomic operation)
+                    // Write to temp file first, then move
                     string tempFile = _filePath + ".tmp";
                     await File.WriteAllTextAsync(tempFile, json);
                     File.Move(tempFile, _filePath, true);
@@ -175,12 +208,12 @@ namespace FlawsFightNight.Data.Handlers
                 catch (IOException ex) when (i < maxRetries - 1)
                 {
                     lastException = ex;
-                    await Task.Delay(delayMs * (i + 1)); // Exponential backoff
+                    await Task.Delay(delayMs * (i + 1));
                 }
                 catch (UnauthorizedAccessException ex) when (i < maxRetries - 1)
                 {
                     lastException = ex;
-                    await Task.Delay(delayMs * (i + 1)); // Exponential backoff
+                    await Task.Delay(delayMs * (i + 1));
                 }
             }
 
@@ -205,10 +238,7 @@ namespace FlawsFightNight.Data.Handlers
                 try
                 {
                     var json = await File.ReadAllTextAsync(file);
-                    var data = JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
-                    {
-                        TypeNameHandling = TypeNameHandling.Auto
-                    });
+                    var data = JsonConvert.DeserializeObject<T>(json, _safeJsonSettings);
 
                     if (data != null)
                         list.Add(data);
@@ -233,6 +263,7 @@ namespace FlawsFightNight.Data.Handlers
                 PathOption.TAMStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "TAM"),
                 PathOption.iBRStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "iBR"),
                 PathOption.UT2004PlayerProfiles => Path.Combine(baseDir, "Databases", "UT2004PlayerProfiles"),
+                PathOption.UserProfiles => Path.Combine(baseDir, "Databases", "UserProfiles"),
                 _ => throw new ArgumentException("Invalid path option")
             };
             if (Directory.Exists(folderPath))

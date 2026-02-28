@@ -6,6 +6,7 @@ using FlawsFightNight.Data.Handlers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Core.Enums.UT2004;
@@ -38,7 +39,7 @@ namespace FlawsFightNight.Managers
         private readonly PermissionsConfigHandler _permissionsConfigHandler;
 
         // Tournament Data System
-        public List<TournamentDataFile> TournamentDataFiles { get; private set; }
+        public List<TournamentDataFile> TournamentDataFiles { get; private set; } = new();
         private readonly TournamentDataHandler _tournamentDataHandler;
 
         // Processed Log Names File
@@ -49,38 +50,84 @@ namespace FlawsFightNight.Managers
         // Stat Log files are lazy loaded
         private readonly StatLogMatchResultHandler _statLogMatchResultsHandler;
 
+        // User Profile Files
+        public List<UserProfileFile> UserProfileFiles { get; private set; } = new();
+        private readonly UserProfileHandler _userProfileHandler;
+
         // UT2004 Player Profile File
         public List<UT2004PlayerProfileFile> UT2004PlayerProfileFiles { get; private set; }
         private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
         #endregion
 
-        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
+        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, UserProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
         {
             DiscordClient = client;
 
             _discordCredentialHandler = discordCredentialHandler;
-            LoadDiscordCredentialFile();
+            //LoadDiscordCredentialFile();
 
             _gitHubCredentialHandler = gitHubCredentialHandler;
-            LoadGitHubCredentialFile();
+            //LoadGitHubCredentialFile();
 
             _ftpCredentialHandler = ftpCredentialHandler;
-            LoadFTPCredentialFiles();
+            //LoadFTPCredentialFiles();
 
             _permissionsConfigHandler = permissionsConfigHandler;
-            LoadPermissionsConfigFile();
+            //LoadPermissionsConfigFile();
 
             _tournamentDataHandler = tournamentDataHandler;
-            LoadTournamentDataFiles();
+            //LoadTournamentDataFiles();
 
             _processedLogNamesHandler = processedLogNamesHandler;
-            LoadProcessedLogNamesFile().Wait();
+            //LoadProcessedLogNamesFile();
 
             _statLogMatchResultsHandler = statLogMatchResultHandler;
-            // Stat Log files will be lazy loaded when data is needed.
+            // Stat Log files are lazy loaded when data is needed
+
+            _userProfileHandler = userProfileHandler;
+            //LoadAllUserProfileFiles();
 
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
-            LoadAllUT2004PlayerProfileFiles().Wait();
+            //LoadAllUT2004PlayerProfileFiles();
+        }
+        #endregion
+
+        #region Intialization
+        public async Task InitializeAsync()
+        {
+            // Helper method to check for and invoke InitializePendingPathAsync on handlers that have it
+            // This is to fix having async methods in the handlers constructors
+            static async Task InvokeInitIfExistsAsync(object? handler)
+            {
+                if (handler == null) return;
+                var initMethod = handler.GetType().GetMethod("InitializePendingPathAsync", BindingFlags.Public | BindingFlags.Instance);
+                if (initMethod == null) return;
+
+                var result = initMethod.Invoke(handler, null);
+                if (result is Task task) await task;
+            }
+            // Invoke initialization on all handlers that have pending paths to set up
+            await InvokeInitIfExistsAsync(_discordCredentialHandler);
+            await InvokeInitIfExistsAsync(_gitHubCredentialHandler);
+            await InvokeInitIfExistsAsync(_ftpCredentialHandler);
+            await InvokeInitIfExistsAsync(_permissionsConfigHandler);
+            await InvokeInitIfExistsAsync(_tournamentDataHandler);
+            await InvokeInitIfExistsAsync(_processedLogNamesHandler);
+            await InvokeInitIfExistsAsync(_statLogMatchResultsHandler);
+            await InvokeInitIfExistsAsync(_userProfileHandler);
+            await InvokeInitIfExistsAsync(_ut2004PlayerProfileHandler);
+
+            // After all pending paths are initialized, load the data from those paths
+            await LoadFTPCredentialFiles();
+            await LoadProcessedLogNamesFile();
+            await LoadAllUserProfileFiles();
+            await LoadAllUT2004PlayerProfileFiles();
+
+            // Changing all these to async soon, but for now they can stay synchronous
+            LoadDiscordCredentialFile();
+            LoadGitHubCredentialFile();
+            LoadPermissionsConfigFile();
+            LoadTournamentDataFiles();
         }
         #endregion
 
@@ -264,10 +311,47 @@ namespace FlawsFightNight.Managers
                     return (await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/TAM")).Count;
                 case UT2004GameMode.iBR:
                     return (await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iBR")).Count;
-                    default:
+                default:
                     return 0;
             }
         }
+        #endregion
+
+        #region User Profile Files
+        public async Task LoadAllUserProfileFiles()
+        {
+            UserProfileFiles = await _userProfileHandler.LoadAll("*.json", "UserProfiles");
+        }
+
+        public async Task<UserProfileFile> LoadUserProfileFile(ulong discordId)
+        {
+            await _userProfileHandler.SetFilePath(PathOption.UserProfiles, $"{discordId}.json");
+            return await _userProfileHandler.Load();
+        }
+
+        public async Task SaveUserProfileFile(UserProfile userProfile)
+        {
+            var userProfileFile = new UserProfileFile()
+            {
+                UserProfile = userProfile
+            };
+            await _userProfileHandler.SetFilePath(PathOption.UserProfiles, $"{userProfile.DiscordId}.json");
+            await _userProfileHandler.Save(userProfileFile);
+        }
+
+        public async Task<UserProfile?> GetUserProfile(ulong discordId)
+        {
+            foreach (var profileFile in UserProfileFiles)
+            {
+                if (profileFile.UserProfile.DiscordId == discordId)
+                {
+                    return profileFile.UserProfile;
+                }
+            }
+            return null;
+        }
+
+
         #endregion
 
         #region UT2004 Player Profile Files
