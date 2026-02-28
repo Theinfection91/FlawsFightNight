@@ -2,6 +2,7 @@
 using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
+using FlawsFightNight.Bot.Components;
 using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.SetCommands;
 using FlawsFightNight.CommandsLogic.SettingsCommands;
@@ -200,6 +201,51 @@ namespace FlawsFightNight.Bot.SlashCommands
                 {
                     await DeferAsync();
                     var result = _removeTeamsChannelLogic.RemoveTeamsChannelProcess(tournamentId);
+                    await FollowupAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+        }
+
+        [Group("ftp_stats_service", "Re-run FTP Setup Process in Console and remove FTP credentials")]
+        public class FTPStatsServiceCommands : InteractionModuleBase<SocketInteractionContext>
+        {
+            private RemoveFTPCredentialsLogic _removeFTPCredentialsLogic;
+            public FTPStatsServiceCommands(RemoveFTPCredentialsLogic removeFTPCredentialsLogic)
+            {
+                _removeFTPCredentialsLogic = removeFTPCredentialsLogic;
+            }
+            [SlashCommand("run_setup", "Re-run the FTP Setup Process in Console to add FTP credentials or change FTP server")]
+            [RequireGuildAdmin]
+            public async Task RunFTPSetupAsync()
+            {
+                try
+                {
+                    //await DeferAsync();
+                    //var result = _runFTPSetupLogic.RunFTPSetupProcess();
+                    //await FollowupAsync(embed: result);
+                    //await DeferAsync();
+                    var components = ComponentFactory.CreateConfirmationCancelButtons("runftp", Context.User.Id);
+                    await RespondAsync("⚠️ **This will re-run FTP setup in the console.\n\n\n\nRepeat: Setup is done in the console, not Discord. If console cannot be reached and this was done by mistake then this can be terminated by using `/settings ftp_stats_service cancel_setup`**\n\nAre you sure you want to continue?", components: components.Build(), ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+            [SlashCommand("remove_credentials", "Remove specific FTP credentials from the database")]
+            [RequireGuildAdmin]
+            public async Task RemoveFTPCredentialsAsync()
+            {
+                try
+                {
+                    await DeferAsync();
+                    var result = _removeFTPCredentialsLogic.RemoveFTPCredentialsProcess();
                     await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)

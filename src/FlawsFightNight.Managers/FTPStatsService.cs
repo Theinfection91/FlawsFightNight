@@ -102,7 +102,7 @@ namespace FlawsFightNight.Managers
                             await client.Connect(token);
                         }
 
-                        Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Connection status for {cred.ServerName}: {client.IsConnected}");
+                        //Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Connection status for {cred.ServerName}: {client.IsConnected}");
                         bool directoryExists = await ExecuteWithDataConnectionFallback(client, () => client.DirectoryExists(cred.UserLogsDirectoryPath, token), token);
                         if (!directoryExists)
                         {
@@ -165,7 +165,7 @@ namespace FlawsFightNight.Managers
                         }
                     }
                     // Testing
-                    await _ut2004StatsManager.RebuildPlayerProfiles();
+                    //await _ut2004StatsManager.RebuildPlayerProfiles();
                 }
                 catch (FtpCommandException ftpEx)
                 {
@@ -214,7 +214,7 @@ namespace FlawsFightNight.Managers
                 catch (FtpCommandException ftpCmdEx) when (ftpCmdEx.Message?.Contains("425") == true || (ftpCmdEx.Message?.Contains("TLS session") == true))
                 {
                     lastEx = ftpCmdEx;
-                    Console.WriteLine($"{DateTime.Now} - [FTPStatsService] FTP 425/TLS data error using {mode}. Will retry with fallback mode.");
+                    //Console.WriteLine($"{DateTime.Now} - [FTPStatsService] FTP 425/TLS data error using {mode}. Will retry with fallback mode.");
                     try { await client.Disconnect(token); } catch { }
                     // continue to next mode
                 }
@@ -222,13 +222,13 @@ namespace FlawsFightNight.Managers
                 {
                     // Non-command FTP error; attempt reconnect with alternate mode once.
                     lastEx = ftpEx;
-                    Console.WriteLine($"{DateTime.Now} - [FTPStatsService] FTP error using {mode}: {ftpEx.Message}. Will retry with fallback mode.");
+                    //Console.WriteLine($"{DateTime.Now} - [FTPStatsService] FTP error using {mode}: {ftpEx.Message}. Will retry with fallback mode.");
                     try { await client.Disconnect(token); } catch { }
                 }
                 catch (Exception ex)
                 {
                     lastEx = ex;
-                    Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Unexpected error using {mode}: {ex.Message}. Will retry with fallback mode.");
+                    //Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Unexpected error using {mode}: {ex.Message}. Will retry with fallback mode.");
                     try { await client.Disconnect(token); } catch { }
                 }
             }

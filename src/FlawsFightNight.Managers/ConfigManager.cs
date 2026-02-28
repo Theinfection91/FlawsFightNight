@@ -257,9 +257,9 @@ namespace FlawsFightNight.Managers
             return _dataManager.FTPCredentialFile.FTPCredentials;
         }
 
-        public async Task FTPSetupProcess()
+        public async Task FTPSetupProcess(bool isUserInit = false)
         {
-            if (!IsFTPCredentialsSet())
+            if (!IsFTPCredentialsSet() || isUserInit)
             {
                 Console.WriteLine($"{DateTime.Now} - [ConfigManager] No FTP credentials found in Credentials/ftp_credentials.json file. If you want to use FTP features, please enter in your FTP credential information now.");
                 Console.WriteLine($"{DateTime.Now} - [ConfigManager] If you want to skip this for now, simply enter 0 for the server name when prompted.");

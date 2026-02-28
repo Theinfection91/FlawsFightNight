@@ -19,6 +19,20 @@ namespace FlawsFightNight.Managers
     {
         public EmbedManager() { }
 
+        public Embed GenericEmbed(string title, string description, Color color, string footer = "Flaws Fight Night", bool includeTimestamp = true)
+        {
+            var embedBuilder = new EmbedBuilder()
+                .WithTitle(title)
+                .WithDescription(description)
+                .WithColor(color)
+                .WithFooter(footer);
+            if (includeTimestamp)
+            {
+                embedBuilder.WithTimestamp(DateTimeOffset.Now);
+            }
+            return embedBuilder.Build();
+        }
+
         public Embed ToDoEmbed(string message = "This feature is not yet implemented.")
         {
             var embed = new EmbedBuilder()
