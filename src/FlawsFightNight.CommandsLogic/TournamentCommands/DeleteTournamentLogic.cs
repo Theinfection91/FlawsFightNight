@@ -25,7 +25,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed DeleteTournamentProcess(string tournamentId)
+        public async Task<Embed> DeleteTournamentProcess(string tournamentId)
         {
             // Grab tournament, modal should have ensured it exists
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
@@ -36,10 +36,10 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // Delete the tournament
-            _tournamentManager.DeleteTournament(tournament.Id);
+            await _tournamentManager.DeleteTournament(tournament.Id);
 
             // Load tournament data files again, now that one is deleted
-            _tournamentManager.LoadTournamentDataFiles();
+            await _tournamentManager.LoadTournamentDataFiles();
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

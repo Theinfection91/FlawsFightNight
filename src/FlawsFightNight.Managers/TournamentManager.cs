@@ -19,29 +19,29 @@ namespace FlawsFightNight.Managers
         }
 
         // New Data System
-        public void SaveTournament(Tournament tournament)
+        public async Task SaveTournament(Tournament tournament)
         {
             foreach (var tournamentData in _dataManager.TournamentDataFiles)
             {
                 if (tournamentData.Tournament.Id.Equals(tournament.Id, StringComparison.OrdinalIgnoreCase))
                 {
-                    _dataManager.SaveTournamentDataFile(tournamentData);
+                    await _dataManager.SaveTournamentDataFile(tournamentData);
                     return;
                 }
             }
             // No existing tournament data file found, create a new one
-            _dataManager.AddNewTournament(tournament);
+            await _dataManager.AddNewTournament(tournament);
         }
 
-        public void LoadTournamentDataFiles()
+        public async Task LoadTournamentDataFiles()
         {
-            _dataManager.LoadTournamentDataFiles();
+            await _dataManager.LoadTournamentDataFiles();
         }
 
-        public void SaveAndReloadTournamentDataFiles(Tournament tournament)
+        public async Task SaveAndReloadTournamentDataFiles(Tournament tournament)
         {
-            SaveTournament(tournament);
-            LoadTournamentDataFiles();
+            await SaveTournament(tournament);
+            await LoadTournamentDataFiles();
         }
 
         public bool IsTournamentNameUnique(string tournamentName)
@@ -93,9 +93,9 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        public void DeleteTournament(string tournamentId)
+        public async Task DeleteTournament(string tournamentId)
         {
-            _dataManager.RemoveTournament(tournamentId);
+            await _dataManager.RemoveTournament(tournamentId);
         }
 
         public void SetCanTeamsBeLocked(ITeamLocking tournament, bool canTeamsBeLocked)

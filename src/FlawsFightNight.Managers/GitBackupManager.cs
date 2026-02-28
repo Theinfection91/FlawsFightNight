@@ -50,7 +50,7 @@ namespace FlawsFightNight.Managers
 
             if (!Repository.IsValid(_repoPath))
             {
-                CloneAndPromptForRestore();
+                await CloneAndPromptForRestore();
             }
 
             _isInitialized = true;
@@ -92,7 +92,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private void CloneAndPromptForRestore()
+        private async Task CloneAndPromptForRestore()
         {
             try
             {
@@ -131,7 +131,7 @@ namespace FlawsFightNight.Managers
                 Console.WriteLine(); // New line after progress
                 Console.WriteLine($"{DateTime.Now} - GitBackupManager - Repository cloned successfully.");
 
-                PromptForDataRestore();
+                await PromptForDataRestore();
             }
             catch (LibGit2SharpException ex)
             {
@@ -143,7 +143,7 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        private void PromptForDataRestore()
+        private async Task PromptForDataRestore()
         {
             Console.WriteLine($"{DateTime.Now} - GitBackupManager - Do you want to use the newly cloned backup data from the repository as your Database?");
             Console.WriteLine("NOTE - This will overwrite data currently present in your JSON files in 'Databases'. This cannot be reversed.");
@@ -172,7 +172,7 @@ namespace FlawsFightNight.Managers
                         case "y":
                             Console.WriteLine($"{DateTime.Now} - GitBackupManager - Copying files from 'BackupRepo' to 'Databases'...");
                             CopyFilesFromBackupRepoToDatabases();
-                            _dataManager.LoadTournamentDataFiles();
+                            await _dataManager.LoadTournamentDataFiles();
                             _dataManager.LoadPermissionsConfigFile();
                             Console.WriteLine($"{DateTime.Now} - GitBackupManager - Data restored successfully.");
                             return;
@@ -302,7 +302,7 @@ namespace FlawsFightNight.Managers
                                 try
                                 {
                                     File.Delete(repoFile);
-                                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Deleted stale file: {relativePath}");
+                                    //Console.WriteLine($"{DateTime.Now} - GitBackupManager - Deleted stale file: {relativePath}");
                                     break;
                                 }
                                 catch (IOException) when (retries > 1)

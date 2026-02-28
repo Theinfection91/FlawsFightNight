@@ -118,6 +118,7 @@ namespace FlawsFightNight.Managers
             await InvokeInitIfExistsAsync(_ut2004PlayerProfileHandler);
 
             // After all pending paths are initialized, load the data from those paths
+            await LoadDiscordCredentialFile();
             await LoadFTPCredentialFiles();
             await LoadProcessedLogNamesFile();
             await LoadTournamentDataFiles();
@@ -125,27 +126,26 @@ namespace FlawsFightNight.Managers
             await LoadAllUT2004PlayerProfileFiles();
 
             // Changing all these to async soon, but for now they can stay synchronous
-            LoadDiscordCredentialFile();
             LoadGitHubCredentialFile();
             LoadPermissionsConfigFile();
         }
         #endregion
 
         #region Discord Credential File
-        public void LoadDiscordCredentialFile()
+        public async Task LoadDiscordCredentialFile()
         {
-            DiscordCredentialFile = _discordCredentialHandler.Load();
+            DiscordCredentialFile = await _discordCredentialHandler.Load();
         }
 
-        public void SaveDiscordCredentialFile()
+        public async Task SaveDiscordCredentialFile()
         {
-            _discordCredentialHandler.Save(DiscordCredentialFile);
+            await _discordCredentialHandler.Save(DiscordCredentialFile);
         }
 
-        public void SaveAndReloadDiscordCredentialFile()
+        public async Task SaveAndReloadDiscordCredentialFile()
         {
-            _discordCredentialHandler.Save(DiscordCredentialFile);
-            LoadDiscordCredentialFile();
+            await _discordCredentialHandler.Save(DiscordCredentialFile);
+            await LoadDiscordCredentialFile();
         }
         #endregion
 

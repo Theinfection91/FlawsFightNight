@@ -133,7 +133,7 @@ namespace FlawsFightNight.Data.Handlers
         public async Task DeleteFolderAndContents(string tournamentId)
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var folderPath = Path.Combine(baseDir, "Databases", tournamentId);
+            var folderPath = Path.Combine(baseDir, "Databases", "Tournaments", tournamentId);
 
             if (Directory.Exists(folderPath))
             {
