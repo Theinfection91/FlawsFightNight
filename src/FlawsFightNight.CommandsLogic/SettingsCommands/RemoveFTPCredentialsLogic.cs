@@ -31,7 +31,8 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             }
 
             await _configManager.RemoveFTPCredential(ftpCredential);
-            return _embedManager.ToDoEmbed($"FTP credential ({ftpCredential.Id} - {ftpCredential.ServerName} - {ftpCredential.Username} ({ftpCredential.IPAddress}:{ftpCredential.Port})) removed successfully.");
+            //return _embedManager.GenericEmbed("FTP Credential Removed", $"FTP credential ({ftpCredential.Id} - {ftpCredential.ServerName} - {ftpCredential.Username} ({ftpCredential.IPAddress}:{ftpCredential.Port})) removed successfully.");
+            return _embedManager.GenericEmbed("FTP Credential Removed", $"FTP credential ({ftpCredential.ServerName} - ({ftpCredential.IPAddress}:{ftpCredential.Port})) removed successfully.", Color.Green);
         }
     }
 }
