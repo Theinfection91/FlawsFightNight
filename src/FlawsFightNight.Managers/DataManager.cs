@@ -121,13 +121,11 @@ namespace FlawsFightNight.Managers
             await LoadDiscordCredentialFile();
             await LoadFTPCredentialFiles();
             await LoadGitHubCredentialFile();
+            await LoadPermissionsConfigFile();
             await LoadProcessedLogNamesFile();
             await LoadTournamentDataFiles();
             await LoadAllUserProfileFiles();
             await LoadAllUT2004PlayerProfileFiles();
-
-            // Changing all these to async soon, but for now they can stay synchronous
-            LoadPermissionsConfigFile();
         }
         #endregion
 
@@ -168,20 +166,20 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Permissions Config Data
-        public void LoadPermissionsConfigFile()
+        public async Task LoadPermissionsConfigFile()
         {
-            PermissionsConfigFile = _permissionsConfigHandler.Load();
+            PermissionsConfigFile = await _permissionsConfigHandler.Load();
         }
 
-        public void SavePermissionsConfigFile()
+        public async Task SavePermissionsConfigFile()
         {
-            _permissionsConfigHandler.Save(PermissionsConfigFile);
+            await _permissionsConfigHandler.Save(PermissionsConfigFile);
         }
 
-        public void SaveAndReloadPermissionsConfigFile()
+        public async Task SaveAndReloadPermissionsConfigFile()
         {
-            _permissionsConfigHandler.Save(PermissionsConfigFile);
-            LoadPermissionsConfigFile();
+            await _permissionsConfigHandler.Save(PermissionsConfigFile);
+            await LoadPermissionsConfigFile();
         }
         #endregion
 

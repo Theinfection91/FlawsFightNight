@@ -202,16 +202,16 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public void AddDiscordIdToDebugAdminList(ulong discordId)
+        public async Task AddDiscordIdToDebugAdminList(ulong discordId)
         {
             _dataManager.PermissionsConfigFile.DebugAdminList.Add(discordId);
-            _dataManager.SaveAndReloadPermissionsConfigFile();
+            await _dataManager.SaveAndReloadPermissionsConfigFile();
         }
 
-        public void RemoveDiscordIdFromDebugAdminList(ulong discordId)
+        public async Task RemoveDiscordIdFromDebugAdminList(ulong discordId)
         {
             _dataManager.PermissionsConfigFile.DebugAdminList.Remove(discordId);
-            _dataManager.SaveAndReloadPermissionsConfigFile();
+            await _dataManager.SaveAndReloadPermissionsConfigFile();
         }
         #endregion
 

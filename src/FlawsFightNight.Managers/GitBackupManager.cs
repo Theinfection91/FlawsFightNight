@@ -173,7 +173,7 @@ namespace FlawsFightNight.Managers
                             Console.WriteLine($"{DateTime.Now} - GitBackupManager - Copying files from 'BackupRepo' to 'Databases'...");
                             CopyFilesFromBackupRepoToDatabases();
                             await _dataManager.LoadTournamentDataFiles();
-                            _dataManager.LoadPermissionsConfigFile();
+                            await _dataManager.LoadPermissionsConfigFile();
                             Console.WriteLine($"{DateTime.Now} - GitBackupManager - Data restored successfully.");
                             return;
 

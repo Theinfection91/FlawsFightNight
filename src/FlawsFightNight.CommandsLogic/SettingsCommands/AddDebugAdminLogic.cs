@@ -21,7 +21,7 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             _gitBackupManager = gitBackupManager;
         }
 
-        public Embed AddDebugAdminProcess(ulong userId)
+        public async Task<Embed> AddDebugAdminProcess(ulong userId)
         {
             if (_configManager.IsDiscordIdInDebugAdminList(userId))
             {
@@ -30,7 +30,7 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             else
             {
                 // This will also save the file
-                _configManager.AddDiscordIdToDebugAdminList(userId);
+                await _configManager.AddDiscordIdToDebugAdminList(userId);
 
                 // Backup to git repo
                 _gitBackupManager.CopyAndBackupFilesToGit();

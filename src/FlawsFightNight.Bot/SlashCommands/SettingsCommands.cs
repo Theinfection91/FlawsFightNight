@@ -34,7 +34,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _addDebugAdminLogic.AddDebugAdminProcess(user.Id);
+                var result = await _addDebugAdminLogic.AddDebugAdminProcess(user.Id);
                 await FollowupAsync(embed: result);
             }
             catch (Exception ex)
@@ -52,7 +52,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _removeDebugAdminLogic.RemoveDebugAdminProcess(user.Id);
+                var result = await _removeDebugAdminLogic.RemoveDebugAdminProcess(user.Id);
                 await FollowupAsync(embed: result);
             }
             catch (Exception ex)
