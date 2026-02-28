@@ -27,7 +27,7 @@ namespace FlawsFightNight.Bot.Components
 
         private bool IsAuthorizedUser(ulong expectedUserId) => Context.User.Id == expectedUserId;
 
-        #region FTP Setup
+        #region FTP Setup Run
         [ComponentInteraction("runftp_confirm:*")]
         public async Task HandleRunFTPConfirmAsync(ulong invokingUserId)
         {
@@ -87,6 +87,71 @@ namespace FlawsFightNight.Bot.Components
                 await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
                 {
                     msg.Content = "❌ FTP setup cancelled.";
+                    msg.Embed = null;
+                    msg.Components = new ComponentBuilder().Build();
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Component Error - FTP Cancel] {ex}");
+                await RespondAsync(embed: _embedManager.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+            }
+        }
+        #endregion
+
+        #region FTP Setup Cancel
+        [ComponentInteraction("cancelftp_confirm:*")]
+        public async Task HandleCancelFTPConfirmAsync(ulong invokingUserId)
+        {
+            if (!IsAuthorizedUser(invokingUserId))
+            {
+                await RespondAsync(embed: _embedManager.ErrorEmbed("This cancellation is not for you."), ephemeral: true);
+                return;
+            }
+
+            try
+            {
+                await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
+                {
+                    msg.Content = "❌ FTP setup cancelled.";
+                    msg.Embed = null;
+                    msg.Components = new ComponentBuilder().Build();
+                });
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        _configManager.NotifyCancelFTPSetupProcess();
+                        //Console.WriteLine($"{DateTime.Now} - [ComponentHandler] FTP setup cancellation completed via Discord command.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"{DateTime.Now} - [ComponentHandler] FTP setup cancellation error: {ex}");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Component Error - FTP Cancel] {ex}");
+                await RespondAsync(embed: _embedManager.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+            }
+        }
+
+        [ComponentInteraction("cancelftp_cancel:*")]
+        public async Task HandleCancelFTPCancelAsync(ulong invokingUserId)
+        {
+            if (!IsAuthorizedUser(invokingUserId))
+            {
+                await RespondAsync(embed: _embedManager.ErrorEmbed("This cancellation is not for you."), ephemeral: true);
+                return;
+            }
+
+            try
+            {
+                await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
+                {
+                    msg.Content = "❌ FTP setup cancellation aborted.";
                     msg.Embed = null;
                     msg.Components = new ComponentBuilder().Build();
                 });

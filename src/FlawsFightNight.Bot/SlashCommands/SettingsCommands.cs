@@ -230,7 +230,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                     //await FollowupAsync(embed: result);
                     //await DeferAsync();
                     var components = ComponentFactory.CreateConfirmationCancelButtons("runftp", Context.User.Id);
-                    await RespondAsync("⚠️ **This will re-run FTP setup in the console.\n\n\n\nRepeat: Setup is done in the console, not Discord. If console cannot be reached and this was done by mistake then this can be terminated by using `/settings ftp_stats_service cancel_setup`**\n\nAre you sure you want to continue?", components: components.Build(), ephemeral: true);
+                    await RespondAsync("⚠️ **This will re-run FTP setup in the console.\n\nRepeat: Setup is done in the console, not Discord. If console cannot be reached and this was done by mistake then this can be terminated by using `/settings ftp_stats_service cancel_setup`**\n\nAre you sure you want to continue?", components: components.Build(), ephemeral: true);
                 }
                 catch (Exception ex)
                 {
@@ -248,6 +248,22 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await DeferAsync();
                     var result = await _removeFTPCredentialsLogic.RemoveFTPCredentialsProcess(ftpServerName);
                     await FollowupAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("cancel_setup", "Cancel the FTP setup process that is currently running in the console")]
+            [RequireGuildAdmin]
+            public async Task CancelFTPSetupAsync()
+            {
+                try
+                {
+                    var components = ComponentFactory.CreateConfirmationCancelButtons("cancelftp", Context.User.Id);
+                    await RespondAsync("⚠️ Confirm FTP Setup Cancellation\n\nAre you sure you want to cancel the FTP setup process? This will stop the ongoing setup and any progress will be lost. You can always run the setup again later if needed.", components: components.Build(), ephemeral: true);
                 }
                 catch (Exception ex)
                 {

@@ -349,9 +349,6 @@ namespace FlawsFightNight.Bot.Autocomplete
 
         public List<AutocompleteResult> GetFTPCredentialsMatchingInput(string input)
         {
-            Console.WriteLine($"Generating FTP credential suggestions for input: '{input}'");
-            Console.WriteLine($"Total FTP credentials in cache: {_ftpCredentials.Count}");
-            // If the input is empty or only whitespace, return all FTP credentials sorted alphabetically by server
             try
             {
                 if (string.IsNullOrWhiteSpace(input))

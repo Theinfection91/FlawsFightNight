@@ -14,6 +14,8 @@ namespace FlawsFightNight.Managers
 
         private bool _ftpDebugMode = true;
         public event EventHandler? FTPCredentialsChanged;
+        public event EventHandler? CancelFTPSetupProcess;
+        private CancellationTokenSource? _ftpSetupCts;
         public ConfigManager(DiscordSocketClient client, DataManager dataManager) : base("ConfigManager", dataManager)
         {
             _client = client;
@@ -227,6 +229,29 @@ namespace FlawsFightNight.Managers
             }
         }
 
+        public void NotifyCancelFTPSetupProcess()
+        {
+            try
+            {
+                // Signal any subscribers
+                CancelFTPSetupProcess?.Invoke(this, EventArgs.Empty);
+
+                // Cancel the currently running FTP setup (if any)
+                try
+                {
+                    _ftpSetupCts?.Cancel();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Error cancelling FTP setup token: {ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{DateTime.Now} - [ConfigManager] Error notifying cancel FTP setup process: {ex.Message}");
+            }
+        }
+
         public bool IsFTPCredentialsSet()
         {
             return _dataManager.FTPCredentialFile.FTPCredentials.Count > 0;
@@ -283,51 +308,180 @@ namespace FlawsFightNight.Managers
         {
             if (!IsFTPCredentialsSet() || isUserInit)
             {
+                _ftpSetupCts = new CancellationTokenSource();
+                var token = _ftpSetupCts.Token;
+
                 Console.WriteLine($"{DateTime.Now} - [ConfigManager] No FTP credentials found in Credentials/ftp_credentials.json file. If you want to use FTP features, please enter in your FTP credential information now.");
                 Console.WriteLine($"{DateTime.Now} - [ConfigManager] If you want to skip this for now, simply enter 0 for the server name when prompted.");
                 bool IsFTPSetupComplete = false;
-                while (!IsFTPSetupComplete)
+
+                // Replace the previous ReadLineCancelableAsync implementation with this polling-based, cancellation-aware reader.
+                // It uses Console.KeyAvailable + Console.ReadKey so the read can be stopped immediately when the CTS is cancelled.
+                static async Task<string?> ReadLineCancelableAsync(CancellationToken ct)
                 {
-                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter a server name for this FTP credential (This is just a name to identify the credential, it does not have to match anything on the actual FTP server): ");
-                    string? serverName = Console.ReadLine();
-                    if (serverName != null && serverName.Equals("0"))
+                    var sb = new StringBuilder();
+                    try
                     {
-                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup skipped. You can manually add your FTP credentials later by editing the Credentials/ftp_credentials.json file or by using the AddFTPCredential method in this ConfigManager class.");
-                        IsFTPSetupComplete = true;
-                    }
-                    else
-                    {
-                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the IP address for this FTP credential (This should be the actual IP address of the FTP server): ");
-                        string? ipAddress = Console.ReadLine();
-                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the port number for this FTP credential (This should be the actual port number of the FTP server, default is usually 21): ");
-                        int port = int.Parse(Console.ReadLine() ?? "21");
-                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the username for this FTP credential (This should be the actual username for the FTP server): ");
-                        string? username = Console.ReadLine();
-                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the password for this FTP credential (This should be the actual password for the FTP server): ");
-                        string? password = Console.ReadLine();
-                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the user logs directory path for this FTP credential (This should be the directory path on the FTP server where user logs are stored): ");
-                        string? userLogsDirectoryPath = Console.ReadLine();
-                        var newCredential = await CreateFTPCredential(serverName, ipAddress, port, username, password, userLogsDirectoryPath);
-                        if (newCredential != null)
+                        while (!ct.IsCancellationRequested)
                         {
-                            await AddFTPCredential(newCredential);
-                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP credential for server '{serverName}' added successfully.");
+                            // Wait until a key is available or cancellation requested
+                            while (!Console.KeyAvailable)
+                            {
+                                // small delay to yield and let cancellation be observed
+                                await Task.Delay(50, ct);
+                            }
+
+                            // A key is available, read it
+                            var keyInfo = Console.ReadKey(intercept: true);
+
+                            if (keyInfo.Key == ConsoleKey.Enter)
+                            {
+                                Console.WriteLine(); // echo newline
+                                return sb.ToString();
+                            }
+                            else if (keyInfo.Key == ConsoleKey.Backspace)
+                            {
+                                if (sb.Length > 0)
+                                {
+                                    // remove last char from buffer and erase from console
+                                    sb.Length--;
+                                    Console.Write("\b \b");
+                                }
+                            }
+                            else
+                            {
+                                // normal character
+                                sb.Append(keyInfo.KeyChar);
+                                Console.Write(keyInfo.KeyChar); // echo
+                            }
                         }
-                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Do you want to add another FTP credential? (y/n): ");
-                        string? addAnother = Console.ReadLine();
-                        if (addAnother != null && addAnother.Equals("y", StringComparison.OrdinalIgnoreCase))
+                    }
+                    catch (OperationCanceledException) { /* fall through */ }
+
+                    // If cancelled, throw so callers can handle consistently
+                    throw new OperationCanceledException(ct);
+                }
+
+                try
+                {
+                    while (!IsFTPSetupComplete)
+                    {
+                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter a server name for this FTP credential (This is just a name to identify the credential, it does not have to match anything on the actual FTP server): ");
+                        string? serverName;
+                        try
                         {
-                            IsFTPSetupComplete = false;
+                            serverName = await ReadLineCancelableAsync(token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled before server name entry.");
+                            break;
+                        }
+
+                        if (serverName != null && serverName.Equals("0"))
+                        {
+                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup skipped. You can manually add your FTP credentials later by editing the Credentials/ftp_credentials.json file or by using the AddFTPCredential method in this ConfigManager class.");
+                            IsFTPSetupComplete = true;
                         }
                         else
                         {
-                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup complete. You can always add more credentials later by running the FTP Setup Discord Command then come back to the console.");
-                            IsFTPSetupComplete = true;
+                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the IP address for this FTP credential (This should be the actual IP address of the FTP server): ");
+                            string? ipAddress;
+                            try
+                            {
+                                ipAddress = await ReadLineCancelableAsync(token);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled while reading IP address.");
+                                break;
+                            }
+
+                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the port number for this FTP credential (This should be the actual port number of the FTP server, default is usually 21): ");
+                            int port;
+                            try
+                            {
+                                var portStr = await ReadLineCancelableAsync(token);
+                                port = int.TryParse(portStr, out var p) ? p : 21;
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled while reading port.");
+                                break;
+                            }
+
+                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the username for this FTP credential (This should be the actual username for the FTP server): ");
+                            string? username;
+                            try
+                            {
+                                username = await ReadLineCancelableAsync(token);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled while reading username.");
+                                break;
+                            }
+
+                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the password for this FTP credential (This should be the actual password for the FTP server): ");
+                            string? password;
+                            try
+                            {
+                                password = await ReadLineCancelableAsync(token);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled while reading password.");
+                                break;
+                            }
+
+                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the user logs directory path for this FTP credential (This should be the directory path on the FTP server where user logs are stored): ");
+                            string? userLogsDirectoryPath;
+                            try
+                            {
+                                userLogsDirectoryPath = await ReadLineCancelableAsync(token);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled while reading user logs directory.");
+                                break;
+                            }
+
+                            var newCredential = await CreateFTPCredential(serverName!, ipAddress, port, username, password, userLogsDirectoryPath);
+                            if (newCredential != null)
+                            {
+                                await AddFTPCredential(newCredential);
+                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP credential for server '{serverName}' added successfully.");
+                            }
+
+                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Do you want to add another FTP credential? (y/n): ");
+                            try
+                            {
+                                string? addAnother = await ReadLineCancelableAsync(token);
+                                if (addAnother != null && addAnother.Equals("y", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    IsFTPSetupComplete = false;
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup complete. You can always add more credentials later by running the FTP Setup Discord Command then come back to the console.");
+                                    IsFTPSetupComplete = true;
+                                }
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled while asking to add another.");
+                                break;
+                            }
                         }
                     }
-        #endregion
+                }
+                finally
+                {
+                    try { _ftpSetupCts?.Dispose(); } catch { }
+                    _ftpSetupCts = null;
                 }
             }
         }
+        #endregion
     }
 }
