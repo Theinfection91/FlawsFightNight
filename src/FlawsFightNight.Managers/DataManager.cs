@@ -120,6 +120,7 @@ namespace FlawsFightNight.Managers
             // After all pending paths are initialized, load the data from those paths
             await LoadFTPCredentialFiles();
             await LoadProcessedLogNamesFile();
+            await LoadTournamentDataFiles();
             await LoadAllUserProfileFiles();
             await LoadAllUT2004PlayerProfileFiles();
 
@@ -127,7 +128,6 @@ namespace FlawsFightNight.Managers
             LoadDiscordCredentialFile();
             LoadGitHubCredentialFile();
             LoadPermissionsConfigFile();
-            LoadTournamentDataFiles();
         }
         #endregion
 
@@ -186,50 +186,50 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Tournament Data System
-        public void LoadTournamentDataFiles()
+        public async Task LoadTournamentDataFiles()
         {
-            TournamentDataFiles = _tournamentDataHandler.LoadAll();
+            TournamentDataFiles = await _tournamentDataHandler.LoadAll("tournament.json", "Tournaments");
         }
 
-        public void SaveTournamentDataFile(TournamentDataFile tournamentDataFile)
+        public async Task SaveTournamentDataFile(TournamentDataFile tournamentDataFile)
         {
-            _tournamentDataHandler.SetFilePath(tournamentDataFile.Tournament.Id);
-            _tournamentDataHandler.Save(tournamentDataFile);
+            await _tournamentDataHandler.SetFilePathCustom("tournament.json", $"Databases/Tournaments/{tournamentDataFile.Tournament.Id}");
+            await _tournamentDataHandler.Save(tournamentDataFile);
         }
 
-        public void SaveAndReloadTournamentDataFiles(Tournament tournament)
+        public async Task SaveAndReloadTournamentDataFiles(Tournament tournament)
         {
             foreach (var tournamentData in TournamentDataFiles)
             {
                 if (tournamentData.Tournament.Id.Equals(tournament.Id, StringComparison.OrdinalIgnoreCase))
                 {
-                    SaveTournamentDataFile(tournamentData);
-                    LoadTournamentDataFiles();
+                    await SaveTournamentDataFile(tournamentData);
+                    await LoadTournamentDataFiles();
                     return;
                 }
             }
             // No existing tournament data file found, create a new one
-            AddNewTournament(tournament);
-            LoadTournamentDataFiles();
+            await AddNewTournament(tournament);
+            await LoadTournamentDataFiles();
         }
 
-        public void AddNewTournament(Tournament tournament)
+        public async Task AddNewTournament(Tournament tournament)
         {
             var newTournamentDataFile = new TournamentDataFile
             {
                 Tournament = tournament
             };
             TournamentDataFiles.Add(newTournamentDataFile);
-            SaveTournamentDataFile(newTournamentDataFile);
+            await SaveTournamentDataFile(newTournamentDataFile);
         }
 
-        public void RemoveTournament(string tournamentId)
+        public async Task RemoveTournament(string tournamentId)
         {
             // Remove from in-memory list
             TournamentDataFiles.RemoveAll(t => t.Tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
 
             // Remove the actual folder and contents
-            _tournamentDataHandler.DeleteFolderAndContents(tournamentId);
+            await _tournamentDataHandler.DeleteFolderAndContents(tournamentId);
         }
 
         public List<Tournament> GetTournaments()

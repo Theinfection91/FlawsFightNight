@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public class TournamentDataHandler : BaseFolderDataHandler<TournamentDataFile>
+    public class TournamentDataHandler : AsyncDataHandler<TournamentDataFile>
     {
         public TournamentDataHandler() : base()
         {
