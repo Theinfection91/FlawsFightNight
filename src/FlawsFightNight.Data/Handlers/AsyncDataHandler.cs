@@ -26,16 +26,45 @@ namespace FlawsFightNight.Data.Handlers
         protected string _filePath;
         private readonly SemaphoreSlim _fileLock = new SemaphoreSlim(1, 1);
 
+        private bool _hasPendingPath = false;
+        private bool _hasPendingCustomPath = false;
+        private PathOption? _pendingPathOption;
+        private string? _pendingFileName;
+        private string? _pendingCustomFolderName;
+
         protected AsyncDataHandler() { }
 
         protected AsyncDataHandler(PathOption pathOption, string fileName)
         {
-            SetFilePath(pathOption, fileName).Wait();
+            _hasPendingPath = true;
+            _pendingPathOption = pathOption;
+            _pendingFileName = fileName;
         }
 
         protected AsyncDataHandler(string fileName, string folderName)
         {
-            SetFilePathCustom(fileName, folderName).Wait();
+            _hasPendingCustomPath = true;
+            _pendingFileName = fileName;
+            _pendingCustomFolderName = folderName;
+        }
+
+        public async Task InitializePendingPathAsync()
+        {
+            if (_hasPendingPath && _pendingPathOption.HasValue && !string.IsNullOrEmpty(_pendingFileName))
+            {
+                await SetFilePath(_pendingPathOption.Value, _pendingFileName);
+                _hasPendingPath = false;
+                _pendingPathOption = null;
+                _pendingFileName = null;
+            }
+
+            if (_hasPendingCustomPath && !string.IsNullOrEmpty(_pendingFileName) && !string.IsNullOrEmpty(_pendingCustomFolderName))
+            {
+                await SetFilePathCustom(_pendingFileName, _pendingCustomFolderName);
+                _hasPendingCustomPath = false;
+                _pendingFileName = null;
+                _pendingCustomFolderName = null;
+            }
         }
 
         private async Task InitializeFile()
@@ -237,6 +266,7 @@ namespace FlawsFightNight.Data.Handlers
                 PathOption.TAMStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "TAM"),
                 PathOption.iBRStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "iBR"),
                 PathOption.UT2004PlayerProfiles => Path.Combine(baseDir, "Databases", "UT2004PlayerProfiles"),
+                PathOption.UserProfiles => Path.Combine(baseDir, "Databases", "UserProfiles"),
                 _ => throw new ArgumentException("Invalid path option")
             };
             if (Directory.Exists(folderPath))

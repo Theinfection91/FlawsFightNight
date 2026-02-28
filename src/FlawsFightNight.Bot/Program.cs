@@ -172,6 +172,12 @@ namespace FlawsFightNight.Bot
                 })
                 .Build();
 
+            using (var scope = host.Services.CreateScope())
+            {
+                var dataManager = scope.ServiceProvider.GetRequiredService<DataManager>();
+                await dataManager.IntitializeAsync();
+            }
+
             // Prep config
             _services = host.Services;
             _configManager = _services.GetRequiredService<ConfigManager>();

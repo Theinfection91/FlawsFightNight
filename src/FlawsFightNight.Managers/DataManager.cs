@@ -6,6 +6,7 @@ using FlawsFightNight.Data.Handlers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Core.Enums.UT2004;
@@ -63,31 +64,70 @@ namespace FlawsFightNight.Managers
             DiscordClient = client;
 
             _discordCredentialHandler = discordCredentialHandler;
-            LoadDiscordCredentialFile();
+            //LoadDiscordCredentialFile();
 
             _gitHubCredentialHandler = gitHubCredentialHandler;
-            LoadGitHubCredentialFile();
+            //LoadGitHubCredentialFile();
 
             _ftpCredentialHandler = ftpCredentialHandler;
-            LoadFTPCredentialFiles();
+            //LoadFTPCredentialFiles();
 
             _permissionsConfigHandler = permissionsConfigHandler;
-            LoadPermissionsConfigFile();
+            //LoadPermissionsConfigFile();
 
             _tournamentDataHandler = tournamentDataHandler;
-            LoadTournamentDataFiles();
+            //LoadTournamentDataFiles();
 
             _processedLogNamesHandler = processedLogNamesHandler;
-            LoadProcessedLogNamesFile().Wait();
+            //LoadProcessedLogNamesFile();
 
             _statLogMatchResultsHandler = statLogMatchResultHandler;
-            // Stat Log files will be lazy loaded when data is needed.
+            // Stat Log files are lazy loaded when data is needed
 
             _userProfileHandler = userProfileHandler;
-            LoadAllUserProfileFiles().Wait();
+            //LoadAllUserProfileFiles();
 
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
-            LoadAllUT2004PlayerProfileFiles().Wait();
+            //LoadAllUT2004PlayerProfileFiles();
+        }
+        #endregion
+
+        #region Intialization
+        public async Task IntitializeAsync()
+        {
+            // Helper method to check for and invoke InitializePendingPathAsync on handlers that have it
+            // This is to fix having async methods in the handlers constructors
+            static async Task InvokeInitIfExistsAsync(object? handler)
+            {
+                if (handler == null) return;
+                var initMethod = handler.GetType().GetMethod("InitializePendingPathAsync", BindingFlags.Public | BindingFlags.Instance);
+                if (initMethod == null) return;
+
+                var result = initMethod.Invoke(handler, null);
+                if (result is Task task) await task;
+            }
+            // Invoke initialization on all handlers that have pending paths to set up
+            await InvokeInitIfExistsAsync(_discordCredentialHandler);
+            await InvokeInitIfExistsAsync(_gitHubCredentialHandler);
+            await InvokeInitIfExistsAsync(_ftpCredentialHandler);
+            await InvokeInitIfExistsAsync(_permissionsConfigHandler);
+            await InvokeInitIfExistsAsync(_tournamentDataHandler);
+            await InvokeInitIfExistsAsync(_processedLogNamesHandler);
+            await InvokeInitIfExistsAsync(_statLogMatchResultsHandler);
+            await InvokeInitIfExistsAsync(_userProfileHandler);
+            await InvokeInitIfExistsAsync(_ut2004PlayerProfileHandler);
+
+            // After all pending paths are initialized, load the data from those paths
+            await LoadFTPCredentialFiles();
+            await LoadProcessedLogNamesFile();
+            await LoadAllUserProfileFiles();
+            await LoadAllUT2004PlayerProfileFiles();
+
+            // Changing all these to async soon, but for now they can stay synchronous
+            LoadDiscordCredentialFile();
+            LoadGitHubCredentialFile();
+            LoadPermissionsConfigFile();
+            LoadTournamentDataFiles();
         }
         #endregion
 
@@ -299,7 +339,7 @@ namespace FlawsFightNight.Managers
             await _userProfileHandler.Save(userProfileFile);
         }
 
-        public async Task<UserProfile> GetUserProfile(ulong discordId)
+        public async Task<UserProfile?> GetUserProfile(ulong discordId)
         {
             foreach (var profileFile in UserProfileFiles)
             {
