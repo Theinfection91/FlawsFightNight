@@ -25,7 +25,7 @@ namespace FlawsFightNight.Managers
         }
 
         #region Discord Config
-        public void SetDiscordTokenProcess()
+        public async Task SetDiscordTokenProcess()
         {
             bool IsBotTokenProcessComplete = false;
             while (!IsBotTokenProcessComplete)
@@ -37,7 +37,7 @@ namespace FlawsFightNight.Managers
                     string? botToken = Console.ReadLine();
                     if (IsValidBotToken(botToken))
                     {
-                        SetDiscordToken(botToken);
+                        await SetDiscordToken(botToken);
                         IsBotTokenProcessComplete = true;
                     }
                     else
@@ -62,7 +62,7 @@ namespace FlawsFightNight.Managers
             return botToken.Length >= 59;
         }
 
-        public void SetGuildIdProcess()
+        public async Task SetGuildIdProcess()
         {
             bool IsGuildIdProcessComplete = false;
             while (!IsGuildIdProcessComplete)
@@ -83,7 +83,7 @@ namespace FlawsFightNight.Managers
                         {
                             if (IsGuildIdValidBool(guildId))
                             {
-                                SetGuildId(guildId);
+                                await SetGuildId(guildId);
                                 IsGuildIdProcessComplete = true;
                             }
                             else
@@ -120,10 +120,10 @@ namespace FlawsFightNight.Managers
             return _dataManager.DiscordCredentialFile.CommandPrefix;
         }
 
-        public void SetCommandPrefix(string prefix)
+        public async Task SetCommandPrefix(string prefix)
         {
             _dataManager.DiscordCredentialFile.CommandPrefix = prefix;
-            _dataManager.SaveDiscordCredentialFile();
+            await _dataManager.SaveDiscordCredentialFile();
         }
 
         public string GetDiscordToken()
@@ -131,10 +131,10 @@ namespace FlawsFightNight.Managers
             return _dataManager.DiscordCredentialFile.DiscordBotToken;
         }
 
-        public void SetDiscordToken(string discordToken)
+        public async Task SetDiscordToken(string discordToken)
         {
             _dataManager.DiscordCredentialFile.DiscordBotToken = discordToken;
-            _dataManager.SaveDiscordCredentialFile();
+            await _dataManager.SaveDiscordCredentialFile();
         }
 
         public ulong GetGuildId()
@@ -142,10 +142,10 @@ namespace FlawsFightNight.Managers
             return _dataManager.DiscordCredentialFile.GuildId;
         }
 
-        public void SetGuildId(ulong guildId)
+        public async Task SetGuildId(ulong guildId)
         {
             _dataManager.DiscordCredentialFile.GuildId = guildId;
-            _dataManager.SaveDiscordCredentialFile();
+            await _dataManager.SaveDiscordCredentialFile();
         }
         #endregion
 
