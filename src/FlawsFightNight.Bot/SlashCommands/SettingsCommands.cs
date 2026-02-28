@@ -2,6 +2,7 @@
 using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
+using FlawsFightNight.Bot.Components;
 using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.SetCommands;
 using FlawsFightNight.CommandsLogic.SettingsCommands;
@@ -201,6 +202,70 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await DeferAsync();
                     var result = _removeTeamsChannelLogic.RemoveTeamsChannelProcess(tournamentId);
                     await FollowupAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+        }
+
+        [Group("ftp_stats_service", "Re-run FTP Setup Process in Console and remove FTP credentials")]
+        public class FTPStatsServiceCommands : InteractionModuleBase<SocketInteractionContext>
+        {
+            private RemoveFTPCredentialsLogic _removeFTPCredentialsLogic;
+            public FTPStatsServiceCommands(RemoveFTPCredentialsLogic removeFTPCredentialsLogic)
+            {
+                _removeFTPCredentialsLogic = removeFTPCredentialsLogic;
+            }
+            [SlashCommand("run_setup", "Re-run the FTP Setup Process in Console to add FTP credentials or change FTP server")]
+            [RequireGuildAdmin]
+            public async Task RunFTPSetupAsync()
+            {
+                try
+                {
+                    //await DeferAsync();
+                    //var result = _runFTPSetupLogic.RunFTPSetupProcess();
+                    //await FollowupAsync(embed: result);
+                    //await DeferAsync();
+                    await DeferAsync(ephemeral: true);
+                    var components = ComponentFactory.CreateConfirmationCancelButtons("runftp", Context.User.Id);
+                    await FollowupAsync("⚠️ **This will re-run FTP setup in the console.\n\nRepeat: Setup is done in the console, not Discord. If console cannot be reached and this was done by mistake then this can be terminated by using `/settings ftp_stats_service cancel_setup`**\n\nAre you sure you want to continue?", components: components.Build(), ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+            [SlashCommand("remove_credentials", "Remove specific FTP credentials from the database")]
+            [RequireGuildAdmin]
+            public async Task RemoveFTPCredentialsAsync(
+                [Summary("ftp_credential_id", "The FTP credential by ID to remove"), Autocomplete(typeof(FTPCredentialAutocomplete))] string ftpServerName)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var result = await _removeFTPCredentialsLogic.RemoveFTPCredentialsProcess(ftpServerName);
+                    await FollowupAsync(embed: result, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("cancel_setup", "Cancel the FTP setup process that is currently running in the console")]
+            [RequireGuildAdmin]
+            public async Task CancelFTPSetupAsync()
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var components = ComponentFactory.CreateConfirmationCancelButtons("cancelftp", Context.User.Id);
+                    await FollowupAsync("⚠️ Confirm FTP Setup Cancellation\n\nAre you sure you want to cancel the FTP setup process? This will stop the ongoing setup and any progress will be lost. You can always run the setup again later if needed.", components: components.Build(), ephemeral: true);
                 }
                 catch (Exception ex)
                 {

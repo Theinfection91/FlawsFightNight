@@ -104,7 +104,7 @@ namespace FlawsFightNight.Managers
             if (!team0.Any() || !team1.Any()) return;
 
             // Debug
-            PrintDebug(match, match.Players.SelectMany(team => team).ToList());
+            //PrintDebug(match, match.Players.SelectMany(team => team).ToList());
 
             // If a kill-matrix is present, use pairwise UTStatsDB matching (closest parity with original)
             if (match.KillMatch != null && match.KillMatch.Count > 0)

@@ -20,7 +20,7 @@ namespace FlawsFightNight.Managers
 
         // Discord Client
         public readonly DiscordSocketClient DiscordClient;
-
+        #region Credentials
         // Discord Credential File
         public DiscordCredentialFile DiscordCredentialFile { get; private set; }
         private readonly DiscordCredentialHandler _discordCredentialHandler;
@@ -29,6 +29,10 @@ namespace FlawsFightNight.Managers
         public GitHubCredentialFile GitHubCredentialFile { get; private set; }
         private readonly GitHubCredentialHandler _gitHubCredentialHandler;
 
+        public FTPCredentialFile FTPCredentialFile { get; private set; }
+        private readonly FTPCredentialHandler _ftpCredentialHandler;
+        #endregion
+        #region Databases
         // Permissions Config
         public PermissionsConfigFile PermissionsConfigFile { get; private set; }
         private readonly PermissionsConfigHandler _permissionsConfigHandler;
@@ -48,9 +52,9 @@ namespace FlawsFightNight.Managers
         // UT2004 Player Profile File
         public List<UT2004PlayerProfileFile> UT2004PlayerProfileFiles { get; private set; }
         private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
+        #endregion
 
-        // Constructor is given each handler type for each specific JSON file
-        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
+        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
         {
             DiscordClient = client;
 
@@ -59,6 +63,9 @@ namespace FlawsFightNight.Managers
 
             _gitHubCredentialHandler = gitHubCredentialHandler;
             LoadGitHubCredentialFile();
+
+            _ftpCredentialHandler = ftpCredentialHandler;
+            LoadFTPCredentialFiles();
 
             _permissionsConfigHandler = permissionsConfigHandler;
             LoadPermissionsConfigFile();
@@ -303,6 +310,24 @@ namespace FlawsFightNight.Managers
             UT2004PlayerProfileFiles.Clear();
             // Delete all profile files from disk
             await _ut2004PlayerProfileHandler.DeleteJsonFilesInFolder(PathOption.UT2004PlayerProfiles);
+        }
+        #endregion
+
+        #region FTP Credential File
+        public async Task LoadFTPCredentialFiles()
+        {
+            FTPCredentialFile = await _ftpCredentialHandler.Load();
+        }
+
+        public async Task SaveFTPCredentialFile(FTPCredentialFile ftpCredentialFile)
+        {
+            await _ftpCredentialHandler.Save(ftpCredentialFile);
+        }
+
+        public async Task SaveAndReloadFTPCredentialFile()
+        {
+            await _ftpCredentialHandler.Save(FTPCredentialFile);
+            await LoadFTPCredentialFiles();
         }
         #endregion
     }

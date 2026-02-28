@@ -26,6 +26,7 @@ namespace FlawsFightNight.Bot
         private ConfigManager _configManager;
 
         private bool _gitBackupSetupComplete = false;
+        private bool _ftpSetupComplete = false;
 
         public static async Task Main(string[] args)
         {
@@ -123,6 +124,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<NextRoundLogic>();
                     services.AddSingleton<RegisterTeamLogic>();
                     services.AddSingleton<RemoveDebugAdminLogic>();
+                    services.AddSingleton<RemoveFTPCredentialsLogic>();
                     services.AddSingleton<RemoveMatchesChannelLogic>();
                     services.AddSingleton<RemoveStandingsChannelLogic>();
                     services.AddSingleton<RemoveTeamsChannelLogic>();
@@ -156,6 +158,7 @@ namespace FlawsFightNight.Bot
 
                     // Data handlers
                     services.AddSingleton<DiscordCredentialHandler>();
+                    services.AddSingleton<FTPCredentialHandler>();
                     services.AddSingleton<GitHubCredentialHandler>();
                     services.AddSingleton<PermissionsConfigHandler>();
                     services.AddSingleton<ProcessedLogNamesHandler>();
@@ -182,7 +185,14 @@ namespace FlawsFightNight.Bot
                 await gitBackupManager.RunInteractiveSetup();
                 _gitBackupSetupComplete = configManager.IsGitPatTokenSet();
             }
-            //await gitBackupManager.RunInteractiveSetup();
+
+            // Run interactive FTP setup in background (add credentials prompts)
+            var ftpSetupManager = _services.GetRequiredService<ConfigManager>();
+            while (!_ftpSetupComplete)
+            {
+                await ftpSetupManager.FTPSetupProcess();
+                _ftpSetupComplete = ftpSetupManager.IsFTPCredentialsSet();
+            }
 
             // Discord services
             _commands = _services.GetRequiredService<CommandService>();
