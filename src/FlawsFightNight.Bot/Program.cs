@@ -164,6 +164,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<ProcessedLogNamesHandler>();
                     services.AddSingleton<StatLogMatchResultHandler>();
                     services.AddSingleton<TournamentDataHandler>();
+                    services.AddSingleton<UserProfileHandler>();
                     services.AddSingleton<UT2004PlayerProfileHandler>();
 
                     // Parsers

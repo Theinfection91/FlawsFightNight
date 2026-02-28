@@ -38,7 +38,7 @@ namespace FlawsFightNight.Managers
         private readonly PermissionsConfigHandler _permissionsConfigHandler;
 
         // Tournament Data System
-        public List<TournamentDataFile> TournamentDataFiles { get; private set; }
+        public List<TournamentDataFile> TournamentDataFiles { get; private set; } = new();
         private readonly TournamentDataHandler _tournamentDataHandler;
 
         // Processed Log Names File
@@ -49,12 +49,16 @@ namespace FlawsFightNight.Managers
         // Stat Log files are lazy loaded
         private readonly StatLogMatchResultHandler _statLogMatchResultsHandler;
 
+        // User Profile Files
+        public List<UserProfileFile> UserProfileFiles { get; private set; } = new();
+        private readonly UserProfileHandler _userProfileHandler;
+
         // UT2004 Player Profile File
         public List<UT2004PlayerProfileFile> UT2004PlayerProfileFiles { get; private set; }
         private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
         #endregion
 
-        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
+        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, UserProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
         {
             DiscordClient = client;
 
@@ -78,6 +82,9 @@ namespace FlawsFightNight.Managers
 
             _statLogMatchResultsHandler = statLogMatchResultHandler;
             // Stat Log files will be lazy loaded when data is needed.
+
+            _userProfileHandler = userProfileHandler;
+            LoadAllUserProfileFiles().Wait();
 
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
             LoadAllUT2004PlayerProfileFiles().Wait();
@@ -264,10 +271,47 @@ namespace FlawsFightNight.Managers
                     return (await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/TAM")).Count;
                 case UT2004GameMode.iBR:
                     return (await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iBR")).Count;
-                    default:
+                default:
                     return 0;
             }
         }
+        #endregion
+
+        #region User Profile Files
+        public async Task LoadAllUserProfileFiles()
+        {
+            UserProfileFiles = await _userProfileHandler.LoadAll("*.json", "UserProfiles");
+        }
+
+        public async Task<UserProfileFile> LoadUserProfileFile(ulong discordId)
+        {
+            await _userProfileHandler.SetFilePath(PathOption.UserProfiles, $"{discordId}.json");
+            return await _userProfileHandler.Load();
+        }
+
+        public async Task SaveUserProfileFile(UserProfile userProfile)
+        {
+            var userProfileFile = new UserProfileFile()
+            {
+                UserProfile = userProfile
+            };
+            await _userProfileHandler.SetFilePath(PathOption.UserProfiles, $"{userProfile.DiscordId}.json");
+            await _userProfileHandler.Save(userProfileFile);
+        }
+
+        public async Task<UserProfile> GetUserProfile(ulong discordId)
+        {
+            foreach (var profileFile in UserProfileFiles)
+            {
+                if (profileFile.UserProfile.DiscordId == discordId)
+                {
+                    return profileFile.UserProfile;
+                }
+            }
+            return null;
+        }
+
+
         #endregion
 
         #region UT2004 Player Profile Files

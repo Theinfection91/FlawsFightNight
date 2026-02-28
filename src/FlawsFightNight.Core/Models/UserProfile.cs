@@ -8,5 +8,6 @@ namespace FlawsFightNight.Core.Models
 {
     public class UserProfile
     {
+        public ulong DiscordId { get; set; }
     }
 }

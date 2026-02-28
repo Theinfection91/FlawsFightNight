@@ -16,7 +16,8 @@ namespace FlawsFightNight.Data.Handlers
         TAMStatLogs,
         iBRStatLogs,
         UT2004PlayerProfiles,
-        Credentials
+        Credentials,
+        UserProfiles
     }
 
     public abstract class AsyncDataHandler<T> where T : new()
@@ -68,6 +69,9 @@ namespace FlawsFightNight.Data.Handlers
                     break;
                 case PathOption.Credentials:
                     _folderPath = Path.Combine(baseDir, "Credentials");
+                    break;
+                case PathOption.UserProfiles:
+                    _folderPath = Path.Combine(baseDir, "Databases", "UserProfiles");
                     break;
             }
 
