@@ -32,6 +32,13 @@ namespace FlawsFightNight.Data.Handlers
         private string? _pendingFileName;
         private string? _pendingCustomFolderName;
 
+        private static readonly JsonSerializerSettings _safeJsonSettings = new()
+        {
+            TypeNameHandling = TypeNameHandling.Auto,
+            SerializationBinder = new SafeSerializationBinder(),
+            Formatting = Formatting.Indented
+        };
+
         protected AsyncDataHandler() { }
 
         protected AsyncDataHandler(PathOption pathOption, string fileName)
@@ -169,15 +176,12 @@ namespace FlawsFightNight.Data.Handlers
                 try
                 {
                     var json = await File.ReadAllTextAsync(_filePath);
-                    return JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
-                    {
-                        TypeNameHandling = TypeNameHandling.Auto
-                    }) ?? new T();
+                    return JsonConvert.DeserializeObject<T>(json, _safeJsonSettings) ?? new T();
                 }
                 catch (IOException ex) when (i < maxRetries - 1)
                 {
                     lastException = ex;
-                    await Task.Delay(delayMs * (i + 1)); // Exponential backoff: 200ms, 400ms, 600ms, 800ms, 1000ms
+                    await Task.Delay(delayMs * (i + 1));
                 }
             }
 
@@ -192,13 +196,9 @@ namespace FlawsFightNight.Data.Handlers
             {
                 try
                 {
-                    var json = JsonConvert.SerializeObject(data, Formatting.Indented,
-                        new JsonSerializerSettings
-                        {
-                            TypeNameHandling = TypeNameHandling.Auto
-                        });
+                    var json = JsonConvert.SerializeObject(data, _safeJsonSettings);
 
-                    // Write to temp file first, then move (atomic operation)
+                    // Write to temp file first, then move
                     string tempFile = _filePath + ".tmp";
                     await File.WriteAllTextAsync(tempFile, json);
                     File.Move(tempFile, _filePath, true);
@@ -208,12 +208,12 @@ namespace FlawsFightNight.Data.Handlers
                 catch (IOException ex) when (i < maxRetries - 1)
                 {
                     lastException = ex;
-                    await Task.Delay(delayMs * (i + 1)); // Exponential backoff
+                    await Task.Delay(delayMs * (i + 1));
                 }
                 catch (UnauthorizedAccessException ex) when (i < maxRetries - 1)
                 {
                     lastException = ex;
-                    await Task.Delay(delayMs * (i + 1)); // Exponential backoff
+                    await Task.Delay(delayMs * (i + 1));
                 }
             }
 
@@ -238,10 +238,7 @@ namespace FlawsFightNight.Data.Handlers
                 try
                 {
                     var json = await File.ReadAllTextAsync(file);
-                    var data = JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
-                    {
-                        TypeNameHandling = TypeNameHandling.Auto
-                    });
+                    var data = JsonConvert.DeserializeObject<T>(json, _safeJsonSettings);
 
                     if (data != null)
                         list.Add(data);

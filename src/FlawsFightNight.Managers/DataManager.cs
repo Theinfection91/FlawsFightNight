@@ -93,7 +93,7 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region Intialization
-        public async Task IntitializeAsync()
+        public async Task InitializeAsync()
         {
             // Helper method to check for and invoke InitializePendingPathAsync on handlers that have it
             // This is to fix having async methods in the handlers constructors

@@ -12,6 +12,13 @@ namespace FlawsFightNight.Data.Handlers
     {
         private readonly string _filePath;
 
+        private static readonly JsonSerializerSettings _safeJsonSettings = new()
+        {
+            TypeNameHandling = TypeNameHandling.Auto,
+            SerializationBinder = new SafeSerializationBinder(),
+            Formatting = Formatting.Indented
+        };
+
         protected BaseDataHandler(string fileName, string folderName)
         {
             _filePath = SetFilePath(fileName, folderName);
@@ -46,18 +53,12 @@ namespace FlawsFightNight.Data.Handlers
         public T Load()
         {
             var json = File.ReadAllText(_filePath);
-            return JsonConvert.DeserializeObject<T>(json, new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.Auto
-            }) ?? new T();
+            return JsonConvert.DeserializeObject<T>(json, _safeJsonSettings) ?? new T();
         }
 
         public void Save(T data)
         {
-            var json = JsonConvert.SerializeObject(data, Formatting.Indented, new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.Auto
-            });
+            var json = JsonConvert.SerializeObject(data, _safeJsonSettings);
             File.WriteAllText(_filePath, json);
         }
     }
