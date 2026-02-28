@@ -38,6 +38,7 @@ namespace FlawsFightNight.Managers
             await _dataManager.LoadTournamentDataFiles();
         }
 
+        // TODO All references need to be updated to await this method and if need be made async all the way up the call stack
         public async Task SaveAndReloadTournamentDataFiles(Tournament tournament)
         {
             await SaveTournament(tournament);
