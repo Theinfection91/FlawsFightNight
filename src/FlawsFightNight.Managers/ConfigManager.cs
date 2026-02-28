@@ -155,7 +155,7 @@ namespace FlawsFightNight.Managers
             return _dataManager.GitHubCredentialFile.GitPatToken != "ENTER_GIT_PAT_TOKEN_HERE";
         }
 
-        public void SetGitBackupProcess()
+        public async Task SetGitBackupProcess()
         {
             bool IsGitBackupProcessComplete = false;
             while (!IsGitBackupProcessComplete)
@@ -171,7 +171,7 @@ namespace FlawsFightNight.Managers
                         string? gitUrlPath = Console.ReadLine();
                         _dataManager.GitHubCredentialFile.GitUrlPath = gitUrlPath;
                         Console.WriteLine($"{DateTime.Now} - [ConfigManager] Repo Url set to: {gitUrlPath}\nYou can manually change your token and url path in the Credentials/github_credentials.json file as well.");
-                        _dataManager.SaveAndReloadGitHubCredentialFile();
+                        await _dataManager.SaveAndReloadGitHubCredentialFile();
                         IsGitBackupProcessComplete = true;
                     }
                     else

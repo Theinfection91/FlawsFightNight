@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public class GitHubCredentialHandler : BaseDataHandler<GitHubCredentialFile>
+    public class GitHubCredentialHandler : AsyncDataHandler<GitHubCredentialFile>
     {
-        public GitHubCredentialHandler() : base("github_credentials.json", "Credentials")
+        public GitHubCredentialHandler() : base(PathOption.Credentials, "github_credentials.json")
         {
 
         }

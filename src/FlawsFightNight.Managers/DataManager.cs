@@ -120,13 +120,13 @@ namespace FlawsFightNight.Managers
             // After all pending paths are initialized, load the data from those paths
             await LoadDiscordCredentialFile();
             await LoadFTPCredentialFiles();
+            await LoadGitHubCredentialFile();
             await LoadProcessedLogNamesFile();
             await LoadTournamentDataFiles();
             await LoadAllUserProfileFiles();
             await LoadAllUT2004PlayerProfileFiles();
 
             // Changing all these to async soon, but for now they can stay synchronous
-            LoadGitHubCredentialFile();
             LoadPermissionsConfigFile();
         }
         #endregion
@@ -150,20 +150,20 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region GitHub Credential File
-        public void LoadGitHubCredentialFile()
+        public async Task LoadGitHubCredentialFile()
         {
-            GitHubCredentialFile = _gitHubCredentialHandler.Load();
+            GitHubCredentialFile = await _gitHubCredentialHandler.Load();
         }
 
-        public void SaveGitHubCredentialFile()
+        public async Task SaveGitHubCredentialFile()
         {
-            _gitHubCredentialHandler.Save(GitHubCredentialFile);
+            await _gitHubCredentialHandler.Save(GitHubCredentialFile);
         }
 
-        public void SaveAndReloadGitHubCredentialFile()
+        public async Task SaveAndReloadGitHubCredentialFile()
         {
-            _gitHubCredentialHandler.Save(GitHubCredentialFile);
-            LoadGitHubCredentialFile();
+            await _gitHubCredentialHandler.Save(GitHubCredentialFile);
+            await LoadGitHubCredentialFile();
         }
         #endregion
 
