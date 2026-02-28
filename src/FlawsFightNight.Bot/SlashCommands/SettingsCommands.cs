@@ -240,12 +240,13 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             [SlashCommand("remove_credentials", "Remove specific FTP credentials from the database")]
             [RequireGuildAdmin]
-            public async Task RemoveFTPCredentialsAsync()
+            public async Task RemoveFTPCredentialsAsync(
+                [Summary("ftp_credential_id", "The FTP credential by ID to remove"), Autocomplete(typeof(FTPCredentialAutocomplete))] string ftpServerName)
             {
                 try
                 {
                     await DeferAsync();
-                    var result = _removeFTPCredentialsLogic.RemoveFTPCredentialsProcess();
+                    var result = await _removeFTPCredentialsLogic.RemoveFTPCredentialsProcess(ftpServerName);
                     await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)

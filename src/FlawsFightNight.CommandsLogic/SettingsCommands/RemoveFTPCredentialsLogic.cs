@@ -10,14 +10,28 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
 {
     public class RemoveFTPCredentialsLogic : Logic
     {
-        private EmbedManager _embedManager;
-        public RemoveFTPCredentialsLogic(EmbedManager embedManager) : base("Remove FTP Credentials")
+        private readonly ConfigManager _configManager;
+        private readonly EmbedManager _embedManager;
+        public RemoveFTPCredentialsLogic(ConfigManager configManager, EmbedManager embedManager) : base("Remove FTP Credentials")
         {
+            _configManager = configManager;
             _embedManager = embedManager;
         }
-        public Embed RemoveFTPCredentialsProcess()
+        public async Task<Embed> RemoveFTPCredentialsProcess(string ftpServerName)
         {
-            return _embedManager.ToDoEmbed();
+            if (!_configManager.IsFTPCredentialsSet())
+            {
+                return _embedManager.ErrorEmbed("No FTP credentials are currently set.");
+            }
+
+            var ftpCredential = _configManager.GetFTPCredentials()!.FirstOrDefault(c => c.ServerName == ftpServerName);
+            if (ftpCredential == null) 
+            {
+                return _embedManager.ErrorEmbed("Invalid FTP credential server name.");
+            }
+
+            await _configManager.RemoveFTPCredential(ftpCredential);
+            return _embedManager.ToDoEmbed($"FTP credential ({ftpCredential.Id} - {ftpCredential.ServerName} - {ftpCredential.Username} ({ftpCredential.IPAddress}:{ftpCredential.Port})) removed successfully.");
         }
     }
 }

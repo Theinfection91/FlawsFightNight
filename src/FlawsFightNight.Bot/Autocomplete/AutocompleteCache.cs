@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
+using FlawsFightNight.Data.Models;
 using FlawsFightNight.Managers;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -16,9 +17,10 @@ namespace FlawsFightNight.Bot.Autocomplete
     public class AutocompleteCache
     {
         // Add Managers as needed here
-        private MatchManager _matchManager;
-        private TeamManager _teamManager;
-        private TournamentManager _tournamentManager;
+        private readonly ConfigManager _configManager;
+        private readonly MatchManager _matchManager;
+        private readonly TeamManager _teamManager;
+        private readonly TournamentManager _tournamentManager;
 
         // Autocomplete Data
         private List<Match> _allMatches = new();
@@ -31,11 +33,13 @@ namespace FlawsFightNight.Bot.Autocomplete
         private List<Team> _ladderTeams = new();
         private List<Team> _roundBasedTeams = new();
         private List<Team> _roundRobinTeams = new();
+        private List<FTPCredential> _ftpCredentials = new();
 
 
-        public AutocompleteCache(MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager)
+        public AutocompleteCache(ConfigManager configManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager)
         {
             // Initialize Managers here
+            _configManager = configManager;
             _matchManager = matchManager;
             _teamManager = teamManager;
             _tournamentManager = tournamentManager;
@@ -57,6 +61,7 @@ namespace FlawsFightNight.Bot.Autocomplete
             _ladderTeams = _teamManager.GetAllLadderTeams();
             _roundRobinTeams = _teamManager.GetAllRoundRobinTeams();
             _roundBasedTeams = _teamManager.GetAllRoundBasedTeams();
+            _ftpCredentials = _configManager.GetFTPCredentials()!;
         }
 
         public List<AutocompleteResult> GetMatchIdsMatchingInput(string input)
@@ -340,6 +345,35 @@ namespace FlawsFightNight.Bot.Autocomplete
                 .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedType()})", tournament.Id))
                 .ToList();
             return matchingTournaments;
+        }
+
+        public List<AutocompleteResult> GetFTPCredentialsMatchingInput(string input)
+        {
+            Console.WriteLine($"Generating FTP credential suggestions for input: '{input}'");
+            Console.WriteLine($"Total FTP credentials in cache: {_ftpCredentials.Count}");
+            // If the input is empty or only whitespace, return all FTP credentials sorted alphabetically by server
+            try
+            {
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    return _ftpCredentials
+                        .OrderBy(cred => cred.ServerName)
+                        .Select(cred => new AutocompleteResult($"{cred.ServerName} ({cred.IPAddress}:{cred.Port})", cred.ServerName))
+                        .ToList();
+                }
+                // Filter FTP credentials based on the input (case-insensitive)
+                var matchingCredentials = _ftpCredentials
+                    .Where(cred => cred.ServerName.Contains(input, StringComparison.OrdinalIgnoreCase) || cred.Username.Contains(input, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(cred => cred.ServerName)
+                    .Select(cred => new AutocompleteResult($"{cred.ServerName} ({cred.IPAddress}:{cred.Port})", cred.ServerName))
+                    .ToList();
+                return matchingCredentials;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating FTP credential suggestions: {ex.Message}");
+                return new List<AutocompleteResult>();
+            }
         }
     }
 }

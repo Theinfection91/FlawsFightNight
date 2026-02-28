@@ -13,6 +13,7 @@ namespace FlawsFightNight.Managers
         private DiscordSocketClient _client;
 
         private bool _ftpDebugMode = true;
+        public event EventHandler? FTPCredentialsChanged;
         public ConfigManager(DiscordSocketClient client, DataManager dataManager) : base("ConfigManager", dataManager)
         {
             _client = client;
@@ -213,6 +214,19 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region FTP Config
+        public void NotifyFTPCredentialsChanged()
+        {
+            try
+            {
+                FTPCredentialsChanged?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{DateTime.Now} - [ConfigManager] Error notifying FTP credentials change: {ex.Message}");
+
+            }
+        }
+
         public bool IsFTPCredentialsSet()
         {
             return _dataManager.FTPCredentialFile.FTPCredentials.Count > 0;
@@ -235,6 +249,7 @@ namespace FlawsFightNight.Managers
             }
             _dataManager.FTPCredentialFile.FTPCredentials.Add(credential);
             await _dataManager.SaveAndReloadFTPCredentialFile();
+            NotifyFTPCredentialsChanged();
         }
 
         public async Task<FTPCredential>? CreateFTPCredential(string serverName, string? ipAddress, int port, string? username, string? password, string? userLogsDirectoryPath)
@@ -255,6 +270,13 @@ namespace FlawsFightNight.Managers
         public List<FTPCredential>? GetFTPCredentials()
         {
             return _dataManager.FTPCredentialFile.FTPCredentials;
+        }
+
+        public async Task RemoveFTPCredential(FTPCredential credential)
+        {
+            _dataManager.FTPCredentialFile.FTPCredentials.Remove(credential);
+            await _dataManager.SaveAndReloadFTPCredentialFile();
+            NotifyFTPCredentialsChanged();
         }
 
         public async Task FTPSetupProcess(bool isUserInit = false)
