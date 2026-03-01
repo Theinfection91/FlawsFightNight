@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Interfaces;
+﻿using FlawsFightNight.Core.Attributes;
+using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.MatchLogs
 {
+    [SafeForSerialization]
     public class DSRLadderMatchLog : MatchLog, IChallengeLog
     {
         public List<Match> MatchesToPlay { get; set; } = [];

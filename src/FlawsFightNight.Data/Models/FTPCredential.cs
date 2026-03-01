@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Data.Interfaces;
+﻿using FlawsFightNight.Core.Attributes;
+using FlawsFightNight.Data.Interfaces;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Models
 {
+    [SafeForSerialization]
     public class FTPCredential : IEncryptable
     {
         public int Id { get; set; }

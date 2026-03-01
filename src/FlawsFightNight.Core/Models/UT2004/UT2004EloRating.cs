@@ -1,3 +1,4 @@
+using FlawsFightNight.Core.Attributes;
 using System;
 
 namespace FlawsFightNight.Core.Models.UT2004
@@ -6,6 +7,7 @@ namespace FlawsFightNight.Core.Models.UT2004
     /// UTStatsDB ELO rating holder.
     /// Matches UTStatsDB design: ratings start at 0 and never go negative.
     /// </summary>
+    [SafeForSerialization]
     public class UT2004EloRating
     {
         // Start at 0 per UTStatsDB design (not 1500).

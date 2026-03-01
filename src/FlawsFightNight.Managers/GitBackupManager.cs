@@ -368,7 +368,7 @@ namespace FlawsFightNight.Managers
                         try
                         {
                             Directory.Delete(repoDir, recursive: false);
-                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Deleted stale folder: {relativePath}");
+                            //Console.WriteLine($"{DateTime.Now} - GitBackupManager - Deleted stale folder: {relativePath}");
                         }
                         catch (Exception ex)
                         {

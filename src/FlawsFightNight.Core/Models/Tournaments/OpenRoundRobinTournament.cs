@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Core.Attributes;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Helpers;
 using FlawsFightNight.Core.Interfaces;
@@ -12,6 +13,7 @@ using Newtonsoft.Json;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
+    [SafeForSerialization]
     public class OpenRoundRobinTournament : Tournament, IRoundRobinLength, ITeamLocking, ITieBreakerRankSystem
     {
         public override TournamentType Type { get; protected set; } = TournamentType.OpenRoundRobin;

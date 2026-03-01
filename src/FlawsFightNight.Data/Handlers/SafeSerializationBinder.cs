@@ -1,92 +1,84 @@
 ﻿using Newtonsoft.Json.Serialization;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 
 namespace FlawsFightNight.Data.Handlers
 {
     public class SafeSerializationBinder : ISerializationBinder
     {
-        private static readonly HashSet<string> _allowedTypes = new(StringComparer.Ordinal)
+        // Cache validated types for performance
+        private static readonly ConcurrentDictionary<string, Type?> _typeCache = new();
+        
+        // Whitelist for system types that can't be decorated with attributes
+        private static readonly HashSet<string> _systemTypeWhitelist = new(StringComparer.Ordinal)
         {
-            // Core Models
-            "FlawsFightNight.Core.Models.UserProfile",
-            "FlawsFightNight.Core.Models.Team",
-            "FlawsFightNight.Core.Models.Member",
-            "FlawsFightNight.Core.Models.Match",
-            "FlawsFightNight.Core.Models.PostMatch",
-            "FlawsFightNight.Core.Models.MatchLog",
-            
-            // Tournament Models (polymorphic - these need TypeNameHandling)
-            "FlawsFightNight.Core.Models.Tournaments.Tournament",
-            "FlawsFightNight.Core.Models.Tournaments.NormalLadderTournament",
-            "FlawsFightNight.Core.Models.Tournaments.DSRLadderTournament",
-            "FlawsFightNight.Core.Models.Tournaments.NormalRoundRobinTournament",
-            "FlawsFightNight.Core.Models.Tournaments.OpenRoundRobinTournament",
-
-            // Match Log Models
-            "FlawsFightNight.Core.Models.MatchLogs.MatchLog",
-            "FlawsFightNight.Core.Models.MatchLogs.DSRLadderMatchLog",
-            "FlawsFightNight.Core.Models.MatchLogs.NormalLadderMatchLog",
-            "FlawsFightNight.Core.Models.MatchLogs.NormalRoundRobinMatchLog",
-            "FlawsFightNight.Core.Models.MatchLogs.OpenRoundRobinMatchLog",
-            
-            // UT2004 Models
-            "FlawsFightNight.Core.Models.UT2004.UT2004PlayerProfile",
-            "FlawsFightNight.Core.Models.UT2004.UT2004StatLog",
-            "FlawsFightNight.Core.Models.UT2004.UTPlayerMatchStats",
-            
-            // Data Models (file wrappers)
-            "FlawsFightNight.Data.Models.UserProfileFile",
-            "FlawsFightNight.Data.Models.TournamentDataFile",
-            "FlawsFightNight.Data.Models.UT2004PlayerProfileFile",
-            "FlawsFightNight.Data.Models.StatLogMatchResultsFile",
-            "FlawsFightNight.Data.Models.ProcessedLogNamesFile",
-            "FlawsFightNight.Data.Models.FTPCredentialFile",
-            "FlawsFightNight.Data.Models.FTPCredential",
-            "FlawsFightNight.Data.Models.DiscordCredentialFile",
-            "FlawsFightNight.Data.Models.GitHubCredentialFile",
-            "FlawsFightNight.Data.Models.PermissionsConfigFile",
-            
-            // System types commonly used in collections
             "System.Collections.Generic.List`1",
             "System.Collections.Generic.Dictionary`2",
-
-            // Tiebreaker Model
-            "FlawsFightNight.Core.Models.TieBreakers.TraditionalTieBreaker",
-            
-            // Add other types as needed...
+            "System.String",
+            "System.Int32",
+            "System.Int64",
+            "System.DateTime",
+            "System.Guid"
         };
 
         public Type BindToType(string? assemblyName, string typeName)
         {
-            // Build full type name (without assembly version info)
             string fullTypeName = string.IsNullOrEmpty(assemblyName)
                 ? typeName
                 : $"{typeName}, {assemblyName.Split(',')[0]}";
 
-            // Check if type is whitelisted
-            if (_allowedTypes.Contains(typeName) || _allowedTypes.Contains(fullTypeName))
+            // Check cache first
+            if (_typeCache.TryGetValue(fullTypeName, out var cachedType))
             {
-                // Allow deserialization - resolve the type
-                return Type.GetType(fullTypeName, throwOnError: false)
-                       ?? Type.GetType(typeName, throwOnError: false)
-                       ?? throw new InvalidOperationException($"Whitelisted type not found: {fullTypeName}");
+                return cachedType ?? throw new InvalidOperationException(
+                    $"Type '{fullTypeName}' was previously rejected for deserialization.");
+            }
+
+            // Try to resolve the type
+            Type? resolvedType = Type.GetType(fullTypeName, throwOnError: false)
+                              ?? Type.GetType(typeName, throwOnError: false);
+
+            if (resolvedType == null)
+            {
+                _typeCache[fullTypeName] = null;
+                throw new InvalidOperationException($"Type '{fullTypeName}' could not be resolved.");
+            }
+
+            // Check if it's a system type
+            if (_systemTypeWhitelist.Contains(typeName) || resolvedType.Namespace?.StartsWith("System") == true)
+            {
+                _typeCache[fullTypeName] = resolvedType;
+                return resolvedType;
+            }
+
+            // Accept types decorated with an attribute named "SafeForSerializationAttribute"
+            // This handles the attribute living in Core or Data (different assemblies/namespaces).
+            var hasSafeAttr = resolvedType.GetCustomAttributes(inherit: true)
+                                          .Any(a => string.Equals(a.GetType().Name, "SafeForSerializationAttribute", StringComparison.Ordinal));
+            if (hasSafeAttr)
+            {
+                _typeCache[fullTypeName] = resolvedType;
+                return resolvedType;
             }
 
             // REJECT: Type is not whitelisted
+            _typeCache[fullTypeName] = null;
             throw new InvalidOperationException(
-                $"Type '{fullTypeName}' is not whitelisted for deserialization. " +
-                $"Add it to SafeSerializationBinder._allowedTypes if it's safe.");
+                $"Type '{fullTypeName}' is not marked with [SafeForSerialization] and is not whitelisted. " +
+                $"Add [SafeForSerialization] attribute to the type definition if it's safe to deserialize.");
         }
 
         public void BindToName(Type serializedType, out string? assemblyName, out string? typeName)
         {
-            // Use default behavior when serializing (write full type names)
             assemblyName = serializedType.Assembly.FullName;
             typeName = serializedType.FullName;
         }
+
+        /// <summary>
+        /// Clears the type cache (useful for testing or dynamic assembly scenarios).
+        /// </summary>
+        public static void ClearCache() => _typeCache.Clear();
     }
 }

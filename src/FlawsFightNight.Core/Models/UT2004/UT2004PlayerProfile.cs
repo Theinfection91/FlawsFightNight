@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Enums.UT2004;
+﻿using FlawsFightNight.Core.Attributes;
+using FlawsFightNight.Core.Enums.UT2004;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,7 @@ namespace FlawsFightNight.Core.Models.UT2004
     /// Represents a player's persistent profile across all UT2004 matches.
     /// Stored in database and updated after each match.
     /// </summary>
+    [SafeForSerialization]
     public class UT2004PlayerProfile
     {
         // Identity

@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Models.Tournaments;
+﻿using FlawsFightNight.Core.Attributes;
+using FlawsFightNight.Core.Models.Tournaments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Models
 {
+    [SafeForSerialization]
     public class TournamentDataFile
     {
         public Tournament Tournament { get; set; }
