@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FlawsFightNight.Core.Attributes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.UT2004
 {
+    [SafeForSerialization]
     public class UTPlayerMatchStats
     {
         public string? Guid { get; set; }
@@ -15,7 +17,7 @@ namespace FlawsFightNight.Core.Models.UT2004
         public bool IsWinner { get; set; }
         public int Placement { get; set; }
         public int TotalTimeSeconds { get; set; } = 0;
-        internal double LastActiveTimestamp { get; set; } = -1.0;
+        public double LastActiveTimestamp { get; set; } = -1.0;
 
         // Combat Stats
         public int Score { get; set; }

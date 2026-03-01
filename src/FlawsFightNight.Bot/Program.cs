@@ -181,8 +181,8 @@ namespace FlawsFightNight.Bot
             // Prep config
             _services = host.Services;
             _configManager = _services.GetRequiredService<ConfigManager>();
-            _configManager.SetDiscordTokenProcess();
-            _configManager.SetGitBackupProcess();
+            await _configManager.SetDiscordTokenProcess();
+            await _configManager.SetGitBackupProcess();
 
             // Run interactive Git backup setup in background (clone/restore prompts)
             var gitBackupManager = _services.GetRequiredService<GitBackupManager>();
@@ -245,7 +245,7 @@ namespace FlawsFightNight.Bot
 
             // Slash commands
             await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
-            _configManager.SetGuildIdProcess();
+            await _configManager.SetGuildIdProcess();
             await _interactionService.RegisterCommandsToGuildAsync(_configManager.GetGuildId());
 
             Console.WriteLine($"{DateTime.Now} - [Discord] Bot logged in as: {_client.CurrentUser}");

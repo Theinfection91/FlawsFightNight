@@ -64,172 +64,142 @@ namespace FlawsFightNight.Managers
             DiscordClient = client;
 
             _discordCredentialHandler = discordCredentialHandler;
-            //LoadDiscordCredentialFile();
-
             _gitHubCredentialHandler = gitHubCredentialHandler;
-            //LoadGitHubCredentialFile();
-
             _ftpCredentialHandler = ftpCredentialHandler;
-            //LoadFTPCredentialFiles();
-
             _permissionsConfigHandler = permissionsConfigHandler;
-            //LoadPermissionsConfigFile();
-
             _tournamentDataHandler = tournamentDataHandler;
-            //LoadTournamentDataFiles();
-
             _processedLogNamesHandler = processedLogNamesHandler;
-            //LoadProcessedLogNamesFile();
-
             _statLogMatchResultsHandler = statLogMatchResultHandler;
-            // Stat Log files are lazy loaded when data is needed
-
             _userProfileHandler = userProfileHandler;
-            //LoadAllUserProfileFiles();
-
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
-            //LoadAllUT2004PlayerProfileFiles();
         }
         #endregion
 
         #region Intialization
         public async Task InitializeAsync()
         {
-            // Helper method to check for and invoke InitializePendingPathAsync on handlers that have it
-            // This is to fix having async methods in the handlers constructors
-            static async Task InvokeInitIfExistsAsync(object? handler)
-            {
-                if (handler == null) return;
-                var initMethod = handler.GetType().GetMethod("InitializePendingPathAsync", BindingFlags.Public | BindingFlags.Instance);
-                if (initMethod == null) return;
-
-                var result = initMethod.Invoke(handler, null);
-                if (result is Task task) await task;
-            }
             // Invoke initialization on all handlers that have pending paths to set up
-            await InvokeInitIfExistsAsync(_discordCredentialHandler);
-            await InvokeInitIfExistsAsync(_gitHubCredentialHandler);
-            await InvokeInitIfExistsAsync(_ftpCredentialHandler);
-            await InvokeInitIfExistsAsync(_permissionsConfigHandler);
-            await InvokeInitIfExistsAsync(_tournamentDataHandler);
-            await InvokeInitIfExistsAsync(_processedLogNamesHandler);
-            await InvokeInitIfExistsAsync(_statLogMatchResultsHandler);
-            await InvokeInitIfExistsAsync(_userProfileHandler);
-            await InvokeInitIfExistsAsync(_ut2004PlayerProfileHandler);
+            await _discordCredentialHandler.InitializePendingPathAsync();
+            await _gitHubCredentialHandler.InitializePendingPathAsync();
+            await _ftpCredentialHandler.InitializePendingPathAsync();
+            await _permissionsConfigHandler.InitializePendingPathAsync();
+            await _tournamentDataHandler.InitializePendingPathAsync();
+            await _processedLogNamesHandler.InitializePendingPathAsync();
+            await _statLogMatchResultsHandler.InitializePendingPathAsync();
+            await _userProfileHandler.InitializePendingPathAsync();
+            await _ut2004PlayerProfileHandler.InitializePendingPathAsync();
 
             // After all pending paths are initialized, load the data from those paths
+            await LoadDiscordCredentialFile();
             await LoadFTPCredentialFiles();
+            await LoadGitHubCredentialFile();
+            await LoadPermissionsConfigFile();
             await LoadProcessedLogNamesFile();
+            await LoadTournamentDataFiles();
             await LoadAllUserProfileFiles();
             await LoadAllUT2004PlayerProfileFiles();
-
-            // Changing all these to async soon, but for now they can stay synchronous
-            LoadDiscordCredentialFile();
-            LoadGitHubCredentialFile();
-            LoadPermissionsConfigFile();
-            LoadTournamentDataFiles();
         }
         #endregion
 
         #region Discord Credential File
-        public void LoadDiscordCredentialFile()
+        public async Task LoadDiscordCredentialFile()
         {
-            DiscordCredentialFile = _discordCredentialHandler.Load();
+            DiscordCredentialFile = await _discordCredentialHandler.Load();
         }
 
-        public void SaveDiscordCredentialFile()
+        public async Task SaveDiscordCredentialFile()
         {
-            _discordCredentialHandler.Save(DiscordCredentialFile);
+            await _discordCredentialHandler.Save(DiscordCredentialFile);
         }
 
-        public void SaveAndReloadDiscordCredentialFile()
+        public async Task SaveAndReloadDiscordCredentialFile()
         {
-            _discordCredentialHandler.Save(DiscordCredentialFile);
-            LoadDiscordCredentialFile();
+            await _discordCredentialHandler.Save(DiscordCredentialFile);
+            await LoadDiscordCredentialFile();
         }
         #endregion
 
         #region GitHub Credential File
-        public void LoadGitHubCredentialFile()
+        public async Task LoadGitHubCredentialFile()
         {
-            GitHubCredentialFile = _gitHubCredentialHandler.Load();
+            GitHubCredentialFile = await _gitHubCredentialHandler.Load();
         }
 
-        public void SaveGitHubCredentialFile()
+        public async Task SaveGitHubCredentialFile()
         {
-            _gitHubCredentialHandler.Save(GitHubCredentialFile);
+            await _gitHubCredentialHandler.Save(GitHubCredentialFile);
         }
 
-        public void SaveAndReloadGitHubCredentialFile()
+        public async Task SaveAndReloadGitHubCredentialFile()
         {
-            _gitHubCredentialHandler.Save(GitHubCredentialFile);
-            LoadGitHubCredentialFile();
+            await _gitHubCredentialHandler.Save(GitHubCredentialFile);
+            await LoadGitHubCredentialFile();
         }
         #endregion
 
         #region Permissions Config Data
-        public void LoadPermissionsConfigFile()
+        public async Task LoadPermissionsConfigFile()
         {
-            PermissionsConfigFile = _permissionsConfigHandler.Load();
+            PermissionsConfigFile = await _permissionsConfigHandler.Load();
         }
 
-        public void SavePermissionsConfigFile()
+        public async Task SavePermissionsConfigFile()
         {
-            _permissionsConfigHandler.Save(PermissionsConfigFile);
+            await _permissionsConfigHandler.Save(PermissionsConfigFile);
         }
 
-        public void SaveAndReloadPermissionsConfigFile()
+        public async Task SaveAndReloadPermissionsConfigFile()
         {
-            _permissionsConfigHandler.Save(PermissionsConfigFile);
-            LoadPermissionsConfigFile();
+            await _permissionsConfigHandler.Save(PermissionsConfigFile);
+            await LoadPermissionsConfigFile();
         }
         #endregion
 
         #region Tournament Data System
-        public void LoadTournamentDataFiles()
+        public async Task LoadTournamentDataFiles()
         {
-            TournamentDataFiles = _tournamentDataHandler.LoadAll();
+            TournamentDataFiles = await _tournamentDataHandler.LoadAll("tournament.json", "Tournaments");
         }
 
-        public void SaveTournamentDataFile(TournamentDataFile tournamentDataFile)
+        public async Task SaveTournamentDataFile(TournamentDataFile tournamentDataFile)
         {
-            _tournamentDataHandler.SetFilePath(tournamentDataFile.Tournament.Id);
-            _tournamentDataHandler.Save(tournamentDataFile);
+            await _tournamentDataHandler.SetFilePathCustom("tournament.json", $"Databases/Tournaments/{tournamentDataFile.Tournament.Id}");
+            await _tournamentDataHandler.Save(tournamentDataFile);
         }
 
-        public void SaveAndReloadTournamentDataFiles(Tournament tournament)
+        public async Task SaveAndReloadTournamentDataFiles(Tournament tournament)
         {
             foreach (var tournamentData in TournamentDataFiles)
             {
                 if (tournamentData.Tournament.Id.Equals(tournament.Id, StringComparison.OrdinalIgnoreCase))
                 {
-                    SaveTournamentDataFile(tournamentData);
-                    LoadTournamentDataFiles();
+                    await SaveTournamentDataFile(tournamentData);
+                    await LoadTournamentDataFiles();
                     return;
                 }
             }
             // No existing tournament data file found, create a new one
-            AddNewTournament(tournament);
-            LoadTournamentDataFiles();
+            await AddNewTournament(tournament);
+            await LoadTournamentDataFiles();
         }
 
-        public void AddNewTournament(Tournament tournament)
+        public async Task AddNewTournament(Tournament tournament)
         {
             var newTournamentDataFile = new TournamentDataFile
             {
                 Tournament = tournament
             };
             TournamentDataFiles.Add(newTournamentDataFile);
-            SaveTournamentDataFile(newTournamentDataFile);
+            await SaveTournamentDataFile(newTournamentDataFile);
         }
 
-        public void RemoveTournament(string tournamentId)
+        public async Task RemoveTournament(string tournamentId)
         {
             // Remove from in-memory list
             TournamentDataFiles.RemoveAll(t => t.Tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
 
             // Remove the actual folder and contents
-            _tournamentDataHandler.DeleteFolderAndContents(tournamentId);
+            await _tournamentDataHandler.DeleteFolderAndContents(tournamentId);
         }
 
         public List<Tournament> GetTournaments()

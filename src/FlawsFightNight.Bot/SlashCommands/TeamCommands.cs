@@ -82,7 +82,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 if (member19 != null) members.Add(member19);
                 if (member20 != null) members.Add(member20);
 
-                var result = _registerTeamLogic.RegisterTeamProcess(name, tournamentId, members);
+                var result = await _registerTeamLogic.RegisterTeamProcess(name, tournamentId, members);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
 
@@ -118,7 +118,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _setTeamRankLogic.SetTeamRankProcess(teamName, rank);
+                var result = await _setTeamRankLogic.SetTeamRankProcess(teamName, rank);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }
@@ -173,7 +173,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _addTeamWinLogic.AddTeamWinProcess(teamName, number_of_wins);
+                    var result = await _addTeamWinLogic.AddTeamWinProcess(teamName, number_of_wins);
                     await FollowupAsync(embed: result);
                     _autocompleteCache.UpdateCache();
                 }
@@ -193,7 +193,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _addTeamLossLogic.AddLossProcess(teamName, number_of_losses);
+                    var result = await _addTeamLossLogic.AddLossProcess(teamName, number_of_losses);
                     await FollowupAsync(embed: result);
                     _autocompleteCache.UpdateCache();
                 }
@@ -249,7 +249,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _removeTeamWinLogic.RemoveWinProcess(teamName, number_of_wins);
+                    var result = await _removeTeamWinLogic.RemoveWinProcess(teamName, number_of_wins);
                     await FollowupAsync(embed: result);
                     _autocompleteCache.UpdateCache();
                 }
@@ -269,7 +269,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _removeTeamLossLogic.RemoveLossProcess(teamName, number_of_losses);
+                    var result = await _removeTeamLossLogic.RemoveLossProcess(teamName, number_of_losses);
                     await FollowupAsync(embed: result);
                     _autocompleteCache.UpdateCache();
                 }

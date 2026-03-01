@@ -5,13 +5,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Data.Interfaces;
 
 namespace FlawsFightNight.Data.Handlers
 {
     public enum PathOption
     {
         Databases,
-        TournamentSystem,
+        Tournaments,
         iCTFStatLogs,
         TAMStatLogs,
         iBRStatLogs,
@@ -20,7 +21,7 @@ namespace FlawsFightNight.Data.Handlers
         UserProfiles
     }
 
-    public abstract class AsyncDataHandler<T> where T : new()
+    public abstract class AsyncDataHandler<T> : IAsyncInitializable where T : new()
     {
         protected string _folderPath;
         protected string _filePath;
@@ -88,8 +89,8 @@ namespace FlawsFightNight.Data.Handlers
                 case PathOption.Databases:
                     _folderPath = Path.Combine(baseDir, "Databases");
                     break;
-                case PathOption.TournamentSystem:
-                    _folderPath = Path.Combine(baseDir, "Databases", "TournamentSystem");
+                case PathOption.Tournaments:
+                    _folderPath = Path.Combine(baseDir, "Databases", "Tournaments");
                     break;
                 case PathOption.iCTFStatLogs:
                     _folderPath = Path.Combine(baseDir, "Databases", "StatLogs", "iCTF");
@@ -133,7 +134,7 @@ namespace FlawsFightNight.Data.Handlers
         public async Task DeleteFolderAndContents(string tournamentId)
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var folderPath = Path.Combine(baseDir, "Databases", tournamentId);
+            var folderPath = Path.Combine(baseDir, "Databases", "Tournaments", tournamentId);
 
             if (Directory.Exists(folderPath))
             {
@@ -258,7 +259,7 @@ namespace FlawsFightNight.Data.Handlers
             string folderPath = pathOption switch
             {
                 PathOption.Databases => Path.Combine(baseDir, "Databases"),
-                PathOption.TournamentSystem => Path.Combine(baseDir, "Databases", "TournamentSystem"),
+                PathOption.Tournaments => Path.Combine(baseDir, "Databases", "Tournaments"),
                 PathOption.iCTFStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "iCTF"),
                 PathOption.TAMStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "TAM"),
                 PathOption.iBRStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "iBR"),

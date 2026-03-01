@@ -135,7 +135,11 @@ namespace FlawsFightNight.Managers
             List<Match> allMatches = new();
             foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
             {
-                allMatches.AddRange(tournament.MatchLog.GetAllActiveMatches());
+                // Skip tournaments with null MatchLog (newly created tournaments)
+                if (tournament?.MatchLog != null)
+                {
+                    allMatches.AddRange(tournament.MatchLog.GetAllActiveMatches());
+                }
             }
             return allMatches;
         }
@@ -145,22 +149,25 @@ namespace FlawsFightNight.Managers
             List<PostMatch> allPostMatches = new();
             foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
             {
-                allPostMatches.AddRange(tournament.MatchLog.GetAllPostMatches());
+                if (tournament?.MatchLog != null)
+                {
+                    allPostMatches.AddRange(tournament.MatchLog.GetAllPostMatches());
+                }
             }
             return allPostMatches;
         }
 
         public List<PostMatch> GetAllRoundRobinPostMatches()
         {
-            List<PostMatch> allPostMatches = new();
+            List<PostMatch> allRoundRobinPostMatches = new();
             foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
             {
-                if (tournament is NormalRoundRobinTournament || tournament is OpenRoundRobinTournament)
+                if (tournament?.MatchLog != null)
                 {
-                    allPostMatches.AddRange(tournament.MatchLog.GetAllPostMatches());
+                    allRoundRobinPostMatches.AddRange(tournament.MatchLog.GetAllPostMatches());
                 }
             }
-            return allPostMatches;
+            return allRoundRobinPostMatches;
         }
 
         public string GetLosingTeamName(Match match, string winningTeamName)

@@ -24,7 +24,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed RemoveWinProcess(string teamName, int numberOfWins)
+        public async Task<Embed> RemoveWinProcess(string teamName, int numberOfWins)
         {
             if (!_teamManager.DoesTeamExist(teamName))
             {
@@ -67,10 +67,10 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             team.WinStreak = 0;
 
             // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
+            _gitBackupManager.EnqueueBackup();
 
             return _embedManager.RemoveTeamWinSuccess(team, tournament, numberOfWins);
         }

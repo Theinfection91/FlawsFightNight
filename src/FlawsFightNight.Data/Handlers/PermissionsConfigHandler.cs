@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public class PermissionsConfigHandler : BaseDataHandler<PermissionsConfigFile>
+    public class PermissionsConfigHandler : AsyncDataHandler<PermissionsConfigFile>
     {
-        public PermissionsConfigHandler() : base("permissions_config.json", "Databases")
+        public PermissionsConfigHandler() : base(PathOption.Databases, "permissions_config.json")
         {
 
         }

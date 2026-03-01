@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FlawsFightNight.Core.Attributes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.UT2004
 {
+    [SafeForSerialization]
     public class UT2004OpenSkillRating
     {
         public double Mu { get; set; } = 25.0;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Core.Attributes;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Helpers;
 using FlawsFightNight.Core.Interfaces;
@@ -12,6 +13,7 @@ using Newtonsoft.Json;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
+    [SafeForSerialization]
     public class NormalRoundRobinTournament : Tournament, IRoundBased, IRoundRobinLength, ITeamLocking, ITieBreakerRankSystem
     {
         public override TournamentType Type { get; protected set; } = TournamentType.NormalRoundRobin;
@@ -22,6 +24,8 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public bool IsTeamsLocked { get; set; } = false;
         public bool CanTeamsBeLocked { get; set; } = false;
         public bool CanTeamsBeUnlocked { get; set; } = false;
+
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
         public bool IsDoubleRoundRobin { get; set; } = true;
 

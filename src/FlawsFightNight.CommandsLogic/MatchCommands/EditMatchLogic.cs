@@ -29,7 +29,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed EditMatchProcess(string matchId, string winningTeamName, int winningTeamScore, int losingTeamScore)
+        public async Task<Embed> EditMatchProcess(string matchId, string winningTeamName, int winningTeamScore, int losingTeamScore)
         {
             // Basic validation of score inputs
             if (winningTeamScore < 0 || losingTeamScore < 0)
@@ -110,10 +110,10 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             tournament.AdjustRanks();
 
             // Save the database
-            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git
-            _gitBackupManager.CopyAndBackupFilesToGit();
+            _gitBackupManager.EnqueueBackup();
 
             return _embedManager.RoundRobinEditMatchSuccess(tournament, postMatch);
         }

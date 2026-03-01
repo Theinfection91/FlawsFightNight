@@ -20,7 +20,7 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
         }
-        public Embed RemoveDebugAdminProcess(ulong userId)
+        public async Task<Embed> RemoveDebugAdminProcess(ulong userId)
         {
             if (!_configManager.IsDiscordIdInDebugAdminList(userId))
             {
@@ -29,10 +29,10 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             else
             {
                 // This will also save the file
-                _configManager.RemoveDiscordIdFromDebugAdminList(userId);
+                await _configManager.RemoveDiscordIdFromDebugAdminList(userId);
 
                 // Backup to git repo
-                _gitBackupManager.CopyAndBackupFilesToGit();
+                _gitBackupManager.EnqueueBackup();
 
                 return _embedManager.DebugAdminRemoveSuccess(userId);
             }

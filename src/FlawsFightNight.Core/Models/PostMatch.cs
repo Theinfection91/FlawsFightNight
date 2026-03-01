@@ -1,4 +1,6 @@
-﻿using System;
+﻿using FlawsFightNight.Core.Attributes;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models
 {
+    [SafeForSerialization]
     public class PostMatch
     {
         public string Id { get; set; }
@@ -21,6 +24,9 @@ namespace FlawsFightNight.Core.Models
 
         // Ladder Specific Info
         public Challenge? Challenge { get; set; }
+
+        [JsonConstructor]
+        private PostMatch() { }
 
         public PostMatch(string matchId, string winner, int winnerScore, string loser, int loserScore, DateTime createdOn, bool wasByeMatch = false, Challenge challenge = null)
         {

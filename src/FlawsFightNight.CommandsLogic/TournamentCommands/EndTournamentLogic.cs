@@ -27,7 +27,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed EndTournamentProcess(string tournamentId)
+        public async Task<Embed> EndTournamentProcess(string tournamentId)
         {
             // Grab tournament, modal should have ensured it exists
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
@@ -65,10 +65,10 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                     tournament.End();
 
                     // Save the updated tournament state
-                    _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+                    await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                     // Backup to git repo
-                    _gitBackupManager.CopyAndBackupFilesToGit();
+                    _gitBackupManager.EnqueueBackup();
 
                     return _embedManager.RoundRobinEndTournamentSuccess(tournament, true, tieBreakerInfo);
                 }
@@ -78,10 +78,10 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                     tournament.End();
 
                     // Save the updated tournament state
-                    _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+                    await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                     // Backup to git repo
-                    _gitBackupManager.CopyAndBackupFilesToGit();
+                    _gitBackupManager.EnqueueBackup();
 
                     return _embedManager.RoundRobinEndTournamentSuccess(tournament);
                 }
@@ -94,10 +94,10 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 ladderTournament.End();
 
                 // Save the updated tournament state
-                _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+                await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                 // Backup to git repo
-                _gitBackupManager.CopyAndBackupFilesToGit();
+                _gitBackupManager.EnqueueBackup();
 
                 return _embedManager.NormalLadderEndTournamentSuccess(tournament);
             }
@@ -109,10 +109,10 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 dsrTournament.End();
 
                 // Save the updated tournament state
-                _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+                await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                 // Backup to git repo
-                _gitBackupManager.CopyAndBackupFilesToGit();
+                _gitBackupManager.EnqueueBackup();
 
                 return _embedManager.DSRLadderEndTournamentSuccess(tournament);
             }

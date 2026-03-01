@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Enums;
+﻿using FlawsFightNight.Core.Attributes;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.MatchLogs;
 using Newtonsoft.Json;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
+    [SafeForSerialization]
     public abstract class Tournament
     {
         [JsonConstructor]

@@ -25,7 +25,7 @@ namespace FlawsFightNight.Managers
         }
 
         #region Discord Config
-        public void SetDiscordTokenProcess()
+        public async Task SetDiscordTokenProcess()
         {
             bool IsBotTokenProcessComplete = false;
             while (!IsBotTokenProcessComplete)
@@ -37,7 +37,7 @@ namespace FlawsFightNight.Managers
                     string? botToken = Console.ReadLine();
                     if (IsValidBotToken(botToken))
                     {
-                        SetDiscordToken(botToken);
+                        await SetDiscordToken(botToken);
                         IsBotTokenProcessComplete = true;
                     }
                     else
@@ -62,7 +62,7 @@ namespace FlawsFightNight.Managers
             return botToken.Length >= 59;
         }
 
-        public void SetGuildIdProcess()
+        public async Task SetGuildIdProcess()
         {
             bool IsGuildIdProcessComplete = false;
             while (!IsGuildIdProcessComplete)
@@ -83,7 +83,7 @@ namespace FlawsFightNight.Managers
                         {
                             if (IsGuildIdValidBool(guildId))
                             {
-                                SetGuildId(guildId);
+                                await SetGuildId(guildId);
                                 IsGuildIdProcessComplete = true;
                             }
                             else
@@ -120,10 +120,10 @@ namespace FlawsFightNight.Managers
             return _dataManager.DiscordCredentialFile.CommandPrefix;
         }
 
-        public void SetCommandPrefix(string prefix)
+        public async Task SetCommandPrefix(string prefix)
         {
             _dataManager.DiscordCredentialFile.CommandPrefix = prefix;
-            _dataManager.SaveDiscordCredentialFile();
+            await _dataManager.SaveDiscordCredentialFile();
         }
 
         public string GetDiscordToken()
@@ -131,10 +131,10 @@ namespace FlawsFightNight.Managers
             return _dataManager.DiscordCredentialFile.DiscordBotToken;
         }
 
-        public void SetDiscordToken(string discordToken)
+        public async Task SetDiscordToken(string discordToken)
         {
             _dataManager.DiscordCredentialFile.DiscordBotToken = discordToken;
-            _dataManager.SaveDiscordCredentialFile();
+            await _dataManager.SaveDiscordCredentialFile();
         }
 
         public ulong GetGuildId()
@@ -142,10 +142,10 @@ namespace FlawsFightNight.Managers
             return _dataManager.DiscordCredentialFile.GuildId;
         }
 
-        public void SetGuildId(ulong guildId)
+        public async Task SetGuildId(ulong guildId)
         {
             _dataManager.DiscordCredentialFile.GuildId = guildId;
-            _dataManager.SaveDiscordCredentialFile();
+            await _dataManager.SaveDiscordCredentialFile();
         }
         #endregion
 
@@ -155,7 +155,7 @@ namespace FlawsFightNight.Managers
             return _dataManager.GitHubCredentialFile.GitPatToken != "ENTER_GIT_PAT_TOKEN_HERE";
         }
 
-        public void SetGitBackupProcess()
+        public async Task SetGitBackupProcess()
         {
             bool IsGitBackupProcessComplete = false;
             while (!IsGitBackupProcessComplete)
@@ -171,7 +171,7 @@ namespace FlawsFightNight.Managers
                         string? gitUrlPath = Console.ReadLine();
                         _dataManager.GitHubCredentialFile.GitUrlPath = gitUrlPath;
                         Console.WriteLine($"{DateTime.Now} - [ConfigManager] Repo Url set to: {gitUrlPath}\nYou can manually change your token and url path in the Credentials/github_credentials.json file as well.");
-                        _dataManager.SaveAndReloadGitHubCredentialFile();
+                        await _dataManager.SaveAndReloadGitHubCredentialFile();
                         IsGitBackupProcessComplete = true;
                     }
                     else
@@ -202,16 +202,16 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public void AddDiscordIdToDebugAdminList(ulong discordId)
+        public async Task AddDiscordIdToDebugAdminList(ulong discordId)
         {
             _dataManager.PermissionsConfigFile.DebugAdminList.Add(discordId);
-            _dataManager.SaveAndReloadPermissionsConfigFile();
+            await _dataManager.SaveAndReloadPermissionsConfigFile();
         }
 
-        public void RemoveDiscordIdFromDebugAdminList(ulong discordId)
+        public async Task RemoveDiscordIdFromDebugAdminList(ulong discordId)
         {
             _dataManager.PermissionsConfigFile.DebugAdminList.Remove(discordId);
-            _dataManager.SaveAndReloadPermissionsConfigFile();
+            await _dataManager.SaveAndReloadPermissionsConfigFile();
         }
         #endregion
 

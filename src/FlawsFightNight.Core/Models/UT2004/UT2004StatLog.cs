@@ -1,10 +1,12 @@
-﻿using FlawsFightNight.Core.Enums.UT2004;
+﻿using FlawsFightNight.Core.Attributes;
+using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Models.Stats;
 using System;
 using System.Collections.Generic;
 
 namespace FlawsFightNight.Core.Models.UT2004
 {
+    [SafeForSerialization]
     public class UT2004StatLog : StatLog
     {
         public string Id { get; set; }
