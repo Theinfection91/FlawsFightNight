@@ -28,7 +28,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed DeleteTeamProcess(string teamName)
+        public async Task<Embed> DeleteTeamProcess(string teamName)
         {
             // Grab tournament from team name
             var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
@@ -80,7 +80,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             tournament.AdjustRanks();
 
             // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

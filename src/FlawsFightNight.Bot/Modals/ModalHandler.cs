@@ -62,7 +62,7 @@ namespace FlawsFightNight.Bot.Modals
                     return;
                 }
 
-                var result = await Task.Run(() => _deleteTeamLogic.DeleteTeamProcess(modal.TeamNameOne));
+                var result = await _deleteTeamLogic.DeleteTeamProcess(modal.TeamNameOne);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }
@@ -96,7 +96,7 @@ namespace FlawsFightNight.Bot.Modals
                     return;
                 }
 
-                var result = await Task.Run(() => _deleteTournamentLogic.DeleteTournamentProcess(modal.TournamentIdOne));
+                var result = await _deleteTournamentLogic.DeleteTournamentProcess(modal.TournamentIdOne);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }
@@ -128,7 +128,7 @@ namespace FlawsFightNight.Bot.Modals
                     return;
                 }
 
-                var result = await Task.Run(() => _endTournamentLogic.EndTournamentProcess(modal.TournamentIdOne));
+                var result = await _endTournamentLogic.EndTournamentProcess(modal.TournamentIdOne);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }
@@ -160,7 +160,7 @@ namespace FlawsFightNight.Bot.Modals
                     return;
                 }
 
-                var result = await Task.Run(() => _startTournamentLogic.StartTournamentProcess(modal.TournamentIdOne));
+                var result = await _startTournamentLogic.StartTournamentProcess(modal.TournamentIdOne);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }

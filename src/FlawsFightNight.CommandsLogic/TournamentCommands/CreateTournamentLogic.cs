@@ -25,7 +25,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed CreateTournamentProcess(SocketInteractionContext context, string name, TournamentType tournamentType, int teamSize, string? description = null)
+        public async Task<Embed> CreateTournamentProcess(SocketInteractionContext context, string name, TournamentType tournamentType, int teamSize, string? description = null)
         {
             // Check if tournament name is unique
             if (!_tournamentManager.IsTournamentNameUnique(name))
@@ -43,7 +43,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // Save and reload the database
-            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

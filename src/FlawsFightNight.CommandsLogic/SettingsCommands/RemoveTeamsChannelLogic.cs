@@ -21,7 +21,7 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed RemoveTeamsChannelProcess(string tournamentId)
+        public async Task<Embed> RemoveTeamsChannelProcess(string tournamentId)
         {
             // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
@@ -39,7 +39,7 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             tournament.TeamsMessageId = 0;
 
             // Save and reload the tournaments database
-            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

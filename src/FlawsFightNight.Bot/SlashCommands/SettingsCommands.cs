@@ -84,7 +84,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _setMatchesChannelLogic.SetMatchesChannelProcess(tournamentId, channel);
+                    var result = await _setMatchesChannelLogic.SetMatchesChannelProcess(tournamentId, channel);
                     await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
@@ -102,7 +102,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _removeMatchesChannelLogic.RemoveMatchesChannelProcess(tournamentId);
+                    var result = await _removeMatchesChannelLogic.RemoveMatchesChannelProcess(tournamentId);
                     await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
@@ -135,7 +135,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _setStandingsChannelLogic.SetStandingsChannelProcess(tournamentId, channel);
+                    var result = await _setStandingsChannelLogic.SetStandingsChannelProcess(tournamentId, channel);
                     await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
@@ -153,7 +153,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _removeStandingsChannelLogic.RemoveStandingsChannelProcess(tournamentId);
+                    var result = await _removeStandingsChannelLogic.RemoveStandingsChannelProcess(tournamentId);
                     await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
@@ -183,7 +183,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _setTeamsChannelLogic.SetTeamsChannelProcess(tournamentId, channel);
+                    var result = await _setTeamsChannelLogic.SetTeamsChannelProcess(tournamentId, channel);
                     await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)
@@ -200,7 +200,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _removeTeamsChannelLogic.RemoveTeamsChannelProcess(tournamentId);
+                    var result = await _removeTeamsChannelLogic.RemoveTeamsChannelProcess(tournamentId);
                     await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)

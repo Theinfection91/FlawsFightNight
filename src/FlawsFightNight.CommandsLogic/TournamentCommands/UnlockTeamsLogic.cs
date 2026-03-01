@@ -23,7 +23,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed UnlockTeamsProcess(string tournamentId)
+        public async Task<Embed> UnlockTeamsProcess(string tournamentId)
         {
             // Check if the tournament exists, grab it if so
             if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
@@ -46,7 +46,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             unlockableTournament.UnlockTeams();
 
             // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

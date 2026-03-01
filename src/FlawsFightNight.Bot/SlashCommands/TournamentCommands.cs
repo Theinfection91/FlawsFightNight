@@ -51,7 +51,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _createTournamentLogic.CreateTournamentProcess(Context, name, tournamentType, teamSize, description);
+                var result = await _createTournamentLogic.CreateTournamentProcess(Context, name, tournamentType, teamSize, description);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }
@@ -86,7 +86,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _lockTeamsLogic.LockTeamsProcess(tournamentId);
+                var result = await _lockTeamsLogic.LockTeamsProcess(tournamentId);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }
@@ -106,7 +106,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _unlockTeamsLogic.UnlockTeamsProcess(tournamentId);
+                var result = await _unlockTeamsLogic.UnlockTeamsProcess(tournamentId);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }
@@ -143,7 +143,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _setupTournamentLogic.SetupRoundRobinTournamentProcess(tournamentId, tieBreakerType, roundRobinType);
+                var result = await _setupTournamentLogic.SetupRoundRobinTournamentProcess(tournamentId, tieBreakerType, roundRobinType);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
 
@@ -179,7 +179,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _lockInRoundLogic.LockInRoundProcess(tournamentId);
+                var result = await _lockInRoundLogic.LockInRoundProcess(tournamentId);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }
@@ -199,7 +199,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _unlockRoundLogic.UnlockRoundProcess(tournamentId);
+                var result = await _unlockRoundLogic.UnlockRoundProcess(tournamentId);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }
@@ -219,7 +219,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _nextRoundLogic.NextRoundProcess(tournamentId);
+                var result = await _nextRoundLogic.NextRoundProcess(tournamentId);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }

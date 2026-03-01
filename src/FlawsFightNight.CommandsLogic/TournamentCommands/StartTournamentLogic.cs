@@ -26,7 +26,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed StartTournamentProcess(string tournamentId)
+        public async Task<Embed> StartTournamentProcess(string tournamentId)
         {
             // Grab tournament, modal should have ensured it exists
             var tournament = _tournamentManager.GetTournamentById(tournamentId);
@@ -54,7 +54,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             _matchManager.SendMatchSchedulesToTeamsResolver(tournament);
 
             // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

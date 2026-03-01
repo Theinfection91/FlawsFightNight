@@ -36,7 +36,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _reportWinLogic.ReportWinProcess(Context, matchId, winningTeamName, winningTeamScore, losingTeamScore);
+                var result = await _reportWinLogic.ReportWinProcess(Context, matchId, winningTeamName, winningTeamScore, losingTeamScore);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }
@@ -59,7 +59,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _editMatchLogic.EditMatchProcess(postMatchId, winningTeamName, winningTeamScore, losingTeamScore);
+                var result = await _editMatchLogic.EditMatchProcess(postMatchId, winningTeamName, winningTeamScore, losingTeamScore);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.UpdateCache();
             }
@@ -90,7 +90,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _sendChallengeLogic.SendChallengeProcess(Context, challengerTeamName, opponentTeamName);
+                    var result = await _sendChallengeLogic.SendChallengeProcess(Context, challengerTeamName, opponentTeamName);
                     await FollowupAsync(embed: result);
                     _autocompleteCache.UpdateCache();
                 }
@@ -107,7 +107,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _cancelChallengeLogic.CancelChallengeProcess(Context, challengerTeamName);
+                    var result = await _cancelChallengeLogic.CancelChallengeProcess(Context, challengerTeamName);
                     await FollowupAsync(embed: result);
                     _autocompleteCache.UpdateCache();
                 }

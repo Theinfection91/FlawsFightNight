@@ -25,7 +25,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed SetTeamRankProcess(string teamName, int newRank)
+        public async Task<Embed> SetTeamRankProcess(string teamName, int newRank)
         {
             if (!_teamManager.DoesTeamExist(teamName))
             {
@@ -86,7 +86,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             tournament.AdjustRanks();
 
             // Save changes
-            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

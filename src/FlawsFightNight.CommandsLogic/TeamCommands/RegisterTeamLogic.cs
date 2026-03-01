@@ -32,7 +32,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             _teamManager = teamManager;
         }
 
-        public Embed RegisterTeamProcess(string teamName, string tournamentId, List<IUser> members)
+        public async Task<Embed> RegisterTeamProcess(string teamName, string tournamentId, List<IUser> members)
         {
             // TODO Cannot register a team name with anything that could be a tournament ID#, or Match ID# (TXXX or MXXX)
 
@@ -115,7 +115,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             }
 
             // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

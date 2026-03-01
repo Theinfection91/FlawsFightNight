@@ -30,7 +30,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed CancelChallengeProcess(SocketInteractionContext context, string challengerTeamName)
+        public async Task<Embed> CancelChallengeProcess(SocketInteractionContext context, string challengerTeamName)
         {
             if (!_teamManager.DoesTeamExist(challengerTeamName))
             {
@@ -96,7 +96,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             tournament.MatchLog.RemoveMatch(pendingMatch);
 
             // Save and reload the tournaments database
-            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
             
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();

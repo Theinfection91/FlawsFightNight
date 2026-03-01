@@ -29,7 +29,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             _tournamentManager = tournamentManager;
         }
 
-        public Embed SendChallengeProcess(SocketInteractionContext context, string challengerTeamName, string challengedTeamName)
+        public async Task<Embed> SendChallengeProcess(SocketInteractionContext context, string challengerTeamName, string challengedTeamName)
         {
             if (!_teamManager.DoesTeamExist(challengerTeamName))
             {
@@ -144,7 +144,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             _matchManager.SendChallengeSuccessNotificationProcess(tournament, newChallengeMatch, challengerTeam, challengedTeam);
 
             // Save and reload the tournament database
-            _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
             _gitBackupManager.CopyAndBackupFilesToGit();
