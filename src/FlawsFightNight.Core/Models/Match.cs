@@ -1,4 +1,5 @@
 ﻿using FlawsFightNight.Core.Attributes;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,9 @@ namespace FlawsFightNight.Core.Models
 
         // Ladder Specific Info
         public Challenge? Challenge { get; set; } = null;
+
+        [JsonConstructor]
+        private Match() { }
 
         public Match(string teamA, string teamB)
         {

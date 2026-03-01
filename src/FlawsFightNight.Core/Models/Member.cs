@@ -1,4 +1,5 @@
 ﻿using FlawsFightNight.Core.Attributes;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,10 @@ namespace FlawsFightNight.Core.Models
     {
         public ulong DiscordId { get; set; }
         public string DisplayName { get; set; }
+
+        [JsonConstructor]
+        private Member() { }
+
         public Member(ulong discordId, string displayName)
         {
             DiscordId = discordId;

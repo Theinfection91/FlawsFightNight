@@ -24,6 +24,8 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public bool IsTeamsLocked { get; set; } = false;
         public bool CanTeamsBeLocked { get; set; } = false;
         public bool CanTeamsBeUnlocked { get; set; } = false;
+
+        [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
         public ITieBreakerRule TieBreakerRule { get; set; } = new TraditionalTieBreaker();
         public bool IsDoubleRoundRobin { get; set; } = true;
 

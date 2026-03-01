@@ -1,4 +1,5 @@
 ﻿using FlawsFightNight.Core.Attributes;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,9 @@ namespace FlawsFightNight.Core.Models
         public int ChallengedRank { get; set; }
         public int ChallengedRating { get; set; }
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
+
+        [JsonConstructor]
+        private Challenge() { }
 
         public Challenge(string challenger, int challengerRank, string challenged, int challengedRank)
         {
