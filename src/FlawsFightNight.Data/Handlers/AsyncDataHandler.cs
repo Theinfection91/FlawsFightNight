@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Data.Interfaces;
 
 namespace FlawsFightNight.Data.Handlers
 {
@@ -20,7 +21,7 @@ namespace FlawsFightNight.Data.Handlers
         UserProfiles
     }
 
-    public abstract class AsyncDataHandler<T> where T : new()
+    public abstract class AsyncDataHandler<T> : IAsyncInitializable where T : new()
     {
         protected string _folderPath;
         protected string _filePath;

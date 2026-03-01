@@ -78,27 +78,16 @@ namespace FlawsFightNight.Managers
         #region Intialization
         public async Task InitializeAsync()
         {
-            // Helper method to check for and invoke InitializePendingPathAsync on handlers that have it
-            // This is to fix having async methods in the handlers constructors
-            static async Task InvokeInitIfExistsAsync(object? handler)
-            {
-                if (handler == null) return;
-                var initMethod = handler.GetType().GetMethod("InitializePendingPathAsync", BindingFlags.Public | BindingFlags.Instance);
-                if (initMethod == null) return;
-
-                var result = initMethod.Invoke(handler, null);
-                if (result is Task task) await task;
-            }
             // Invoke initialization on all handlers that have pending paths to set up
-            await InvokeInitIfExistsAsync(_discordCredentialHandler);
-            await InvokeInitIfExistsAsync(_gitHubCredentialHandler);
-            await InvokeInitIfExistsAsync(_ftpCredentialHandler);
-            await InvokeInitIfExistsAsync(_permissionsConfigHandler);
-            await InvokeInitIfExistsAsync(_tournamentDataHandler);
-            await InvokeInitIfExistsAsync(_processedLogNamesHandler);
-            await InvokeInitIfExistsAsync(_statLogMatchResultsHandler);
-            await InvokeInitIfExistsAsync(_userProfileHandler);
-            await InvokeInitIfExistsAsync(_ut2004PlayerProfileHandler);
+            await _discordCredentialHandler.InitializePendingPathAsync();
+            await _gitHubCredentialHandler.InitializePendingPathAsync();
+            await _ftpCredentialHandler.InitializePendingPathAsync();
+            await _permissionsConfigHandler.InitializePendingPathAsync();
+            await _tournamentDataHandler.InitializePendingPathAsync();
+            await _processedLogNamesHandler.InitializePendingPathAsync();
+            await _statLogMatchResultsHandler.InitializePendingPathAsync();
+            await _userProfileHandler.InitializePendingPathAsync();
+            await _ut2004PlayerProfileHandler.InitializePendingPathAsync();
 
             // After all pending paths are initialized, load the data from those paths
             await LoadDiscordCredentialFile();
