@@ -259,7 +259,7 @@ namespace FlawsFightNight.Data.Handlers
             string folderPath = pathOption switch
             {
                 PathOption.Databases => Path.Combine(baseDir, "Databases"),
-                PathOption.Tournaments => Path.Combine(baseDir, "Databases", "TournamentSystem"),
+                PathOption.Tournaments => Path.Combine(baseDir, "Databases", "Tournaments"),
                 PathOption.iCTFStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "iCTF"),
                 PathOption.TAMStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "TAM"),
                 PathOption.iBRStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "iBR"),
