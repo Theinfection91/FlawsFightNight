@@ -42,7 +42,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             await _tournamentManager.LoadTournamentDataFiles();
 
             // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
+            _gitBackupManager.EnqueueBackup();
 
             // Return success embed
             return _embedManager.DeleteTournamentSuccess(tournament);

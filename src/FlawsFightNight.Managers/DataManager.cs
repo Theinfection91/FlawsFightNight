@@ -64,31 +64,14 @@ namespace FlawsFightNight.Managers
             DiscordClient = client;
 
             _discordCredentialHandler = discordCredentialHandler;
-            //LoadDiscordCredentialFile();
-
             _gitHubCredentialHandler = gitHubCredentialHandler;
-            //LoadGitHubCredentialFile();
-
             _ftpCredentialHandler = ftpCredentialHandler;
-            //LoadFTPCredentialFiles();
-
             _permissionsConfigHandler = permissionsConfigHandler;
-            //LoadPermissionsConfigFile();
-
             _tournamentDataHandler = tournamentDataHandler;
-            //LoadTournamentDataFiles();
-
             _processedLogNamesHandler = processedLogNamesHandler;
-            //LoadProcessedLogNamesFile();
-
             _statLogMatchResultsHandler = statLogMatchResultHandler;
-            // Stat Log files are lazy loaded when data is needed
-
             _userProfileHandler = userProfileHandler;
-            //LoadAllUserProfileFiles();
-
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
-            //LoadAllUT2004PlayerProfileFiles();
         }
         #endregion
 

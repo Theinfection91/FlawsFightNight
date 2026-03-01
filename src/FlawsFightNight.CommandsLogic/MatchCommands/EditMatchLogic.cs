@@ -113,7 +113,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git
-            _gitBackupManager.CopyAndBackupFilesToGit();
+            _gitBackupManager.EnqueueBackup();
 
             return _embedManager.RoundRobinEditMatchSuccess(tournament, postMatch);
         }

@@ -68,7 +68,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                     await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                     // Backup to git repo
-                    _gitBackupManager.CopyAndBackupFilesToGit();
+                    _gitBackupManager.EnqueueBackup();
 
                     return _embedManager.RoundRobinEndTournamentSuccess(tournament, true, tieBreakerInfo);
                 }
@@ -81,7 +81,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                     await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                     // Backup to git repo
-                    _gitBackupManager.CopyAndBackupFilesToGit();
+                    _gitBackupManager.EnqueueBackup();
 
                     return _embedManager.RoundRobinEndTournamentSuccess(tournament);
                 }
@@ -97,7 +97,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                 // Backup to git repo
-                _gitBackupManager.CopyAndBackupFilesToGit();
+                _gitBackupManager.EnqueueBackup();
 
                 return _embedManager.NormalLadderEndTournamentSuccess(tournament);
             }
@@ -112,7 +112,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                 // Backup to git repo
-                _gitBackupManager.CopyAndBackupFilesToGit();
+                _gitBackupManager.EnqueueBackup();
 
                 return _embedManager.DSRLadderEndTournamentSuccess(tournament);
             }

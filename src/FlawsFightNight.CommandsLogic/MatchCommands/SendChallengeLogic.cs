@@ -147,7 +147,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
+            _gitBackupManager.EnqueueBackup();
 
             return _embedManager.SendChallengeSuccess(tournament, newChallengeMatch, isGuildAdmin);
         }

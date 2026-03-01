@@ -56,7 +56,7 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
                 // Backup to git repo
-                _gitBackupManager.CopyAndBackupFilesToGit();
+                _gitBackupManager.EnqueueBackup();
 
                 return _embedManager.NextRoundSuccess(tournament, roundBasedTournament.CurrentRound);
             }

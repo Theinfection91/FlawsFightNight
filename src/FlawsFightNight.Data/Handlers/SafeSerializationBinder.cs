@@ -53,6 +53,9 @@ namespace FlawsFightNight.Data.Handlers
             // System types commonly used in collections
             "System.Collections.Generic.List`1",
             "System.Collections.Generic.Dictionary`2",
+
+            // Tiebreaker Model
+            "FlawsFightNight.Core.Models.TieBreakers.TraditionalTieBreaker",
             
             // Add other types as needed...
         };

@@ -179,7 +179,7 @@ namespace FlawsFightNight.Managers
                             Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Processing complete for {cred.ServerName}");
 
                             await _ut2004StatsManager.SetupPlayerProfiles();
-                            await _gitBackupManager.CopyAndBackupFilesToGitAsync();
+                            _gitBackupManager.EnqueueBackup();
                         }
                         else
                         {

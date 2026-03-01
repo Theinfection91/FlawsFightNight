@@ -103,7 +103,7 @@ namespace FlawsFightNight.Managers
             await Task.Run(async () =>
             {
                 await _dataManager.SaveAndReloadTournamentDataFiles(tournament);
-                _gitBackupManager.CopyAndBackupFilesToGit();
+                _gitBackupManager.EnqueueBackup();
             });
         }
 
@@ -127,7 +127,7 @@ namespace FlawsFightNight.Managers
             await Task.Run(async () =>
             {
                 await _dataManager.SaveAndReloadTournamentDataFiles(tournament);
-                _gitBackupManager.CopyAndBackupFilesToGit();
+                _gitBackupManager.EnqueueBackup();
             });
         }
 
@@ -151,7 +151,7 @@ namespace FlawsFightNight.Managers
             await Task.Run(async () =>
             {
                 await _dataManager.SaveAndReloadTournamentDataFiles(tournament);
-                _gitBackupManager.CopyAndBackupFilesToGit();
+                _gitBackupManager.EnqueueBackup();
             });
         }
     }

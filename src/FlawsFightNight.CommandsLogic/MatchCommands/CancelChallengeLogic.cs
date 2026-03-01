@@ -99,7 +99,7 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
             
             // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
+            _gitBackupManager.EnqueueBackup();
             
             return _embedManager.CancelChallengeSuccess(tournament, pendingMatch, isGuildAdmin);
         }

@@ -33,7 +33,7 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
                 await _configManager.AddDiscordIdToDebugAdminList(userId);
 
                 // Backup to git repo
-                _gitBackupManager.CopyAndBackupFilesToGit();
+                _gitBackupManager.EnqueueBackup();
 
                 return _embedManager.DebugAdminAddSuccess(userId);
             }

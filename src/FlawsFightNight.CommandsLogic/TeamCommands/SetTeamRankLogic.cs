@@ -89,7 +89,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
-            _gitBackupManager.CopyAndBackupFilesToGit();
+            _gitBackupManager.EnqueueBackup();
 
             return _embedManager.SetTeamRankSuccess(team, tournament);
         }
