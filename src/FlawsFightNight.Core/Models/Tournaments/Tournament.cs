@@ -14,8 +14,6 @@ namespace FlawsFightNight.Core.Models.Tournaments
     [SafeForSerialization]
     public abstract class Tournament
     {
-        [JsonConstructor]
-        protected Tournament() { }
         public string Id { get; set; }
         public string Name { get; set; }
         public string? Description { get; set; }
@@ -34,6 +32,9 @@ namespace FlawsFightNight.Core.Models.Tournaments
         public ulong StandingsMessageId { get; set; } = 0;
         public ulong TeamsChannelId { get; set; } = 0;
         public ulong TeamsMessageId { get; set; } = 0;
+
+        [JsonConstructor]
+        protected Tournament() { }
 
         public Tournament(string id, string name, int teamSize)
         {
