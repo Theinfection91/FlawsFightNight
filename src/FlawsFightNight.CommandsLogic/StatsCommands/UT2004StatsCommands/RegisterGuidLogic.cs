@@ -42,9 +42,19 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
             }
             _memberManager.RegisterUT2004GUIDToProfile(memberProfile, guid);
 
+            var utProfile = _memberManager.GetUT2004PlayerProfile(guid);
+            if (utProfile == null) 
+            {
+                return _embedManager.ErrorEmbed(Name, $"An error occurred while retrieving the UT2004 profile for GUID `{guid}`. Please ensure the GUID is correct and try again.");
+            }
+
+            var embed = _embedManager.UT2004PlayerProfileEmbed(utProfile);
+
             await _memberManager.SaveAndReloadMemberProfiles();
 
-            return _embedManager.GenericEmbed(Name, $"The GUID `{guid}` has been successfully registered to your account.", Color.Blue);
+            //return _embedManager.GenericEmbed(Name, $"The GUID `{guid}` has been successfully registered to your account.", Color.Blue);
+
+            return embed;
         }
     }
 }
