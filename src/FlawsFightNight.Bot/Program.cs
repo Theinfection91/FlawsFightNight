@@ -6,6 +6,8 @@ using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.CommandsLogic.MatchCommands;
 using FlawsFightNight.CommandsLogic.SetCommands;
 using FlawsFightNight.CommandsLogic.SettingsCommands;
+using FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands;
+using FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands;
 using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Core.Helpers.UT2004;
@@ -121,6 +123,8 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<EndTournamentLogic>();
                     services.AddSingleton<LockInRoundLogic>();
                     services.AddSingleton<LockTeamsLogic>();
+                    services.AddSingleton<MyPlayerProfileLogic>();
+                    services.AddSingleton<MyTournamentProfileLogic>();
                     services.AddSingleton<NextRoundLogic>();
                     services.AddSingleton<RegisterTeamLogic>();
                     services.AddSingleton<RemoveDebugAdminLogic>();

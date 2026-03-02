@@ -159,6 +159,7 @@ namespace FlawsFightNight.Managers
             }
             return false;
         }
+
         public UT2004PlayerProfile? GetUT2004PlayerProfile(string playerGuid)
         {
             return _dataManager.GetUT2004PlayerProfile(playerGuid);
