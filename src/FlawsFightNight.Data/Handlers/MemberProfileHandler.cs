@@ -9,6 +9,9 @@ namespace FlawsFightNight.Data.Handlers
 {
     public class MemberProfileHandler : AsyncDataHandler<MemberProfileFile>
     {
+        public MemberProfileHandler() : base()
+        {
 
+        }
     }
 }

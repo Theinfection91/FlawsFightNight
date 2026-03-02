@@ -36,9 +36,9 @@ namespace FlawsFightNight.Managers
             await _dataManager.LoadAllMemberProfileFiles();
         }
 
-        public async Task SaveAndReloadMemberProfiles(MemberProfile profileToSave)
+        public async Task SaveAndReloadMemberProfiles()
         {
-            await SaveMemberProfile(profileToSave);
+            await _dataManager.SaveAllMemberProfileFiles();
             await LoadAllMemberProfiles();
         }
         #endregion
@@ -106,6 +106,12 @@ namespace FlawsFightNight.Managers
             return new MemberProfile(discordId, displayName);
         }
 
+        public void AddProfileToDatabase(MemberProfile profile)
+        {
+            var file = _dataManager.CreateNewMemberProfileFile(profile);
+            _dataManager.AddNewMemberProfileFile(file);
+        }
+
         public bool DoesMemberProfileExist(ulong discordId)
         {
             foreach (var memberProfileData in _dataManager.MemberProfileFiles)
@@ -136,15 +142,13 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public void RegisterUT2004GUIDToProfile(ulong discordId, string guid)
+        public void RegisterUT2004GUIDToProfile(MemberProfile memberProfile, string guid)
         {
-            var memberProfile = GetMemberProfile(discordId);
             memberProfile?.RegisteredUT2004GUIDs.Add(guid);
         }
 
-        public void UnregisterUT2004GUIDToProfile(ulong discordId, string guid)
+        public void UnregisterUT2004GUIDToProfile(MemberProfile memberProfile, string guid)
         {
-            var memberProfile = GetMemberProfile(discordId);
             memberProfile?.RegisteredUT2004GUIDs.RemoveAll(g => g.Equals(guid, StringComparison.OrdinalIgnoreCase));
         }
 

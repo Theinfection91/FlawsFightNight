@@ -290,7 +290,7 @@ namespace FlawsFightNight.Managers
         #region Member Profile Files
         public async Task LoadAllMemberProfileFiles()
         {
-            MemberProfileFiles = await _memberProfileHandler.LoadAll("*.json", "UserProfiles");
+            MemberProfileFiles = await _memberProfileHandler.LoadAll("*.json", "MemberProfiles");
         }
 
         public async Task<MemberProfileFile> LoadMemberProfileFile(ulong discordId)
@@ -299,14 +299,43 @@ namespace FlawsFightNight.Managers
             return await _memberProfileHandler.Load();
         }
 
+        public MemberProfileFile CreateNewMemberProfileFile(MemberProfile memberProfile)
+        {
+            return new MemberProfileFile()
+            {
+                MemberProfile = memberProfile
+            };
+        }
+
+        public void AddNewMemberProfileFile(MemberProfileFile memberProfile)
+        {
+            MemberProfileFiles.Add(memberProfile);
+        }
+
         public async Task SaveMemberProfileFile(MemberProfile userProfile)
         {
-            var userProfileFile = new MemberProfileFile()
+            try
             {
-                MemberProfile = userProfile
-            };
-            await _memberProfileHandler.SetFilePath(PathOption.MemberProfiles, $"{userProfile.DiscordId}.json");
-            await _memberProfileHandler.Save(userProfileFile);
+                var userProfileFile = new MemberProfileFile()
+                {
+                    MemberProfile = userProfile
+                };
+                await _memberProfileHandler.SetFilePath(PathOption.MemberProfiles, $"{userProfile.DiscordId}.json");
+                await _memberProfileHandler.Save(userProfileFile);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving member profile for Discord ID {userProfile.DiscordId}: {ex.Message}");
+            }
+        }
+
+        public async Task SaveAllMemberProfileFiles()
+        {
+            foreach (var profileFile in MemberProfileFiles)
+            {
+                await _memberProfileHandler.SetFilePath(PathOption.MemberProfiles, $"{profileFile.MemberProfile.DiscordId}.json");
+                await _memberProfileHandler.Save(profileFile);
+            }
         }
 
         public MemberProfile? GetMemberProfile(ulong discordId)
