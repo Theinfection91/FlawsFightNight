@@ -241,15 +241,13 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (!int.TryParse(parts[2], out int seqNum))
                 return;
 
-            string tempGuid = parts[3]; // This is NOT the real GUID, just a temporary identifier
-            string name = parts[4];
+            //string tempGuid = parts[3]; // This is NOT the real GUID, just a temporary identifier
+            //string name = parts[4];
             bool hasKey = parts.Length >= 6 && !string.IsNullOrEmpty(parts[5]);
 
             // Create player with temporary GUID - will be updated when PS line is parsed
             var player = new UTPlayerMatchStats
             {
-                Guid = tempGuid, // Will be overwritten by PS line
-                LastKnownName = name,
                 IsBot = !hasKey
             };
 
@@ -260,7 +258,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _activePlayersBySeqNum[seqNum] = player;
 
             if (_expandedDebugLogging)
-                Console.WriteLine($"Player Connected: {name} (SeqNum: {seqNum}, TempGUID: {tempGuid}, Bot: {!hasKey})");
+                Console.WriteLine($"Player Connected: (SeqNum: {seqNum}, Bot: {!hasKey})");
         }
 
         private void ParsePlayerString(string[] parts, double timestamp)
