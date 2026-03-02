@@ -309,7 +309,7 @@ namespace FlawsFightNight.Managers
             await _memberProfileHandler.Save(userProfileFile);
         }
 
-        public async Task<MemberProfile?> GetMemberProfile(ulong discordId)
+        public MemberProfile? GetMemberProfile(ulong discordId)
         {
             foreach (var profileFile in MemberProfileFiles)
             {
@@ -344,7 +344,7 @@ namespace FlawsFightNight.Managers
             await _ut2004PlayerProfileHandler.Save(playerProfileFile);
         }
 
-        public async Task<UT2004PlayerProfile> GetUT2004PlayerProfile(string playerGuid)
+        public UT2004PlayerProfile? GetUT2004PlayerProfile(string playerGuid)
         {
 
             foreach (var profileFile in UT2004PlayerProfileFiles)

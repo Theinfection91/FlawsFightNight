@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
+using FlawsFightNight.Core.Models.UT2004;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,13 +42,6 @@ namespace FlawsFightNight.Managers
             await LoadAllMemberProfiles();
         }
         #endregion
-
-        public async Task<MemberProfile>? CreateNewMemberProfile(ulong discordId, string displayName)
-        {
-            MemberProfile newProfile = new(discordId, displayName);
-            if (newProfile == null) return null;
-            return newProfile;
-        }
 
         #region Discord Command Related
         public bool IsMemberCountCorrect(int membersCount, int teamSize)
@@ -104,6 +98,70 @@ namespace FlawsFightNight.Managers
             }
 
             return membersList;
+        }
+        #endregion
+
+        public MemberProfile CreateNewMemberProfile(ulong discordId, string displayName)
+        {
+            return new MemberProfile(discordId, displayName);
+        }
+
+        public bool DoesMemberProfileExist(ulong discordId)
+        {
+            foreach (var memberProfileData in _dataManager.MemberProfileFiles)
+            {
+                if (discordId == memberProfileData.MemberProfile.DiscordId)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public MemberProfile? GetMemberProfile(ulong discordId)
+        {
+            return _dataManager.GetMemberProfile(discordId);
+        }
+
+        #region UT2004 Player Profile Related
+        public bool IsUT2004GUIDRegistered(string guid)
+        {
+            foreach (var memberProfileData in _dataManager.MemberProfileFiles)
+            {
+                if (memberProfileData.MemberProfile.RegisteredUT2004GUIDs.Contains(guid, StringComparer.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void RegisterUT2004GUIDToProfile(ulong discordId, string guid)
+        {
+            var memberProfile = GetMemberProfile(discordId);
+            memberProfile?.RegisteredUT2004GUIDs.Add(guid);
+        }
+
+        public void UnregisterUT2004GUIDToProfile(ulong discordId, string guid)
+        {
+            var memberProfile = GetMemberProfile(discordId);
+            memberProfile?.RegisteredUT2004GUIDs.RemoveAll(g => g.Equals(guid, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public bool DoesUT2004PlayerProfileExist(string playerGuid)
+        {
+            foreach (var file in _dataManager.UT2004PlayerProfileFiles)
+            {
+                if (file.PlayerProfile.Guid.Equals(playerGuid, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public UT2004PlayerProfile? GetUT2004PlayerProfile(string playerGuid)
+        {
+            return _dataManager.GetUT2004PlayerProfile(playerGuid);
         }
         #endregion
     }
