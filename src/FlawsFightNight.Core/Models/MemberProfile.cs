@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 namespace FlawsFightNight.Core.Models
 {
     [SafeForSerialization]
-    public class UserProfile
+    public class MemberProfile
     {
         public ulong DiscordId { get; set; }
         public string DisplayName { get; set; }
 
         #region Tournament/Bot Related
         // Title, Level and XP
-        public string Title { get; set; } = UserLevelTitles.Novice.ToString();
+        public string Title { get; set; } = MemberLevelTitles.Novice.ToString();
         public int Level { get; set; } = 1;
         public int ExperiencePoints { get; set; } = 0;
         public int ExperienceToNextLevel => (GetNextLevelAmount(Level) - ExperiencePoints);
@@ -33,13 +33,13 @@ namespace FlawsFightNight.Core.Models
         #endregion
 
         #region UT2004 Specific
-        public List<string> RegisteredUT2004GUIDs { get; set; }
+        public List<string> RegisteredUT2004GUIDs { get; set; } = new();
         #endregion
 
         [JsonConstructor]
-        private UserProfile() { }
+        private MemberProfile() { }
 
-        public UserProfile(ulong discordId, string displayName)
+        public MemberProfile(ulong discordId, string displayName)
         {
             DiscordId = discordId;
             DisplayName = displayName;
@@ -47,7 +47,7 @@ namespace FlawsFightNight.Core.Models
 
         public override bool Equals(object? obj)
         {
-            if (obj is UserProfile other)
+            if (obj is MemberProfile other)
             {
                 return DiscordId == other.DiscordId;
             }
@@ -84,23 +84,23 @@ namespace FlawsFightNight.Core.Models
         public string GetTitle(int level)
         {
             if (level >= 1 && level < 3)
-                return UserLevelTitles.Novice.ToString();
+                return MemberLevelTitles.Novice.ToString();
             else if (level >= 3 && level < 5)
-                return UserLevelTitles.Apprentice.ToString();
+                return MemberLevelTitles.Apprentice.ToString();
             else if (level >= 5 && level < 7)
-                return UserLevelTitles.Challenger.ToString();
+                return MemberLevelTitles.Challenger.ToString();
             else if (level >= 7 && level < 9)
-                return UserLevelTitles.Contender.ToString();
+                return MemberLevelTitles.Contender.ToString();
             else if (level >= 9 && level < 11)
-                return UserLevelTitles.Elite.ToString();
+                return MemberLevelTitles.Elite.ToString();
             else if (level >= 11 && level < 13)
-                return UserLevelTitles.Champion.ToString();
+                return MemberLevelTitles.Champion.ToString();
             else if (level >= 13 && level < 15)
-                return UserLevelTitles.Master.ToString();
+                return MemberLevelTitles.Master.ToString();
             else if (level >= 15 && level < 20)
-                return UserLevelTitles.Master.ToString();
+                return MemberLevelTitles.Master.ToString();
             else if (level >= 20)
-                return UserLevelTitles.Legend.ToString();
+                return MemberLevelTitles.Legend.ToString();
             else
                 return "Invalid level given";
         }

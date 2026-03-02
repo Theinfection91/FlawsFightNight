@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Enums
 {
-    public enum UserLevelTitles
+    public enum MemberLevelTitles
     {
         Novice,
         Apprentice,

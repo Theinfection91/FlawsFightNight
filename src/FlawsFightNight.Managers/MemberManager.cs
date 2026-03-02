@@ -17,8 +17,39 @@ namespace FlawsFightNight.Managers
 
         }
 
-        // TODO Load, Save Reload Members Database
+        #region Save and Load
+        public async Task SaveMemberProfile(MemberProfile profileToSave)
+        {
+            foreach (var memberProfileData in _dataManager.MemberProfileFiles)
+            {
+                if (profileToSave.DiscordId == memberProfileData.MemberProfile.DiscordId)
+                {
+                    await _dataManager.SaveMemberProfileFile(profileToSave);
+                    return;
+                }
+            }
+        }
 
+        public async Task LoadAllMemberProfiles()
+        {
+            await _dataManager.LoadAllMemberProfileFiles();
+        }
+
+        public async Task SaveAndReloadMemberProfiles(MemberProfile profileToSave)
+        {
+            await SaveMemberProfile(profileToSave);
+            await LoadAllMemberProfiles();
+        }
+        #endregion
+
+        public async Task<MemberProfile>? CreateNewMemberProfile(ulong discordId, string displayName)
+        {
+            MemberProfile newProfile = new(discordId, displayName);
+            if (newProfile == null) return null;
+            return newProfile;
+        }
+
+        #region Discord Command Related
         public bool IsMemberCountCorrect(int membersCount, int teamSize)
         {
             // Case 1: For team sizes of 20 or less, the member count must match the team size.
@@ -74,5 +105,6 @@ namespace FlawsFightNight.Managers
 
             return membersList;
         }
+        #endregion
     }
 }
