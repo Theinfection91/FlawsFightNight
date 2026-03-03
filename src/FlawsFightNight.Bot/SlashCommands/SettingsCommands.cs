@@ -270,5 +270,50 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
             }
         }
+
+        [Group("ut2004", "Admin commands related to UT2004 data")]
+        [RequireGuildAdmin]
+        public class UT2004Commands : InteractionModuleBase<SocketInteractionContext>
+        {
+            private readonly RegisterGuidToMemberLogic _registerGuidToMemberLogic;
+            private readonly RemoveGuidFromMemberLogic _removeGuidFromMemberLogic;
+            public UT2004Commands(RegisterGuidToMemberLogic registerGuidToMemberLogic, RemoveGuidFromMemberLogic removeGuidFromMemberLogic)
+            {
+                _registerGuidToMemberLogic = registerGuidToMemberLogic;
+                _removeGuidFromMemberLogic = removeGuidFromMemberLogic;
+            }
+
+            [SlashCommand("register_guid", "Register a GUID to a Member's profile")]
+            public async Task RegisterGuidToMemberAsync(IUser member, string guid)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var result = _registerGuidToMemberLogic.RegisterGuidToMemberProcess(member, guid);
+                    await FollowupAsync(ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("remove_guid", "Remove a GUID from a Member's profile")]
+            public async Task RemoveGuidFromMemberAsync(IUser member, string guid)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var result = _removeGuidFromMemberLogic.RemoveGuidFromMemberProcess(member, guid);
+                    await FollowupAsync(ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+        }
     }
 }
