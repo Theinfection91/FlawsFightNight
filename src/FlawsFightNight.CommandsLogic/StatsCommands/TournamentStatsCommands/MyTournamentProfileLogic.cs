@@ -1,4 +1,6 @@
 ﻿using Discord;
+using Discord.Interactions;
+using Discord.WebSocket;
 using FlawsFightNight.Managers;
 using System;
 using System.Collections.Generic;
@@ -11,14 +13,18 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands
     public class MyTournamentProfileLogic : Logic
     {
         private readonly EmbedManager _embedManager;
-        public MyTournamentProfileLogic(EmbedManager embedManager) : base("My Tournament Profile")
+        private readonly MemberManager _memberManager;
+        public MyTournamentProfileLogic(EmbedManager embedManager, MemberManager memberManager) : base("My Tournament Profile")
         {
             _embedManager = embedManager;
+            _memberManager = memberManager;
         }
 
-        public async Task<Embed> MyTournamentProfileProcess(ulong userId)
+        public async Task<Embed> MyTournamentProfileProcess(SocketInteractionContext context)
         {
-            return _embedManager.ToDoEmbed("This feature is still in development. Stay tuned for updates!");
+            var memberProfile = _memberManager.GetMemberProfile(context.User.Id);
+
+            return _embedManager.GenericEmbed("Test", memberProfile?.GetAllStats()!, Color.DarkGreen);
         }
     }
 }

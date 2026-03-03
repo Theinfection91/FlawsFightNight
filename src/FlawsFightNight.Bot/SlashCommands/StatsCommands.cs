@@ -1,5 +1,6 @@
 ﻿using Discord.Interactions;
 using FlawsFightNight.Bot.Components;
+using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands;
 using FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands;
 using System;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
+    [RequireMemberProfile]
     [Group("stats", "Commands related to tournament and UT2004 statistics.")]
     public class StatsCommands : InteractionModuleBase<SocketInteractionContext>
     {
@@ -32,7 +34,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             public async Task MyTournamentProfileAsync()
             {
                 await DeferAsync(ephemeral: true);
-                var embed = await _myTournamentProfileLogic.MyTournamentProfileProcess(Context.User.Id);
+                var embed = await _myTournamentProfileLogic.MyTournamentProfileProcess(Context);
                 await FollowupAsync(embed: embed, ephemeral: true);
             }
         }

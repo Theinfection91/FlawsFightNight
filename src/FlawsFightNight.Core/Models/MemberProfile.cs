@@ -122,5 +122,45 @@ namespace FlawsFightNight.Core.Models
             else
                 return "Invalid level given";
         }
+
+        public string GetAllStats()
+        {
+            var sb = new StringBuilder();
+
+            // Identity
+            sb.AppendLine($"DiscordId: {DiscordId}");
+            sb.AppendLine($"DisplayName: {DisplayName}");
+
+            // Level & XP
+            var nextLevelAmount = GetNextLevelAmount(Level);
+            var xpToNext = ExperienceToNextLevel;
+            sb.AppendLine($"Title: {Title}");
+            sb.AppendLine($"Level: {Level}");
+            sb.AppendLine($"Experience: {ExperiencePoints} / {nextLevelAmount} (XP to next level: {xpToNext})");
+
+            // Tournament stats
+            sb.AppendLine($"Wins: {Wins}");
+            sb.AppendLine($"Losses: {Losses}");
+            sb.AppendLine($"Total Matches Played: {TotalMatchesPlayed}");
+            sb.AppendLine($"Win/Loss Ratio: {(WinLossRatio):P2}");
+            sb.AppendLine($"Tournaments Played: {TotalTournamentsPlayed}");
+            sb.AppendLine($"Tournaments Won: {TournamentsWon}");
+
+            // UT2004 specific
+            if (RegisteredUT2004GUIDs == null || RegisteredUT2004GUIDs.Count == 0)
+            {
+                sb.AppendLine("Registered UT2004 GUIDs: None");
+            }
+            else
+            {
+                sb.AppendLine("Registered UT2004 GUIDs:");
+                foreach (var guid in RegisteredUT2004GUIDs)
+                {
+                    sb.AppendLine($" - {guid}");
+                }
+            }
+
+            return sb.ToString();
+        }
     }
 }
