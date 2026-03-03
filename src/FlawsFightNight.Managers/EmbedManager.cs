@@ -500,19 +500,19 @@ namespace FlawsFightNight.Managers
             {
                 dsrMatchAchievements = dsrTournament.GetMatchAchievements(winningTeam, losingTeam, winningTeamScore, losingTeamScore, winningTeamRatingChange, losingTeamRatingChange);
             }
-            
+
             StringBuilder sb = new();
             foreach (var achievement in dsrMatchAchievements)
             {
                 sb.AppendLine(achievement);
             }
-            
+
             string reporterText = isGuildAdminReporting
                 ? "An **admin** reported this match result."
                 : "The match result was reported normally.";
-                
+
             string achievementsText = sb.Length > 0 ? $"**🎉 Highlights**\n{sb}\n" : "";
-            
+
             var embed = new EmbedBuilder()
                 .WithTitle("🏆 Match Result Reported")
                 .WithDescription(
@@ -531,10 +531,10 @@ namespace FlawsFightNight.Managers
             {
                 string winnerChange = winningTeamRatingChange >= 0 ? $"+{winningTeamRatingChange}" : $"{winningTeamRatingChange}";
                 string loserChange = losingTeamRatingChange >= 0 ? $"+{losingTeamRatingChange}" : $"{losingTeamRatingChange}";
-                
-                embed.AddField("⭐ Rating Changes", 
+
+                embed.AddField("⭐ Rating Changes",
                     $"**{winningTeam.Name}:** {winningTeam.Rating - winningTeamRatingChange} → {winningTeam.Rating} ({winnerChange})\n" +
-                    $"**{losingTeam.Name}:** {losingTeam.Rating - losingTeamRatingChange} → {losingTeam.Rating} ({loserChange})", 
+                    $"**{losingTeam.Name}:** {losingTeam.Rating - losingTeamRatingChange} → {losingTeam.Rating} ({loserChange})",
                     false);
             }
 
@@ -1392,8 +1392,17 @@ namespace FlawsFightNight.Managers
         #endregion
 
         #region UT2004 Embeds
+        // ── Section resolver ────────────────────────────────────────
+        public Embed UT2004ProfileSectionEmbed(UT2004PlayerProfile profile, string section) =>
+            section switch
+            {
+                "ictf" => UT2004ProfileCTFEmbed(profile),
+                "tam" => UT2004ProfileTAMEmbed(profile),
+                "ibr" => UT2004ProfileBREmbed(profile),
+                _ => UT2004ProfileGeneralEmbed(profile)
+            };
 
-        public Embed UT2004PlayerProfileEmbed(UT2004PlayerProfile profile)
+        public Embed UT2004ProfileGeneralEmbed(UT2004PlayerProfile profile)
         {
             string previousNames = profile.PreviousNames.Count > 0
                 ? string.Join(", ", profile.PreviousNames)
@@ -1403,15 +1412,15 @@ namespace FlawsFightNight.Managers
             string lastPlayed = profile.LastPlayed == DateTime.MinValue ? "_Never_" : profile.LastPlayed.ToString("yyyy-MM-dd");
 
             var embed = new EmbedBuilder()
-                .WithTitle($"🎮 {profile.CurrentName} — UT2004 Career Profile")
+                .WithTitle($"🎮 {profile.CurrentName} — UT2004 Profile")
                 .WithDescription(
                     $"**GUID:** `{profile.Guid}`\n" +
                     $"📅 **First Seen:** {firstSeen}   **Last Played:** {lastPlayed}\n" +
                     $"📛 **Previous Names:** {previousNames}")
                 .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Stats · General")
                 .WithCurrentTimestamp();
 
-            // ── Overall Career ──────────────────────────────────────
             embed.AddField("📊 Overall Career",
                 $"**Matches:** {profile.TotalMatches}  ·  **Wins:** {profile.Wins}  ·  **Losses:** {profile.Losses}  ·  **Win Rate:** {profile.WinRate:P1}\n" +
                 $"**Kills:** {profile.TotalKills}  ·  **Deaths:** {profile.TotalDeaths}  ·  **K/D:** {profile.KDRatio:F2}  ·  **Suicides:** {profile.TotalSuicides}  ·  **Headshots:** {profile.TotalHeadshots}\n" +
@@ -1419,17 +1428,43 @@ namespace FlawsFightNight.Managers
                 $"**Team Protect Frags:** {profile.TotalTeamProtectFrags}  ·  **Critical Frags:** {profile.TotalCriticalFrags}",
                 false);
 
-            // ── Career Bests ─────────────────────────────────────────
             embed.AddField("🏆 Career Bests",
                 $"**Best Kill Streak:** {profile.BestKillStreak}  ·  **Best Multi-Kill:** {profile.BestMultiKill}\n" +
                 $"**Most Kills (match):** {profile.MostKillsInMatch}  ·  **Most Deaths (match):** {profile.MostDeathsInMatch}  ·  **Highest Score (match):** {profile.HighestScoreInMatch:N0}",
                 false);
 
-            // ── iCTF ─────────────────────────────────────────────────
-            embed.AddField("\u200B", "━━━━━━━━━━  🚩  **iCTF — Capture the Flag**  ━━━━━━━━━━", false);
+            if (profile.TotalWeaponKills.Count > 0 || profile.TotalWeaponStatistics.Count > 0)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"**Overall Accuracy:** {profile.OverallWeaponAccuracy:F1}%");
+                sb.AppendLine("**Top Weapons by Kills:**");
+                foreach (var weapon in profile.TotalWeaponKills.OrderByDescending(kvp => kvp.Value).Take(5))
+                {
+                    string accText = profile.TotalWeaponStatistics.TryGetValue(weapon.Key, out var wStat)
+                        ? $"  ·  Acc: {wStat.GetAccuracy():F1}%  ·  Dmg: {wStat.DamageDealt:N0}"
+                        : string.Empty;
+                    sb.AppendLine($"• **{weapon.Key}:** {weapon.Value:N0} kills{accText}");
+                }
+                embed.AddField("🔫 Weapon Statistics", sb.ToString().TrimEnd(), false);
+            }
 
-            string ctfEloChange = profile.CaptureTheFlagElo.Change >= 0 ? $"+{profile.CaptureTheFlagElo.Change:F1}" : $"{profile.CaptureTheFlagElo.Change:F1}";
-            string ctfPeakDate = profile.CaptureTheFlagElo.PeakDate.HasValue ? $" ({profile.CaptureTheFlagElo.PeakDate.Value:yyyy-MM-dd})" : string.Empty;
+            return embed.Build();
+        }
+
+        public Embed UT2004ProfileCTFEmbed(UT2004PlayerProfile profile)
+        {
+            string ctfEloChange = profile.CaptureTheFlagElo.Change >= 0
+                ? $"+{profile.CaptureTheFlagElo.Change:F1}"
+                : $"{profile.CaptureTheFlagElo.Change:F1}";
+            string ctfPeakDate = profile.CaptureTheFlagElo.PeakDate.HasValue
+                ? $" ({profile.CaptureTheFlagElo.PeakDate.Value:yyyy-MM-dd})"
+                : string.Empty;
+
+            var embed = new EmbedBuilder()
+                .WithTitle($"🎮 {profile.CurrentName} — iCTF Stats")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Stats · iCTF")
+                .WithCurrentTimestamp();
 
             embed.AddField("🚩 Record & Ratings",
                 $"**Matches:** {profile.TotalCTFMatches}  ·  **Wins:** {profile.TotalCTFWins}  ·  **Losses:** {profile.TotalCTFLosses}  ·  **Win Rate:** {profile.CTFWinRate:P1}\n" +
@@ -1446,11 +1481,23 @@ namespace FlawsFightNight.Managers
                 $"**Best Caps (match):** {profile.MostFlagCapsInMatch}  ·  **Best Returns (match):** {profile.MostFlagReturnsInMatch}  ·  **Avg Caps/Match:** {profile.AverageCapturesPerMatch:F2}",
                 false);
 
-            // ── TAM ──────────────────────────────────────────────────
-            embed.AddField("\u200B", "━━━━━━━━━━  🎯  **TAM — Team Arena Masters**  ━━━━━━━━━━", false);
+            return embed.Build();
+        }
 
-            string tamEloChange = profile.TAMElo.Change >= 0 ? $"+{profile.TAMElo.Change:F1}" : $"{profile.TAMElo.Change:F1}";
-            string tamPeakDate = profile.TAMElo.PeakDate.HasValue ? $" ({profile.TAMElo.PeakDate.Value:yyyy-MM-dd})" : string.Empty;
+        public Embed UT2004ProfileTAMEmbed(UT2004PlayerProfile profile)
+        {
+            string tamEloChange = profile.TAMElo.Change >= 0
+                ? $"+{profile.TAMElo.Change:F1}"
+                : $"{profile.TAMElo.Change:F1}";
+            string tamPeakDate = profile.TAMElo.PeakDate.HasValue
+                ? $" ({profile.TAMElo.PeakDate.Value:yyyy-MM-dd})"
+                : string.Empty;
+
+            var embed = new EmbedBuilder()
+                .WithTitle($"🎮 {profile.CurrentName} — TAM Stats")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Stats · TAM")
+                .WithCurrentTimestamp();
 
             embed.AddField("🎯 Record & Ratings",
                 $"**Matches:** {profile.TotalTAMMatches}  ·  **Wins:** {profile.TotalTAMWins}  ·  **Losses:** {profile.TotalTAMLosses}  ·  **Win Rate:** {profile.TAMWinRate:P1}\n" +
@@ -1467,11 +1514,23 @@ namespace FlawsFightNight.Managers
                 $"**Round-Ending Kills:** {profile.TotalRoundEndingKills}  ·  **Best Dmg (match):** {profile.MostDamageInMatch:N0}  ·  **Best REKs (match):** {profile.MostRoundEndingKillsInMatch}  ·  **Best Rounds Won (match):** {profile.MostRoundsWonInMatch}",
                 false);
 
-            // ── iBR ──────────────────────────────────────────────────
-            embed.AddField("\u200B", "━━━━━━━━━━  💣  **iBR — Bombing Run**  ━━━━━━━━━━", false);
+            return embed.Build();
+        }
 
-            string brEloChange = profile.BombingRunElo.Change >= 0 ? $"+{profile.BombingRunElo.Change:F1}" : $"{profile.BombingRunElo.Change:F1}";
-            string brPeakDate = profile.BombingRunElo.PeakDate.HasValue ? $" ({profile.BombingRunElo.PeakDate.Value:yyyy-MM-dd})" : string.Empty;
+        public Embed UT2004ProfileBREmbed(UT2004PlayerProfile profile)
+        {
+            string brEloChange = profile.BombingRunElo.Change >= 0
+                ? $"+{profile.BombingRunElo.Change:F1}"
+                : $"{profile.BombingRunElo.Change:F1}";
+            string brPeakDate = profile.BombingRunElo.PeakDate.HasValue
+                ? $" ({profile.BombingRunElo.PeakDate.Value:yyyy-MM-dd})"
+                : string.Empty;
+
+            var embed = new EmbedBuilder()
+                .WithTitle($"🎮 {profile.CurrentName} — iBR Stats")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Stats · iBR")
+                .WithCurrentTimestamp();
 
             embed.AddField("💣 Record & Ratings",
                 $"**Matches:** {profile.TotalBRMatches}  ·  **Wins:** {profile.TotalBRWins}  ·  **Losses:** {profile.TotalBRLosses}  ·  **Win Rate:** {profile.BRWinRate:P1}\n" +
@@ -1488,28 +1547,8 @@ namespace FlawsFightNight.Managers
                 $"**Avg Caps/Match:** {profile.AverageBallCapsPerBRMatch:F2}  ·  **Avg Pickups/Match:** {profile.AverageBombPickupsPerBRMatch:F2}",
                 false);
 
-            // ── Weapons ──────────────────────────────────────────────
-            if (profile.TotalWeaponKills.Count > 0 || profile.TotalWeaponStatistics.Count > 0)
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine($"**Overall Accuracy:** {profile.OverallWeaponAccuracy:F1}%");
-                sb.AppendLine("**Top Weapons by Kills:**");
-
-                foreach (var weapon in profile.TotalWeaponKills.OrderByDescending(kvp => kvp.Value).Take(5))
-                {
-                    string accText = profile.TotalWeaponStatistics.TryGetValue(weapon.Key, out var wStat)
-                        ? $"  ·  Acc: {wStat.GetAccuracy():F1}%  ·  Dmg: {wStat.DamageDealt:N0}"
-                        : string.Empty;
-                    sb.AppendLine($"• **{weapon.Key}:** {weapon.Value:N0} kills{accText}");
-                }
-
-                embed.AddField("🔫 Weapon Statistics", sb.ToString().TrimEnd(), false);
-            }
-
-            embed.WithFooter("Flaws Fight Night — UT2004 Stats");
             return embed.Build();
         }
-
         #endregion
     }
 }

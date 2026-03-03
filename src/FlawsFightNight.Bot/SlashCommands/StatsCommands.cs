@@ -1,4 +1,5 @@
 ﻿using Discord.Interactions;
+using FlawsFightNight.Bot.Components;
 using FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands;
 using FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands;
 using System;
@@ -60,8 +61,17 @@ namespace FlawsFightNight.Bot.SlashCommands
             public async Task MyPlayerProfileAsync()
             {
                 await DeferAsync(ephemeral: true);
-                var embed = await _myPlayerProfileLogic.MyPlayerProfileProcess(Context.User.Id);
-                await FollowupAsync(embed: embed, ephemeral: true);
+                var (embed, hasProfile) = await _myPlayerProfileLogic.MyPlayerProfileProcess(Context.User.Id);
+
+                if (hasProfile)
+                {
+                    var components = ComponentFactory.CreateUT2004ProfileSelectMenu(Context.User.Id);
+                    await FollowupAsync(embed: embed, components: components.Build(), ephemeral: true);
+                }
+                else
+                {
+                    await FollowupAsync(embed: embed, ephemeral: true);
+                }
             }
         }
     }

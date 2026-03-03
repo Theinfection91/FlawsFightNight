@@ -14,10 +14,12 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
     public class RegisterGuidLogic : Logic
     {
         private readonly EmbedManager _embedManager;
+        private readonly GitBackupManager _gitBackupManager;
         private readonly MemberManager _memberManager;
-        public RegisterGuidLogic(EmbedManager embedManager, MemberManager memberManager) : base("Register GUID")
+        public RegisterGuidLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MemberManager memberManager) : base("Register GUID")
         {
             _embedManager = embedManager;
+            _gitBackupManager = gitBackupManager;
             _memberManager = memberManager;
         }
         public async Task<Embed> RegisterGuidProcess(SocketInteractionContext context, string guid)
@@ -48,13 +50,10 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
                 return _embedManager.ErrorEmbed(Name, $"An error occurred while retrieving the UT2004 profile for GUID `{guid}`. Please ensure the GUID is correct and try again.");
             }
 
-            var embed = _embedManager.UT2004PlayerProfileEmbed(utProfile);
-
             await _memberManager.SaveAndReloadMemberProfiles();
+            _gitBackupManager.EnqueueBackup();
 
-            //return _embedManager.GenericEmbed(Name, $"The GUID `{guid}` has been successfully registered to your account.", Color.Blue);
-
-            return embed;
+            return _embedManager.GenericEmbed(Name, $"The GUID `{guid}` has been successfully registered to your account.", Color.Blue);
         }
     }
 }

@@ -10,13 +10,8 @@ namespace FlawsFightNight.Core.Models.UT2004
     [SafeForSerialization]
     public class UT2004EloRating
     {
-        // Start at 0 per UTStatsDB design (not 1500).
         public double Rating { get; set; } = 0.0;
-
-        // Last match change (positive or negative)
         public double Change { get; set; } = 0.0;
-
-        // Career peak value and date
         public double Peak { get; set; } = 0.0;
         public DateTime? PeakDate { get; set; } = null;
 
@@ -28,7 +23,6 @@ namespace FlawsFightNight.Core.Models.UT2004
             Change = change;
         }
 
-        // Call this after the configured minimum matches for the mode are met
         public void UpdatePeak(DateTime matchDate)
         {
             if (Rating > Peak)
