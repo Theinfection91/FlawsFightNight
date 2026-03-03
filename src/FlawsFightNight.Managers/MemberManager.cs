@@ -234,16 +234,6 @@ namespace FlawsFightNight.Managers
             return false;
         }
 
-        public void RegisterUT2004GUIDToProfile(MemberProfile memberProfile, string guid)
-        {
-            memberProfile?.RegisteredUT2004GUIDs.Add(guid);
-        }
-
-        public void UnregisterUT2004GUIDToProfile(MemberProfile memberProfile, string guid)
-        {
-            memberProfile?.RegisteredUT2004GUIDs.RemoveAll(g => g.Equals(guid, StringComparison.OrdinalIgnoreCase));
-        }
-
         public bool DoesUT2004PlayerProfileExist(string playerGuid)
         {
             foreach (var file in _dataManager.UT2004PlayerProfileFiles)

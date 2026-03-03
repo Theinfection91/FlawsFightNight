@@ -162,5 +162,21 @@ namespace FlawsFightNight.Core.Models
 
             return sb.ToString();
         }
+
+        public void RegisterUT2004GUID(string guid)
+        {
+            if (!RegisteredUT2004GUIDs.Contains(guid))
+            {
+                RegisteredUT2004GUIDs.Add(guid);
+            }
+        }
+
+        public void RemoveUT2004GUID(string guid)
+        {
+            if (RegisteredUT2004GUIDs.Contains(guid))
+            {
+                RegisteredUT2004GUIDs.Remove(guid);
+            }
+        }
     }
 }

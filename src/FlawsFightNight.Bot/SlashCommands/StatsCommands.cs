@@ -44,10 +44,12 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             private readonly MyPlayerProfileLogic _myPlayerProfileLogic;
             private readonly RegisterGuidLogic _registerGuidLogic;
-            public UT2004StatsCommands(MyPlayerProfileLogic myPlayerProfileLogic, RegisterGuidLogic registerGuidLogic)
+            private readonly RemoveGuidLogic _removeGuidLogic;
+            public UT2004StatsCommands(MyPlayerProfileLogic myPlayerProfileLogic, RegisterGuidLogic registerGuidLogic, RemoveGuidLogic removeGuidLogic)
             {
                 _myPlayerProfileLogic = myPlayerProfileLogic;
                 _registerGuidLogic = registerGuidLogic;
+                _removeGuidLogic = removeGuidLogic;
             }
 
             [SlashCommand("register_guid", "Registers a UT2004 GUID to link your player profile with your Discord account.")]
@@ -56,6 +58,15 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 await DeferAsync(ephemeral: true);
                 var embed = await _registerGuidLogic.RegisterGuidProcess(Context, guid);
+                await FollowupAsync(embed: embed, ephemeral: true);
+            }
+
+            [SlashCommand("remove_guid", "Removes a UT2004 GUID from your account.")]
+            public async Task RemoveGuidAsync(
+                [Summary("guid", "The UT2004 GUID to remove.")] string guid)
+            {
+                await DeferAsync(ephemeral: true);
+                var embed = await _removeGuidLogic.RemoveGuidProcess(Context, guid);
                 await FollowupAsync(embed: embed, ephemeral: true);
             }
 

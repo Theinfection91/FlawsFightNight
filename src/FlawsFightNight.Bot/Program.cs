@@ -127,6 +127,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<MyTournamentProfileLogic>();
                     services.AddSingleton<NextRoundLogic>();
                     services.AddSingleton<RegisterGuidLogic>();
+                    services.AddSingleton<RemoveGuidLogic>();
                     services.AddSingleton<RegisterTeamLogic>();
                     services.AddSingleton<RemoveDebugAdminLogic>();
                     services.AddSingleton<RemoveFTPCredentialsLogic>();
