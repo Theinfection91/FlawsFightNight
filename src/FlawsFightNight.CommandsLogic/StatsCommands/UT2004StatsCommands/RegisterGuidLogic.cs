@@ -33,7 +33,7 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
             if (!_memberManager.DoesMemberProfileExist(context.User.Id))
             {
                 // If the user doesn't have a member profile yet, create one for them
-                memberProfile = _memberManager.CreateNewMemberProfile(context.User.Id, (context.User as SocketGuildUser)!.DisplayName);
+                memberProfile = _memberManager.CreateMemberProfile(context.User.Id, (context.User as SocketGuildUser)!.DisplayName);
                 _memberManager.AddProfileToDatabase(memberProfile);
             }
 

@@ -72,6 +72,11 @@ namespace FlawsFightNight.Core.Models.Tournaments
             return Teams.FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));
         }
 
+        public List<Member> GetAllMembers()
+        {
+            return Teams.SelectMany(t => t.Members).ToList();
+        }
+
         public void RemoveTeam(Team team)
         {
             Teams.Remove(team);

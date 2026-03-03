@@ -15,7 +15,7 @@ namespace FlawsFightNight.Core.Models
         public ulong DiscordId { get; set; }
         public string DisplayName { get; set; }
 
-        #region Tournament/Bot Related
+        #region Tournament/Bot Related Fields
         // Title, Level and XP
         public string Title { get; set; } = MemberLevelTitles.Novice.ToString();
         public int Level { get; set; } = 1;
@@ -32,7 +32,7 @@ namespace FlawsFightNight.Core.Models
         public double WinLossRatio => (Wins + Losses) == 0 ? 0 : (double)Wins / (Wins + Losses);
         #endregion
 
-        #region UT2004 Specific
+        #region UT2004 Specific Fields
         public List<string> RegisteredUT2004GUIDs { get; set; } = new();
         #endregion
 
@@ -56,6 +56,24 @@ namespace FlawsFightNight.Core.Models
         public override int GetHashCode()
         {
             return DiscordId.GetHashCode();
+        }
+
+        public void RecordWinLoss(bool isWin)
+        {
+            if (isWin)
+                Wins++;
+            else
+                Losses++;
+        }
+
+        public void IncrementTournamentsPlayed()
+        {
+            TotalTournamentsPlayed++;
+        }
+
+        public void IncrementTournamentsWon()
+        {
+            TournamentsWon++;
         }
 
         public void AddExperience(int xpGained)

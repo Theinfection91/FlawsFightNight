@@ -13,16 +13,17 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class StartTournamentLogic : Logic
     {
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
-        private MatchManager _matchManager;
-        private TournamentManager _tournamentManager;
-
-        public StartTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TournamentManager tournamentManager) : base("Start Tournament")
+        private readonly EmbedManager _embedManager;
+        private readonly GitBackupManager _gitBackupManager;
+        private readonly MatchManager _matchManager;
+        private readonly MemberManager _memberManager;
+        private readonly TournamentManager _tournamentManager;
+        public StartTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, MemberManager memberManager, TournamentManager tournamentManager) : base("Start Tournament")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
             _matchManager = matchManager;
+            _memberManager = memberManager;
             _tournamentManager = tournamentManager;
         }
 
@@ -40,6 +41,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Start tournament before building match schedules to prevent clearing match logs early
             tournament.Start();
 
+            // Update member stats for all members in the tournament before starting
+            _memberManager.IncrementMembersTournamentsPlayed(tournament.GetAllMembers());
+
             // Build match schedules if applicable and start tournament
             if (tournament is NormalRoundRobinTournament normalRRTournament)
             {
@@ -53,8 +57,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Send out match schedules to each member of every team
             _matchManager.SendMatchSchedulesToTeamsResolver(tournament);
 
-            // Save and reload the tournament database
+            // Save and reload databases
             await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _memberManager.SaveAndReloadMemberProfiles();
 
             // Backup to git repo
             _gitBackupManager.EnqueueBackup();

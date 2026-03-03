@@ -1,5 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Helpers;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Core.Models.UT2004;
@@ -101,7 +103,7 @@ namespace FlawsFightNight.Managers
         }
         #endregion
 
-        public MemberProfile CreateNewMemberProfile(ulong discordId, string displayName)
+        public MemberProfile CreateMemberProfile(ulong discordId, string displayName)
         {
             return new MemberProfile(discordId, displayName);
         }
@@ -128,6 +130,96 @@ namespace FlawsFightNight.Managers
         {
             return _dataManager.GetMemberProfile(discordId);
         }
+
+        #region Tournament Specific Stats
+        public void IncrementMembersTournamentsPlayed(List<Member> members)
+        {
+            foreach (var member in members)
+            {
+                var profile = GetMemberProfile(member.DiscordId);
+                if (profile != null)
+                {
+                    profile.IncrementTournamentsPlayed();
+                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.ParticipateTournament));
+                }
+            }
+        }
+
+        public void RecordWinLossForMembers(Team winningTeam, Team losingTeam)
+        {
+            foreach (var member in winningTeam.Members)
+            {
+                var profile = GetMemberProfile(member.DiscordId);
+                if (profile != null)
+                {
+                    profile.RecordWinLoss(true);
+                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.WinMatch));
+                }
+            }
+
+            foreach (var member in losingTeam.Members)
+            {
+                var profile = GetMemberProfile(member.DiscordId);
+                if (profile != null)
+                {
+                    profile.RecordWinLoss(false);
+                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.LoseMatch));
+                }
+            }
+        }
+
+        // TODO Still need this added to logic
+        public void AwardFirstPlaceTournamentWinForMembers(Team championTeam)
+        {
+            foreach (var member in championTeam.Members)
+            {
+                var profile = GetMemberProfile(member.DiscordId);
+                if (profile != null)
+                {
+                    profile.IncrementTournamentsWon();
+                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.FirstPlaceTournament));
+                }
+            }
+        }
+
+        // TODO Still need this added to logic
+        public void AwardSecondPlaceTournamentWinForMembers(Team runnerUpTeam)
+        {
+            foreach (var member in runnerUpTeam.Members)
+            {
+                var profile = GetMemberProfile(member.DiscordId);
+                if (profile != null)
+                {
+                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.SecondPlaceTournament));
+                }
+            }
+        }
+
+        // TODO Still need this added to logic
+        public void AwardThirdPlaceTournamentWinForMembers(Team thirdPlaceTeam)
+        {
+            foreach (var member in thirdPlaceTeam.Members)
+            {
+                var profile = GetMemberProfile(member.DiscordId);
+                if (profile != null)
+                {
+                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.ThirdPlaceTournament));
+                }
+            }
+        }
+
+        public void AwardCompletionTournamentForMembers(List<Member> allMembers)
+        {
+            foreach (var member in allMembers)
+            {
+                var profile = GetMemberProfile(member.DiscordId);
+                if (profile != null)
+                {
+                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.CompleteTournament));
+                }
+            }
+        }
+        #endregion
 
         #region UT2004 Player Profile Related
         public bool IsUT2004GUIDRegistered(string guid)

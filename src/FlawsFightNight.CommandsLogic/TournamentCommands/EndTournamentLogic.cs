@@ -15,15 +15,17 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class EndTournamentLogic : Logic
     {
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
-        private MatchManager _matchManager;
-        private TournamentManager _tournamentManager;
-        public EndTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TournamentManager tournamentManager) : base("End Tournament")
+        private readonly EmbedManager _embedManager;
+        private readonly GitBackupManager _gitBackupManager;
+        private readonly MatchManager _matchManager;
+        private readonly MemberManager _memberManager;
+        private readonly TournamentManager _tournamentManager;
+        public EndTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, MemberManager memberManager, TournamentManager tournamentManager) : base("End Tournament")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
             _matchManager = matchManager;
+            _memberManager = memberManager;
             _tournamentManager = tournamentManager;
         }
 
@@ -36,6 +38,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             {
                 return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot be ended at this time: {errorReason.Info}");
             }
+
+            // Award completion experience to all members
+            _memberManager.AwardCompletionTournamentForMembers(tournament.GetAllMembers());
 
             // Handle Normal and Open Round Robin Tournaments
             if (tournament is ITieBreakerRankSystem tbTournament)

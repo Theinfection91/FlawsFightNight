@@ -225,10 +225,6 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 try
                 {
-                    //await DeferAsync();
-                    //var result = _runFTPSetupLogic.RunFTPSetupProcess();
-                    //await FollowupAsync(embed: result);
-                    //await DeferAsync();
                     await DeferAsync(ephemeral: true);
                     var components = ComponentFactory.CreateConfirmationCancelButtons("runftp", Context.User.Id);
                     await FollowupAsync("⚠️ **This will re-run FTP setup in the console.\n\nRepeat: Setup is done in the console, not Discord. If console cannot be reached and this was done by mistake then this can be terminated by using `/settings ftp_stats_service cancel_setup`**\n\nAre you sure you want to continue?", components: components.Build(), ephemeral: true);
