@@ -75,7 +75,7 @@ namespace FlawsFightNight.Managers
             return false; // Member is not registered in the tournament
         }
 
-        public List<Member> ConvertMembersListToObjects(List<IUser> members)
+        public List<Member> ConvertIUsersToMembers(List<IUser> members)
         {
             List<Member> membersList = new List<Member>();
 

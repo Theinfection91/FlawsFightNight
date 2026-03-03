@@ -15,14 +15,19 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 {
     public class RegisterTeamLogic : Logic
     {
-        private ConfigManager _configManager;
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
-        private MemberManager _memberManager;
-        private TournamentManager _tournamentManager;
-        private TeamManager _teamManager;
+        private readonly ConfigManager _configManager;
+        private readonly EmbedManager _embedManager;
+        private readonly GitBackupManager _gitBackupManager;
+        private readonly MemberManager _memberManager;
+        private readonly TournamentManager _tournamentManager;
+        private readonly TeamManager _teamManager;
 
-        public RegisterTeamLogic(ConfigManager configManager, EmbedManager embedManager, GitBackupManager gitBackupManager, MemberManager memberManager, TournamentManager tournamentManager, TeamManager teamManager) : base("Register Team")
+        public RegisterTeamLogic(ConfigManager configManager,
+                                 EmbedManager embedManager,
+                                 GitBackupManager gitBackupManager,
+                                 MemberManager memberManager,
+                                 TournamentManager tournamentManager,
+                                 TeamManager teamManager) : base("Register Team")
         {
             _configManager = configManager;
             _embedManager = embedManager;
@@ -68,7 +73,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             }
 
             // Convert IUser list to Member objects list
-            List<Member> convertedMembersList = _memberManager.ConvertMembersListToObjects(members);
+            List<Member> convertedMembersList = _memberManager.ConvertIUsersToMembers(members);
 
 
             // Check if all members are valid and not already registered in the tournament (If they are, check if they are in debug admin list)
