@@ -278,8 +278,8 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    var result = _registerGuidToMemberLogic.RegisterGuidToMemberProcess(member, guid);
-                    await FollowupAsync(ephemeral: true);
+                    var result = await _registerGuidToMemberLogic.RegisterGuidToMemberProcess(member, guid);
+                    await FollowupAsync(embed: result, ephemeral: true);
                 }
                 catch (Exception ex)
                 {
@@ -294,8 +294,8 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    var result = _removeGuidFromMemberLogic.RemoveGuidFromMemberProcess(member, guid);
-                    await FollowupAsync(ephemeral: true);
+                    var result = await _removeGuidFromMemberLogic.RemoveGuidFromMemberProcess(member, guid);
+                    await FollowupAsync(embed: result, ephemeral: true);
                 }
                 catch (Exception ex)
                 {
