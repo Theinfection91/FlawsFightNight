@@ -107,55 +107,58 @@ namespace FlawsFightNight.Bot
                     // Autocomplete
                     services.AddSingleton<AutocompleteCache>();
 
-                    // Command Logic
-                    // Match Commands
-                    services.AddSingleton<CancelChallengeLogic>();
-                    services.AddSingleton<EditMatchLogic>();
-                    services.AddSingleton<ReportWinLogic>();
-                    services.AddSingleton<SendChallengeLogic>();
+                    /// Command Logic ///
+                    
+                        // Match Commands
+                        services.AddSingleton<CancelChallengeLogic>();
+                        services.AddSingleton<EditMatchLogic>();
+                        services.AddSingleton<ReportWinLogic>();
+                        services.AddSingleton<SendChallengeLogic>();
 
-                    // Settings Commands
-                    services.AddSingleton<AddDebugAdminLogic>();
-                    services.AddSingleton<RegisterGuidToMemberLogic>();
-                    services.AddSingleton<RemoveGuidFromMemberLogic>();
-                    services.AddSingleton<RemoveDebugAdminLogic>();
-                    services.AddSingleton<RemoveFTPCredentialsLogic>();
-                    services.AddSingleton<RemoveMatchesChannelLogic>();
-                    services.AddSingleton<RemoveStandingsChannelLogic>();
-                    services.AddSingleton<RemoveTeamsChannelLogic>();
-                    services.AddSingleton<SetMatchesChannelLogic>();
-                    services.AddSingleton<SetStandingsChannelLogic>();
-                    services.AddSingleton<SetTeamsChannelLogic>();
+                        // Settings Commands
+                        services.AddSingleton<AddDebugAdminLogic>();
+                        services.AddSingleton<RegisterGuidToMemberLogic>();
+                        services.AddSingleton<RemoveGuidFromMemberLogic>();
+                        services.AddSingleton<RemoveDebugAdminLogic>();
+                        services.AddSingleton<RemoveFTPCredentialsLogic>();
+                        services.AddSingleton<RemoveMatchesChannelLogic>();
+                        services.AddSingleton<RemoveStandingsChannelLogic>();
+                        services.AddSingleton<RemoveTeamsChannelLogic>();
+                        services.AddSingleton<SetMatchesChannelLogic>();
+                        services.AddSingleton<SetStandingsChannelLogic>();
+                        services.AddSingleton<SetTeamsChannelLogic>();
 
-                    // Stat Commands
-                    services.AddSingleton<MyPlayerProfileLogic>();
-                    services.AddSingleton<MyTournamentProfileLogic>();
-                    services.AddSingleton<RegisterGuidLogic>();
-                    services.AddSingleton<RemoveGuidLogic>();
+                        // Stat Commands
+                        services.AddSingleton<MyPlayerProfileLogic>();
+                        services.AddSingleton<MyTournamentProfileLogic>();
+                        services.AddSingleton<RegisterGuidLogic>();
+                        services.AddSingleton<RemoveGuidLogic>();
 
-                    // Team commands
-                    services.AddSingleton<RegisterTeamLogic>();
-                    services.AddSingleton<SetTeamRankLogic>();
-                    services.AddSingleton<AddTeamLossLogic>();
-                    services.AddSingleton<AddTeamMemberLogic>();
-                    services.AddSingleton<AddTeamWinLogic>();
-                    services.AddSingleton<DeleteTeamLogic>();
-                    services.AddSingleton<RemoveTeamLossLogic>();
-                    services.AddSingleton<RemoveTeamMemberLogic>();
-                    services.AddSingleton<RemoveTeamWinLogic>();
+                        // Team Commands
+                        services.AddSingleton<RegisterTeamLogic>();
+                        services.AddSingleton<SetTeamRankLogic>();
+                        services.AddSingleton<AddTeamLossLogic>();
+                        services.AddSingleton<AddTeamMemberLogic>();
+                        services.AddSingleton<AddTeamWinLogic>();
+                        services.AddSingleton<DeleteTeamLogic>();
+                        services.AddSingleton<RemoveTeamLossLogic>();
+                        services.AddSingleton<RemoveTeamMemberLogic>();
+                        services.AddSingleton<RemoveTeamWinLogic>();
 
-                    // Tournament commands
-                    services.AddSingleton<CreateTournamentLogic>();
-                    services.AddSingleton<DeleteTournamentLogic>();
-                    services.AddSingleton<EndTournamentLogic>();
-                    services.AddSingleton<LockInRoundLogic>();
-                    services.AddSingleton<LockTeamsLogic>();
-                    services.AddSingleton<NextRoundLogic>();
-                    services.AddSingleton<SetupRoundRobinTournamentLogic>();
-                    services.AddSingleton<ShowAllTournamentsLogic>();
-                    services.AddSingleton<StartTournamentLogic>();
-                    services.AddSingleton<UnlockRoundLogic>();
-                    services.AddSingleton<UnlockTeamsLogic>();
+                        // Tournament Commands
+                        services.AddSingleton<CreateTournamentLogic>();
+                        services.AddSingleton<DeleteTournamentLogic>();
+                        services.AddSingleton<EndTournamentLogic>();
+                        services.AddSingleton<LockInRoundLogic>();
+                        services.AddSingleton<LockTeamsLogic>();
+                        services.AddSingleton<NextRoundLogic>();
+                        services.AddSingleton<SetupRoundRobinTournamentLogic>();
+                        services.AddSingleton<ShowAllTournamentsLogic>();
+                        services.AddSingleton<StartTournamentLogic>();
+                        services.AddSingleton<UnlockRoundLogic>();
+                        services.AddSingleton<UnlockTeamsLogic>();
+
+                    ///
 
                     // Managers
                     services.AddSingleton<ConfigManager>();

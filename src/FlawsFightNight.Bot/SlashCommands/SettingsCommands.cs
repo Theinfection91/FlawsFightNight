@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 namespace FlawsFightNight.Bot.SlashCommands
 {
     [Group("settings", "Commands for tournament and admin settings")]
+    [RequireGuildAdmin]
     public class SettingsCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private AddDebugAdminLogic _addDebugAdminLogic;
@@ -27,7 +28,6 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         #region Debug Commands
         [SlashCommand("add_debug_admin", "Add a user as a debug admin")]
-        [RequireGuildAdmin]
         public async Task AddDebugAdminAsync(
             [Summary("user", "The user to add as a debug admin")] IUser user)
         {
@@ -45,7 +45,6 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [SlashCommand("remove_debug_admin", "Remove a user from debug admins")]
-        [RequireGuildAdmin]
         public async Task RemoveDebugAdminAsync(
             [Summary("user", "The user to remove from debug admins")] IUser user)
         {
@@ -75,7 +74,6 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("set", "Set the channel ID for matches of a specified tournament")]
-            [RequireGuildAdmin]
             public async Task SetMatchesChannelIdAsync(
             [Summary("tournament_id", "The ID of the tournament to set the matches channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
             [Summary("channel_id", "The ID of the channel where matches will be posted")] IMessageChannel channel)
@@ -95,7 +93,6 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("remove", "Remove the channel ID for matches of a specified tournament")]
-            [RequireGuildAdmin]
             public async Task RemoveMatchesChannelIdAsync(
             [Summary("tournament_id", "The ID of the tournament to stop the matches LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
             {
@@ -126,7 +123,6 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("set", "Set the channel ID for standings of a specified tournament")]
-            [RequireGuildAdmin]
             public async Task SetStandingsChannelIdAsync(
             [Summary("tournament_id", "The ID of the tournament to set the standings channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
             [Summary("channel_id", "The ID of the channel where standings will be posted")] IMessageChannel channel)
@@ -146,7 +142,6 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("remove", "Remove the channel ID for standings of a specified tournament")]
-            [RequireGuildAdmin]
             public async Task RemoveStandingsChannelIdAsync(
             [Summary("tournament_id", "The ID of the tournament to stop the standings LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
             {
@@ -175,7 +170,6 @@ namespace FlawsFightNight.Bot.SlashCommands
                 _removeTeamsChannelLogic = removeTeamsChannelLogic;
             }
             [SlashCommand("set", "Set the channel ID for teams of a specified tournament")]
-            [RequireGuildAdmin]
             public async Task SetTeamsChannelIdAsync(
             [Summary("tournament_id", "The ID of the tournament to set the teams channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
             [Summary("channel_id", "The ID of the channel where teams will be posted")] IMessageChannel channel)
@@ -193,7 +187,6 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
             }
             [SlashCommand("remove", "Remove the channel ID for teams of a specified tournament")]
-            [RequireGuildAdmin]
             public async Task RemoveTeamsChannelIdAsync(
             [Summary("tournament_id", "The ID of the tournament to stop the teams LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
             {
@@ -220,7 +213,6 @@ namespace FlawsFightNight.Bot.SlashCommands
                 _removeFTPCredentialsLogic = removeFTPCredentialsLogic;
             }
             [SlashCommand("run_setup", "Re-run the FTP Setup Process in Console to add FTP credentials or change FTP server")]
-            [RequireGuildAdmin]
             public async Task RunFTPSetupAsync()
             {
                 try
@@ -236,7 +228,6 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
             }
             [SlashCommand("remove_credentials", "Remove specific FTP credentials from the database")]
-            [RequireGuildAdmin]
             public async Task RemoveFTPCredentialsAsync(
                 [Summary("ftp_credential_id", "The FTP credential by ID to remove"), Autocomplete(typeof(FTPCredentialAutocomplete))] string ftpServerName)
             {
@@ -254,7 +245,6 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("cancel_setup", "Cancel the FTP setup process that is currently running in the console")]
-            [RequireGuildAdmin]
             public async Task CancelFTPSetupAsync()
             {
                 try
@@ -272,7 +262,6 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
 
         [Group("ut2004", "Admin commands related to UT2004 data")]
-        [RequireGuildAdmin]
         public class UT2004Commands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly RegisterGuidToMemberLogic _registerGuidToMemberLogic;
