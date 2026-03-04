@@ -18,16 +18,16 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class TournamentCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly AutocompleteCache _autocompleteCache;
-        private CreateTournamentLogic _createTournamentLogic;
-        private LockInRoundLogic _lockInRoundLogic;
-        private LockTeamsLogic _lockTeamsLogic;
-        private NextRoundLogic _nextRoundLogic;
-        private SetupRoundRobinTournamentLogic _setupTournamentLogic;
-        private ShowAllTournamentsLogic _showAllTournamentsLogic;
-        private UnlockRoundLogic _unlockRoundLogic;
-        private UnlockTeamsLogic _unlockTeamsLogic;
+        private CreateTournamentHandler _createTournamentLogic;
+        private LockInRoundHandler _lockInRoundLogic;
+        private LockTeamsHandler _lockTeamsLogic;
+        private NextRoundHandler _nextRoundLogic;
+        private SetupRoundRobinTournamentHandler _setupTournamentLogic;
+        private ShowAllTournamentsHandler _showAllTournamentsLogic;
+        private UnlockRoundHandler _unlockRoundLogic;
+        private UnlockTeamsHandler _unlockTeamsLogic;
 
-        public TournamentCommands(AutocompleteCache autocompleteCache, CreateTournamentLogic createTournamentLogic, LockInRoundLogic lockInRoundLogic, LockTeamsLogic lockTeamsLogic, NextRoundLogic nextRoundLogic, SetupRoundRobinTournamentLogic setupTournamentLogic, ShowAllTournamentsLogic showAllTournamentsLogic, UnlockRoundLogic unlockRoundLogic, UnlockTeamsLogic unlockTeamsLogic)
+        public TournamentCommands(AutocompleteCache autocompleteCache, CreateTournamentHandler createTournamentLogic, LockInRoundHandler lockInRoundLogic, LockTeamsHandler lockTeamsLogic, NextRoundHandler nextRoundLogic, SetupRoundRobinTournamentHandler setupTournamentLogic, ShowAllTournamentsHandler showAllTournamentsLogic, UnlockRoundHandler unlockRoundLogic, UnlockTeamsHandler unlockTeamsLogic)
         {
             _autocompleteCache = autocompleteCache;
             _createTournamentLogic = createTournamentLogic;

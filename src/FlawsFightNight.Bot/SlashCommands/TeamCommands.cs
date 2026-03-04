@@ -16,10 +16,10 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class TeamCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly AutocompleteCache _autocompleteCache;
-        private RegisterTeamLogic _registerTeamLogic;
-        private SetTeamRankLogic _setTeamRankLogic;
+        private RegisterTeamHandler _registerTeamLogic;
+        private SetTeamRankHandler _setTeamRankLogic;
 
-        public TeamCommands(AutocompleteCache autocompleteCache, RegisterTeamLogic registerTeamLogic, SetTeamRankLogic setTeamRankLogic)
+        public TeamCommands(AutocompleteCache autocompleteCache, RegisterTeamHandler registerTeamLogic, SetTeamRankHandler setTeamRankLogic)
         {
             _autocompleteCache = autocompleteCache;
             _registerTeamLogic = registerTeamLogic;
@@ -133,10 +133,10 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class TeamAddCommands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
-            private AddTeamLossLogic _addTeamLossLogic;
-            private AddTeamWinLogic _addTeamWinLogic;
-            private AddTeamMemberLogic _addTeamMemberLogic;
-            public TeamAddCommands(AutocompleteCache autocompleteCache, AddTeamLossLogic addTeamLossLogic, AddTeamWinLogic addTeamWinLogic, AddTeamMemberLogic addTeamMemberLogic)
+            private AddTeamLossHandler _addTeamLossLogic;
+            private AddTeamWinHandler _addTeamWinLogic;
+            private AddTeamMemberHandler _addTeamMemberLogic;
+            public TeamAddCommands(AutocompleteCache autocompleteCache, AddTeamLossHandler addTeamLossLogic, AddTeamWinHandler addTeamWinLogic, AddTeamMemberHandler addTeamMemberLogic)
             {
                 _autocompleteCache = autocompleteCache;
                 _addTeamLossLogic = addTeamLossLogic;
@@ -252,10 +252,10 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class TeamRemoveCommands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
-            private RemoveTeamLossLogic _removeTeamLossLogic;
-            private RemoveTeamWinLogic _removeTeamWinLogic;
-            private RemoveTeamMemberLogic _removeTeamMemberLogic;
-            public TeamRemoveCommands(AutocompleteCache autocompleteCache, RemoveTeamLossLogic removeTeamLossLogic, RemoveTeamWinLogic removeTeamWinLogic, RemoveTeamMemberLogic removeTeamMemberLogic)
+            private RemoveTeamLossHandler _removeTeamLossLogic;
+            private RemoveTeamWinHandler _removeTeamWinLogic;
+            private RemoveTeamMemberHandler _removeTeamMemberLogic;
+            public TeamRemoveCommands(AutocompleteCache autocompleteCache, RemoveTeamLossHandler removeTeamLossLogic, RemoveTeamWinHandler removeTeamWinLogic, RemoveTeamMemberHandler removeTeamMemberLogic)
             {
                 _autocompleteCache = autocompleteCache;
                 _removeTeamLossLogic = removeTeamLossLogic;

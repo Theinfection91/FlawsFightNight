@@ -12,21 +12,21 @@ namespace FlawsFightNight.Bot.Modals
     public class ModalHandler : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly AutocompleteCache _autocompleteCache;
-        private readonly DeleteTeamLogic _deleteTeamLogic;
-        private readonly DeleteTournamentLogic _deleteTournamentLogic;
+        private readonly DeleteTeamHandler _deleteTeamLogic;
+        private readonly DeleteTournamentHandler _deleteTournamentLogic;
         private readonly EmbedFactory _embedFactory;
-        private readonly EndTournamentLogic _endTournamentLogic;
-        private readonly StartTournamentLogic _startTournamentLogic;
+        private readonly EndTournamentHandler _endTournamentLogic;
+        private readonly StartTournamentHandler _startTournamentLogic;
         private readonly TeamService _teamService;
         private readonly TournamentService _tournamentService;
 
         public ModalHandler(
             AutocompleteCache autocompleteCache,
-            DeleteTeamLogic deleteTeamLogic,
-            DeleteTournamentLogic deleteTournamentLogic,
+            DeleteTeamHandler deleteTeamLogic,
+            DeleteTournamentHandler deleteTournamentLogic,
             EmbedFactory embedFactory,
-            EndTournamentLogic endTournamentLogic,
-            StartTournamentLogic startTournamentLogic,
+            EndTournamentHandler endTournamentLogic,
+            StartTournamentHandler startTournamentLogic,
             TeamService teamService,
             TournamentService tournamentService)
         {

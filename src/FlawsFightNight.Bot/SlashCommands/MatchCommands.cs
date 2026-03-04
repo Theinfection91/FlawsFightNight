@@ -73,9 +73,9 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class MatchesChannelCommands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
-            private SendChallengeLogic _sendChallengeLogic;
+            private SendChallengeHandler _sendChallengeLogic;
             private CancelChallengeHandler _cancelChallengeLogic;
-            public MatchesChannelCommands(AutocompleteCache autocompleteCache, SendChallengeLogic sendChallengeLogic, CancelChallengeHandler cancelChallengeLogic)
+            public MatchesChannelCommands(AutocompleteCache autocompleteCache, SendChallengeHandler sendChallengeLogic, CancelChallengeHandler cancelChallengeLogic)
             {
                 _autocompleteCache = autocompleteCache;
                 _sendChallengeLogic = sendChallengeLogic;
