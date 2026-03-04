@@ -7,8 +7,11 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Data.Handlers
 {
-    public class UserProfileHandler : AsyncDataHandler<UserProfileFile>
+    public class MemberProfileHandler : AsyncDataHandler<MemberProfileFile>
     {
+        public MemberProfileHandler() : base()
+        {
 
+        }
     }
 }

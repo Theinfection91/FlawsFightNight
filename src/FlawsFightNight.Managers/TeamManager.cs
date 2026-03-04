@@ -107,6 +107,17 @@ namespace FlawsFightNight.Managers
             return roundRobinTeams;
         }
 
+        public List<Team> GetAllTeams()
+        {
+            List<Team> allTeams = new();
+            var tournaments = _dataManager.TournamentDataFiles.Select(df => df.Tournament);
+            foreach (var tournament in tournaments)
+            {
+                allTeams.AddRange(tournament.Teams);
+            }
+            return allTeams;
+        }
+
         public Team GetTeamByName(string teamName)
         {
             List<Tournament> tournaments = _dataManager.GetTournaments();

@@ -17,16 +17,18 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 {
     public class ReportWinLogic : Logic
     {
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
-        private MatchManager _matchManager;
-        private TeamManager _teamManager;
-        private TournamentManager _tournamentManager;
-        public ReportWinLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Report Win")
+        private readonly EmbedManager _embedManager;
+        private readonly GitBackupManager _gitBackupManager;
+        private readonly MatchManager _matchManager;
+        private readonly MemberManager _memberManager;
+        private readonly TeamManager _teamManager;
+        private readonly TournamentManager _tournamentManager;
+        public ReportWinLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, MemberManager memberManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Report Win")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
             _matchManager = matchManager;
+            _memberManager = memberManager;
             _teamManager = teamManager;
             _tournamentManager = tournamentManager;
         }
@@ -154,11 +156,15 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             winningTeam.IsChallengeable = true;
             losingTeam.IsChallengeable = true;
 
+            // Update member stats for all members in the tournament
+            _memberManager.RecordWinLossForMembers(winningTeam, losingTeam);
+
             // Adjust ranks
             tournament.AdjustRanks();
 
-            // Save and reload the tournament database
+            // Save and reload databases
             await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _memberManager.SaveAndReloadMemberProfiles();
 
             // Backup to git repo
             _gitBackupManager.EnqueueBackup();

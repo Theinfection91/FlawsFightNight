@@ -6,6 +6,8 @@ using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.CommandsLogic.MatchCommands;
 using FlawsFightNight.CommandsLogic.SetCommands;
 using FlawsFightNight.CommandsLogic.SettingsCommands;
+using FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands;
+using FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands;
 using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Core.Helpers.UT2004;
@@ -105,40 +107,58 @@ namespace FlawsFightNight.Bot
                     // Autocomplete
                     services.AddSingleton<AutocompleteCache>();
 
-                    // Command Logic
-                    services.AddSingleton<AddTeamLossLogic>();
-                    services.AddSingleton<AddTeamWinLogic>();
-                    services.AddSingleton<AddTeamMemberLogic>();
-                    services.AddSingleton<RemoveTeamLossLogic>();
-                    services.AddSingleton<RemoveTeamWinLogic>();
-                    services.AddSingleton<RemoveTeamMemberLogic>();
-                    services.AddSingleton<AddDebugAdminLogic>();
-                    services.AddSingleton<CancelChallengeLogic>();
-                    services.AddSingleton<CreateTournamentLogic>();
-                    services.AddSingleton<DeleteTeamLogic>();
-                    services.AddSingleton<DeleteTournamentLogic>();
-                    services.AddSingleton<EditMatchLogic>();
-                    services.AddSingleton<EndTournamentLogic>();
-                    services.AddSingleton<LockInRoundLogic>();
-                    services.AddSingleton<LockTeamsLogic>();
-                    services.AddSingleton<NextRoundLogic>();
-                    services.AddSingleton<RegisterTeamLogic>();
-                    services.AddSingleton<RemoveDebugAdminLogic>();
-                    services.AddSingleton<RemoveFTPCredentialsLogic>();
-                    services.AddSingleton<RemoveMatchesChannelLogic>();
-                    services.AddSingleton<RemoveStandingsChannelLogic>();
-                    services.AddSingleton<RemoveTeamsChannelLogic>();
-                    services.AddSingleton<ReportWinLogic>();
-                    services.AddSingleton<SendChallengeLogic>();
-                    services.AddSingleton<SetMatchesChannelLogic>();
-                    services.AddSingleton<SetStandingsChannelLogic>();
-                    services.AddSingleton<SetTeamsChannelLogic>();
-                    services.AddSingleton<SetTeamRankLogic>();
-                    services.AddSingleton<SetupRoundRobinTournamentLogic>();
-                    services.AddSingleton<ShowAllTournamentsLogic>();
-                    services.AddSingleton<StartTournamentLogic>();
-                    services.AddSingleton<UnlockRoundLogic>();
-                    services.AddSingleton<UnlockTeamsLogic>();
+                    /// Command Logic ///
+                    
+                        // Match Commands
+                        services.AddSingleton<CancelChallengeLogic>();
+                        services.AddSingleton<EditMatchLogic>();
+                        services.AddSingleton<ReportWinLogic>();
+                        services.AddSingleton<SendChallengeLogic>();
+
+                        // Settings Commands
+                        services.AddSingleton<AddDebugAdminLogic>();
+                        services.AddSingleton<RegisterGuidToMemberLogic>();
+                        services.AddSingleton<RemoveGuidFromMemberLogic>();
+                        services.AddSingleton<RemoveDebugAdminLogic>();
+                        services.AddSingleton<RemoveFTPCredentialsLogic>();
+                        services.AddSingleton<RemoveMatchesChannelLogic>();
+                        services.AddSingleton<RemoveStandingsChannelLogic>();
+                        services.AddSingleton<RemoveTeamsChannelLogic>();
+                        services.AddSingleton<SetMatchesChannelLogic>();
+                        services.AddSingleton<SetStandingsChannelLogic>();
+                        services.AddSingleton<SetTeamsChannelLogic>();
+
+                        // Stat Commands
+                        services.AddSingleton<MyPlayerProfileLogic>();
+                        services.AddSingleton<MyTournamentProfileLogic>();
+                        services.AddSingleton<RegisterGuidLogic>();
+                        services.AddSingleton<RemoveGuidLogic>();
+
+                        // Team Commands
+                        services.AddSingleton<RegisterTeamLogic>();
+                        services.AddSingleton<SetTeamRankLogic>();
+                        services.AddSingleton<AddTeamLossLogic>();
+                        services.AddSingleton<AddTeamMemberLogic>();
+                        services.AddSingleton<AddTeamWinLogic>();
+                        services.AddSingleton<DeleteTeamLogic>();
+                        services.AddSingleton<RemoveTeamLossLogic>();
+                        services.AddSingleton<RemoveTeamMemberLogic>();
+                        services.AddSingleton<RemoveTeamWinLogic>();
+
+                        // Tournament Commands
+                        services.AddSingleton<CreateTournamentLogic>();
+                        services.AddSingleton<DeleteTournamentLogic>();
+                        services.AddSingleton<EndTournamentLogic>();
+                        services.AddSingleton<LockInRoundLogic>();
+                        services.AddSingleton<LockTeamsLogic>();
+                        services.AddSingleton<NextRoundLogic>();
+                        services.AddSingleton<SetupRoundRobinTournamentLogic>();
+                        services.AddSingleton<ShowAllTournamentsLogic>();
+                        services.AddSingleton<StartTournamentLogic>();
+                        services.AddSingleton<UnlockRoundLogic>();
+                        services.AddSingleton<UnlockTeamsLogic>();
+
+                    ///
 
                     // Managers
                     services.AddSingleton<ConfigManager>();
@@ -164,7 +184,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<ProcessedLogNamesHandler>();
                     services.AddSingleton<StatLogMatchResultHandler>();
                     services.AddSingleton<TournamentDataHandler>();
-                    services.AddSingleton<UserProfileHandler>();
+                    services.AddSingleton<MemberProfileHandler>();
                     services.AddSingleton<UT2004PlayerProfileHandler>();
 
                     // Parsers

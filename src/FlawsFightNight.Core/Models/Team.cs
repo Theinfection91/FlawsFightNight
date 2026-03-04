@@ -100,5 +100,49 @@ namespace FlawsFightNight.Core.Models
             WinStreak = 0;
             TotalScore += points;
         }
+
+        public bool IsTeamFull(int teamSize)
+        {
+            return Members.Count >= teamSize;
+        }
+
+        public bool CanAcceptAmountOfMembers(int amount, int teamSize)
+        {
+            return (Members.Count + amount) <= teamSize;
+        }
+
+        public bool IsMemberOnTeam(ulong discordId)
+        {
+            return Members.Any(m => m.DiscordId == discordId);
+        }
+
+        public bool ContainsMembers(List<Member> members, out List<Member> missingMembers)
+        {
+            missingMembers = members.Where(m => !IsMemberOnTeam(m.DiscordId)).ToList();
+            return missingMembers.Count == 0;
+        }
+
+        public void AddMember(Member member)
+        {
+            Members.Add(member);
+        }
+
+        public void AddMembers(List<Member> members)
+        {
+            Members.AddRange(members);
+        }
+
+        public void RemoveMembers(List<Member> members)
+        {
+            foreach (var member in members)
+            {
+                Members.RemoveAll(m => m.DiscordId == member.DiscordId);
+            }
+        }
+
+        public void RemoveMember(Member member)
+        {
+            Members.RemoveAll(m => m.DiscordId == member.DiscordId);
+        }
     }
 }

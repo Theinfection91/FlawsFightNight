@@ -17,5 +17,20 @@ namespace FlawsFightNight.Bot.Components
                 .WithButton("✅ Confirm", customId: confirmId, style: ButtonStyle.Success)
                 .WithButton("❌ Cancel", customId: cancelId, style: ButtonStyle.Danger);
         }
+
+        public static ComponentBuilder CreateUT2004ProfileSelectMenu(ulong discordId)
+        {
+            string selectId = $"ut2004profile_select:{discordId}";
+
+            var selectMenu = new SelectMenuBuilder()
+                .WithCustomId(selectId)
+                .WithPlaceholder("📊 Select a stats category...")
+                .AddOption("📊 General", "general", "Overall career stats and career bests")
+                .AddOption("🚩 iCTF", "ictf", "Capture the Flag statistics")
+                .AddOption("🎯 TAM", "tam", "Team Arena Master statistics")
+                .AddOption("💣 iBR", "ibr", "Bombing Run statistics");
+
+            return new ComponentBuilder().WithSelectMenu(selectMenu);
+        }
     }
 }
