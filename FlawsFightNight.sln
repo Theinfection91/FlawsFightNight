@@ -5,9 +5,9 @@ VisualStudioVersion = 18.2.11415.280
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlawsFightNight.Bot", "src\FlawsFightNight.Bot\FlawsFightNight.Bot.csproj", "{92442D67-7D6F-490E-B369-EF6CF0B2C623}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlawsFightNight.Commands", "src\FlawsFightNight.CommandsLogic\FlawsFightNight.Commands.csproj", "{4E853729-A74A-4ED7-9656-A2974F5AC623}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlawsFightNight.Commands", "src\FlawsFightNight.Commands\FlawsFightNight.Commands.csproj", "{4E853729-A74A-4ED7-9656-A2974F5AC623}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlawsFightNight.IO", "src\FlawsFightNight.Data\FlawsFightNight.IO.csproj", "{5FE27B11-63BF-4770-95C7-6C61CF7BF154}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlawsFightNight.IO", "src\FlawsFightNight.IO\FlawsFightNight.IO.csproj", "{5FE27B11-63BF-4770-95C7-6C61CF7BF154}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlawsFightNight.Core", "src\FlawsFightNight.Core\FlawsFightNight.Core.csproj", "{8414F88F-CBFE-47AF-A271-5E85B17B0228}"
 EndProject
