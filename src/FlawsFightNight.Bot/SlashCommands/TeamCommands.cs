@@ -2,7 +2,7 @@
 using Discord.Interactions;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Modals;
-using FlawsFightNight.Bot.PreconditionAttributes;
+using FlawsFightNight.Bot.Attributes;
 using FlawsFightNight.CommandsLogic.TeamCommands;
 using System;
 using System.Collections.Generic;

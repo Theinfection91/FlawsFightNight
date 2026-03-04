@@ -3,7 +3,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Components;
-using FlawsFightNight.Bot.PreconditionAttributes;
+using FlawsFightNight.Bot.Attributes;
 using FlawsFightNight.CommandsLogic.SettingsCommands;
 using System;
 using System.Collections.Generic;

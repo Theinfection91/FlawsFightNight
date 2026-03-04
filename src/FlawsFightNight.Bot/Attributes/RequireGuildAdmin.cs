@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Bot.PreconditionAttributes
+namespace FlawsFightNight.Bot.Attributes
 {
     public class RequireGuildAdmin : PreconditionAttribute
     {

@@ -1,7 +1,7 @@
 ﻿using Discord.Interactions;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Components;
-using FlawsFightNight.Bot.PreconditionAttributes;
+using FlawsFightNight.Bot.Attributes;
 using FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands;
 using FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands;
 using System;

@@ -5,7 +5,7 @@ using FlawsFightNight.Services;
 using System;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Bot.PreconditionAttributes
+namespace FlawsFightNight.Bot.Attributes
 {
     public class RequireMemberProfile : PreconditionAttribute
     {

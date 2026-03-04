@@ -1,9 +1,9 @@
 ﻿using Discord;
 using Discord.Interactions;
 using FlawsFightNight.Bot.Autocomplete;
-using FlawsFightNight.Bot.PreconditionAttributes;
+using FlawsFightNight.Bot.Attributes;
 using FlawsFightNight.CommandsLogic.MatchCommands;
-using FlawsFightNight.Bot.PreconditionAttributes;
+using FlawsFightNight.Bot.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
