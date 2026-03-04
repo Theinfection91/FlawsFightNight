@@ -36,6 +36,17 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             return _guidToPrimary.TryGetValue(guid, out var primary) ? primary : guid;
         }
 
+        /// <summary>
+        /// Returns all non-primary (alias) GUIDs — the ones that resolve to something else.
+        /// </summary>
+        public IEnumerable<string> GetAliasGuids()
+            => _guidToPrimary.Where(kv => !kv.Key.Equals(kv.Value, StringComparison.OrdinalIgnoreCase))
+                             .Select(kv => kv.Key);
+
+        public bool IsAlias(string guid)
+            => _guidToPrimary.TryGetValue(guid, out var primary)
+               && !guid.Equals(primary, StringComparison.OrdinalIgnoreCase);
+
         public bool HasAliases => _guidToPrimary.Count > 0;
     }
 }

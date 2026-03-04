@@ -13,15 +13,17 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
         private readonly EmbedManager _embedManager;
         private readonly GitBackupManager _gitBackupManager;
         private readonly MemberManager _memberManager;
+        private readonly UT2004StatsManager _ut2004StatsManager;
 
-        public RemoveGuidFromMemberLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MemberManager memberManager) : base("Remove GUID From Member")
+        public RemoveGuidFromMemberLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MemberManager memberManager, UT2004StatsManager ut2004StatsManager) : base("Remove GUID From Member")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
             _memberManager = memberManager;
+            _ut2004StatsManager = ut2004StatsManager;
         }
 
-        public async Task<Embed?> RemoveGuidFromMemberProcess(IUser member,  string guid)
+        public async Task<Embed?> RemoveGuidFromMemberProcess(IUser member, string guid)
         {
             if (!_memberManager.DoesMemberProfileExist(member.Id))
             {
@@ -45,6 +47,11 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
                 return _embedManager.ErrorEmbed(Name, "This GUID is not registered to the given member.");
             }
             memberProfile.RemoveUT2004GUID(guid);
+            if (memberProfile.RegisteredUT2004GUIDs.Count is not 0)
+            {
+                // Testing: Trigger rebuild when removing a secondary GUID
+                await _ut2004StatsManager.RebuildPlayerProfiles();
+            }
 
             await _memberManager.SaveAndReloadMemberProfiles();
             _gitBackupManager.EnqueueBackup();

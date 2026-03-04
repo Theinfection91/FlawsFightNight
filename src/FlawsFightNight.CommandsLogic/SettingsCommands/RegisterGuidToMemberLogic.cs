@@ -14,12 +14,14 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
         private readonly EmbedManager _embedManager;
         private readonly GitBackupManager _gitBackupManager;
         private readonly MemberManager _memberManager;
+        private readonly UT2004StatsManager _ut2004StatsManager;
 
-        public RegisterGuidToMemberLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MemberManager memberManager) : base("Register GUID To Member")
+        public RegisterGuidToMemberLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MemberManager memberManager, UT2004StatsManager ut2004StatsManager) : base("Register GUID To Member")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
             _memberManager = memberManager;
+            _ut2004StatsManager = ut2004StatsManager;
         }
 
         public async Task<Embed?> RegisterGuidToMemberProcess(IUser member, string guid)
@@ -40,6 +42,11 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
                 return _embedManager.ErrorEmbed(Name, "This GUID is already registered to the given member.");
             }
             memberProfile.RegisterUT2004GUID(guid);
+            if (memberProfile.RegisteredUT2004GUIDs.Count > 1)
+            {
+                // Testing SeamlessRatings: for now calling it this way but will see how well it works and will optimize later. Need to have checks in place to avoid unnecessary calls of rebuilding profiles and to avoid performance issues.
+                await _ut2004StatsManager.RebuildPlayerProfiles();
+            }
 
             await _memberManager.SaveAndReloadMemberProfiles();
             _gitBackupManager.EnqueueBackup();

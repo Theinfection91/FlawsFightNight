@@ -38,6 +38,12 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
 
                 return _embedManager.ErrorEmbed(Name, $"The GUID `{guid}` is not registered to your profile. {registeredGuids}");
             }
+
+            if (memberProfile.RegisteredUT2004GUIDs.Count > 1)
+            {
+                // If a user has more than one GUID an admin must remove GUIDs for them to avoid potential issues with SeamlessRatings
+                return _embedManager.ErrorEmbed(Name, $"You have multiple GUIDs registered to your profile. To avoid potential issues with SeamlessRatings, you must contact an administrator to remove GUIDs from your profile.");
+            }
             memberProfile.RemoveUT2004GUID(guid);
 
             await _memberManager.SaveAndReloadMemberProfiles();

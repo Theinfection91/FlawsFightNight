@@ -39,12 +39,14 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
             {
                 return _embedManager.ErrorEmbed(Name, "An error occurred while retrieving your member profile. Please try again later.");
             }
-            memberProfile.RegisterUT2004GUID(guid);
-            if (memberProfile.RegisteredUT2004GUIDs.Count > 1)
+
+            if (memberProfile.RegisteredUT2004GUIDs.Count >= 1)
             {
-                // Testing SeamlessRatings: for now calling it this way but will see how well it works and will optimize later. Need to have checks in place to avoid unnecessary calls of rebuilding profiles and to avoid performance issues.
-                await _ut2004StatsManager.RebuildPlayerProfiles();
+                // Users may only register one GUID. To register more for SeamlessRatings an admin must do it for them
+                return _embedManager.ErrorEmbed(Name, $"You have already registered a GUID to your account. Users may only register one GUID. If you need to register additional GUIDs for SeamlessRatings, please contact an administrator.");
             }
+            memberProfile.RegisterUT2004GUID(guid);
+            
 
             //var utProfile = _memberManager.GetUT2004PlayerProfile(guid);
             //if (utProfile == null) 

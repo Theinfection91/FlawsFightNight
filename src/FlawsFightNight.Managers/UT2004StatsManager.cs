@@ -174,7 +174,11 @@ namespace FlawsFightNight.Managers
 
             var profiles = new Dictionary<string, UT2004PlayerProfile>();
 
-            // DEBUG: Track which raw GUIDs got merged into a primary during the replay
+            // Standalone per-raw-GUID profiles for aliased players.
+            // Stats only — no ELO/OpenSkill (those live on the merged primary profile).
+            // Preserved so players can switch primary without losing their history.
+            var rawProfiles = new Dictionary<string, UT2004PlayerProfile>(StringComparer.OrdinalIgnoreCase);
+
             var mergeLog = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             int processedCount = 0;
@@ -196,10 +200,18 @@ namespace FlawsFightNight.Managers
                             Console.WriteLine($"[SeamlessRatings] First merge hit in replay — raw: {playerStats.Guid} → primary: {resolvedGuid} (match: {match.FileName}, date: {match.MatchDate:yyyy-MM-dd})");
                         }
 
+                        // Merged profile (primary GUID)
                         if (!profiles.ContainsKey(resolvedGuid))
                             profiles[resolvedGuid] = new UT2004PlayerProfile(resolvedGuid);
-
                         profiles[resolvedGuid].UpdateStatsFromMatch(playerStats, match.GameMode, match.MatchDate);
+
+                        // Standalone raw profile — only for alias GUIDs, stats only, no ratings
+                        if (_ratingsMapper.IsAlias(playerStats.Guid))
+                        {
+                            if (!rawProfiles.ContainsKey(playerStats.Guid))
+                                rawProfiles[playerStats.Guid] = new UT2004PlayerProfile(playerStats.Guid);
+                            rawProfiles[playerStats.Guid].UpdateStatsFromMatch(playerStats, match.GameMode, match.MatchDate);
+                        }
                     }
                 }
 
@@ -297,6 +309,14 @@ namespace FlawsFightNight.Managers
 
             foreach (var profile in profiles.Values)
                 await _dataManager.SaveUT2004PlayerProfileFile(profile);
+
+            // Save standalone raw profiles for aliased GUIDs
+            if (rawProfiles.Count > 0)
+            {
+                Console.WriteLine($"[SeamlessRatings] Saving {rawProfiles.Count} standalone raw GUID profile(s)...");
+                foreach (var rawProfile in rawProfiles.Values)
+                    await _dataManager.SaveUT2004PlayerProfileFile(rawProfile);
+            }
 
             await _dataManager.LoadAllUT2004PlayerProfileFiles();
         }
