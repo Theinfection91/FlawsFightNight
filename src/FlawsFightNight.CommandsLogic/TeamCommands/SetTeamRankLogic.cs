@@ -1,7 +1,7 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models.Tournaments;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,12 +12,12 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 {
     public class SetTeamRankLogic : Logic
     {
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
-        private TeamManager _teamManager;
-        private TournamentManager _tournamentManager;
+        private EmbedFactory _embedManager;
+        private GitBackupService _gitBackupManager;
+        private TeamService _teamManager;
+        private TournamentService _tournamentManager;
 
-        public SetTeamRankLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Set Team Rank")
+        public SetTeamRankLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TeamService teamManager, TournamentService tournamentManager) : base("Set Team Rank")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

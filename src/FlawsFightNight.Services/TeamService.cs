@@ -8,11 +8,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
-    public class TeamManager : BaseDataDriven
+    public class TeamService : BaseDataDriven
     {
-        public TeamManager(DataManager dataManager) : base("TeamManager", dataManager)
+        public TeamService(DataContext dataManager) : base("TeamService", dataManager)
         {
 
         }
@@ -20,7 +20,7 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool DoesTeamExist(string teamName, bool isCaseSensitive = false)
         {
-            List<Tournament> tournaments = _dataManager.GetTournaments();
+            List<Tournament> tournaments = _dataContext.GetTournaments();
             foreach (Tournament tournament in tournaments)
             {
                 if (isCaseSensitive)
@@ -43,7 +43,7 @@ namespace FlawsFightNight.Managers
 
         public bool IsTeamNameUnique(string teamName)
         {
-            List<Tournament> tournaments = _dataManager.GetTournaments();
+            List<Tournament> tournaments = _dataContext.GetTournaments();
             foreach (Tournament tournament in tournaments)
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
@@ -64,7 +64,7 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllLadderTeams()
         {
             List<Team> ladderTeams = new List<Team>();
-            var tournaments = _dataManager.TournamentDataFiles.Select(df => df.Tournament);
+            var tournaments = _dataContext.TournamentDataFiles.Select(df => df.Tournament);
             foreach (var tournament in tournaments)
             {
                 if (tournament is NormalLadderTournament)
@@ -82,7 +82,7 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllRoundBasedTeams()
         {
             List<Team> roundBasedTeams = new();
-            var tournaments = _dataManager.TournamentDataFiles.Select(df => df.Tournament);
+            var tournaments = _dataContext.TournamentDataFiles.Select(df => df.Tournament);
             foreach (var tournament in tournaments)
             {
                 if (tournament is IRoundBased) // Will add elimination later
@@ -96,7 +96,7 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllRoundRobinTeams()
         {
             List<Team> roundRobinTeams = new();
-            var tournaments = _dataManager.TournamentDataFiles.Select(df => df.Tournament);
+            var tournaments = _dataContext.TournamentDataFiles.Select(df => df.Tournament);
             foreach (var tournament in tournaments)
             {
                 if (tournament is NormalRoundRobinTournament || tournament is OpenRoundRobinTournament)
@@ -110,7 +110,7 @@ namespace FlawsFightNight.Managers
         public List<Team> GetAllTeams()
         {
             List<Team> allTeams = new();
-            var tournaments = _dataManager.TournamentDataFiles.Select(df => df.Tournament);
+            var tournaments = _dataContext.TournamentDataFiles.Select(df => df.Tournament);
             foreach (var tournament in tournaments)
             {
                 allTeams.AddRange(tournament.Teams);
@@ -120,7 +120,7 @@ namespace FlawsFightNight.Managers
 
         public Team GetTeamByName(string teamName)
         {
-            List<Tournament> tournaments = _dataManager.GetTournaments();
+            List<Tournament> tournaments = _dataContext.GetTournaments();
             foreach (var tournament in tournaments)
             {
                 Team? team = tournament.Teams.FirstOrDefault(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase));

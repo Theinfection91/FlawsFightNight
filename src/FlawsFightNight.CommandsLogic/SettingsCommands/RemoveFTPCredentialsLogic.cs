@@ -1,5 +1,5 @@
 ﻿using Discord;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,9 +10,9 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
 {
     public class RemoveFTPCredentialsLogic : Logic
     {
-        private readonly ConfigManager _configManager;
-        private readonly EmbedManager _embedManager;
-        public RemoveFTPCredentialsLogic(ConfigManager configManager, EmbedManager embedManager) : base("Remove FTP Credentials")
+        private readonly AdminConfigurationService _configManager;
+        private readonly EmbedFactory _embedManager;
+        public RemoveFTPCredentialsLogic(AdminConfigurationService configManager, EmbedFactory embedManager) : base("Remove FTP Credentials")
         {
             _configManager = configManager;
             _embedManager = embedManager;

@@ -10,23 +10,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
     public class FTPStatsService : BackgroundService
     {
-        private readonly ConfigManager _configManager;
-        private readonly GitBackupManager _gitBackupManager;
-        private readonly UT2004StatsManager _ut2004StatsManager;
+        private readonly AdminConfigurationService _configManager;
+        private readonly GitBackupService _gitBackupService;
+        private readonly UT2004StatsService _ut2004StatsService;
 
         private readonly DiscordSocketClient _discordClient;
         private Dictionary<FTPCredential, AsyncFtpClient> _ftpClients = new();
         private bool IsClientsConfigured = false;
 
-        public FTPStatsService(ConfigManager configManager, DiscordSocketClient client, GitBackupManager gitBackupManager, UT2004StatsManager uT2004StatsManager)
+        public FTPStatsService(AdminConfigurationService configManager, DiscordSocketClient client, GitBackupService gitBackupManager, UT2004StatsService uT2004StatsManager)
         {
             _configManager = configManager;
-            _gitBackupManager = gitBackupManager;
-            _ut2004StatsManager = uT2004StatsManager;
+            _gitBackupService = gitBackupManager;
+            _ut2004StatsService = uT2004StatsManager;
 
             _discordClient = client;
 
@@ -146,7 +146,7 @@ namespace FlawsFightNight.Managers
                             {
                                 if (token.IsCancellationRequested) break;
                                 processedCount++;
-                                if (await _ut2004StatsManager.IsLogFileProcessed(item.Name))
+                                if (await _ut2004StatsService.IsLogFileProcessed(item.Name))
                                 {
                                     string message = $"[FTPStatsService] Progress for {cred.ServerName}: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Skipped (already processed)";
                                     Console.Write($"\r{message.PadRight(100)}");
@@ -154,7 +154,7 @@ namespace FlawsFightNight.Managers
                                 }
                                 await using (var fileStream = await ExecuteWithDataConnectionFallback(client, () => client.OpenRead(item.FullName, token: token), token))
                                 {
-                                    bool wasValid = await _ut2004StatsManager.ProcessLogFile(fileStream, item.Name);
+                                    bool wasValid = await _ut2004StatsService.ProcessLogFile(fileStream, item.Name);
                                     string message;
                                     if (wasValid)
                                     {
@@ -178,8 +178,8 @@ namespace FlawsFightNight.Managers
                             Console.WriteLine();
                             Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Processing complete for {cred.ServerName}");
 
-                            await _ut2004StatsManager.SetupPlayerProfiles();
-                            _gitBackupManager.EnqueueBackup();
+                            await _ut2004StatsService.SetupPlayerProfiles();
+                            _gitBackupService.EnqueueBackup();
                         }
                         else
                         {
@@ -273,7 +273,7 @@ namespace FlawsFightNight.Managers
                 {
                     if (item.Name.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (!await _ut2004StatsManager.IsLogFileProcessed(item.Name))
+                        if (!await _ut2004StatsService.IsLogFileProcessed(item.Name))
                         {
                             return true;
                         }

@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,12 +11,12 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
 {
     public class RegisterGuidToMemberLogic : Logic
     {
-        private readonly EmbedManager _embedManager;
-        private readonly GitBackupManager _gitBackupManager;
-        private readonly MemberManager _memberManager;
-        private readonly UT2004StatsManager _ut2004StatsManager;
+        private readonly EmbedFactory _embedManager;
+        private readonly GitBackupService _gitBackupManager;
+        private readonly MemberService _memberManager;
+        private readonly UT2004StatsService _ut2004StatsManager;
 
-        public RegisterGuidToMemberLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MemberManager memberManager, UT2004StatsManager ut2004StatsManager) : base("Register GUID To Member")
+        public RegisterGuidToMemberLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, MemberService memberManager, UT2004StatsService ut2004StatsManager) : base("Register GUID To Member")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

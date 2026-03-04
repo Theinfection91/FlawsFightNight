@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +12,9 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands
 {
     public class MyTournamentProfileLogic : Logic
     {
-        private readonly EmbedManager _embedManager;
-        private readonly MemberManager _memberManager;
-        public MyTournamentProfileLogic(EmbedManager embedManager, MemberManager memberManager) : base("My Tournament Profile")
+        private readonly EmbedFactory _embedManager;
+        private readonly MemberService _memberManager;
+        public MyTournamentProfileLogic(EmbedFactory embedManager, MemberService memberManager) : base("My Tournament Profile")
         {
             _embedManager = embedManager;
             _memberManager = memberManager;

@@ -8,25 +8,25 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
     public class LiveViewService : BackgroundService
     {
         private readonly DiscordSocketClient _client;
-        private readonly EmbedManager _embedManager;
-        private readonly GitBackupManager _gitBackupManager;
-        private readonly DataManager _dataManager;
+        private readonly EmbedFactory _embedFactory;
+        private readonly GitBackupService _gitBackupService;
+        private readonly DataContext _dataContext;
 
         public LiveViewService(
             DiscordSocketClient client,
-            EmbedManager embedManager,
-            GitBackupManager gitBackupManager,
-            DataManager dataManager)
+            EmbedFactory embedManager,
+            GitBackupService gitBackupManager,
+            DataContext dataManager)
         {
             _client = client;
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
-            _dataManager = dataManager;
+            _embedFactory = embedManager;
+            _gitBackupService = gitBackupManager;
+            _dataContext = dataManager;
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -58,7 +58,7 @@ namespace FlawsFightNight.Managers
                 {
                     //Console.WriteLine($"{DateTime.Now} [LiveViewService] Heartbeat...");
 
-                    var tournaments = _dataManager.GetTournaments();
+                    var tournaments = _dataContext.GetTournaments();
                     tournaments = tournaments
                         .Where(t => t != null)
                         .ToList();
@@ -86,7 +86,7 @@ namespace FlawsFightNight.Managers
             var channel = _client.GetChannel(tournament.MatchesChannelId) as IMessageChannel;
             if (channel == null) return;
 
-            var embed = _embedManager.MatchesLiveViewResolver(tournament);
+            var embed = _embedFactory.MatchesLiveViewResolver(tournament);
 
             if (tournament.MatchesMessageId != 0)
             {
@@ -102,8 +102,8 @@ namespace FlawsFightNight.Managers
             tournament.MatchesMessageId = newMsg.Id;
             await Task.Run(async () =>
             {
-                await _dataManager.SaveAndReloadTournamentDataFiles(tournament);
-                _gitBackupManager.EnqueueBackup();
+                await _dataContext.SaveAndReloadTournamentDataFiles(tournament);
+                _gitBackupService.EnqueueBackup();
             });
         }
 
@@ -112,7 +112,7 @@ namespace FlawsFightNight.Managers
             if (tournament.StandingsChannelId == 0) return;
             var channel = _client.GetChannel(tournament.StandingsChannelId) as IMessageChannel;
             if (channel == null) return;
-            var embed = _embedManager.StandingsLiveViewResolver(tournament);
+            var embed = _embedFactory.StandingsLiveViewResolver(tournament);
             if (tournament.StandingsMessageId != 0)
             {
                 var existing = await channel.GetMessageAsync(tournament.StandingsMessageId) as IUserMessage;
@@ -126,8 +126,8 @@ namespace FlawsFightNight.Managers
             tournament.StandingsMessageId = newMsg.Id;
             await Task.Run(async () =>
             {
-                await _dataManager.SaveAndReloadTournamentDataFiles(tournament);
-                _gitBackupManager.EnqueueBackup();
+                await _dataContext.SaveAndReloadTournamentDataFiles(tournament);
+                _gitBackupService.EnqueueBackup();
             });
         }
 
@@ -136,7 +136,7 @@ namespace FlawsFightNight.Managers
             if (tournament.TeamsChannelId == 0) return;
             var channel = _client.GetChannel(tournament.TeamsChannelId) as IMessageChannel;
             if (channel == null) return;
-            var embed = _embedManager.TeamsLiveView(tournament);
+            var embed = _embedFactory.TeamsLiveView(tournament);
             if (tournament.TeamsMessageId != 0)
             {
                 var existing = await channel.GetMessageAsync(tournament.TeamsMessageId) as IUserMessage;
@@ -150,8 +150,8 @@ namespace FlawsFightNight.Managers
             tournament.TeamsMessageId = newMsg.Id;
             await Task.Run(async () =>
             {
-                await _dataManager.SaveAndReloadTournamentDataFiles(tournament);
-                _gitBackupManager.EnqueueBackup();
+                await _dataContext.SaveAndReloadTournamentDataFiles(tournament);
+                _gitBackupService.EnqueueBackup();
             });
         }
     }

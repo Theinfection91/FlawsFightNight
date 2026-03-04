@@ -4,7 +4,7 @@ using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Data.Models;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -17,11 +17,11 @@ namespace FlawsFightNight.Bot.Autocomplete
     public class AutocompleteCache
     {
         // Add Managers as needed here
-        private readonly ConfigManager _configManager;
-        private readonly MatchManager _matchManager;
-        private readonly TeamManager _teamManager;
-        private readonly TournamentManager _tournamentManager;
-        private readonly MemberManager _memberManager;
+        private readonly AdminConfigurationService _configManager;
+        private readonly MatchService _matchManager;
+        private readonly TeamService _teamManager;
+        private readonly TournamentService _tournamentManager;
+        private readonly MemberService _memberManager;
 
         // Autocomplete Data
         private List<Match> _allMatches = new();
@@ -39,7 +39,7 @@ namespace FlawsFightNight.Bot.Autocomplete
         private List<MemberProfile> _memberProfiles = new();
 
 
-        public AutocompleteCache(ConfigManager configManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager, MemberManager memberManager)
+        public AutocompleteCache(AdminConfigurationService configManager, MatchService matchManager, TeamService teamManager, TournamentService tournamentManager, MemberService memberManager)
         {
             // Initialize Managers here
             _configManager = configManager;

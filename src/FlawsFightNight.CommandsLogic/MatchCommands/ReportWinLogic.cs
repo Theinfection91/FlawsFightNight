@@ -2,7 +2,7 @@
 using Discord.Interactions;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Enums;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,13 +17,13 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 {
     public class ReportWinLogic : Logic
     {
-        private readonly EmbedManager _embedManager;
-        private readonly GitBackupManager _gitBackupManager;
-        private readonly MatchManager _matchManager;
-        private readonly MemberManager _memberManager;
-        private readonly TeamManager _teamManager;
-        private readonly TournamentManager _tournamentManager;
-        public ReportWinLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, MemberManager memberManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Report Win")
+        private readonly EmbedFactory _embedManager;
+        private readonly GitBackupService _gitBackupManager;
+        private readonly MatchService _matchManager;
+        private readonly MemberService _memberManager;
+        private readonly TeamService _teamManager;
+        private readonly TournamentService _tournamentManager;
+        public ReportWinLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, MatchService matchManager, MemberService memberManager, TeamService teamManager, TournamentService tournamentManager) : base("Report Win")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

@@ -1,5 +1,5 @@
 ﻿using Discord;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,12 +10,12 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
 {
     public class RemoveGuidFromMemberLogic : Logic
     {
-        private readonly EmbedManager _embedManager;
-        private readonly GitBackupManager _gitBackupManager;
-        private readonly MemberManager _memberManager;
-        private readonly UT2004StatsManager _ut2004StatsManager;
+        private readonly EmbedFactory _embedManager;
+        private readonly GitBackupService _gitBackupManager;
+        private readonly MemberService _memberManager;
+        private readonly UT2004StatsService _ut2004StatsManager;
 
-        public RemoveGuidFromMemberLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MemberManager memberManager, UT2004StatsManager ut2004StatsManager) : base("Remove GUID From Member")
+        public RemoveGuidFromMemberLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, MemberService memberManager, UT2004StatsService ut2004StatsManager) : base("Remove GUID From Member")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

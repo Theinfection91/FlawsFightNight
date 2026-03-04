@@ -9,32 +9,32 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
-    public class TournamentManager : BaseDataDriven
+    public class TournamentService : BaseDataDriven
     {
-        public TournamentManager(DataManager dataManager) : base("TournamentManager", dataManager)
+        public TournamentService(DataContext dataManager) : base("TournamentService", dataManager)
         {
 
         }
 
         public async Task SaveTournament(Tournament tournament)
         {
-            foreach (var tournamentData in _dataManager.TournamentDataFiles)
+            foreach (var tournamentData in _dataContext.TournamentDataFiles)
             {
                 if (tournamentData.Tournament.Id.Equals(tournament.Id, StringComparison.OrdinalIgnoreCase))
                 {
-                    await _dataManager.SaveTournamentDataFile(tournamentData);
+                    await _dataContext.SaveTournamentDataFile(tournamentData);
                     return;
                 }
             }
             // No existing tournament data file found, create a new one
-            await _dataManager.AddNewTournament(tournament);
+            await _dataContext.AddNewTournament(tournament);
         }
 
         public async Task LoadTournamentDataFiles()
         {
-            await _dataManager.LoadTournamentDataFiles();
+            await _dataContext.LoadTournamentDataFiles();
         }
 
         public async Task SaveAndReloadTournamentDataFiles(Tournament tournament)
@@ -45,7 +45,7 @@ namespace FlawsFightNight.Managers
 
         public bool IsTournamentNameUnique(string tournamentName)
         {
-            foreach (var dataFile in _dataManager.TournamentDataFiles)
+            foreach (var dataFile in _dataContext.TournamentDataFiles)
             {
                 if (dataFile.Tournament.Name.Equals(tournamentName, StringComparison.OrdinalIgnoreCase))
                 {
@@ -84,7 +84,7 @@ namespace FlawsFightNight.Managers
 
         public async Task DeleteTournament(string tournamentId)
         {
-            await _dataManager.RemoveTournament(tournamentId);
+            await _dataContext.RemoveTournament(tournamentId);
         }
 
         public void SetCanTeamsBeLocked(ITeamLocking tournament, bool canTeamsBeLocked)
@@ -98,7 +98,7 @@ namespace FlawsFightNight.Managers
             {
                 //return _dataManager.TournamentsDatabaseFile.Tournaments
                 //    .Any(t => t.Id.Equals(tournamentId));
-                foreach (var dataFile in _dataManager.TournamentDataFiles)
+                foreach (var dataFile in _dataContext.TournamentDataFiles)
                 {
                     if (dataFile.Tournament.Id.Equals(tournamentId))
                     {
@@ -108,7 +108,7 @@ namespace FlawsFightNight.Managers
             }
             else
             {
-                foreach (var dataFile in _dataManager.TournamentDataFiles)
+                foreach (var dataFile in _dataContext.TournamentDataFiles)
                 {
                     if (dataFile.Tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase))
                     {
@@ -122,13 +122,13 @@ namespace FlawsFightNight.Managers
         public List<Tournament> GetAllTournaments()
         {
             //return _dataManager.TournamentsDatabaseFile.Tournaments;
-            return _dataManager.GetTournaments();
+            return _dataContext.GetTournaments();
         }
 
         public List<Tournament> GetAllLadderTournaments()
         {
             List<Tournament> ladderTournaments = new();
-            foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
+            foreach (var tournament in _dataContext.TournamentDataFiles.Select(df => df.Tournament))
             {
                 if (tournament is NormalLadderTournament)
                 {
@@ -145,7 +145,7 @@ namespace FlawsFightNight.Managers
         public List<Tournament> GetAllRoundRobinTournaments()
         {
             List<Tournament> roundRobinTournaments = new();
-            foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
+            foreach (var tournament in _dataContext.TournamentDataFiles.Select(df => df.Tournament))
             {
                 if (tournament is NormalRoundRobinTournament || tournament is OpenRoundRobinTournament)
                 {
@@ -166,7 +166,7 @@ namespace FlawsFightNight.Managers
         {
             //return _dataManager.TournamentsDatabaseFile.Tournaments
             //    .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
-            foreach (var dataFile in _dataManager.TournamentDataFiles)
+            foreach (var dataFile in _dataContext.TournamentDataFiles)
             {
                 if (dataFile.Tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase))
                 {
@@ -178,7 +178,7 @@ namespace FlawsFightNight.Managers
 
         public Tournament GetTournamentFromTeamName(string teamName)
         {
-            foreach (var tournament in _dataManager.GetTournaments())
+            foreach (var tournament in _dataContext.GetTournaments())
             {
                 if (tournament.Teams.Any(t => t.Name.Equals(teamName, StringComparison.OrdinalIgnoreCase)))
                 {
@@ -190,7 +190,7 @@ namespace FlawsFightNight.Managers
 
         public Tournament GetTournamentFromMatchId(string matchId)
         {
-            foreach (var tournament in _dataManager.GetTournaments())
+            foreach (var tournament in _dataContext.GetTournaments())
             {
                 if (tournament.MatchLog.GetAllActiveMatches().Any(m => m.Id.Equals(matchId, StringComparison.OrdinalIgnoreCase)))
                 {

@@ -1,5 +1,5 @@
 ﻿using Discord;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -7,10 +7,10 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
 {
     public class MyPlayerProfileLogic : Logic
     {
-        private readonly EmbedManager _embedManager;
-        private readonly MemberManager _memberManager;
+        private readonly EmbedFactory _embedManager;
+        private readonly MemberService _memberManager;
 
-        public MyPlayerProfileLogic(EmbedManager embedManager, MemberManager memberManager) : base("My Player Profile")
+        public MyPlayerProfileLogic(EmbedFactory embedManager, MemberService memberManager) : base("My Player Profile")
         {
             _embedManager = embedManager;
             _memberManager = memberManager;

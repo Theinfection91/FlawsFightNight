@@ -1,5 +1,5 @@
 ﻿using Discord;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,16 +10,16 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 {
     public class RemoveTeamMemberLogic : Logic
     {
-        private readonly EmbedManager _embedManager;
-        private readonly GitBackupManager _gitBackupManager;
-        private readonly MemberManager _memberManager;
-        private readonly TeamManager _teamManager;
-        private readonly TournamentManager _tournamentManager;
-        public RemoveTeamMemberLogic(EmbedManager embedManager,
-                                     GitBackupManager gitBackupManager,
-                                     MemberManager memberManager,
-                                     TeamManager teamManager,
-                                     TournamentManager tournamentManager) : base("Remove Member")
+        private readonly EmbedFactory _embedManager;
+        private readonly GitBackupService _gitBackupManager;
+        private readonly MemberService _memberManager;
+        private readonly TeamService _teamManager;
+        private readonly TournamentService _tournamentManager;
+        public RemoveTeamMemberLogic(EmbedFactory embedManager,
+                                     GitBackupService gitBackupManager,
+                                     MemberService memberManager,
+                                     TeamService teamManager,
+                                     TournamentService tournamentManager) : base("Remove Member")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

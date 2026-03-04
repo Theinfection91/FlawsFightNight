@@ -11,11 +11,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
-    public class MemberManager : BaseDataDriven
+    public class MemberService : BaseDataDriven
     {
-        public MemberManager(DataManager dataManager) : base("MemberManager", dataManager)
+        public MemberService(DataContext dataManager) : base("MemberService", dataManager)
         {
 
         }
@@ -23,11 +23,11 @@ namespace FlawsFightNight.Managers
         #region Save and Load
         public async Task SaveMemberProfile(MemberProfile profileToSave)
         {
-            foreach (var memberProfileData in _dataManager.MemberProfileFiles)
+            foreach (var memberProfileData in _dataContext.MemberProfileFiles)
             {
                 if (profileToSave.DiscordId == memberProfileData.MemberProfile.DiscordId)
                 {
-                    await _dataManager.SaveMemberProfileFile(profileToSave);
+                    await _dataContext.SaveMemberProfileFile(profileToSave);
                     return;
                 }
             }
@@ -35,12 +35,12 @@ namespace FlawsFightNight.Managers
 
         public async Task LoadAllMemberProfiles()
         {
-            await _dataManager.LoadAllMemberProfileFiles();
+            await _dataContext.LoadAllMemberProfileFiles();
         }
 
         public async Task SaveAndReloadMemberProfiles()
         {
-            await _dataManager.SaveAllMemberProfileFiles();
+            await _dataContext.SaveAllMemberProfileFiles();
             await LoadAllMemberProfiles();
         }
         #endregion
@@ -110,13 +110,13 @@ namespace FlawsFightNight.Managers
 
         public void AddProfileToDatabase(MemberProfile profile)
         {
-            var file = _dataManager.CreateNewMemberProfileFile(profile);
-            _dataManager.AddNewMemberProfileFile(file);
+            var file = _dataContext.CreateNewMemberProfileFile(profile);
+            _dataContext.AddNewMemberProfileFile(file);
         }
 
         public bool DoesMemberProfileExist(ulong discordId)
         {
-            foreach (var memberProfileData in _dataManager.MemberProfileFiles)
+            foreach (var memberProfileData in _dataContext.MemberProfileFiles)
             {
                 if (discordId == memberProfileData.MemberProfile.DiscordId)
                 {
@@ -128,12 +128,12 @@ namespace FlawsFightNight.Managers
 
         public MemberProfile? GetMemberProfile(ulong discordId)
         {
-            return _dataManager.GetMemberProfile(discordId);
+            return _dataContext.GetMemberProfile(discordId);
         }
 
         public List<MemberProfile> GetAllMemberProfiles()
         {
-            return _dataManager.MemberProfileFiles.Select(file => file.MemberProfile).ToList();
+            return _dataContext.MemberProfileFiles.Select(file => file.MemberProfile).ToList();
         }
 
         #region Tournament Specific Stats
@@ -249,7 +249,7 @@ namespace FlawsFightNight.Managers
         #region UT2004 Player Profile Related
         public bool IsUT2004GUIDRegistered(string guid)
         {
-            foreach (var memberProfileData in _dataManager.MemberProfileFiles)
+            foreach (var memberProfileData in _dataContext.MemberProfileFiles)
             {
                 if (memberProfileData.MemberProfile.RegisteredUT2004GUIDs.Contains(guid, StringComparer.OrdinalIgnoreCase))
                 {
@@ -261,7 +261,7 @@ namespace FlawsFightNight.Managers
 
         public bool DoesUT2004PlayerProfileExist(string playerGuid)
         {
-            foreach (var file in _dataManager.UT2004PlayerProfileFiles)
+            foreach (var file in _dataContext.UT2004PlayerProfileFiles)
             {
                 if (file.PlayerProfile.Guid.Equals(playerGuid, StringComparison.OrdinalIgnoreCase))
                 {
@@ -273,7 +273,7 @@ namespace FlawsFightNight.Managers
 
         public UT2004PlayerProfile? GetUT2004PlayerProfile(string playerGuid)
         {
-            return _dataManager.GetUT2004PlayerProfile(playerGuid);
+            return _dataContext.GetUT2004PlayerProfile(playerGuid);
         }
         #endregion
     }

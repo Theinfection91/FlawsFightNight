@@ -4,7 +4,7 @@ using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.TieBreakers;
 using FlawsFightNight.Core.Models.Tournaments;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,11 +15,11 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class SetupRoundRobinTournamentLogic : Logic
     {
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
-        private TournamentManager _tournamentManager;
+        private EmbedFactory _embedManager;
+        private GitBackupService _gitBackupManager;
+        private TournamentService _tournamentManager;
 
-        public SetupRoundRobinTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager) : base("Setup Round Robin Tournament")
+        public SetupRoundRobinTournamentLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TournamentService tournamentManager) : base("Setup Round Robin Tournament")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

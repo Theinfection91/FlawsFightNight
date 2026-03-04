@@ -3,7 +3,7 @@ using Discord.Interactions;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,11 +14,11 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class CreateTournamentLogic : Logic
     {
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
-        private TournamentManager _tournamentManager;
+        private EmbedFactory _embedManager;
+        private GitBackupService _gitBackupManager;
+        private TournamentService _tournamentManager;
 
-        public CreateTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager) : base("Create Tournament")
+        public CreateTournamentLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TournamentService tournamentManager) : base("Create Tournament")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

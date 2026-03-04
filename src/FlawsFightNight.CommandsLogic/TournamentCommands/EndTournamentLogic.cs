@@ -4,7 +4,7 @@ using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.MatchLogs;
 using FlawsFightNight.Core.Models.Tournaments;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,12 +15,12 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class EndTournamentLogic : Logic
     {
-        private readonly EmbedManager _embedManager;
-        private readonly GitBackupManager _gitBackupManager;
-        private readonly MatchManager _matchManager;
-        private readonly MemberManager _memberManager;
-        private readonly TournamentManager _tournamentManager;
-        public EndTournamentLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, MemberManager memberManager, TournamentManager tournamentManager) : base("End Tournament")
+        private readonly EmbedFactory _embedManager;
+        private readonly GitBackupService _gitBackupManager;
+        private readonly MatchService _matchManager;
+        private readonly MemberService _memberManager;
+        private readonly TournamentService _tournamentManager;
+        public EndTournamentLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, MatchService matchManager, MemberService memberManager, TournamentService tournamentManager) : base("End Tournament")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

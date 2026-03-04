@@ -4,17 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
     public abstract class BaseDataDriven
     {
         public required string Name { get; set; }
-        internal DataManager _dataManager;
+        internal DataContext _dataContext;
 
-        public BaseDataDriven(string name, DataManager dataManager)
+        public BaseDataDriven(string name, DataContext dataManager)
         {
             Name = name;
-            _dataManager = dataManager;
+            _dataContext = dataManager;
         }
     }
 }

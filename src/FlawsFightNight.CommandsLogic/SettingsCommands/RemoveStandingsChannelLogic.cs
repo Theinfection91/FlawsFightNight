@@ -1,5 +1,5 @@
 ﻿using Discord;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,11 +10,11 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
 {
     public class RemoveStandingsChannelLogic : Logic
     {
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
-        private TournamentManager _tournamentManager;
+        private EmbedFactory _embedManager;
+        private GitBackupService _gitBackupManager;
+        private TournamentService _tournamentManager;
 
-        public RemoveStandingsChannelLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager) : base("Remove Standings Channel")
+        public RemoveStandingsChannelLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TournamentService tournamentManager) : base("Remove Standings Channel")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

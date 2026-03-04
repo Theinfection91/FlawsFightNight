@@ -12,12 +12,12 @@ using System.Threading.Tasks;
 using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
-    public class DataManager
+    public class DataContext
     {
         #region Fields and Constructor
-        public string Name { get; set; } = "DataManager";
+        public string Name { get; set; } = "DataContext";
 
         // Discord Client
         public readonly DiscordSocketClient DiscordClient;
@@ -59,7 +59,7 @@ namespace FlawsFightNight.Managers
         private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
         #endregion
 
-        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
+        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
         {
             DiscordClient = client;
 

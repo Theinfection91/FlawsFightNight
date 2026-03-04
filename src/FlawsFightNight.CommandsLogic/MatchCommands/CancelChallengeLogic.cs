@@ -5,7 +5,7 @@ using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,12 +16,12 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 {
     public class CancelChallengeLogic : Logic
     {
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
-        private MatchManager _matchManager;
-        private TeamManager _teamManager;
-        private TournamentManager _tournamentManager;
-        public CancelChallengeLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Cancel Challenge")
+        private EmbedFactory _embedManager;
+        private GitBackupService _gitBackupManager;
+        private MatchService _matchManager;
+        private TeamService _teamManager;
+        private TournamentService _tournamentManager;
+        public CancelChallengeLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, MatchService matchManager, TeamService teamManager, TournamentService tournamentManager) : base("Cancel Challenge")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

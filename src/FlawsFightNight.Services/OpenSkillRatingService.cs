@@ -4,7 +4,7 @@ using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
     /// <summary>
     /// Bridges OpenSkillSharp with the UT2004 player profile system.

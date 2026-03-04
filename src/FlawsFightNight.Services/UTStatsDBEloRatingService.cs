@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
     /// <summary>
     /// UTStatsDB-style ELO variant for team games (documentation mode) with conservative safety guards.

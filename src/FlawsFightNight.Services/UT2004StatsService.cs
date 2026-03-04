@@ -9,9 +9,9 @@ using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
-    public class UT2004StatsManager : BaseDataDriven
+    public class UT2004StatsService : BaseDataDriven
     {
         private readonly UT2004LogParser _logParser;
         private readonly OpenSkillRatingService _ratingService;
@@ -25,7 +25,7 @@ namespace FlawsFightNight.Managers
         private const int MinTAMMatchesBeforePeak = 3;
         private const int MinBRMatchesBeforePeak = 3;
 
-        public UT2004StatsManager(DataManager dataManager, UT2004LogParser logParser, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsManager", dataManager)
+        public UT2004StatsService(DataContext dataManager, UT2004LogParser logParser, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsService", dataManager)
         {
             _logParser = logParser;
             _ratingService = ratingService;
@@ -41,12 +41,12 @@ namespace FlawsFightNight.Managers
         #region Stat Log Processing
         public async Task<bool> IsLogFileProcessed(string fileName)
         {
-            if (_dataManager.ProcessedLogNamesFile == null)
+            if (_dataContext.ProcessedLogNamesFile == null)
             {
-                await _dataManager.LoadProcessedLogNamesFile();
+                await _dataContext.LoadProcessedLogNamesFile();
             }
 
-            var processedLogs = _dataManager.GetProcessedLogNames();
+            var processedLogs = _dataContext.GetProcessedLogNames();
 
             if (processedLogs.ProcessedLogFileNames?.Contains(fileName) == true)
                 return true;
@@ -67,7 +67,7 @@ namespace FlawsFightNight.Managers
                     teamList.OrderByDescending(p => p.Score).ToList()
                 ).ToList();
                 statLog.Id = await GenerateStatLogId(statLog.GameMode);
-                await _dataManager.SaveStatLogMatchResultFile(statLog);
+                await _dataContext.SaveStatLogMatchResultFile(statLog);
                 await MarkLogFileAsProcessed(fileName);
                 return true;
             }
@@ -80,9 +80,9 @@ namespace FlawsFightNight.Managers
 
         public async Task GetStatLogCounts()
         {
-            _iCTFStatLogIdCounter = await _dataManager.GetStatLogCount(UT2004GameMode.iCTF);
-            _TAMStatLogIdCounter = await _dataManager.GetStatLogCount(UT2004GameMode.TAM);
-            _iBRStatLogIdCounter = await _dataManager.GetStatLogCount(UT2004GameMode.iBR);
+            _iCTFStatLogIdCounter = await _dataContext.GetStatLogCount(UT2004GameMode.iCTF);
+            _TAMStatLogIdCounter = await _dataContext.GetStatLogCount(UT2004GameMode.TAM);
+            _iBRStatLogIdCounter = await _dataContext.GetStatLogCount(UT2004GameMode.iBR);
         }
 
         public async Task<string> GenerateStatLogId(UT2004GameMode gameMode)
@@ -107,31 +107,31 @@ namespace FlawsFightNight.Managers
 
         public async Task MarkLogFileAsProcessed(string fileName)
         {
-            var processedLogs = _dataManager.GetProcessedLogNames();
+            var processedLogs = _dataContext.GetProcessedLogNames();
             processedLogs.ProcessedLogFileNames ??= new List<string>();
 
             if (!processedLogs.ProcessedLogFileNames.Contains(fileName))
             {
                 processedLogs.ProcessedLogFileNames.Add(fileName);
-                await _dataManager.SaveAndReloadProcessedLogNamesFile();
+                await _dataContext.SaveAndReloadProcessedLogNamesFile();
             }
         }
 
         public async Task MarkLogFileAsIgnored(string fileName)
         {
-            var processedLogs = _dataManager.GetProcessedLogNames();
+            var processedLogs = _dataContext.GetProcessedLogNames();
             processedLogs.IgnoredLogFileNames ??= new List<string>();
 
             if (!processedLogs.IgnoredLogFileNames.Contains(fileName))
             {
                 processedLogs.IgnoredLogFileNames.Add(fileName);
-                await _dataManager.SaveAndReloadProcessedLogNamesFile();
+                await _dataContext.SaveAndReloadProcessedLogNamesFile();
             }
         }
 
         public async Task<List<UT2004StatLog>> GetAllProcessedStatLogs()
         {
-            var statLogFiles = await _dataManager.LoadAllStatLogMatchResultFiles();
+            var statLogFiles = await _dataContext.LoadAllStatLogMatchResultFiles();
             return statLogFiles.Select(file => file.StatLog).ToList();
         }
 
@@ -141,7 +141,7 @@ namespace FlawsFightNight.Managers
         public async Task SetupPlayerProfiles()
         {
             // Prime the SeamlessRatings alias map
-            var memberProfiles = _dataManager.MemberProfileFiles
+            var memberProfiles = _dataContext.MemberProfileFiles
                 .Select(f => f.MemberProfile)
                 .ToList();
             _ratingsMapper.BuildAliasMap(memberProfiles);
@@ -276,7 +276,7 @@ namespace FlawsFightNight.Managers
                     var summarizer = new RuleBasedMatchSummarizer();
                     summarizer.Summarize(match, profiles, eloChanges);
 
-                    await _dataManager.SaveStatLogMatchResultFile(match);
+                    await _dataContext.SaveStatLogMatchResultFile(match);
                 }
                 catch (Exception ex)
                 {
@@ -308,17 +308,17 @@ namespace FlawsFightNight.Managers
             await GenerateAndPersistMatchSummaries();
 
             foreach (var profile in profiles.Values)
-                await _dataManager.SaveUT2004PlayerProfileFile(profile);
+                await _dataContext.SaveUT2004PlayerProfileFile(profile);
 
             // Save standalone raw profiles for aliased GUIDs
             if (rawProfiles.Count > 0)
             {
                 Console.WriteLine($"[SeamlessRatings] Saving {rawProfiles.Count} standalone raw GUID profile(s)...");
                 foreach (var rawProfile in rawProfiles.Values)
-                    await _dataManager.SaveUT2004PlayerProfileFile(rawProfile);
+                    await _dataContext.SaveUT2004PlayerProfileFile(rawProfile);
             }
 
-            await _dataManager.LoadAllUT2004PlayerProfileFiles();
+            await _dataContext.LoadAllUT2004PlayerProfileFiles();
         }
 
         public async Task RebuildPlayerProfiles()
@@ -329,16 +329,16 @@ namespace FlawsFightNight.Managers
             _ratingService.SkippedImbalancedMatches = 0;
             _ratingService.SkippedInsufficientPlayers = 0;
 
-            await _dataManager.DeleteUT2004ProfilesDatabase();
+            await _dataContext.DeleteUT2004ProfilesDatabase();
             await SetupPlayerProfiles();
         }
 
         public async Task GenerateAndPersistMatchSummaries(bool overwrite = false)
         {
             // Ensure profiles are loaded
-            await _dataManager.LoadAllUT2004PlayerProfileFiles();
+            await _dataContext.LoadAllUT2004PlayerProfileFiles();
 
-            var profiles = _dataManager.UT2004PlayerProfileFiles?
+            var profiles = _dataContext.UT2004PlayerProfileFiles?
                 .Where(f => f?.PlayerProfile != null)
                 .ToDictionary(f => f.PlayerProfile.Guid, f => f.PlayerProfile, StringComparer.OrdinalIgnoreCase)
                 ?? new Dictionary<string, UT2004PlayerProfile>(StringComparer.OrdinalIgnoreCase);
@@ -390,7 +390,7 @@ namespace FlawsFightNight.Managers
 
                     // Summarize and persist
                     summarizer.Summarize(match, profiles, eloChanges);
-                    await _dataManager.SaveStatLogMatchResultFile(match);
+                    await _dataContext.SaveStatLogMatchResultFile(match);
 
                     updated++;
                     if (updated % 100 == 0)
@@ -408,7 +408,7 @@ namespace FlawsFightNight.Managers
         public async Task PrintAllPlayerRatings()
         {
             // Make temp list and sort by most total matches across all modes
-            List<UT2004PlayerProfile> tempList = new List<UT2004PlayerProfile>(_dataManager.UT2004PlayerProfileFiles.Select(f => f.PlayerProfile));
+            List<UT2004PlayerProfile> tempList = new List<UT2004PlayerProfile>(_dataContext.UT2004PlayerProfileFiles.Select(f => f.PlayerProfile));
             tempList = tempList.OrderByDescending(p => p.TotalMatches).ToList();
             foreach (var profile in tempList)
             {

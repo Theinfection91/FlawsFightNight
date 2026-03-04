@@ -4,7 +4,6 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.CommandsLogic.MatchCommands;
-using FlawsFightNight.CommandsLogic.SetCommands;
 using FlawsFightNight.CommandsLogic.SettingsCommands;
 using FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands;
 using FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands;
@@ -12,7 +11,7 @@ using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.Data.Handlers;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
@@ -25,7 +24,7 @@ namespace FlawsFightNight.Bot
         private DiscordSocketClient _client;
         private CommandService _commands;
         private InteractionService _interactionService;
-        private ConfigManager _configManager;
+        private AdminConfigurationService _configManager;
 
         private bool _gitBackupSetupComplete = false;
         private bool _ftpSetupComplete = false;
@@ -161,15 +160,15 @@ namespace FlawsFightNight.Bot
                     ///
 
                     // Managers
-                    services.AddSingleton<ConfigManager>();
-                    services.AddSingleton<DataManager>();
-                    services.AddSingleton<EmbedManager>();
-                    services.AddSingleton<GitBackupManager>();
-                    services.AddSingleton<MatchManager>();
-                    services.AddSingleton<MemberManager>();
-                    services.AddSingleton<UT2004StatsManager>();
-                    services.AddSingleton<TeamManager>();
-                    services.AddSingleton<TournamentManager>();
+                    services.AddSingleton<AdminConfigurationService>();
+                    services.AddSingleton<DataContext>();
+                    services.AddSingleton<EmbedFactory>();
+                    services.AddSingleton<GitBackupService>();
+                    services.AddSingleton<MatchService>();
+                    services.AddSingleton<MemberService>();
+                    services.AddSingleton<UT2004StatsService>();
+                    services.AddSingleton<TeamService>();
+                    services.AddSingleton<TournamentService>();
 
                     // Hosted services 
                     services.AddHostedService<LiveViewService>();
@@ -197,21 +196,21 @@ namespace FlawsFightNight.Bot
             // Initialize data and stats managers before starting hosted services to ensure they have the data they need when they start
             using (var scope = host.Services.CreateScope())
             {
-                var dataManager = scope.ServiceProvider.GetRequiredService<DataManager>();
-                var ut2004StatsManager = scope.ServiceProvider.GetRequiredService<UT2004StatsManager>();
+                var dataManager = scope.ServiceProvider.GetRequiredService<DataContext>();
+                var ut2004StatsManager = scope.ServiceProvider.GetRequiredService<UT2004StatsService>();
                 await dataManager.InitializeAsync();
                 await ut2004StatsManager.InitializeAsync();
             }
 
             // Prep config
             _services = host.Services;
-            _configManager = _services.GetRequiredService<ConfigManager>();
+            _configManager = _services.GetRequiredService<AdminConfigurationService>();
             await _configManager.SetDiscordTokenProcess();
             await _configManager.SetGitBackupProcess();
 
             // Run interactive Git backup setup in background (clone/restore prompts)
-            var gitBackupManager = _services.GetRequiredService<GitBackupManager>();
-            var configManager = _services.GetRequiredService<ConfigManager>();
+            var gitBackupManager = _services.GetRequiredService<GitBackupService>();
+            var configManager = _services.GetRequiredService<AdminConfigurationService>();
             while (!_gitBackupSetupComplete)
             {
                 await gitBackupManager.RunInteractiveSetup();
@@ -219,7 +218,7 @@ namespace FlawsFightNight.Bot
             }
 
             // Run interactive FTP setup in background (add credentials prompts)
-            var ftpSetupManager = _services.GetRequiredService<ConfigManager>();
+            var ftpSetupManager = _services.GetRequiredService<AdminConfigurationService>();
             while (!_ftpSetupComplete)
             {
                 await ftpSetupManager.FTPSetupProcess();

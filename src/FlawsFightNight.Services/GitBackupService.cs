@@ -8,9 +8,9 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
-    public class GitBackupManager : BaseDataDriven
+    public class GitBackupService : BaseDataDriven
     {
         private readonly string _repoPath;
         private readonly string _remoteUrl;
@@ -18,7 +18,7 @@ namespace FlawsFightNight.Managers
         private readonly string _databasesFolderPath;
         private readonly string _gitUsername = "FlawsFightNight";
 
-        private ConfigManager _configManager;
+        private AdminConfigurationService _adminConfigService;
         private bool _isInitialized = false;
         private readonly CancellationTokenSource _shutdownToken = new();
 
@@ -26,20 +26,20 @@ namespace FlawsFightNight.Managers
         private readonly Channel<bool> _backupChannel = Channel.CreateUnbounded<bool>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
         private readonly Task _backupWorker;
 
-        public GitBackupManager(ConfigManager configManager, DataManager dataManager) : base("Git Backup Manager", dataManager)
+        public GitBackupService(AdminConfigurationService configManager, DataContext dataManager) : base("GitBackupService", dataManager)
         {
-            _configManager = configManager;
+            _adminConfigService = configManager;
 
             // Grab info from GitHub Credential File
-            _remoteUrl = _dataManager.GitHubCredentialFile.GitUrlPath;
-            _token = _dataManager.GitHubCredentialFile.GitPatToken;
+            _remoteUrl = _dataContext.GitHubCredentialFile.GitUrlPath;
+            _token = _dataContext.GitHubCredentialFile.GitPatToken;
 
             // Set up repo path
             _repoPath = SetRepoFilePath();
             _databasesFolderPath = SetDatabasesFolder();
 
             // Only validate repo exists, don't do interactive prompts here
-            if (_configManager.IsGitPatTokenSet())
+            if (_adminConfigService.IsGitPatTokenSet())
             {
                 ValidateRepository();
             }
@@ -54,7 +54,7 @@ namespace FlawsFightNight.Managers
 
         public async Task RunInteractiveSetup()
         {
-            if (!_configManager.IsGitPatTokenSet() || _isInitialized)
+            if (!_adminConfigService.IsGitPatTokenSet() || _isInitialized)
                 return;
 
             if (!Repository.IsValid(_repoPath))
@@ -188,8 +188,8 @@ namespace FlawsFightNight.Managers
                         case "y":
                             Console.WriteLine($"{DateTime.Now} - GitBackupManager - Copying files from 'BackupRepo' to 'Databases'...");
                             await CopyFilesFromBackupRepoToDatabases().ConfigureAwait(false);
-                            await _dataManager.LoadTournamentDataFiles().ConfigureAwait(false);
-                            await _dataManager.LoadPermissionsConfigFile().ConfigureAwait(false);
+                            await _dataContext.LoadTournamentDataFiles().ConfigureAwait(false);
+                            await _dataContext.LoadPermissionsConfigFile().ConfigureAwait(false);
                             Console.WriteLine($"{DateTime.Now} - GitBackupManager - Data restored successfully.");
                             return;
 
@@ -477,7 +477,7 @@ namespace FlawsFightNight.Managers
         /// </summary>
         public void EnqueueBackup()
         {
-            if (!_configManager.IsGitPatTokenSet())
+            if (!_adminConfigService.IsGitPatTokenSet())
             {
                 // no-op if not configured
                 return;
@@ -503,7 +503,7 @@ namespace FlawsFightNight.Managers
         {
             try
             {
-                if (!_configManager.IsGitPatTokenSet())
+                if (!_adminConfigService.IsGitPatTokenSet())
                 {
                     Console.WriteLine($"{DateTime.Now} - GitBackupManager - Git PAT Token not set. Git Backup Storage not enabled.");
                     return;

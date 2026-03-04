@@ -4,7 +4,7 @@ using Discord.WebSocket;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,12 +15,12 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
 {
     public class SendChallengeLogic : Logic
     {
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
-        private MatchManager _matchManager;
-        private TeamManager _teamManager;
-        private TournamentManager _tournamentManager;
-        public SendChallengeLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Send Challenge")
+        private EmbedFactory _embedManager;
+        private GitBackupService _gitBackupManager;
+        private MatchService _matchManager;
+        private TeamService _teamManager;
+        private TournamentService _tournamentManager;
+        public SendChallengeLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, MatchService matchManager, TeamService teamManager, TournamentService tournamentManager) : base("Send Challenge")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

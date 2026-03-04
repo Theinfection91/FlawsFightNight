@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Discord.WebSocket;
 using FlawsFightNight.Data.Models;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
-    public class ConfigManager : BaseDataDriven
+    public class AdminConfigurationService : BaseDataDriven
     {
         private DiscordSocketClient _client;
 
@@ -16,7 +16,7 @@ namespace FlawsFightNight.Managers
         public event EventHandler? FTPCredentialsChanged;
         public event EventHandler? CancelFTPSetupProcess;
         private CancellationTokenSource? _ftpSetupCts;
-        public ConfigManager(DiscordSocketClient client, DataManager dataManager) : base("ConfigManager", dataManager)
+        public AdminConfigurationService(DiscordSocketClient client, DataContext dataManager) : base("AdminConfigurationService", dataManager)
         {
             _client = client;
 
@@ -117,42 +117,42 @@ namespace FlawsFightNight.Managers
 
         public string GetCommandPrefix()
         {
-            return _dataManager.DiscordCredentialFile.CommandPrefix;
+            return _dataContext.DiscordCredentialFile.CommandPrefix;
         }
 
         public async Task SetCommandPrefix(string prefix)
         {
-            _dataManager.DiscordCredentialFile.CommandPrefix = prefix;
-            await _dataManager.SaveDiscordCredentialFile();
+            _dataContext.DiscordCredentialFile.CommandPrefix = prefix;
+            await _dataContext.SaveDiscordCredentialFile();
         }
 
         public string GetDiscordToken()
         {
-            return _dataManager.DiscordCredentialFile.DiscordBotToken;
+            return _dataContext.DiscordCredentialFile.DiscordBotToken;
         }
 
         public async Task SetDiscordToken(string discordToken)
         {
-            _dataManager.DiscordCredentialFile.DiscordBotToken = discordToken;
-            await _dataManager.SaveDiscordCredentialFile();
+            _dataContext.DiscordCredentialFile.DiscordBotToken = discordToken;
+            await _dataContext.SaveDiscordCredentialFile();
         }
 
         public ulong GetGuildId()
         {
-            return _dataManager.DiscordCredentialFile.GuildId;
+            return _dataContext.DiscordCredentialFile.GuildId;
         }
 
         public async Task SetGuildId(ulong guildId)
         {
-            _dataManager.DiscordCredentialFile.GuildId = guildId;
-            await _dataManager.SaveDiscordCredentialFile();
+            _dataContext.DiscordCredentialFile.GuildId = guildId;
+            await _dataContext.SaveDiscordCredentialFile();
         }
         #endregion
 
         #region GitHub Config
         public bool IsGitPatTokenSet()
         {
-            return _dataManager.GitHubCredentialFile.GitPatToken != "ENTER_GIT_PAT_TOKEN_HERE";
+            return _dataContext.GitHubCredentialFile.GitPatToken != "ENTER_GIT_PAT_TOKEN_HERE";
         }
 
         public async Task SetGitBackupProcess()
@@ -166,12 +166,12 @@ namespace FlawsFightNight.Managers
                     string? gitPatToken = Console.ReadLine();
                     if (!gitPatToken.Equals("0") && gitPatToken.Length > 15)
                     {
-                        _dataManager.GitHubCredentialFile.GitPatToken = gitPatToken;
+                        _dataContext.GitHubCredentialFile.GitPatToken = gitPatToken;
                         Console.WriteLine($"{DateTime.Now} - [ConfigManager] Git PAT Token accepted. Now give the https url path to your Git repo. It will look something like this: https://github.com/YourUsername/YourGitStorageRepo.git");
                         string? gitUrlPath = Console.ReadLine();
-                        _dataManager.GitHubCredentialFile.GitUrlPath = gitUrlPath;
+                        _dataContext.GitHubCredentialFile.GitUrlPath = gitUrlPath;
                         Console.WriteLine($"{DateTime.Now} - [ConfigManager] Repo Url set to: {gitUrlPath}\nYou can manually change your token and url path in the Credentials/github_credentials.json file as well.");
-                        await _dataManager.SaveAndReloadGitHubCredentialFile();
+                        await _dataContext.SaveAndReloadGitHubCredentialFile();
                         IsGitBackupProcessComplete = true;
                     }
                     else
@@ -192,7 +192,7 @@ namespace FlawsFightNight.Managers
         #region Permissions Config
         public bool IsDiscordIdInDebugAdminList(ulong discordId)
         {
-            foreach (ulong id in _dataManager.PermissionsConfigFile.DebugAdminList)
+            foreach (ulong id in _dataContext.PermissionsConfigFile.DebugAdminList)
             {
                 if (id.Equals(discordId))
                 {
@@ -204,14 +204,14 @@ namespace FlawsFightNight.Managers
 
         public async Task AddDiscordIdToDebugAdminList(ulong discordId)
         {
-            _dataManager.PermissionsConfigFile.DebugAdminList.Add(discordId);
-            await _dataManager.SaveAndReloadPermissionsConfigFile();
+            _dataContext.PermissionsConfigFile.DebugAdminList.Add(discordId);
+            await _dataContext.SaveAndReloadPermissionsConfigFile();
         }
 
         public async Task RemoveDiscordIdFromDebugAdminList(ulong discordId)
         {
-            _dataManager.PermissionsConfigFile.DebugAdminList.Remove(discordId);
-            await _dataManager.SaveAndReloadPermissionsConfigFile();
+            _dataContext.PermissionsConfigFile.DebugAdminList.Remove(discordId);
+            await _dataContext.SaveAndReloadPermissionsConfigFile();
         }
         #endregion
 
@@ -254,12 +254,12 @@ namespace FlawsFightNight.Managers
 
         public bool IsFTPCredentialsSet()
         {
-            return _dataManager.FTPCredentialFile.FTPCredentials.Count > 0;
+            return _dataContext.FTPCredentialFile.FTPCredentials.Count > 0;
         }
 
         public async Task AddFTPCredential(FTPCredential credential)
         {
-            foreach (var existingCredential in _dataManager.FTPCredentialFile.FTPCredentials)
+            foreach (var existingCredential in _dataContext.FTPCredentialFile.FTPCredentials)
             {
                 if (existingCredential.ServerName.Equals(credential.ServerName, StringComparison.OrdinalIgnoreCase))
                 {
@@ -272,8 +272,8 @@ namespace FlawsFightNight.Managers
                     return;
                 }
             }
-            _dataManager.FTPCredentialFile.FTPCredentials.Add(credential);
-            await _dataManager.SaveAndReloadFTPCredentialFile();
+            _dataContext.FTPCredentialFile.FTPCredentials.Add(credential);
+            await _dataContext.SaveAndReloadFTPCredentialFile();
             NotifyFTPCredentialsChanged();
         }
 
@@ -281,7 +281,7 @@ namespace FlawsFightNight.Managers
         {
             var newCredential = new FTPCredential()
             {
-                Id = _dataManager.FTPCredentialFile.FTPCredentials.Count + 1,
+                Id = _dataContext.FTPCredentialFile.FTPCredentials.Count + 1,
                 ServerName = serverName,
                 IPAddress = ipAddress,
                 Port = port,
@@ -294,13 +294,13 @@ namespace FlawsFightNight.Managers
 
         public List<FTPCredential>? GetFTPCredentials()
         {
-            return _dataManager.FTPCredentialFile.FTPCredentials;
+            return _dataContext.FTPCredentialFile.FTPCredentials;
         }
 
         public async Task RemoveFTPCredential(FTPCredential credential)
         {
-            _dataManager.FTPCredentialFile.FTPCredentials.Remove(credential);
-            await _dataManager.SaveAndReloadFTPCredentialFile();
+            _dataContext.FTPCredentialFile.FTPCredentials.Remove(credential);
+            await _dataContext.SaveAndReloadFTPCredentialFile();
             NotifyFTPCredentialsChanged();
         }
 

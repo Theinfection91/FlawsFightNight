@@ -14,11 +14,11 @@ using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
-    public class EmbedManager
+    public class EmbedFactory
     {
-        public EmbedManager() { }
+        public EmbedFactory() { }
 
         public Embed GenericEmbed(string title, string description, Color color, string footer = "Flaws Fight Night", bool includeTimestamp = true)
         {

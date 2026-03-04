@@ -2,7 +2,7 @@
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,10 +13,10 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class UnlockRoundLogic : Logic
     {
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
-        private TournamentManager _tournamentManager;
-        public UnlockRoundLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, TournamentManager tournamentManager) : base("Unlock Round")
+        private EmbedFactory _embedManager;
+        private GitBackupService _gitBackupManager;
+        private TournamentService _tournamentManager;
+        public UnlockRoundLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TournamentService tournamentManager) : base("Unlock Round")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,11 +10,11 @@ namespace FlawsFightNight.Bot.Components
 {
     public class ComponentHandler : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly EmbedManager _embedManager;
-        private readonly ConfigManager _configManager;
-        private readonly MemberManager _memberManager;
+        private readonly EmbedFactory _embedManager;
+        private readonly AdminConfigurationService _configManager;
+        private readonly MemberService _memberManager;
 
-        public ComponentHandler(EmbedManager embedManager, ConfigManager configManager, MemberManager memberManager)
+        public ComponentHandler(EmbedFactory embedManager, AdminConfigurationService configManager, MemberService memberManager)
         {
             _embedManager = embedManager;
             _configManager = configManager;

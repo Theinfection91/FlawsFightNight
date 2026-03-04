@@ -3,7 +3,7 @@ using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Core.Models;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Threading.Tasks;
 
@@ -14,21 +14,21 @@ namespace FlawsFightNight.Bot.Modals
         private readonly AutocompleteCache _autocompleteCache;
         private readonly DeleteTeamLogic _deleteTeamLogic;
         private readonly DeleteTournamentLogic _deleteTournamentLogic;
-        private readonly EmbedManager _embedManager;
+        private readonly EmbedFactory _embedManager;
         private readonly EndTournamentLogic _endTournamentLogic;
         private readonly StartTournamentLogic _startTournamentLogic;
-        private readonly TeamManager _teamManager;
-        private readonly TournamentManager _tournamentManager;
+        private readonly TeamService _teamManager;
+        private readonly TournamentService _tournamentManager;
 
         public ModalHandler(
             AutocompleteCache autocompleteCache,
             DeleteTeamLogic deleteTeamLogic,
             DeleteTournamentLogic deleteTournamentLogic,
-            EmbedManager embedManager,
+            EmbedFactory embedManager,
             EndTournamentLogic endTournamentLogic,
             StartTournamentLogic startTournamentLogic,
-            TeamManager teamManager,
-            TournamentManager tournamentManager)
+            TeamService teamManager,
+            TournamentService tournamentManager)
         {
             _autocompleteCache = autocompleteCache;
             _deleteTeamLogic = deleteTeamLogic;

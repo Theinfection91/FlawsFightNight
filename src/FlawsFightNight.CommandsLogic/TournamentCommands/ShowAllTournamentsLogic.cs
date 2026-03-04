@@ -1,5 +1,5 @@
 ﻿using Discord;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,10 +10,10 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
 {
     public class ShowAllTournamentsLogic : Logic
     {
-        private EmbedManager _embedManager;
-        private TournamentManager _tournamentManager;
+        private EmbedFactory _embedManager;
+        private TournamentService _tournamentManager;
 
-        public ShowAllTournamentsLogic(EmbedManager embedManager, TournamentManager tournamentManager) : base("Show All Tournaments")
+        public ShowAllTournamentsLogic(EmbedFactory embedManager, TournamentService tournamentManager) : base("Show All Tournaments")
         {
             _embedManager = embedManager;
             _tournamentManager = tournamentManager;

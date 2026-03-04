@@ -1,5 +1,5 @@
 ﻿using Discord;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,11 +10,11 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
 {
     public class AddDebugAdminLogic : Logic
     {
-        private ConfigManager _configManager;
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
+        private AdminConfigurationService _configManager;
+        private EmbedFactory _embedManager;
+        private GitBackupService _gitBackupManager;
 
-        public AddDebugAdminLogic(ConfigManager configManager, EmbedManager embedManager, GitBackupManager gitBackupManager) : base("Add Debug Admin")
+        public AddDebugAdminLogic(AdminConfigurationService configManager, EmbedFactory embedManager, GitBackupService gitBackupManager) : base("Add Debug Admin")
         {
             _configManager = configManager;
             _embedManager = embedManager;

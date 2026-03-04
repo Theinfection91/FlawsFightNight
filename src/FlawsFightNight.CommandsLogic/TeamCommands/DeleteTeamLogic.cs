@@ -1,5 +1,5 @@
 ﻿using Discord;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using FlawsFightNight.Core.Enums;
 using System;
 using System.Collections.Generic;
@@ -13,13 +13,13 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 {
     public class DeleteTeamLogic : Logic
     {
-        private EmbedManager _embedManager;
-        private GitBackupManager _gitBackupManager;
-        private MatchManager _matchManager;
-        private TeamManager _teamManager;
-        private TournamentManager _tournamentManager;
+        private EmbedFactory _embedManager;
+        private GitBackupService _gitBackupManager;
+        private MatchService _matchManager;
+        private TeamService _teamManager;
+        private TournamentService _tournamentManager;
 
-        public DeleteTeamLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager) : base("Remove Team")
+        public DeleteTeamLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, MatchService matchManager, TeamService teamManager, TournamentService tournamentManager) : base("Remove Team")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

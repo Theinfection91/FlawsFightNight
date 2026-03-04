@@ -4,7 +4,7 @@ using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,19 +15,19 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
 {
     public class RegisterTeamLogic : Logic
     {
-        private readonly ConfigManager _configManager;
-        private readonly EmbedManager _embedManager;
-        private readonly GitBackupManager _gitBackupManager;
-        private readonly MemberManager _memberManager;
-        private readonly TournamentManager _tournamentManager;
-        private readonly TeamManager _teamManager;
+        private readonly AdminConfigurationService _configManager;
+        private readonly EmbedFactory _embedManager;
+        private readonly GitBackupService _gitBackupManager;
+        private readonly MemberService _memberManager;
+        private readonly TournamentService _tournamentManager;
+        private readonly TeamService _teamManager;
 
-        public RegisterTeamLogic(ConfigManager configManager,
-                                 EmbedManager embedManager,
-                                 GitBackupManager gitBackupManager,
-                                 MemberManager memberManager,
-                                 TournamentManager tournamentManager,
-                                 TeamManager teamManager) : base("Register Team")
+        public RegisterTeamLogic(AdminConfigurationService configManager,
+                                 EmbedFactory embedManager,
+                                 GitBackupService gitBackupManager,
+                                 MemberService memberManager,
+                                 TournamentService tournamentManager,
+                                 TeamService teamManager) : base("Register Team")
         {
             _configManager = configManager;
             _embedManager = embedManager;

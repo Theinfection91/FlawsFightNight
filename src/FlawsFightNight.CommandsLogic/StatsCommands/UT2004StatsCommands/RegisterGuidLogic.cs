@@ -2,7 +2,7 @@
 using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.Core.Models;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,14 +13,14 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
 {
     public class RegisterGuidLogic : Logic
     {
-        private readonly EmbedManager _embedManager;
-        private readonly GitBackupManager _gitBackupManager;
-        private readonly MemberManager _memberManager;
-        private readonly UT2004StatsManager _ut2004StatsManager;
-        public RegisterGuidLogic(EmbedManager embedManager,
-                                 GitBackupManager gitBackupManager,
-                                 MemberManager memberManager,
-                                 UT2004StatsManager ut2004StatsManager) : base("Register GUID")
+        private readonly EmbedFactory _embedManager;
+        private readonly GitBackupService _gitBackupManager;
+        private readonly MemberService _memberManager;
+        private readonly UT2004StatsService _ut2004StatsManager;
+        public RegisterGuidLogic(EmbedFactory embedManager,
+                                 GitBackupService gitBackupManager,
+                                 MemberService memberManager,
+                                 UT2004StatsService ut2004StatsManager) : base("Register GUID")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;

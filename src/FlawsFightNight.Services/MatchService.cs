@@ -9,9 +9,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Managers
+namespace FlawsFightNight.Services
 {
-    public class MatchManager : BaseDataDriven
+    public class MatchService : BaseDataDriven
     {
         class UnorderedPairComparer : IEqualityComparer<(string A, string B)>
         {
@@ -31,12 +31,12 @@ namespace FlawsFightNight.Managers
         }
 
         private readonly DiscordSocketClient _client;
-        private EmbedManager _embedManager;
+        private EmbedFactory _embedFactory;
 
-        public MatchManager(DataManager dataManager, DiscordSocketClient client, EmbedManager embedManager) : base("MatchManager", dataManager)
+        public MatchService(DataContext dataManager, DiscordSocketClient client, EmbedFactory embedManager) : base("MatchService", dataManager)
         {
             _client = client;
-            _embedManager = embedManager;
+            _embedFactory = embedManager;
         }
 
         public string? GenerateMatchId()
@@ -63,7 +63,7 @@ namespace FlawsFightNight.Managers
         #region Bools
         public bool IsMatchIdInDatabase(string matchId)
         {
-            foreach (var tournament in _dataManager.GetTournaments())
+            foreach (var tournament in _dataContext.GetTournaments())
             {
                 if (tournament.MatchLog.ContainsMatchId(matchId))
                 {
@@ -133,7 +133,7 @@ namespace FlawsFightNight.Managers
         public List<Match> GetAllActiveMatches()
         {
             List<Match> allMatches = new();
-            foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
+            foreach (var tournament in _dataContext.TournamentDataFiles.Select(df => df.Tournament))
             {
                 // Skip tournaments with null MatchLog (newly created tournaments)
                 if (tournament?.MatchLog != null)
@@ -147,7 +147,7 @@ namespace FlawsFightNight.Managers
         public List<PostMatch> GetAllPostMatches()
         {
             List<PostMatch> allPostMatches = new();
-            foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
+            foreach (var tournament in _dataContext.TournamentDataFiles.Select(df => df.Tournament))
             {
                 if (tournament?.MatchLog != null)
                 {
@@ -160,7 +160,7 @@ namespace FlawsFightNight.Managers
         public List<PostMatch> GetAllRoundRobinPostMatches()
         {
             List<PostMatch> allRoundRobinPostMatches = new();
-            foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
+            foreach (var tournament in _dataContext.TournamentDataFiles.Select(df => df.Tournament))
             {
                 if (tournament?.MatchLog != null)
                 {
@@ -533,7 +533,7 @@ namespace FlawsFightNight.Managers
                     //Console.WriteLine($"Failed to create DM channel with user {user.Username}.");
                     return;
                 }
-                var message = _embedManager.NormalRoundRobinMatchScheduleNotification(tournament as NormalRoundRobinTournament, matches, user.Username, discordId, teamName);
+                var message = _embedFactory.NormalRoundRobinMatchScheduleNotification(tournament as NormalRoundRobinTournament, matches, user.Username, discordId, teamName);
                 await dmChannel.SendMessageAsync(embed: message);
             }
             catch (Exception ex)
@@ -570,7 +570,7 @@ namespace FlawsFightNight.Managers
                     //Console.WriteLine($"Failed to create DM channel with user {user.Username}.");
                     return;
                 }
-                var message = _embedManager.OpenRoundRobinMatchScheduleNotification(tournament, matches, user.Username, discordId, teamName);
+                var message = _embedFactory.OpenRoundRobinMatchScheduleNotification(tournament, matches, user.Username, discordId, teamName);
                 await dmChannel.SendMessageAsync(embed: message);
             }
             catch (Exception ex)
@@ -596,7 +596,7 @@ namespace FlawsFightNight.Managers
                     {
                         continue;
                     }
-                    var message = _embedManager.SendLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, true);
+                    var message = _embedFactory.SendLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, true);
                     await dmChannel.SendMessageAsync(embed: message);
                 }
                 foreach (var member in challengedTeam.Members)
@@ -611,7 +611,7 @@ namespace FlawsFightNight.Managers
                     {
                         continue;
                     }
-                    var message = _embedManager.SendLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, false);
+                    var message = _embedFactory.SendLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, false);
                     await dmChannel.SendMessageAsync(embed: message);
                 }
             }
@@ -637,7 +637,7 @@ namespace FlawsFightNight.Managers
                     {
                         continue;
                     }
-                    var message = _embedManager.CancelLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, true);
+                    var message = _embedFactory.CancelLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, true);
                     await dmChannel.SendMessageAsync(embed: message);
                 }
                 foreach (var member in challengedTeam.Members)
@@ -652,7 +652,7 @@ namespace FlawsFightNight.Managers
                     {
                         continue;
                     }
-                    var message = _embedManager.CancelLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, false);
+                    var message = _embedFactory.CancelLadderChallengeMatchNotificationResolver(tournament, challengerTeam, challengedTeam, false);
                     await dmChannel.SendMessageAsync(embed: message);
                 }
             }
@@ -664,7 +664,7 @@ namespace FlawsFightNight.Managers
 
         public string GetTeamNameFromDiscordId(ulong discordId, string tournamentId)
         {
-            foreach (var tournament in _dataManager.TournamentDataFiles.Select(df => df.Tournament))
+            foreach (var tournament in _dataContext.TournamentDataFiles.Select(df => df.Tournament))
             {
                 foreach (var team in tournament.Teams)
                 {

@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Threading.Tasks;
 
@@ -12,7 +12,7 @@ namespace FlawsFightNight.Bot.PreconditionAttributes
         public override async Task<PreconditionResult> CheckRequirementsAsync(IInteractionContext context, ICommandInfo commandInfo, IServiceProvider services)
         {
             // Resolve MemberManager from DI
-            var memberManager = services.GetService(typeof(MemberManager)) as MemberManager;
+            var memberManager = services.GetService(typeof(MemberService)) as MemberService;
             if (memberManager == null)
                 return PreconditionResult.FromError("MemberManager is not available in the service provider.");
 
@@ -23,7 +23,7 @@ namespace FlawsFightNight.Bot.PreconditionAttributes
                 return PreconditionResult.FromSuccess();
 
             // Create profile for invoking user
-            var gitBackupManager = services.GetService(typeof(GitBackupManager)) as GitBackupManager;
+            var gitBackupManager = services.GetService(typeof(GitBackupService)) as GitBackupService;
             if (gitBackupManager == null) 
                 return PreconditionResult.FromError("GitBackupManager is not available in the service provider.");
             string displayName = (context.User as SocketGuildUser)?.DisplayName ?? context.User.Username;

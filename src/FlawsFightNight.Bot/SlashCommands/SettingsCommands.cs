@@ -4,7 +4,6 @@ using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Components;
 using FlawsFightNight.Bot.PreconditionAttributes;
-using FlawsFightNight.CommandsLogic.SetCommands;
 using FlawsFightNight.CommandsLogic.SettingsCommands;
 using System;
 using System.Collections.Generic;
