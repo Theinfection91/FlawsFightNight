@@ -131,6 +131,11 @@ namespace FlawsFightNight.Managers
             return _dataManager.GetMemberProfile(discordId);
         }
 
+        public List<MemberProfile> GetAllMemberProfiles()
+        {
+            return _dataManager.MemberProfileFiles.Select(file => file.MemberProfile).ToList();
+        }
+
         #region Tournament Specific Stats
         public void IncrementMembersTournamentsPlayed(List<Member> members)
         {
@@ -172,8 +177,8 @@ namespace FlawsFightNight.Managers
         {
             if (allTeams == null || allTeams.Count == 0) return; // Can happen for Ladder tournaments
 
-            var topTeams = allTeams.Where(t => t != null).Take(3).ToList();
-            for (int place = 0; place < topTeams.Count; place++)
+            var topTeams = allTeams.Where(t => t != null).Take(3)?.ToList();
+            for (int place = 0; place < topTeams?.Count; place++)
             {
                 var team = topTeams[place];
                 switch (place)
@@ -191,7 +196,6 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        // TODO Still need this added to logic
         public void AwardFirstPlaceTournamentWinForMembers(Team championTeam)
         {
             foreach (var member in championTeam.Members)
@@ -205,7 +209,6 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        // TODO Still need this added to logic
         public void AwardSecondPlaceTournamentWinForMembers(Team runnerUpTeam)
         {
             foreach (var member in runnerUpTeam.Members)
@@ -218,7 +221,6 @@ namespace FlawsFightNight.Managers
             }
         }
 
-        // TODO Still need this added to logic
         public void AwardThirdPlaceTournamentWinForMembers(Team thirdPlaceTeam)
         {
             foreach (var member in thirdPlaceTeam.Members)

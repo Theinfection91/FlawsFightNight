@@ -35,14 +35,15 @@ namespace FlawsFightNight.Managers
 
         // Game Mode weighters for objective-specific score adjustments (CTF/BR/TAM)
         private readonly Dictionary<UT2004GameMode, IUTGameModeWeight> _weighters;
+        private readonly SeamlessRatingsMapper _ratingsMapper;
 
-        public UTStatsDBEloRatingService(bool rankBots = false, int minRankTime = 60, int minRankMatches = 5)
+        public UTStatsDBEloRatingService(SeamlessRatingsMapper ratingsMapper, bool rankBots = false, int minRankTime = 60, int minRankMatches = 5)
         {
+            _ratingsMapper = ratingsMapper;
             RankBots = rankBots;
             MinRankTime = minRankTime;
             MinRankMatches = minRankMatches;
 
-            // Defaults - replace or extend by injecting your own IGameModeScoreWeighter if desired
             _weighters = new Dictionary<UT2004GameMode, IUTGameModeWeight>
             {
                 [UT2004GameMode.iCTF] = new CTFScoreWeighter(),
@@ -90,6 +91,9 @@ namespace FlawsFightNight.Managers
         /// </summary>
         public void UpdateRatingsForMatch(UT2004StatLog match, Dictionary<string, UT2004PlayerProfile> profiles)
         {
+            // Local shorthand — resolves aliased GUIDs to their primary before any profile lookup
+            string Res(string g) => _ratingsMapper.Resolve(g);
+
             if (match == null) return;
 
             if (match.GameMode != UT2004GameMode.iCTF &&
@@ -120,16 +124,16 @@ namespace FlawsFightNight.Managers
                 // For each opposing pair across teams
                 foreach (var p in team0)
                 {
-                    if (string.IsNullOrEmpty(p.Guid) || !profiles.ContainsKey(p.Guid)) continue;
+                    if (string.IsNullOrEmpty(p.Guid) || !profiles.ContainsKey(Res(p.Guid))) continue;
                     foreach (var q in team1)
                     {
-                        if (string.IsNullOrEmpty(q.Guid) || !profiles.ContainsKey(q.Guid)) continue;
+                        if (string.IsNullOrEmpty(q.Guid) || !profiles.ContainsKey(Res(q.Guid))) continue;
 
                         // Basic young/short playtime gating mirroring PHP checks
                         if ((p.TotalTimeSeconds + q.TotalTimeSeconds) <= 20) // both must have > 10 each in original, use combined conservative check
                             continue;
 
-                        // Get pairwise raw kill counts from matrix
+                        // Get pairwise raw kill counts from matrix (raw GUIDs)
                         int score_pq = 0;
                         if (match.KillMatch.TryGetValue(p.Guid, out var innerP) && innerP.TryGetValue(q.Guid, out var v1))
                             score_pq = v1;
@@ -224,9 +228,9 @@ namespace FlawsFightNight.Managers
                         adjustedScoreP = Math.Max(0.0, adjustedScoreP);
                         adjustedScoreQ = Math.Max(0.0, adjustedScoreQ);
 
-                        // Get current ranks
-                        double rankP = GetCurrentEloRating(profiles[p.Guid], match.GameMode);
-                        double rankQ = GetCurrentEloRating(profiles[q.Guid], match.GameMode);
+                        // Get current ranks using resolved (primary) GUIDs
+                        double rankP = GetCurrentEloRating(profiles[Res(p.Guid)], match.GameMode);
+                        double rankQ = GetCurrentEloRating(profiles[Res(q.Guid)], match.GameMode);
 
                         // Compute rank change for this pair (no team multiplier here; UTStatsDB used KFactor inside and *1 pairwise)
                         double rc = RankCalc(rankP, rankQ, adjustedScoreP, adjustedScoreQ);
@@ -244,18 +248,18 @@ namespace FlawsFightNight.Managers
                         }
 
                         // Apply gating/unbalanced checks same as original:
-                        // For p
-                        EnsurePlayerPending(p.Guid);
-                        EnsurePlayerPending(q.Guid);
+                        // Use resolved GUIDs for pendingChanges bookkeeping
+                        EnsurePlayerPending(Res(p.Guid));
+                        EnsurePlayerPending(Res(q.Guid));
                         if (rc > 0.0 || adjustedScoreQ > 0.0)
                         {
                             if (rc < 0.0 || rankP < rankQ + 250.0 || rankP < rankQ * 8.0)
-                                pendingChanges[p.Guid] += rc;
+                                pendingChanges[Res(p.Guid)] += rc;
                         }
                         if (rc < 0.0 || adjustedScoreP > 0.0)
                         {
                             if (rc > 0.0 || rankQ < rankP + 250.0 || rankQ < rankP * 8.0)
-                                pendingChanges[q.Guid] -= rc;
+                                pendingChanges[Res(q.Guid)] -= rc;
                         }
                     }
                 }
@@ -263,7 +267,7 @@ namespace FlawsFightNight.Managers
                 // After all pairs processed, apply accumulated changes with conservative caps & floor at 0
                 foreach (var kv in pendingChanges)
                 {
-                    var guid = kv.Key;
+                    var guid = kv.Key; // already resolved key
                     var totalChange = kv.Value;
 
                     if (!profiles.TryGetValue(guid, out var profile)) continue;
@@ -311,11 +315,11 @@ namespace FlawsFightNight.Managers
 
             // Fallback: team-average approach (existing conservative behavior)
             double avgRank0 = team0
-                .Select(p => profiles.TryGetValue(p.Guid, out var pr) ? GetCurrentEloRating(pr, match.GameMode) : (double?)null)
+                .Select(p => profiles.TryGetValue(Res(p.Guid), out var pr) ? GetCurrentEloRating(pr, match.GameMode) : (double?)null)
                 .Where(v => v.HasValue).Select(v => v.Value).DefaultIfEmpty(0.0).Average();
 
             double avgRank1 = team1
-                .Select(p => profiles.TryGetValue(p.Guid, out var pr) ? GetCurrentEloRating(pr, match.GameMode) : (double?)null)
+                .Select(p => profiles.TryGetValue(Res(p.Guid), out var pr) ? GetCurrentEloRating(pr, match.GameMode) : (double?)null)
                 .Where(v => v.HasValue).Select(v => v.Value).DefaultIfEmpty(0.0).Average();
 
             // Compute raw averages first (used to detect trivial matches)
@@ -333,25 +337,25 @@ namespace FlawsFightNight.Managers
             // For each player, skip trivial matches where opponent avg <= 1 AND player score <= 1
             foreach (var p in team0)
             {
-                if (!profiles.ContainsKey(p.Guid)) continue;
+                if (!profiles.ContainsKey(Res(p.Guid))) continue;
 
                 // Skip trivial/non-event matches (conservative); prevents RankCalc explosion on degenerate logs
                 if (rawAvgScore1 <= 5.0 && p.Score <= 5.0)
                     continue;
 
-                ProcessPlayerRankChange(p, profiles[p.Guid], match.GameMode,
+                ProcessPlayerRankChange(p, profiles[Res(p.Guid)], match.GameMode,
                     opponentAvgRank: avgRank1, opponentAvgScore: avgScore1, avgMatchTimeSeconds: avgTimeSeconds, matchDate: match.MatchDate);
             }
 
             foreach (var p in team1)
             {
-                if (!profiles.ContainsKey(p.Guid)) continue;
+                if (!profiles.ContainsKey(Res(p.Guid))) continue;
 
                 // Skip trivial/non-event matches (conservative); prevents RankCalc explosion on degenerate logs
                 if (rawAvgScore0 <= 5.0 && p.Score <= 5.0)
                     continue;
 
-                ProcessPlayerRankChange(p, profiles[p.Guid], match.GameMode,
+                ProcessPlayerRankChange(p, profiles[Res(p.Guid)], match.GameMode,
                     opponentAvgRank: avgRank0, opponentAvgScore: avgScore0, avgMatchTimeSeconds: avgTimeSeconds, matchDate: match.MatchDate);
             }
         }

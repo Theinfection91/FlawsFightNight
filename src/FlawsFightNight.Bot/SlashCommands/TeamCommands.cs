@@ -15,7 +15,7 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("team", "Commands related to teams like creating, removal, etc.")]
     public class TeamCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        private AutocompleteCache _autocompleteCache;
+        private readonly AutocompleteCache _autocompleteCache;
         private RegisterTeamLogic _registerTeamLogic;
         private SetTeamRankLogic _setTeamRankLogic;
 
@@ -84,7 +84,7 @@ namespace FlawsFightNight.Bot.SlashCommands
 
                 var result = await _registerTeamLogic.RegisterTeamProcess(name, tournamentId, members);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
 
             }
             catch (Exception ex)
@@ -120,7 +120,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = await _setTeamRankLogic.SetTeamRankProcess(teamName, rank);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
             }
             catch (Exception ex)
             {
@@ -132,7 +132,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("add", "Commands related to addings things to a team.")]
         public class TeamAddCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private AutocompleteCache _autocompleteCache;
+            private readonly AutocompleteCache _autocompleteCache;
             private AddTeamLossLogic _addTeamLossLogic;
             private AddTeamWinLogic _addTeamWinLogic;
             private AddTeamMemberLogic _addTeamMemberLogic;
@@ -198,7 +198,7 @@ namespace FlawsFightNight.Bot.SlashCommands
 
                     var result = await _addTeamMemberLogic.AddTeamMemberProcess(teamName, members);
                     await FollowupAsync(embed: result);
-                    _autocompleteCache.UpdateCache();
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
@@ -218,7 +218,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await DeferAsync();
                     var result = await _addTeamWinLogic.AddTeamWinProcess(teamName, number_of_wins);
                     await FollowupAsync(embed: result);
-                    _autocompleteCache.UpdateCache();
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
@@ -238,7 +238,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await DeferAsync();
                     var result = await _addTeamLossLogic.AddLossProcess(teamName, number_of_losses);
                     await FollowupAsync(embed: result);
-                    _autocompleteCache.UpdateCache();
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
@@ -251,7 +251,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("remove", "Commands related to removing things to a team.")]
         public class TeamRemoveCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private AutocompleteCache _autocompleteCache;
+            private readonly AutocompleteCache _autocompleteCache;
             private RemoveTeamLossLogic _removeTeamLossLogic;
             private RemoveTeamWinLogic _removeTeamWinLogic;
             private RemoveTeamMemberLogic _removeTeamMemberLogic;
@@ -317,7 +317,7 @@ namespace FlawsFightNight.Bot.SlashCommands
 
                     var result = await _removeTeamMemberLogic.RemoveTeamMemberProcess(teamName, members);
                     await FollowupAsync(embed: result);
-                    _autocompleteCache.UpdateCache();
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
@@ -337,7 +337,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await DeferAsync();
                     var result = await _removeTeamWinLogic.RemoveWinProcess(teamName, number_of_wins);
                     await FollowupAsync(embed: result);
-                    _autocompleteCache.UpdateCache();
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
@@ -357,7 +357,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await DeferAsync();
                     var result = await _removeTeamLossLogic.RemoveLossProcess(teamName, number_of_losses);
                     await FollowupAsync(embed: result);
-                    _autocompleteCache.UpdateCache();
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {

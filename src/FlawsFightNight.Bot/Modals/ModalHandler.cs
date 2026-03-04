@@ -64,7 +64,7 @@ namespace FlawsFightNight.Bot.Modals
 
                 var result = await _deleteTeamLogic.DeleteTeamProcess(modal.TeamNameOne);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
             }
             catch (Exception ex)
             {
@@ -98,7 +98,7 @@ namespace FlawsFightNight.Bot.Modals
 
                 var result = await _deleteTournamentLogic.DeleteTournamentProcess(modal.TournamentIdOne);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
             }
             catch (Exception ex)
             {
@@ -130,7 +130,7 @@ namespace FlawsFightNight.Bot.Modals
 
                 var result = await _endTournamentLogic.EndTournamentProcess(modal.TournamentIdOne);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
             }
             catch (Exception ex)
             {
@@ -162,7 +162,7 @@ namespace FlawsFightNight.Bot.Modals
 
                 var result = await _startTournamentLogic.StartTournamentProcess(modal.TournamentIdOne);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
             }
             catch (Exception ex)
             {

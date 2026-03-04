@@ -167,7 +167,6 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<GitBackupManager>();
                     services.AddSingleton<MatchManager>();
                     services.AddSingleton<MemberManager>();
-                    services.AddSingleton<OpenSkillRatingService>();
                     services.AddSingleton<UT2004StatsManager>();
                     services.AddSingleton<TeamManager>();
                     services.AddSingleton<TournamentManager>();
@@ -187,15 +186,21 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<MemberProfileHandler>();
                     services.AddSingleton<UT2004PlayerProfileHandler>();
 
-                    // Parsers
+                    // UT2004 Helpers
                     services.AddSingleton<UT2004LogParser>();
+                    services.AddSingleton<OpenSkillRatingService>();
+                    services.AddSingleton<UTStatsDBEloRatingService>();
+                    services.AddSingleton<SeamlessRatingsMapper>();
                 })
                 .Build();
 
+            // Initialize data and stats managers before starting hosted services to ensure they have the data they need when they start
             using (var scope = host.Services.CreateScope())
             {
                 var dataManager = scope.ServiceProvider.GetRequiredService<DataManager>();
+                var ut2004StatsManager = scope.ServiceProvider.GetRequiredService<UT2004StatsManager>();
                 await dataManager.InitializeAsync();
+                await ut2004StatsManager.InitializeAsync();
             }
 
             // Prep config

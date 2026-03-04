@@ -17,7 +17,7 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("tournament", "Commands related to tournaments like creating, removal, etc.")]
     public class TournamentCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        private AutocompleteCache _autocompleteCache;
+        private readonly AutocompleteCache _autocompleteCache;
         private CreateTournamentLogic _createTournamentLogic;
         private LockInRoundLogic _lockInRoundLogic;
         private LockTeamsLogic _lockTeamsLogic;
@@ -53,7 +53,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = await _createTournamentLogic.CreateTournamentProcess(Context, name, tournamentType, teamSize, description);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
             }
             catch (Exception ex)
             {
@@ -88,7 +88,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = await _lockTeamsLogic.LockTeamsProcess(tournamentId);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
             }
             catch (Exception ex)
             {
@@ -108,7 +108,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = await _unlockTeamsLogic.UnlockTeamsProcess(tournamentId);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
             }
             catch (Exception ex)
             {
@@ -145,7 +145,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = await _setupTournamentLogic.SetupRoundRobinTournamentProcess(tournamentId, tieBreakerType, roundRobinType);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
 
             }
             catch (Exception ex)
@@ -181,7 +181,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = await _lockInRoundLogic.LockInRoundProcess(tournamentId);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
             }
             catch (Exception ex)
             {
@@ -201,7 +201,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = await _unlockRoundLogic.UnlockRoundProcess(tournamentId);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
             }
             catch (Exception ex)
             {
@@ -221,7 +221,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync();
                 var result = await _nextRoundLogic.NextRoundProcess(tournamentId);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
             }
             catch (Exception ex)
             {
