@@ -10,13 +10,13 @@ namespace FlawsFightNight.Bot.Components
 {
     public class ComponentHandler : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly EmbedFactory _embedManager;
+        private readonly EmbedFactory _embedFactory;
         private readonly AdminConfigurationService _configManager;
         private readonly MemberService _memberManager;
 
-        public ComponentHandler(EmbedFactory embedManager, AdminConfigurationService configManager, MemberService memberManager)
+        public ComponentHandler(EmbedFactory embedFactory, AdminConfigurationService configManager, MemberService memberManager)
         {
-            _embedManager = embedManager;
+            _embedFactory = embedFactory;
             _configManager = configManager;
             _memberManager = memberManager;
         }
@@ -29,13 +29,13 @@ namespace FlawsFightNight.Bot.Components
         {
             if (!IsAuthorizedUser(invokingUserId))
             {
-                await RespondAsync(embed: _embedManager.ErrorEmbed("This confirmation is not for you."), ephemeral: true);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed("This confirmation is not for you."), ephemeral: true);
                 return;
             }
 
             try
             {
-                var statusEmbed = _embedManager.GenericEmbed(
+                var statusEmbed = _embedFactory.GenericEmbed(
                     "🚀 FTP Setup Initiated",
                     "Running FTP setup process...\n\n**Go back to the console to continue.**\n\nIf chosen by mistake, you can cancel the process in console or by using `/settings ftp_stats_service cancel_setup`\n\nTo remove existing credentials use `/settings ftp_stats_service remove_credentials`",
                     Color.Blue);
@@ -63,7 +63,7 @@ namespace FlawsFightNight.Bot.Components
             catch (Exception ex)
             {
                 Console.WriteLine($"[Component Error - FTP Confirm] {ex}");
-                await RespondAsync(embed: _embedManager.ErrorEmbed($"An error occurred while running FTP setup: {ex.Message}"), ephemeral: true);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred while running FTP setup: {ex.Message}"), ephemeral: true);
             }
         }
 
@@ -72,7 +72,7 @@ namespace FlawsFightNight.Bot.Components
         {
             if (!IsAuthorizedUser(invokingUserId))
             {
-                await RespondAsync(embed: _embedManager.ErrorEmbed("This cancellation is not for you."), ephemeral: true);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed("This cancellation is not for you."), ephemeral: true);
                 return;
             }
 
@@ -88,7 +88,7 @@ namespace FlawsFightNight.Bot.Components
             catch (Exception ex)
             {
                 Console.WriteLine($"[Component Error - FTP Cancel] {ex}");
-                await RespondAsync(embed: _embedManager.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }
         #endregion
@@ -99,7 +99,7 @@ namespace FlawsFightNight.Bot.Components
         {
             if (!IsAuthorizedUser(invokingUserId))
             {
-                await RespondAsync(embed: _embedManager.ErrorEmbed("This cancellation is not for you."), ephemeral: true);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed("This cancellation is not for you."), ephemeral: true);
                 return;
             }
 
@@ -128,7 +128,7 @@ namespace FlawsFightNight.Bot.Components
             catch (Exception ex)
             {
                 Console.WriteLine($"[Component Error - FTP Cancel] {ex}");
-                await RespondAsync(embed: _embedManager.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }
 
@@ -137,7 +137,7 @@ namespace FlawsFightNight.Bot.Components
         {
             if (!IsAuthorizedUser(invokingUserId))
             {
-                await RespondAsync(embed: _embedManager.ErrorEmbed("This cancellation is not for you."), ephemeral: true);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed("This cancellation is not for you."), ephemeral: true);
                 return;
             }
 
@@ -153,7 +153,7 @@ namespace FlawsFightNight.Bot.Components
             catch (Exception ex)
             {
                 Console.WriteLine($"[Component Error - FTP Cancel] {ex}");
-                await RespondAsync(embed: _embedManager.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }
         #endregion
@@ -164,7 +164,7 @@ namespace FlawsFightNight.Bot.Components
         {
             if (!IsAuthorizedUser(invokingUserId))
             {
-                await RespondAsync(embed: _embedManager.ErrorEmbed("This menu is not for you."), ephemeral: true);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed("This menu is not for you."), ephemeral: true);
                 return;
             }
 
@@ -173,7 +173,7 @@ namespace FlawsFightNight.Bot.Components
                 var memberProfile = _memberManager.GetMemberProfile(invokingUserId);
                 if (memberProfile == null || memberProfile.RegisteredUT2004GUIDs.Count == 0)
                 {
-                    await RespondAsync(embed: _embedManager.ErrorEmbed("UT2004 Profile", "No UT2004 GUID registered to your account."), ephemeral: true);
+                    await RespondAsync(embed: _embedFactory.ErrorEmbed("UT2004 Profile", "No UT2004 GUID registered to your account."), ephemeral: true);
                     return;
                 }
 
@@ -181,12 +181,12 @@ namespace FlawsFightNight.Bot.Components
                 var utProfile = _memberManager.GetUT2004PlayerProfile(guid);
                 if (utProfile == null)
                 {
-                    await RespondAsync(embed: _embedManager.ErrorEmbed("UT2004 Profile", $"No stats found for GUID `{guid}`."), ephemeral: true);
+                    await RespondAsync(embed: _embedFactory.ErrorEmbed("UT2004 Profile", $"No stats found for GUID `{guid}`."), ephemeral: true);
                     return;
                 }
 
                 var selectedSection = selectedValues[0];
-                var embed = _embedManager.UT2004ProfileSectionEmbed(utProfile, selectedSection);
+                var embed = _embedFactory.UT2004ProfileSectionEmbed(utProfile, selectedSection);
                 var components = ComponentFactory.CreateUT2004ProfileSelectMenu(invokingUserId);
 
                 await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
@@ -198,7 +198,7 @@ namespace FlawsFightNight.Bot.Components
             catch (Exception ex)
             {
                 Console.WriteLine($"[Component Error - UT2004 Profile Select] {ex}");
-                await RespondAsync(embed: _embedManager.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }
         #endregion

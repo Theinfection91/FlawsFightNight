@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
@@ -9,56 +10,56 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.TournamentCommands
+namespace FlawsFightNight.Commands.TournamentCommands
 {
-    public class NextRoundLogic : Logic
+    public class NextRoundLogic : CommandHandler
     {
-        private EmbedFactory _embedManager;
-        private GitBackupService _gitBackupManager;
-        private TournamentService _tournamentManager;
-        public NextRoundLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TournamentService tournamentManager) : base("Next Round")
+        private EmbedFactory _embedFactory;
+        private GitBackupService _gitBackupService;
+        private TournamentService _tournamentService;
+        public NextRoundLogic(EmbedFactory embedFactory, GitBackupService gitBackupService, TournamentService tournamentService) : base("Next Round")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
-            _tournamentManager = tournamentManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
+            _tournamentService = tournamentService;
         }
 
         public async Task<Embed> NextRoundProcess(string tournamentId)
         {
             // Check if the tournament exists, grab it if so
-            if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
+            if (!_tournamentService.IsTournamentIdInDatabase(tournamentId))
             {
-                return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentService.GetTournamentById(tournamentId);
 
             if (!tournament.IsRunning)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
+                return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
             }
 
             // Check if the tournament is IRoundBased
             if (tournament is not IRoundBased roundBasedTournament)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a round-based tournament and does not support round mechanics.");
+                return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a round-based tournament and does not support round mechanics.");
             }
             else
             {
                 if (!roundBasedTournament.CanAdvanceRound())
                 {
-                    return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot advance to the next round at this time. Ensure all matches are completed and there is another round to advance to.");
+                    return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot advance to the next round at this time. Ensure all matches are completed and there is another round to advance to.");
                 }
 
                 // Advance to next round
                 roundBasedTournament.AdvanceRound();
 
                 // Save and reload the tournament database
-                await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+                await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
 
                 // Backup to git repo
-                _gitBackupManager.EnqueueBackup();
+                _gitBackupService.EnqueueBackup();
 
-                return _embedManager.NextRoundSuccess(tournament, roundBasedTournament.CurrentRound);
+                return _embedFactory.NextRoundSuccess(tournament, roundBasedTournament.CurrentRound);
             }
         }
     }

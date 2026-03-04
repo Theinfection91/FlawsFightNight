@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
@@ -11,30 +12,30 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.TeamCommands
+namespace FlawsFightNight.Commands.TeamCommands
 {
-    public class RegisterTeamLogic : Logic
+    public class RegisterTeamLogic : CommandHandler
     {
         private readonly AdminConfigurationService _configManager;
-        private readonly EmbedFactory _embedManager;
-        private readonly GitBackupService _gitBackupManager;
+        private readonly EmbedFactory _embedFactory;
+        private readonly GitBackupService _gitBackupService;
         private readonly MemberService _memberManager;
-        private readonly TournamentService _tournamentManager;
-        private readonly TeamService _teamManager;
+        private readonly TournamentService _tournamentService;
+        private readonly TeamService _teamService;
 
         public RegisterTeamLogic(AdminConfigurationService configManager,
-                                 EmbedFactory embedManager,
-                                 GitBackupService gitBackupManager,
+                                 EmbedFactory embedFactory,
+                                 GitBackupService gitBackupService,
                                  MemberService memberManager,
-                                 TournamentService tournamentManager,
-                                 TeamService teamManager) : base("Register Team")
+                                 TournamentService tournamentService,
+                                 TeamService teamService) : base("Register Team")
         {
             _configManager = configManager;
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
             _memberManager = memberManager;
-            _tournamentManager = tournamentManager;
-            _teamManager = teamManager;
+            _tournamentService = tournamentService;
+            _teamService = teamService;
         }
 
         public async Task<Embed> RegisterTeamProcess(string teamName, string tournamentId, List<IUser> members)
@@ -44,32 +45,32 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Cannot try to report Bye as a team
             if (teamName.Equals("Bye", StringComparison.OrdinalIgnoreCase))
             {
-                return _embedManager.ErrorEmbed(Name, $"Teams are not allowed to have any variation of the singular name 'Bye' for data purposes. \n\nUser input: {teamName}");
+                return _embedFactory.ErrorEmbed(Name, $"Teams are not allowed to have any variation of the singular name 'Bye' for data purposes. \n\nUser input: {teamName}");
             }
 
             // Check if the tournament exists, grab it if so
-            if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
+            if (!_tournamentService.IsTournamentIdInDatabase(tournamentId))
             {
-                return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentService.GetTournamentById(tournamentId);
 
             // Can register new teams if Ladder Tournament is running, but cannot register them to Round Robin Tournament or SE/DE Bracket once they have started
             if (!tournament.CanAcceptNewTeams())
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time. Check if teams are locked if applicable.");
+                return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' can not accept new teams at this time. Check if teams are locked if applicable.");
             }
 
             // Check if the team name is unique within the tournament
-            if (!_teamManager.IsTeamNameUnique(teamName))
+            if (!_teamService.IsTeamNameUnique(teamName))
             {
-                return _embedManager.ErrorEmbed(Name, $"The team name '{teamName}' is already taken in this tournament or another. Team names must be unique across the entire bot. Please choose a different name.");
+                return _embedFactory.ErrorEmbed(Name, $"The team name '{teamName}' is already taken in this tournament or another. Team names must be unique across the entire bot. Please choose a different name.");
             }
 
             // Check if member count is valid based on the tournament's team size
             if (!_memberManager.IsMemberCountCorrect(members.Count, tournament.TeamSize))
             {
-                return _embedManager.ErrorEmbed(Name, $"The number of members ({members.Count}) does not match the required team size ({tournament.TeamSize}) for the tournament '{tournament.Name}'.");
+                return _embedFactory.ErrorEmbed(Name, $"The number of members ({members.Count}) does not match the required team size ({tournament.TeamSize}) for the tournament '{tournament.Name}'.");
             }
 
             // Convert IUser list to Member objects list
@@ -81,12 +82,12 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             {
                 if (_memberManager.IsMemberRegisteredInTournament(member.DiscordId, tournament) && !_configManager.IsDiscordIdInDebugAdminList(member.DiscordId))
                 {
-                    return _embedManager.ErrorEmbed(Name, $"Member '{member.DisplayName}' (ID: {member.DiscordId}) is already registered in the tournament '{tournament.Name}'. Each member can only be part of one team per tournament.");
+                    return _embedFactory.ErrorEmbed(Name, $"Member '{member.DisplayName}' (ID: {member.DiscordId}) is already registered in the tournament '{tournament.Name}'. Each member can only be part of one team per tournament.");
                 }
             }
 
             // Create Team object
-            Team newTeam = _teamManager.CreateTeam(teamName, convertedMembersList, tournament.Teams.Count + 1);
+            Team newTeam = _teamService.CreateTeam(teamName, convertedMembersList, tournament.Teams.Count + 1);
 
             // Add new team to the tournament
             tournament.AddTeam(newTeam);
@@ -108,11 +109,11 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
                 // For now, only enable locking if tournament is running and has at least 3 teams
                 if (!tournament.IsRunning && tournament.Teams.Count >= 3)
                 {
-                    _tournamentManager.SetCanTeamsBeLocked(lockableTournament, true);
+                    _tournamentService.SetCanTeamsBeLocked(lockableTournament, true);
                 }
                 else
                 {
-                    _tournamentManager.SetCanTeamsBeLocked(lockableTournament, false);
+                    _tournamentService.SetCanTeamsBeLocked(lockableTournament, false);
                 }
 
                 // Check if tournament is tie breaker rank system to adjust ranks
@@ -137,13 +138,13 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             }
 
             // Save and reload the databases
-            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
             await _memberManager.SaveAndReloadMemberProfiles();
 
             // Backup to git repo
-            _gitBackupManager.EnqueueBackup();
+            _gitBackupService.EnqueueBackup();
 
-            return _embedManager.TeamRegistrationSuccess(newTeam, tournament);
+            return _embedFactory.TeamRegistrationSuccess(newTeam, tournament);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
@@ -6,28 +7,28 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.TournamentCommands
+namespace FlawsFightNight.Commands.TournamentCommands
 {
-    public class ShowAllTournamentsLogic : Logic
+    public class ShowAllTournamentsLogic : CommandHandler
     {
-        private EmbedFactory _embedManager;
-        private TournamentService _tournamentManager;
+        private EmbedFactory _embedFactory;
+        private TournamentService _tournamentService;
 
-        public ShowAllTournamentsLogic(EmbedFactory embedManager, TournamentService tournamentManager) : base("Show All Tournaments")
+        public ShowAllTournamentsLogic(EmbedFactory embedFactory, TournamentService tournamentService) : base("Show All Tournaments")
         {
-            _embedManager = embedManager;
-            _tournamentManager = tournamentManager;
+            _embedFactory = embedFactory;
+            _tournamentService = tournamentService;
         }
 
         public Embed ShowAllTournamentsProcess()
         {
-            var tournaments = _tournamentManager.GetAllTournaments();
+            var tournaments = _tournamentService.GetAllTournaments();
             if (tournaments == null || !tournaments.Any())
             {
-                return _embedManager.ErrorEmbed(Name, "There are currently no tournaments created.");
+                return _embedFactory.ErrorEmbed(Name, "There are currently no tournaments created.");
             }
 
-            return _embedManager.ShowAllTournamentsSuccess(tournaments);
+            return _embedFactory.ShowAllTournamentsSuccess(tournaments);
         }
     }
 }

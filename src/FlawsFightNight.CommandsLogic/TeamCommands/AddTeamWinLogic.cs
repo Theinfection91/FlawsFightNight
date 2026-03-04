@@ -8,49 +8,49 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.TeamCommands
+namespace FlawsFightNight.Commands.TeamCommands
 {
-    public class AddTeamWinLogic : Logic
+    public class AddTeamWinLogic : CommandHandler
     {
-        private EmbedFactory _embedManager;
-        private GitBackupService _gitBackupManager;
-        private TeamService _teamManager;
-        private TournamentService _tournamentManager;
+        private EmbedFactory _embedFactory;
+        private GitBackupService _gitBackupService;
+        private TeamService _teamService;
+        private TournamentService _tournamentService;
 
-        public AddTeamWinLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TeamService teamManager, TournamentService tournamentManager) : base("Add Win")
+        public AddTeamWinLogic(EmbedFactory embedFactory, GitBackupService gitBackupService, TeamService teamService, TournamentService tournamentService) : base("Add Win")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
-            _teamManager = teamManager;
-            _tournamentManager = tournamentManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
+            _teamService = teamService;
+            _tournamentService = tournamentService;
         }
 
         public async Task<Embed> AddTeamWinProcess(string teamName, int numberOfWins)
         {
-            if (!_teamManager.DoesTeamExist(teamName))
+            if (!_teamService.DoesTeamExist(teamName))
             {
-                return _embedManager.ErrorEmbed(Name, $"No team found with the name: {teamName}\n\nPlease check the name and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"No team found with the name: {teamName}\n\nPlease check the name and try again.");
             }
             // Grab tournament from team name
-            var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
+            var tournament = _tournamentService.GetTournamentFromTeamName(teamName);
 
             // Check tournament type
             if (tournament is not NormalLadderTournament)
             {
                 // Only ladder tournaments can have wins added manually
-                return _embedManager.ErrorEmbed(Name, $"Wins can only be added manually to teams in Normal Ladder tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
+                return _embedFactory.ErrorEmbed(Name, $"Wins can only be added manually to teams in Normal Ladder tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
             }
 
             // Check if tournament is running
             if (!tournament.IsRunning)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Wins can only be added to teams in tournaments that are running.");
+                return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Wins can only be added to teams in tournaments that are running.");
             }
 
             // Validate number of wins
             if (numberOfWins < 1)
             {
-                return _embedManager.ErrorEmbed(Name, $"The number of wins to add must be at least 1. You provided: {numberOfWins}");
+                return _embedFactory.ErrorEmbed(Name, $"The number of wins to add must be at least 1. You provided: {numberOfWins}");
             }
 
             // Grab team
@@ -63,12 +63,12 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             team.LoseStreak = 0;
 
             // Save and reload the tournament database
-            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
-            _gitBackupManager.EnqueueBackup();
+            _gitBackupService.EnqueueBackup();
 
-            return _embedManager.AddTeamWinSuccess(team, tournament, numberOfWins);
+            return _embedFactory.AddTeamWinSuccess(team, tournament, numberOfWins);
         }
     }
 }

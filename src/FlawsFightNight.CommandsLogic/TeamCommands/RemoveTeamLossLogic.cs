@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Services;
@@ -8,49 +9,50 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.TeamCommands
+namespace FlawsFightNight.Commands.TeamCommands
 {
-    public class RemoveTeamLossLogic : Logic
+    public class RemoveTeamLossLogic : CommandHandler
     {
-        private EmbedFactory _embedManager;
-        private GitBackupService _gitBackupManager;
-        private TeamService _teamManager;
-        private TournamentService _tournamentManager;
-        public RemoveTeamLossLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TeamService teamManager, TournamentService tournamentManager) : base("Remove Loss")
+        private EmbedFactory _embedFactory;
+        private GitBackupService _gitBackupService;
+        private TeamService _teamService;
+        private TournamentService _tournamentService;
+
+        public RemoveTeamLossLogic(EmbedFactory embedFactory, GitBackupService gitBackupService, TeamService teamService, TournamentService tournamentService) : base("Remove Loss")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
-            _teamManager = teamManager;
-            _tournamentManager = tournamentManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
+            _teamService = teamService;
+            _tournamentService = tournamentService;
         }
 
         public async Task<Embed> RemoveLossProcess(string teamName, int numberOfLosses)
         {
-            if (!_teamManager.DoesTeamExist(teamName))
+            if (!_teamService.DoesTeamExist(teamName))
             {
-                return _embedManager.ErrorEmbed(Name, $"No team found with the name: {teamName}\n\nPlease check the name and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"No team found with the name: {teamName}\n\nPlease check the name and try again.");
             }
 
             // Grab tournament from team name
-            var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
+            var tournament = _tournamentService.GetTournamentFromTeamName(teamName);
 
             // Check tournament type
             if (tournament is not NormalLadderTournament)
             {
                 // Only ladder tournaments can have losses removed manually
-                return _embedManager.ErrorEmbed(Name, $"Losses can only be removed manually from teams in Ladder tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
+                return _embedFactory.ErrorEmbed(Name, $"Losses can only be removed manually from teams in Ladder tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
             }
 
             // Check if tournament is running
             if (!tournament.IsRunning)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Losses can only be removed from teams in tournaments that are running.");
+                return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Losses can only be removed from teams in tournaments that are running.");
             }
 
             // Validate number of losses
             if (numberOfLosses < 1)
             {
-                return _embedManager.ErrorEmbed(Name, $"The number of losses to remove must be at least 1. You provided: {numberOfLosses}");
+                return _embedFactory.ErrorEmbed(Name, $"The number of losses to remove must be at least 1. You provided: {numberOfLosses}");
             }
 
             // Grab team
@@ -59,7 +61,7 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Check if team has enough losses to remove
             if (team.Losses < numberOfLosses)
             {
-                return _embedManager.ErrorEmbed(Name, $"The team '{team.Name}' only has {team.Losses} losses. You cannot remove {numberOfLosses} losses.");
+                return _embedFactory.ErrorEmbed(Name, $"The team '{team.Name}' only has {team.Losses} losses. You cannot remove {numberOfLosses} losses.");
             }
 
             // Remove loss(es)
@@ -67,12 +69,12 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             team.LoseStreak = 0;
 
             // Save and reload the tournament database
-            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
-            _gitBackupManager.EnqueueBackup();
+            _gitBackupService.EnqueueBackup();
 
-            return _embedManager.RemoveTeamLossSuccess(team, tournament, numberOfLosses);
+            return _embedFactory.RemoveTeamLossSuccess(team, tournament, numberOfLosses);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
@@ -7,20 +8,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
+namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
 {
-    public class RemoveGuidLogic : Logic
+    public class RemoveGuidLogic : CommandHandler
     {
-        private readonly EmbedFactory _embedManager;
-        private readonly GitBackupService _gitBackupManager;
+        private readonly EmbedFactory _embedFactory;
+        private readonly GitBackupService _gitBackupService;
         private readonly MemberService _memberManager;
 
-        public RemoveGuidLogic(EmbedFactory embedManager,
-                               GitBackupService gitBackupManager,
+        public RemoveGuidLogic(EmbedFactory embedFactory,
+                               GitBackupService gitBackupService,
                                MemberService memberManager) : base("Remove UT2004 GUID")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
             _memberManager = memberManager;
         }
 
@@ -29,27 +30,27 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
             var memberProfile = _memberManager.GetMemberProfile(context.User.Id)!;
             if (memberProfile == null)
             {
-                return _embedManager.ErrorEmbed(Name, "An error occurred while retrieving your member profile. Please try again later.");
+                return _embedFactory.ErrorEmbed(Name, "An error occurred while retrieving your member profile. Please try again later.");
             }
 
             if (!memberProfile.RegisteredUT2004GUIDs.Contains(guid))
             {
                 var registeredGuids = memberProfile.RegisteredUT2004GUIDs.Count == 0 ? "You currently do not have any GUIDs registered to your profile." : $"You currently have the following GUIDs registered: {string.Join(", ", memberProfile.RegisteredUT2004GUIDs)}";
 
-                return _embedManager.ErrorEmbed(Name, $"The GUID `{guid}` is not registered to your profile. {registeredGuids}");
+                return _embedFactory.ErrorEmbed(Name, $"The GUID `{guid}` is not registered to your profile. {registeredGuids}");
             }
 
             if (memberProfile.RegisteredUT2004GUIDs.Count > 1)
             {
                 // If a user has more than one GUID an admin must remove GUIDs for them to avoid potential issues with SeamlessRatings
-                return _embedManager.ErrorEmbed(Name, $"You have multiple GUIDs registered to your profile. To avoid potential issues with SeamlessRatings, you must contact an administrator to remove GUIDs from your profile.");
+                return _embedFactory.ErrorEmbed(Name, $"You have multiple GUIDs registered to your profile. To avoid potential issues with SeamlessRatings, you must contact an administrator to remove GUIDs from your profile.");
             }
             memberProfile.RemoveUT2004GUID(guid);
 
             await _memberManager.SaveAndReloadMemberProfiles();
-            _gitBackupManager.EnqueueBackup();
+            _gitBackupService.EnqueueBackup();
 
-            return _embedManager.GenericEmbed(Name, $"The GUID `{guid}` has been successfully removed from your profile.", Color.DarkGreen);
+            return _embedFactory.GenericEmbed(Name, $"The GUID `{guid}` has been successfully removed from your profile.", Color.DarkGreen);
         }
     }
 }

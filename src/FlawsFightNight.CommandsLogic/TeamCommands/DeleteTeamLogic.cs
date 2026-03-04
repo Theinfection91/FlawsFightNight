@@ -9,42 +9,42 @@ using System.Threading.Tasks;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Interfaces;
 
-namespace FlawsFightNight.CommandsLogic.TeamCommands
+namespace FlawsFightNight.Commands.TeamCommands
 {
-    public class DeleteTeamLogic : Logic
+    public class DeleteTeamLogic : CommandHandler
     {
-        private EmbedFactory _embedManager;
-        private GitBackupService _gitBackupManager;
-        private MatchService _matchManager;
-        private TeamService _teamManager;
-        private TournamentService _tournamentManager;
+        private EmbedFactory _embedFactory;
+        private GitBackupService _gitBackupService;
+        private MatchService _matchService;
+        private TeamService _teamService;
+        private TournamentService _tournamentService;
 
-        public DeleteTeamLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, MatchService matchManager, TeamService teamManager, TournamentService tournamentManager) : base("Remove Team")
+        public DeleteTeamLogic(EmbedFactory embedFactory, GitBackupService gitBackupService, MatchService matchService, TeamService teamService, TournamentService tournamentService) : base("Remove Team")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
-            _matchManager = matchManager;
-            _teamManager = teamManager;
-            _tournamentManager = tournamentManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
+            _matchService = matchService;
+            _teamService = teamService;
+            _tournamentService = tournamentService;
         }
 
         public async Task<Embed> DeleteTeamProcess(string teamName)
         {
             // Grab tournament from team name
-            var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
+            var tournament = _tournamentService.GetTournamentFromTeamName(teamName);
 
             // Handle team locking tournament conditions (Round Robin and eventually Elimination)
             if (tournament is ITeamLocking teamLockingTournament)
             {
                 if (teamLockingTournament.IsTeamsLocked && !tournament.IsRunning)
                 {
-                    return _embedManager.ErrorEmbed(Name, "Teams have been locked for this tournament, team deletion is not allowed.");
+                    return _embedFactory.ErrorEmbed(Name, "Teams have been locked for this tournament, team deletion is not allowed.");
                 }
 
                 // Check if tournament is running, cant remove after starting only before locking
                 if (tournament.IsRunning)
                 {
-                    return _embedManager.ErrorEmbed(Name, $"Teams cannot be removed from a Round Robin tournament that is currently running. If a team can no longer participate then have their opponents report they have won with a score of 0 to 0.");
+                    return _embedFactory.ErrorEmbed(Name, $"Teams cannot be removed from a Round Robin tournament that is currently running. If a team can no longer participate then have their opponents report they have won with a score of 0 to 0.");
                 }
             }
 
@@ -80,12 +80,12 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             tournament.AdjustRanks();
 
             // Save and reload the tournament database
-            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
-            _gitBackupManager.EnqueueBackup();
+            _gitBackupService.EnqueueBackup();
 
-            return _embedManager.TeamDeleteSuccess(team, tournament);
+            return _embedFactory.TeamDeleteSuccess(team, tournament);
         }
     }
 }

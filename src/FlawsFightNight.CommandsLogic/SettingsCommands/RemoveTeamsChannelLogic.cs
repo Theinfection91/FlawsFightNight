@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
@@ -6,45 +7,45 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.SettingsCommands
+namespace FlawsFightNight.Commands.SettingsCommands
 {
-    public class RemoveTeamsChannelLogic : Logic
+    public class RemoveTeamsChannelLogic : CommandHandler
     {
-        private EmbedFactory _embedManager;
-        private GitBackupService _gitBackupManager;
-        private TournamentService _tournamentManager;
+        private EmbedFactory _embedFactory;
+        private GitBackupService _gitBackupService;
+        private TournamentService _tournamentService;
 
-        public RemoveTeamsChannelLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TournamentService tournamentManager) : base("Remove Teams Channel")
+        public RemoveTeamsChannelLogic(EmbedFactory embedFactory, GitBackupService gitBackupService, TournamentService tournamentService) : base("Remove Teams Channel")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
-            _tournamentManager = tournamentManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
+            _tournamentService = tournamentService;
         }
 
         public async Task<Embed> RemoveTeamsChannelProcess(string tournamentId)
         {
             // Check if the tournament exists, grab it if so
-            if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
+            if (!_tournamentService.IsTournamentIdInDatabase(tournamentId))
             {
-                return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentService.GetTournamentById(tournamentId);
             // Check if a teams channel is set
             if (tournament.TeamsChannelId == 0)
             {
-                return _embedManager.ErrorEmbed(Name, $"Tournament {tournament.Name} ({tournament.Id}) does not have a teams channel set.");
+                return _embedFactory.ErrorEmbed(Name, $"Tournament {tournament.Name} ({tournament.Id}) does not have a teams channel set.");
             }
             // Remove the teams channel
             tournament.TeamsChannelId = 0;
             tournament.TeamsMessageId = 0;
 
             // Save and reload the tournaments database
-            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
-            _gitBackupManager.EnqueueBackup();
+            _gitBackupService.EnqueueBackup();
 
-            return _embedManager.RemoveTeamsChannelSuccess(tournament);
+            return _embedFactory.RemoveTeamsChannelSuccess(tournament);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
@@ -6,39 +7,39 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.SettingsCommands
+namespace FlawsFightNight.Commands.SettingsCommands
 {
-    public class SetMatchesChannelLogic : Logic
+    public class SetMatchesChannelLogic : CommandHandler
     {
-        private EmbedFactory _embedManager;
-        private GitBackupService _gitBackupManager;
-        private TournamentService _tournamentManager;
+        private EmbedFactory _embedFactory;
+        private GitBackupService _gitBackupService;
+        private TournamentService _tournamentService;
 
-        public SetMatchesChannelLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TournamentService tournamentManager) : base("Set Matches Channel")
+        public SetMatchesChannelLogic(EmbedFactory embedFactory, GitBackupService gitBackupService, TournamentService tournamentService) : base("Set Matches Channel")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
-            _tournamentManager = tournamentManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
+            _tournamentService = tournamentService;
         }
 
         public async Task<Embed> SetMatchesChannelProcess(string tournamentId, IMessageChannel channel)
         {
             // Check if the tournament exists, grab it if so
-            if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
+            if (!_tournamentService.IsTournamentIdInDatabase(tournamentId))
             {
-                return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentService.GetTournamentById(tournamentId);
 
             tournament.MatchesChannelId = channel.Id;
 
             // Save and reload the tournaments database
-            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
-            _gitBackupManager.EnqueueBackup();
+            _gitBackupService.EnqueueBackup();
 
-            return _embedManager.SetMatchesChannelSuccess(channel, tournament);
+            return _embedFactory.SetMatchesChannelSuccess(channel, tournament);
         }
     }
 }

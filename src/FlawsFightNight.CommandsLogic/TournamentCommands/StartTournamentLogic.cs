@@ -9,33 +9,34 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.TournamentCommands
+namespace FlawsFightNight.Commands.TournamentCommands
 {
-    public class StartTournamentLogic : Logic
+    public class StartTournamentLogic : CommandHandler
     {
-        private readonly EmbedFactory _embedManager;
-        private readonly GitBackupService _gitBackupManager;
-        private readonly MatchService _matchManager;
+        private readonly EmbedFactory _embedFactory;
+        private readonly GitBackupService _gitBackupService;
+        private readonly MatchService _matchService;
         private readonly MemberService _memberManager;
-        private readonly TournamentService _tournamentManager;
-        public StartTournamentLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, MatchService matchManager, MemberService memberManager, TournamentService tournamentManager) : base("Start Tournament")
+        private readonly TournamentService _tournamentService;
+
+        public StartTournamentLogic(EmbedFactory embedFactory, GitBackupService gitBackupService, MatchService matchService, MemberService memberManager, TournamentService tournamentService) : base("Start Tournament")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
-            _matchManager = matchManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
+            _matchService = matchService;
             _memberManager = memberManager;
-            _tournamentManager = tournamentManager;
+            _tournamentService = tournamentService;
         }
 
         public async Task<Embed> StartTournamentProcess(string tournamentId)
         {
             // Grab tournament, modal should have ensured it exists
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentService.GetTournamentById(tournamentId);
 
             // Check if the tournament can be started
             if (!tournament.CanStart(out var errorReason))
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' does not meet the requirements to start: {errorReason.Info}");
+                return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' does not meet the requirements to start: {errorReason.Info}");
             }
 
             // Start tournament before building match schedules to prevent clearing match logs early
@@ -47,24 +48,24 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Build match schedules if applicable and start tournament
             if (tournament is NormalRoundRobinTournament normalRRTournament)
             {
-                _matchManager.BuildRoundRobinMatchSchedule(normalRRTournament);
+                _matchService.BuildRoundRobinMatchSchedule(normalRRTournament);
             }
             if (tournament is OpenRoundRobinTournament openRRTournament)
             {
-                _matchManager.BuildRoundRobinMatchSchedule(openRRTournament);
+                _matchService.BuildRoundRobinMatchSchedule(openRRTournament);
             }
 
             // Send out match schedules to each member of every team
-            _matchManager.SendMatchSchedulesToTeamsResolver(tournament);
+            _matchService.SendMatchSchedulesToTeamsResolver(tournament);
 
             // Save and reload databases
-            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
             await _memberManager.SaveAndReloadMemberProfiles();
 
             // Backup to git repo
-            _gitBackupManager.EnqueueBackup();
+            _gitBackupService.EnqueueBackup();
 
-            return _embedManager.StartTournamentSuccess(tournament);
+            return _embedFactory.StartTournamentSuccess(tournament);
         }
     }
 }

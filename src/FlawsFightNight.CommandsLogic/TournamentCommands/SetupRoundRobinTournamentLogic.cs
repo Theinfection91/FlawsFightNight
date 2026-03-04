@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
@@ -11,45 +12,45 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.TournamentCommands
+namespace FlawsFightNight.Commands.TournamentCommands
 {
-    public class SetupRoundRobinTournamentLogic : Logic
+    public class SetupRoundRobinTournamentLogic : CommandHandler
     {
-        private EmbedFactory _embedManager;
-        private GitBackupService _gitBackupManager;
-        private TournamentService _tournamentManager;
+        private EmbedFactory _embedFactory;
+        private GitBackupService _gitBackupService;
+        private TournamentService _tournamentService;
 
-        public SetupRoundRobinTournamentLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TournamentService tournamentManager) : base("Setup Round Robin Tournament")
+        public SetupRoundRobinTournamentLogic(EmbedFactory embedFactory, GitBackupService gitBackupService, TournamentService tournamentService) : base("Setup Round Robin Tournament")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
-            _tournamentManager = tournamentManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
+            _tournamentService = tournamentService;
         }
 
         public async Task<Embed> SetupRoundRobinTournamentProcess(string tournamentId, TieBreakerType tieBreakerType, RoundRobinLengthType roundRobinType)
         {
             // Check if the tournament exists, grab it if so
-            if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
+            if (!_tournamentService.IsTournamentIdInDatabase(tournamentId))
             {
-                return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
 
             // Grab the tournament
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentService.GetTournamentById(tournamentId);
             if (tournament == null)
             {
-                return _embedManager.ErrorEmbed(Name, "An error occurred while retrieving the tournament. Contact support.");
+                return _embedFactory.ErrorEmbed(Name, "An error occurred while retrieving the tournament. Contact support.");
             }
 
             // Ensure it is a form of round robin tournament
             if (tournament is not NormalRoundRobinTournament and not OpenRoundRobinTournament)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a Normal or Open Round Robin Tournament. This command can only be used for Round Robin tournaments.");
+                return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a Normal or Open Round Robin Tournament. This command can only be used for Round Robin tournaments.");
             }
 
             if (tournament.IsRunning)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is already running. You cannot change it's settings now.");
+                return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is already running. You cannot change it's settings now.");
             }
 
             // Change tie breaker logic to chosen type
@@ -74,12 +75,12 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             }
 
             // Save and reload the tournament database
-            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
-            _gitBackupManager.EnqueueBackup();
+            _gitBackupService.EnqueueBackup();
 
-            return _embedManager.RoundRobinSetupTournamentSuccess(tournament);
+            return _embedFactory.RoundRobinSetupTournamentSuccess(tournament);
         }
     }
 }

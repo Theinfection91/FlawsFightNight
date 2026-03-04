@@ -19,12 +19,12 @@ namespace FlawsFightNight.Services
 
         public LiveViewService(
             DiscordSocketClient client,
-            EmbedFactory embedManager,
+            EmbedFactory embedFactory,
             GitBackupService gitBackupManager,
             DataContext dataManager)
         {
             _client = client;
-            _embedFactory = embedManager;
+            _embedFactory = embedFactory;
             _gitBackupService = gitBackupManager;
             _dataContext = dataManager;
         }

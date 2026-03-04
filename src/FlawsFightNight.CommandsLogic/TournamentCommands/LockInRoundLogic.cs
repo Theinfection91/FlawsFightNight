@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
@@ -10,63 +11,63 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.TournamentCommands
+namespace FlawsFightNight.Commands.TournamentCommands
 {
-    public class LockInRoundLogic : Logic
+    public class LockInRoundLogic : CommandHandler
     {
-        private EmbedFactory _embedManager;
-        private GitBackupService _gitBackupManager;
-        private TournamentService _tournamentManager;
-        public LockInRoundLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TournamentService tournamentManager) : base("Lock In Round")
+        private EmbedFactory _embedFactory;
+        private GitBackupService _gitBackupService;
+        private TournamentService _tournamentService;
+        public LockInRoundLogic(EmbedFactory embedFactory, GitBackupService gitBackupService, TournamentService tournamentService) : base("Lock In Round")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
-            _tournamentManager = tournamentManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
+            _tournamentService = tournamentService;
         }
 
         public async Task<Embed> LockInRoundProcess(string tournamentId)
         {
             // Check if the tournament exists, grab it if so
-            if (!_tournamentManager.IsTournamentIdInDatabase(tournamentId))
+            if (!_tournamentService.IsTournamentIdInDatabase(tournamentId))
             {
-                return _embedManager.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"No tournament found with ID: {tournamentId}. Please check the ID and try again.");
             }
-            var tournament = _tournamentManager.GetTournamentById(tournamentId);
+            var tournament = _tournamentService.GetTournamentById(tournamentId);
 
             // Check if tournament is running
             if (!tournament.IsRunning)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
+                return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running.");
             }
 
             // Check if tournament is IRoundBased
             if (tournament is not IRoundBased roundBasedTournament)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a round-based tournament and cannot lock in rounds.");
+                return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not a round-based tournament and cannot lock in rounds.");
             }
             else
             {
                 // Check if the round is already locked in
                 if (roundBasedTournament.IsRoundLockedIn)
                 {
-                    return _embedManager.ErrorEmbed(Name, $"The current round in tournament '{tournament.Name}' is already locked in.");
+                    return _embedFactory.ErrorEmbed(Name, $"The current round in tournament '{tournament.Name}' is already locked in.");
                 }
 
                 // Check if the round can be locked in
                 if (!roundBasedTournament.CanLockRound())
                 {
-                    return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot lock in the current round at this time. Please ensure all matches are complete.");
+                    return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' cannot lock in the current round at this time. Please ensure all matches are complete.");
                 }
                 // Lock in the round
                 roundBasedTournament.LockRound();
 
                 // Save and reload the tournament database
-                await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+                await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
 
                 // Backup to git repo
-                _gitBackupManager.EnqueueBackup();
+                _gitBackupService.EnqueueBackup();
 
-                return _embedManager.LockInRoundSuccess(tournament);
+                return _embedFactory.LockInRoundSuccess(tournament);
             }
         }
     }

@@ -6,33 +6,33 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.SettingsCommands
+namespace FlawsFightNight.Commands.SettingsCommands
 {
-    public class RemoveFTPCredentialsLogic : Logic
+    public class RemoveFTPCredentialsLogic : CommandHandler
     {
         private readonly AdminConfigurationService _configManager;
-        private readonly EmbedFactory _embedManager;
-        public RemoveFTPCredentialsLogic(AdminConfigurationService configManager, EmbedFactory embedManager) : base("Remove FTP Credentials")
+        private readonly EmbedFactory _embedFactory;
+        public RemoveFTPCredentialsLogic(AdminConfigurationService configManager, EmbedFactory embedFactory) : base("Remove FTP Credentials")
         {
             _configManager = configManager;
-            _embedManager = embedManager;
+            _embedFactory = embedFactory;
         }
         public async Task<Embed> RemoveFTPCredentialsProcess(string ftpServerName)
         {
             if (!_configManager.IsFTPCredentialsSet())
             {
-                return _embedManager.ErrorEmbed("No FTP credentials are currently set.");
+                return _embedFactory.ErrorEmbed("No FTP credentials are currently set.");
             }
 
             var ftpCredential = _configManager.GetFTPCredentials()!.FirstOrDefault(c => c.ServerName == ftpServerName);
             if (ftpCredential == null) 
             {
-                return _embedManager.ErrorEmbed("Invalid FTP credential server name.");
+                return _embedFactory.ErrorEmbed("Invalid FTP credential server name.");
             }
 
             await _configManager.RemoveFTPCredential(ftpCredential);
-            //return _embedManager.GenericEmbed("FTP Credential Removed", $"FTP credential ({ftpCredential.Id} - {ftpCredential.ServerName} - {ftpCredential.Username} ({ftpCredential.IPAddress}:{ftpCredential.Port})) removed successfully.");
-            return _embedManager.GenericEmbed("FTP Credential Removed", $"FTP credential ({ftpCredential.ServerName} - ({ftpCredential.IPAddress}:{ftpCredential.Port})) removed successfully.", Color.Green);
+            //return _embedFactory.GenericEmbed("FTP Credential Removed", $"FTP credential ({ftpCredential.Id} - {ftpCredential.ServerName} - {ftpCredential.Username} ({ftpCredential.IPAddress}:{ftpCredential.Port})) removed successfully.");
+            return _embedFactory.GenericEmbed("FTP Credential Removed", $"FTP credential ({ftpCredential.ServerName} - ({ftpCredential.IPAddress}:{ftpCredential.Port})) removed successfully.", Color.Green);
         }
     }
 }

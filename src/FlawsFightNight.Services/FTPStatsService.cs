@@ -22,10 +22,10 @@ namespace FlawsFightNight.Services
         private Dictionary<FTPCredential, AsyncFtpClient> _ftpClients = new();
         private bool IsClientsConfigured = false;
 
-        public FTPStatsService(AdminConfigurationService configManager, DiscordSocketClient client, GitBackupService gitBackupManager, UT2004StatsService uT2004StatsManager)
+        public FTPStatsService(AdminConfigurationService configManager, DiscordSocketClient client, GitBackupService gitBackupService, UT2004StatsService uT2004StatsManager)
         {
             _configManager = configManager;
-            _gitBackupService = gitBackupManager;
+            _gitBackupService = gitBackupService;
             _ut2004StatsService = uT2004StatsManager;
 
             _discordClient = client;

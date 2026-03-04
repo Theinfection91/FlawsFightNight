@@ -4,12 +4,12 @@ using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Components;
 using FlawsFightNight.Bot.Attributes;
-using FlawsFightNight.CommandsLogic.SettingsCommands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Commands.SettingsCommands;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {

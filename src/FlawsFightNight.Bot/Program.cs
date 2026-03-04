@@ -3,12 +3,12 @@ using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
-using FlawsFightNight.CommandsLogic.MatchCommands;
-using FlawsFightNight.CommandsLogic.SettingsCommands;
-using FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands;
-using FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands;
-using FlawsFightNight.CommandsLogic.TeamCommands;
-using FlawsFightNight.CommandsLogic.TournamentCommands;
+using FlawsFightNight.Commands.MatchCommands;
+using FlawsFightNight.Commands.SettingsCommands;
+using FlawsFightNight.Commands.StatsCommands.TournamentStatsCommands;
+using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
+using FlawsFightNight.Commands.TeamCommands;
+using FlawsFightNight.Commands.TournamentCommands;
 using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.IO.Handlers;
 using FlawsFightNight.Services;
@@ -109,9 +109,9 @@ namespace FlawsFightNight.Bot
                     /// Command Logic ///
                     
                         // Match Commands
-                        services.AddSingleton<CancelChallengeLogic>();
-                        services.AddSingleton<EditMatchLogic>();
-                        services.AddSingleton<ReportWinLogic>();
+                        services.AddSingleton<CancelChallengeHandler>();
+                        services.AddSingleton<EditMatchHandler>();
+                        services.AddSingleton<ReportWinHandler>();
                         services.AddSingleton<SendChallengeLogic>();
 
                         // Settings Commands
@@ -209,11 +209,11 @@ namespace FlawsFightNight.Bot
             await _configManager.SetGitBackupProcess();
 
             // Run interactive Git backup setup in background (clone/restore prompts)
-            var gitBackupManager = _services.GetRequiredService<GitBackupService>();
+            var gitBackupService = _services.GetRequiredService<GitBackupService>();
             var configManager = _services.GetRequiredService<AdminConfigurationService>();
             while (!_gitBackupSetupComplete)
             {
-                await gitBackupManager.RunInteractiveSetup();
+                await gitBackupService.RunInteractiveSetup();
                 _gitBackupSetupComplete = configManager.IsGitPatTokenSet();
             }
 

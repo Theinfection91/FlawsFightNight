@@ -2,13 +2,12 @@
 using Discord.Interactions;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Attributes;
-using FlawsFightNight.CommandsLogic.MatchCommands;
-using FlawsFightNight.Bot.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Commands.MatchCommands;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
@@ -16,10 +15,10 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class MatchCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly AutocompleteCache _autocompleteCache;
-        private EditMatchLogic _editMatchLogic;
-        private ReportWinLogic _reportWinLogic;
+        private EditMatchHandler _editMatchLogic;
+        private ReportWinHandler _reportWinLogic;
 
-        public MatchCommands(AutocompleteCache autocompleteCache, EditMatchLogic editMatchLogic, ReportWinLogic reportWinLogic)
+        public MatchCommands(AutocompleteCache autocompleteCache, EditMatchHandler editMatchLogic, ReportWinHandler reportWinLogic)
         {
             _autocompleteCache = autocompleteCache;
             _editMatchLogic = editMatchLogic;
@@ -75,8 +74,8 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             private readonly AutocompleteCache _autocompleteCache;
             private SendChallengeLogic _sendChallengeLogic;
-            private CancelChallengeLogic _cancelChallengeLogic;
-            public MatchesChannelCommands(AutocompleteCache autocompleteCache, SendChallengeLogic sendChallengeLogic, CancelChallengeLogic cancelChallengeLogic)
+            private CancelChallengeHandler _cancelChallengeLogic;
+            public MatchesChannelCommands(AutocompleteCache autocompleteCache, SendChallengeLogic sendChallengeLogic, CancelChallengeHandler cancelChallengeLogic)
             {
                 _autocompleteCache = autocompleteCache;
                 _sendChallengeLogic = sendChallengeLogic;

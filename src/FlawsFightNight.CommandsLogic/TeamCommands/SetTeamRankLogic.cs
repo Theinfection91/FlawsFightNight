@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Services;
@@ -8,38 +9,38 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.TeamCommands
+namespace FlawsFightNight.Commands.TeamCommands
 {
-    public class SetTeamRankLogic : Logic
+    public class SetTeamRankLogic : CommandHandler
     {
-        private EmbedFactory _embedManager;
-        private GitBackupService _gitBackupManager;
-        private TeamService _teamManager;
-        private TournamentService _tournamentManager;
+        private EmbedFactory _embedFactory;
+        private GitBackupService _gitBackupService;
+        private TeamService _teamService;
+        private TournamentService _tournamentService;
 
-        public SetTeamRankLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, TeamService teamManager, TournamentService tournamentManager) : base("Set Team Rank")
+        public SetTeamRankLogic(EmbedFactory embedFactory, GitBackupService gitBackupService, TeamService teamService, TournamentService tournamentService) : base("Set Team Rank")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
-            _teamManager = teamManager;
-            _tournamentManager = tournamentManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
+            _teamService = teamService;
+            _tournamentService = tournamentService;
         }
 
         public async Task<Embed> SetTeamRankProcess(string teamName, int newRank)
         {
-            if (!_teamManager.DoesTeamExist(teamName))
+            if (!_teamService.DoesTeamExist(teamName))
             {
-                return _embedManager.ErrorEmbed(Name, $"No team found with the name: {teamName}\n\nPlease check the name and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"No team found with the name: {teamName}\n\nPlease check the name and try again.");
             }
 
             // Grab tournament from team name
-            var tournament = _tournamentManager.GetTournamentFromTeamName(teamName);
+            var tournament = _tournamentService.GetTournamentFromTeamName(teamName);
 
             // Check tournament type, only Normal Ladder tournaments can have ranks set manually
             // Not even DSR Ladder can have rank set, as that uses ratings to determine spot in standings. Cant put the top rated guy in 3rd place.
             if (tournament is not NormalLadderTournament)
             {
-                return _embedManager.ErrorEmbed(Name, $"Ranks can only be set manually for teams in **Normal Ladder** tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
+                return _embedFactory.ErrorEmbed(Name, $"Ranks can only be set manually for teams in **Normal Ladder** tournaments. The tournament '{tournament.Name}' is a {tournament.Type} tournament.");
             }
 
             // Grab team
@@ -48,13 +49,13 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             // Check if new rank is valid
             if (newRank < 1 || newRank > tournament.Teams.Count)
             {
-                return _embedManager.ErrorEmbed(Name, $"The new rank must be between 1 and {tournament.Teams.Count} (the current number of teams in the tournament). Please provide a valid rank and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"The new rank must be between 1 and {tournament.Teams.Count} (the current number of teams in the tournament). Please provide a valid rank and try again.");
             }
 
             // Check if team is already at that rank
             if (team.Rank == newRank)
             {
-                return _embedManager.ErrorEmbed(Name, $"The team '{team.Name}' is already at rank {newRank}. Please provide a different rank and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"The team '{team.Name}' is already at rank {newRank}. Please provide a different rank and try again.");
             }
 
             // Moving the team up the ranks (to a lower number)
@@ -86,12 +87,12 @@ namespace FlawsFightNight.CommandsLogic.TeamCommands
             tournament.AdjustRanks();
 
             // Save changes
-            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
-            _gitBackupManager.EnqueueBackup();
+            _gitBackupService.EnqueueBackup();
 
-            return _embedManager.SetTeamRankSuccess(team, tournament);
+            return _embedFactory.SetTeamRankSuccess(team, tournament);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Discord;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
@@ -6,25 +7,25 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.SettingsCommands
+namespace FlawsFightNight.Commands.SettingsCommands
 {
-    public class RemoveDebugAdminLogic : Logic
+    public class RemoveDebugAdminLogic : CommandHandler
     {
         private AdminConfigurationService _configManager;
-        private EmbedFactory _embedManager;
-        private GitBackupService _gitBackupManager;
+        private EmbedFactory _embedFactory;
+        private GitBackupService _gitBackupService;
 
-        public RemoveDebugAdminLogic(AdminConfigurationService configManager, EmbedFactory embedManager, GitBackupService gitBackupManager) : base("Remove Debug Admin")
+        public RemoveDebugAdminLogic(AdminConfigurationService configManager, EmbedFactory embedFactory, GitBackupService gitBackupService) : base("Remove Debug Admin")
         {
             _configManager = configManager;
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
         }
         public async Task<Embed> RemoveDebugAdminProcess(ulong userId)
         {
             if (!_configManager.IsDiscordIdInDebugAdminList(userId))
             {
-                return _embedManager.ErrorEmbed(Name, "User is not a Debug Admin.");
+                return _embedFactory.ErrorEmbed(Name, "User is not a Debug Admin.");
             }
             else
             {
@@ -32,9 +33,9 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
                 await _configManager.RemoveDiscordIdFromDebugAdminList(userId);
 
                 // Backup to git repo
-                _gitBackupManager.EnqueueBackup();
+                _gitBackupService.EnqueueBackup();
 
-                return _embedManager.DebugAdminRemoveSuccess(userId);
+                return _embedFactory.DebugAdminRemoveSuccess(userId);
             }
         }
     }

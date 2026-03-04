@@ -3,12 +3,12 @@ using Discord.Interactions;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Modals;
 using FlawsFightNight.Bot.Attributes;
-using FlawsFightNight.CommandsLogic.TeamCommands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Commands.TeamCommands;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {

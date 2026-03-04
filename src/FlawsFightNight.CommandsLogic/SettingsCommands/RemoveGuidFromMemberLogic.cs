@@ -6,19 +6,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.SettingsCommands
+namespace FlawsFightNight.Commands.SettingsCommands
 {
-    public class RemoveGuidFromMemberLogic : Logic
+    public class RemoveGuidFromMemberLogic : CommandHandler
     {
-        private readonly EmbedFactory _embedManager;
-        private readonly GitBackupService _gitBackupManager;
+        private readonly EmbedFactory _embedFactory;
+        private readonly GitBackupService _gitBackupService;
         private readonly MemberService _memberManager;
         private readonly UT2004StatsService _ut2004StatsManager;
 
-        public RemoveGuidFromMemberLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, MemberService memberManager, UT2004StatsService ut2004StatsManager) : base("Remove GUID From Member")
+        public RemoveGuidFromMemberLogic(EmbedFactory embedFactory, GitBackupService gitBackupService, MemberService memberManager, UT2004StatsService ut2004StatsManager) : base("Remove GUID From Member")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
             _memberManager = memberManager;
             _ut2004StatsManager = ut2004StatsManager;
         }
@@ -31,20 +31,20 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
                 _memberManager.AddProfileToDatabase(newProfile);
 
                 await _memberManager.SaveAndReloadMemberProfiles();
-                _gitBackupManager.EnqueueBackup();
+                _gitBackupService.EnqueueBackup();
 
-                return _embedManager.ErrorEmbed(Name, "Member profile did not exist, but has now been created and a GUID can be added. A GUID can not be removed from a profile that didn't exist until now.");
+                return _embedFactory.ErrorEmbed(Name, "Member profile did not exist, but has now been created and a GUID can be added. A GUID can not be removed from a profile that didn't exist until now.");
             }
 
             var memberProfile = _memberManager.GetMemberProfile(member.Id);
             if (memberProfile == null)
             {
-                return _embedManager.ErrorEmbed(Name, "Member profile not found.");
+                return _embedFactory.ErrorEmbed(Name, "Member profile not found.");
             }
 
             if (!memberProfile.RegisteredUT2004GUIDs.Contains(guid))
             {
-                return _embedManager.ErrorEmbed(Name, "This GUID is not registered to the given member.");
+                return _embedFactory.ErrorEmbed(Name, "This GUID is not registered to the given member.");
             }
             memberProfile.RemoveUT2004GUID(guid);
             if (memberProfile.RegisteredUT2004GUIDs.Count is not 0)
@@ -54,9 +54,9 @@ namespace FlawsFightNight.CommandsLogic.SettingsCommands
             }
 
             await _memberManager.SaveAndReloadMemberProfiles();
-            _gitBackupManager.EnqueueBackup();
+            _gitBackupService.EnqueueBackup();
 
-            return _embedManager.GenericEmbed(Name, $"Successfully removed GUID `{guid}` from member {member.Username}.", Color.DarkGreen);
+            return _embedFactory.GenericEmbed(Name, $"Successfully removed GUID `{guid}` from member {member.Username}.", Color.DarkGreen);
         }
     }
 }

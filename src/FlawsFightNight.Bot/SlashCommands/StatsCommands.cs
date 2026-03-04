@@ -2,13 +2,13 @@
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Components;
 using FlawsFightNight.Bot.Attributes;
-using FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands;
-using FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Commands.StatsCommands.TournamentStatsCommands;
+using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {

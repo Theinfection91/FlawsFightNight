@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic
+namespace FlawsFightNight.Commands
 {
-    public abstract class Logic
+    public abstract class CommandHandler
     {
         public required string Name { get; set; }
 
-        protected Logic(string name)
+        protected CommandHandler(string name)
         {
             Name = name;
         }

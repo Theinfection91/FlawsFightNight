@@ -3,14 +3,14 @@ using Discord.Interactions;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Modals;
 using FlawsFightNight.Bot.Attributes;
-using FlawsFightNight.CommandsLogic.TeamCommands;
-using FlawsFightNight.CommandsLogic.TournamentCommands;
+using FlawsFightNight.Commands.TeamCommands;
 using FlawsFightNight.Core.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Commands.TournamentCommands;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {

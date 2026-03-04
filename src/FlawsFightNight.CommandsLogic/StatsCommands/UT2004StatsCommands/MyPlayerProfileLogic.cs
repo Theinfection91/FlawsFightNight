@@ -1,18 +1,19 @@
 ﻿using Discord;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Services;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
+namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
 {
-    public class MyPlayerProfileLogic : Logic
+    public class MyPlayerProfileLogic : CommandHandler
     {
-        private readonly EmbedFactory _embedManager;
+        private readonly EmbedFactory _embedFactory;
         private readonly MemberService _memberManager;
 
-        public MyPlayerProfileLogic(EmbedFactory embedManager, MemberService memberManager) : base("My Player Profile")
+        public MyPlayerProfileLogic(EmbedFactory embedFactory, MemberService memberManager) : base("My Player Profile")
         {
-            _embedManager = embedManager;
+            _embedFactory = embedFactory;
             _memberManager = memberManager;
         }
 
@@ -22,7 +23,7 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
             if (memberProfile == null || memberProfile.RegisteredUT2004GUIDs.Count == 0)
             {
                 return Task.FromResult<(Embed, bool)>((
-                    _embedManager.ErrorEmbed(Name, "You don't have a UT2004 GUID registered. Use `/stats ut2004 register_guid` to link your profile."),
+                    _embedFactory.ErrorEmbed(Name, "You don't have a UT2004 GUID registered. Use `/stats ut2004 register_guid` to link your profile."),
                     false));
             }
 
@@ -31,11 +32,11 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
             if (utProfile == null)
             {
                 return Task.FromResult<(Embed, bool)>((
-                    _embedManager.ErrorEmbed(Name, $"No UT2004 stats found for your registered GUID `{guid}`. Stats may not have been processed yet."),
+                    _embedFactory.ErrorEmbed(Name, $"No UT2004 stats found for your registered GUID `{guid}`. Stats may not have been processed yet."),
                     false));
             }
 
-            return Task.FromResult<(Embed, bool)>((_embedManager.UT2004ProfileGeneralEmbed(utProfile), true));
+            return Task.FromResult<(Embed, bool)>((_embedFactory.UT2004ProfileGeneralEmbed(utProfile), true));
         }
     }
 }

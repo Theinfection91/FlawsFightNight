@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using FlawsFightNight.Commands;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
@@ -11,77 +12,76 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.MatchCommands
+namespace FlawsFightNight.Commands.MatchCommands
 {
-    public class SendChallengeLogic : Logic
+    public class SendChallengeLogic : CommandHandler
     {
-        private EmbedFactory _embedManager;
-        private GitBackupService _gitBackupManager;
-        private MatchService _matchManager;
-        private TeamService _teamManager;
-        private TournamentService _tournamentManager;
-        public SendChallengeLogic(EmbedFactory embedManager, GitBackupService gitBackupManager, MatchService matchManager, TeamService teamManager, TournamentService tournamentManager) : base("Send Challenge")
+        private EmbedFactory _embedFactory;
+        private GitBackupService _gitBackupService;
+        private MatchService _matchService;
+        private TeamService _teamService;
+        private TournamentService _tournamentService;
+        public SendChallengeLogic(EmbedFactory embedFactory, GitBackupService gitBackupService, MatchService matchService, TeamService teamService, TournamentService tournamentService) : base("Send Challenge")
         {
-            _embedManager = embedManager;
-            _gitBackupManager = gitBackupManager;
-            _matchManager = matchManager;
-            _teamManager = teamManager;
-            _tournamentManager = tournamentManager;
+            _embedFactory = embedFactory;
+            _gitBackupService = gitBackupService;
+            _matchService = matchService;
+            _teamService = teamService;
+            _tournamentService = tournamentService;
         }
 
         public async Task<Embed> SendChallengeProcess(SocketInteractionContext context, string challengerTeamName, string challengedTeamName)
         {
-            if (!_teamManager.DoesTeamExist(challengerTeamName))
+            if (!_teamService.DoesTeamExist(challengerTeamName))
             {
-                return _embedManager.ErrorEmbed(Name, $"No team found with the name '{challengerTeamName}'. Please check the name and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"No team found with the name '{challengerTeamName}'. Please check the name and try again.");
             }
-            if (!_teamManager.DoesTeamExist(challengedTeamName))
+            if (!_teamService.DoesTeamExist(challengedTeamName))
             {
-                return _embedManager.ErrorEmbed(Name, $"No team found with the name '{challengedTeamName}'. Please check the name and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"No team found with the name '{challengedTeamName}'. Please check the name and try again.");
             }
 
             // Grab teams
-            Team? challengerTeam = _teamManager.GetTeamByName(challengerTeamName);
-            Team? challengedTeam = _teamManager.GetTeamByName(challengedTeamName);
+            Team? challengerTeam = _teamService.GetTeamByName(challengerTeamName);
+            Team? challengedTeam = _teamService.GetTeamByName(challengedTeamName);
 
             // Check if invoker is on challenger team (or guild admin)
             if (context.User is not SocketGuildUser guildUser)
             {
-                return _embedManager.ErrorEmbed(Name, "Only members of the guild may use this command.");
+                return _embedFactory.ErrorEmbed(Name, "Only members of the guild may use this command.");
             }
             // Store admin status for embed message use
             bool isGuildAdmin = guildUser.GuildPermissions.Administrator;
             // Check if user is on the challenger team
-            if (!_teamManager.IsDiscordIdOnTeam(challengerTeam, context.User.Id) && !isGuildAdmin)
+            if (!_teamService.IsDiscordIdOnTeam(challengerTeam, context.User.Id) && !isGuildAdmin)
             {
-                return _embedManager.ErrorEmbed(Name, $"You are not a member of the team '{challengerTeam.Name}', or an admin on this server, and cannot issue a challenge on their behalf.");
+                return _embedFactory.ErrorEmbed(Name, $"You are not a member of the team '{challengerTeam.Name}', or an admin on this server, and cannot issue a challenge on their behalf.");
             }
 
             // Grab tournament from challenger team
-            var tournament = _tournamentManager.GetTournamentFromTeamName(challengerTeam.Name);
-
+            var tournament = _tournamentService.GetTournamentFromTeamName(challengerTeam.Name);
             // Ensure tournament is a ladder type
             if (!tournament.Type.Equals(TournamentType.NormalLadder) && !tournament.Type.Equals(TournamentType.DSRLadder))
             {
-                return _embedManager.ErrorEmbed(Name, $"Challenges can only be sent in Normal or DSR Ladder type tournaments. The tournament '{tournament.Name}' is of type '{tournament.Type}'.");
+                return _embedFactory.ErrorEmbed(Name, $"Challenges can only be sent in Normal or DSR Ladder type tournaments. The tournament '{tournament.Name}' is of type '{tournament.Type}'.");
             }
 
             // Ensure tournament is running
             if (!tournament.IsRunning)
             {
-                return _embedManager.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Challenges can only be sent in running tournaments.");
+                return _embedFactory.ErrorEmbed(Name, $"The tournament '{tournament.Name}' is not currently running. Challenges can only be sent in running tournaments.");
             }
 
             // Ensure teams are in the same tournament
             if (!tournament.ContainsTeams(challengerTeam, challengedTeam))
             {
-                return _embedManager.ErrorEmbed(Name, $"Both teams must be registered in the same tournament to issue a challenge. Please check the team registrations and try again.");
+                return _embedFactory.ErrorEmbed(Name, $"Both teams must be registered in the same tournament to issue a challenge. Please check the team registrations and try again.");
             }
 
             // Ensure challenger team is not the same as challenged team
             if (challengerTeam.Name.Equals(challengedTeam.Name, StringComparison.OrdinalIgnoreCase))
             {
-                return _embedManager.ErrorEmbed(Name, "A team cannot challenge itself. Please choose a different team to challenge.");
+                return _embedFactory.ErrorEmbed(Name, "A team cannot challenge itself. Please choose a different team to challenge.");
             }
 
             if (tournament is NormalLadderTournament ladderTournament)
@@ -89,13 +89,13 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 // Challenger cannot be higher rank than challenged team
                 if (challengerTeam.Rank < challengedTeam.Rank)
                 {
-                    return _embedManager.ErrorEmbed(Name, $"The challenger team (#{challengerTeam.Rank}){challengerTeam.Name} is ranked higher than the challenged team (#{challengedTeam.Rank}){challengedTeam.Name} - In a ladder tournament, a team may only challenge another team that is ranked higher than itself.");
+                    return _embedFactory.ErrorEmbed(Name, $"The challenger team (#{challengerTeam.Rank}){challengerTeam.Name} is ranked higher than the challenged team (#{challengedTeam.Rank}){challengedTeam.Name} - In a ladder tournament, a team may only challenge another team that is ranked higher than itself.");
                 }
 
                 // Ensure challenged team is only 2 ranks above challenger team at most
                 if (!ladderTournament.IsChallengedTeamWithinRanks(challengerTeam, challengedTeam))
                 {
-                    return _embedManager.ErrorEmbed(Name, $"The challenger team (#{challengerTeam.Rank}){challengerTeam.Name} can not challenge (#{challengedTeam.Rank}){challengedTeam.Name} - Teams may only challenge up to 2 ranks above them.");
+                    return _embedFactory.ErrorEmbed(Name, $"The challenger team (#{challengerTeam.Rank}){challengerTeam.Name} can not challenge (#{challengedTeam.Rank}){challengedTeam.Name} - Teams may only challenge up to 2 ranks above them.");
                 }
             }
 
@@ -110,11 +110,11 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 var existingChallenge = tournament.MatchLog.GetMatchByTeamName(challengerTeam.Name);
                 if (challengerTeam.Name.Equals(existingChallenge.Challenge.Challenger))
                 {
-                    return _embedManager.ErrorEmbed(Name, $"The team '{challengerTeam.Name}' has already sent a challenge to '{existingChallenge.Challenge.Challenged}' and is awaiting the match to be played.");
+                    return _embedFactory.ErrorEmbed(Name, $"The team '{challengerTeam.Name}' has already sent a challenge to '{existingChallenge.Challenge.Challenged}' and is awaiting the match to be played.");
                 }
                 else
                 {
-                    return _embedManager.ErrorEmbed(Name, $"The team '{challengerTeam.Name}' has already been challenged by '{existingChallenge.Challenge.Challenger}' and is awaiting the match to be played first.");
+                    return _embedFactory.ErrorEmbed(Name, $"The team '{challengerTeam.Name}' has already been challenged by '{existingChallenge.Challenge.Challenger}' and is awaiting the match to be played first.");
                 }
             }
             if (!challengedTeam.IsChallengeable)
@@ -122,16 +122,16 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
                 var existingChallenge = tournament.MatchLog.GetMatchByTeamName(challengedTeam.Name);
                 if (challengedTeam.Name.Equals(existingChallenge.Challenge.Challenger))
                 {
-                    return _embedManager.ErrorEmbed(Name, $"The team '{challengedTeam.Name}' has already sent a challenge to '{existingChallenge.Challenge.Challenged}' and is awaiting the match to be played.");
+                    return _embedFactory.ErrorEmbed(Name, $"The team '{challengedTeam.Name}' has already sent a challenge to '{existingChallenge.Challenge.Challenged}' and is awaiting the match to be played.");
                 }
                 else
                 {
-                    return _embedManager.ErrorEmbed(Name, $"The team '{challengedTeam.Name}' has already been challenged by '{existingChallenge.Challenge.Challenger}' and is awaiting the match to be played first.");
+                    return _embedFactory.ErrorEmbed(Name, $"The team '{challengedTeam.Name}' has already been challenged by '{existingChallenge.Challenge.Challenger}' and is awaiting the match to be played first.");
                 }
             }
 
             // Create new challenge match
-            var newChallengeMatch = _matchManager.CreateChallengeMatch(challengerTeam, challengedTeam, challengerTeam.Rating, challengedTeam.Rating);
+            var newChallengeMatch = _matchService.CreateChallengeMatch(challengerTeam, challengedTeam, challengerTeam.Rating, challengedTeam.Rating);
 
             // Add the new match to the tournament
             tournament.MatchLog.AddMatch(newChallengeMatch);
@@ -141,15 +141,15 @@ namespace FlawsFightNight.CommandsLogic.MatchCommands
             challengedTeam.IsChallengeable = false;
 
             // Send direct message notifications to each member of both teams about the challenge
-            _matchManager.SendChallengeSuccessNotificationProcess(tournament, newChallengeMatch, challengerTeam, challengedTeam);
+            _matchService.SendChallengeSuccessNotificationProcess(tournament, newChallengeMatch, challengerTeam, challengedTeam);
 
             // Save and reload the tournament database
-            await _tournamentManager.SaveAndReloadTournamentDataFiles(tournament);
+            await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
 
             // Backup to git repo
-            _gitBackupManager.EnqueueBackup();
+            _gitBackupService.EnqueueBackup();
 
-            return _embedManager.SendChallengeSuccess(tournament, newChallengeMatch, isGuildAdmin);
+            return _embedFactory.SendChallengeSuccess(tournament, newChallengeMatch, isGuildAdmin);
         }
     }
 }

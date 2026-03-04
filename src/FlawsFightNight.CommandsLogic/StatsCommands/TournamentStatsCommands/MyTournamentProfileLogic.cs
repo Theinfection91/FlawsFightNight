@@ -8,15 +8,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands
+namespace FlawsFightNight.Commands.StatsCommands.TournamentStatsCommands
 {
-    public class MyTournamentProfileLogic : Logic
+    public class MyTournamentProfileLogic : CommandHandler
     {
-        private readonly EmbedFactory _embedManager;
+        private readonly EmbedFactory _embedFactory;
         private readonly MemberService _memberManager;
-        public MyTournamentProfileLogic(EmbedFactory embedManager, MemberService memberManager) : base("My Tournament Profile")
+        public MyTournamentProfileLogic(EmbedFactory embedFactory, MemberService memberManager) : base("My Tournament Profile")
         {
-            _embedManager = embedManager;
+            _embedFactory = embedFactory;
             _memberManager = memberManager;
         }
 
@@ -24,7 +24,7 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands
         {
             var memberProfile = _memberManager.GetMemberProfile(context.User.Id);
 
-            return _embedManager.GenericEmbed("Test", memberProfile?.GetAllStats()!, Color.DarkGreen);
+            return _embedFactory.GenericEmbed("Test", memberProfile?.GetAllStats()!, Color.DarkGreen);
         }
     }
 }
