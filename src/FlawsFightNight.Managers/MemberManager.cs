@@ -168,6 +168,29 @@ namespace FlawsFightNight.Managers
             }
         }
 
+        public void HandleTournamentEndAwards(List<Team> allTeams)
+        {
+            if (allTeams == null || allTeams.Count == 0) return; // Can happen for Ladder tournaments
+
+            var topTeams = allTeams.Where(t => t != null).Take(3).ToList();
+            for (int place = 0; place < topTeams.Count; place++)
+            {
+                var team = topTeams[place];
+                switch (place)
+                {
+                    case 0:
+                        AwardFirstPlaceTournamentWinForMembers(team);
+                        break;
+                    case 1:
+                        AwardSecondPlaceTournamentWinForMembers(team);
+                        break;
+                    case 2:
+                        AwardThirdPlaceTournamentWinForMembers(team);
+                        break;
+                }
+            }
+        }
+
         // TODO Still need this added to logic
         public void AwardFirstPlaceTournamentWinForMembers(Team championTeam)
         {

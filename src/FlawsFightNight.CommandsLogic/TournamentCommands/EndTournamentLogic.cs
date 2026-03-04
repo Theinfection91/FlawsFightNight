@@ -66,6 +66,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                     // Apply tie-breaker rankings to the tied teams
                     _tournamentManager.ApplyTieBreakerRankings(tournament, tiedTeams, winnerTeamName);
 
+                    // Handle tournament end awards (1st, 2nd, 3rd place)
+                    _memberManager.HandleTournamentEndAwards(tournament.Teams);
+
                     // End the tournament
                     tournament.End();
 
@@ -79,6 +82,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
                 }
                 else
                 {
+                    // Handle tournament end awards (1st, 2nd, 3rd place)
+                    _memberManager.HandleTournamentEndAwards(tournament.Teams);
+
                     // End the tournament, no tie breaker needed
                     tournament.End();
 
@@ -95,6 +101,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Handle Normal Ladder Tournament
             if (tournament is NormalLadderTournament ladderTournament)
             {
+                // Handle tournament end awards (1st, 2nd, 3rd place)
+                _memberManager.HandleTournamentEndAwards(tournament.Teams);
+
                 // End the tournament, normal ladder tournaments can be ended as long as they are running
                 ladderTournament.End();
 
@@ -110,6 +119,9 @@ namespace FlawsFightNight.CommandsLogic.TournamentCommands
             // Handle DSR Tournament
             if (tournament is DSRLadderTournament dsrTournament)
             {
+                // Handle tournament end awards (1st, 2nd, 3rd place)
+                _memberManager.HandleTournamentEndAwards(tournament.Teams);
+
                 // End the tournament, DSR tournaments can be ended as long as they are running
                 dsrTournament.End();
 
