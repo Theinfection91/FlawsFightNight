@@ -33,7 +33,6 @@ namespace FlawsFightNight.Bot.Autocomplete
         private List<Team> _ladderTeams = new();
         private List<Team> _roundBasedTeams = new();
         private List<Team> _roundRobinTeams = new();
-        private List<Team> _allTeams = new();
         private List<FTPCredential> _ftpCredentials = new();
 
 
@@ -62,7 +61,6 @@ namespace FlawsFightNight.Bot.Autocomplete
             _ladderTeams = _teamManager.GetAllLadderTeams();
             _roundRobinTeams = _teamManager.GetAllRoundRobinTeams();
             _roundBasedTeams = _teamManager.GetAllRoundBasedTeams();
-            _allTeams = _teamManager.GetAllTeams();
             _ftpCredentials = _configManager.GetFTPCredentials()!;
         }
 
@@ -371,32 +369,6 @@ namespace FlawsFightNight.Bot.Autocomplete
             catch (Exception ex)
             {
                 Console.WriteLine($"Error generating FTP credential suggestions: {ex.Message}");
-                return new List<AutocompleteResult>();
-            }
-        }
-
-        public List<AutocompleteResult> GetAllTeams(string input)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(input))
-                {
-                    return _allTeams
-                        .OrderBy(team => team.Name)
-                        .Select (team => new AutocompleteResult(team.Name, team.Name))
-                        .ToList();
-                }
-                // Filter all teams based on the input (case-insensitive)
-                var matchingTeams = _allTeams
-                    .Where(team => team.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(team => team.Name)
-                    .Select(team => new AutocompleteResult(team.Name, team.Name))
-                    .ToList();
-                return matchingTeams;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error generating teams for add/remove member suggestions: {ex.Message}");
                 return new List<AutocompleteResult>();
             }
         }

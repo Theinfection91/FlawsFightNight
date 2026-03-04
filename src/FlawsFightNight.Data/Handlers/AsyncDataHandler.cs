@@ -18,7 +18,7 @@ namespace FlawsFightNight.Data.Handlers
         iBRStatLogs,
         UT2004PlayerProfiles,
         Credentials,
-        MemberProfiles
+        UserProfiles
     }
 
     public abstract class AsyncDataHandler<T> : IAsyncInitializable where T : new()
@@ -107,8 +107,8 @@ namespace FlawsFightNight.Data.Handlers
                 case PathOption.Credentials:
                     _folderPath = Path.Combine(baseDir, "Credentials");
                     break;
-                case PathOption.MemberProfiles:
-                    _folderPath = Path.Combine(baseDir, "Databases", "MemberProfiles");
+                case PathOption.UserProfiles:
+                    _folderPath = Path.Combine(baseDir, "Databases", "UserProfiles");
                     break;
             }
 
@@ -264,7 +264,7 @@ namespace FlawsFightNight.Data.Handlers
                 PathOption.TAMStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "TAM"),
                 PathOption.iBRStatLogs => Path.Combine(baseDir, "Databases", "StatLogs", "iBR"),
                 PathOption.UT2004PlayerProfiles => Path.Combine(baseDir, "Databases", "UT2004PlayerProfiles"),
-                PathOption.MemberProfiles => Path.Combine(baseDir, "Databases", "MemberProfiles"),
+                PathOption.UserProfiles => Path.Combine(baseDir, "Databases", "UserProfiles"),
                 _ => throw new ArgumentException("Invalid path option")
             };
             if (Directory.Exists(folderPath))

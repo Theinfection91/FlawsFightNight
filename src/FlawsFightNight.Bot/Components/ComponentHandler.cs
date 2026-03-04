@@ -1,24 +1,28 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using FlawsFightNight.CommandsLogic.SettingsCommands;
 using FlawsFightNight.Managers;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace FlawsFightNight.Bot.Components
 {
     public class ComponentHandler : InteractionModuleBase<SocketInteractionContext>
     {
+        // Managers and Services
         private readonly EmbedManager _embedManager;
         private readonly ConfigManager _configManager;
-        private readonly MemberManager _memberManager;
+        
+        // Logic dependencies
 
-        public ComponentHandler(EmbedManager embedManager, ConfigManager configManager, MemberManager memberManager)
+        public ComponentHandler(EmbedManager embedManager, ConfigManager configManager)
         {
             _embedManager = embedManager;
             _configManager = configManager;
-            _memberManager = memberManager;
         }
 
         private bool IsAuthorizedUser(ulong expectedUserId) => Context.User.Id == expectedUserId;
@@ -35,18 +39,20 @@ namespace FlawsFightNight.Bot.Components
 
             try
             {
+                // STEP 1: Update message immediately to show setup is starting
                 var statusEmbed = _embedManager.GenericEmbed(
-                    "🚀 FTP Setup Initiated",
-                    "Running FTP setup process...\n\n**Go back to the console to continue.**\n\nIf chosen by mistake, you can cancel the process in console or by using `/settings ftp_stats_service cancel_setup`\n\nTo remove existing credentials use `/settings ftp_stats_service remove_credentials`",
+                    "🚀 FTP Setup Initiated", 
+                    "Running FTP setup process...\n\n**Go back to the console to continue.**\n\nIf chosen by mistake, you can cancel the process in console or by using `/settings ftp_stats_service cancel_setup`\n\nTo remove existing credentials use `/settings ftp_stats_service remove_credentials`", 
                     Color.Blue);
 
                 await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
                 {
                     msg.Content = null;
                     msg.Embed = statusEmbed;
-                    msg.Components = new ComponentBuilder().Build();
+                    msg.Components = new ComponentBuilder().Build(); // remove buttons
                 });
 
+                // STEP 2: Fire off the FTP setup in background (don't await, don't block)
                 _ = Task.Run(async () =>
                 {
                     try
@@ -112,17 +118,17 @@ namespace FlawsFightNight.Bot.Components
                     msg.Components = new ComponentBuilder().Build();
                 });
 
-                _ = Task.Run(() =>
+                _ = Task.Run(async () =>
                 {
                     try
                     {
                         _configManager.NotifyCancelFTPSetupProcess();
+                        //Console.WriteLine($"{DateTime.Now} - [ComponentHandler] FTP setup cancellation completed via Discord command.");
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"{DateTime.Now} - [ComponentHandler] FTP setup cancellation error: {ex}");
                     }
-                    return Task.CompletedTask;
                 });
             }
             catch (Exception ex)
@@ -153,51 +159,6 @@ namespace FlawsFightNight.Bot.Components
             catch (Exception ex)
             {
                 Console.WriteLine($"[Component Error - FTP Cancel] {ex}");
-                await RespondAsync(embed: _embedManager.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
-            }
-        }
-        #endregion
-
-        #region UT2004 Player Profile Select Menu
-        [ComponentInteraction("ut2004profile_select:*")]
-        public async Task HandleUT2004ProfileSelectAsync(ulong invokingUserId, string[] selectedValues)
-        {
-            if (!IsAuthorizedUser(invokingUserId))
-            {
-                await RespondAsync(embed: _embedManager.ErrorEmbed("This menu is not for you."), ephemeral: true);
-                return;
-            }
-
-            try
-            {
-                var memberProfile = _memberManager.GetMemberProfile(invokingUserId);
-                if (memberProfile == null || memberProfile.RegisteredUT2004GUIDs.Count == 0)
-                {
-                    await RespondAsync(embed: _embedManager.ErrorEmbed("UT2004 Profile", "No UT2004 GUID registered to your account."), ephemeral: true);
-                    return;
-                }
-
-                var guid = memberProfile.RegisteredUT2004GUIDs.First();
-                var utProfile = _memberManager.GetUT2004PlayerProfile(guid);
-                if (utProfile == null)
-                {
-                    await RespondAsync(embed: _embedManager.ErrorEmbed("UT2004 Profile", $"No stats found for GUID `{guid}`."), ephemeral: true);
-                    return;
-                }
-
-                var selectedSection = selectedValues[0];
-                var embed = _embedManager.UT2004ProfileSectionEmbed(utProfile, selectedSection);
-                var components = ComponentFactory.CreateUT2004ProfileSelectMenu(invokingUserId);
-
-                await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
-                {
-                    msg.Embed = embed;
-                    msg.Components = components.Build();
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Component Error - UT2004 Profile Select] {ex}");
                 await RespondAsync(embed: _embedManager.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }

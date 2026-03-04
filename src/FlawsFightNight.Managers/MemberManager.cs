@@ -1,10 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using FlawsFightNight.Core.Enums;
-using FlawsFightNight.Core.Helpers;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
-using FlawsFightNight.Core.Models.UT2004;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,32 +17,8 @@ namespace FlawsFightNight.Managers
 
         }
 
-        #region Save and Load
-        public async Task SaveMemberProfile(MemberProfile profileToSave)
-        {
-            foreach (var memberProfileData in _dataManager.MemberProfileFiles)
-            {
-                if (profileToSave.DiscordId == memberProfileData.MemberProfile.DiscordId)
-                {
-                    await _dataManager.SaveMemberProfileFile(profileToSave);
-                    return;
-                }
-            }
-        }
+        // TODO Load, Save Reload Members Database
 
-        public async Task LoadAllMemberProfiles()
-        {
-            await _dataManager.LoadAllMemberProfileFiles();
-        }
-
-        public async Task SaveAndReloadMemberProfiles()
-        {
-            await _dataManager.SaveAllMemberProfileFiles();
-            await LoadAllMemberProfiles();
-        }
-        #endregion
-
-        #region Discord Command Related
         public bool IsMemberCountCorrect(int membersCount, int teamSize)
         {
             // Case 1: For team sizes of 20 or less, the member count must match the team size.
@@ -75,7 +48,7 @@ namespace FlawsFightNight.Managers
             return false; // Member is not registered in the tournament
         }
 
-        public List<Member> ConvertIUsersToMembers(List<IUser> members)
+        public List<Member> ConvertMembersListToObjects(List<IUser> members)
         {
             List<Member> membersList = new List<Member>();
 
@@ -101,178 +74,5 @@ namespace FlawsFightNight.Managers
 
             return membersList;
         }
-        #endregion
-
-        public MemberProfile CreateMemberProfile(ulong discordId, string displayName)
-        {
-            return new MemberProfile(discordId, displayName);
-        }
-
-        public void AddProfileToDatabase(MemberProfile profile)
-        {
-            var file = _dataManager.CreateNewMemberProfileFile(profile);
-            _dataManager.AddNewMemberProfileFile(file);
-        }
-
-        public bool DoesMemberProfileExist(ulong discordId)
-        {
-            foreach (var memberProfileData in _dataManager.MemberProfileFiles)
-            {
-                if (discordId == memberProfileData.MemberProfile.DiscordId)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public MemberProfile? GetMemberProfile(ulong discordId)
-        {
-            return _dataManager.GetMemberProfile(discordId);
-        }
-
-        #region Tournament Specific Stats
-        public void IncrementMembersTournamentsPlayed(List<Member> members)
-        {
-            foreach (var member in members)
-            {
-                var profile = GetMemberProfile(member.DiscordId);
-                if (profile != null)
-                {
-                    profile.IncrementTournamentsPlayed();
-                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.ParticipateTournament));
-                }
-            }
-        }
-
-        public void RecordWinLossForMembers(Team winningTeam, Team losingTeam)
-        {
-            foreach (var member in winningTeam.Members)
-            {
-                var profile = GetMemberProfile(member.DiscordId);
-                if (profile != null)
-                {
-                    profile.RecordWinLoss(true);
-                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.WinMatch));
-                }
-            }
-
-            foreach (var member in losingTeam.Members)
-            {
-                var profile = GetMemberProfile(member.DiscordId);
-                if (profile != null)
-                {
-                    profile.RecordWinLoss(false);
-                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.LoseMatch));
-                }
-            }
-        }
-
-        public void HandleTournamentEndAwards(List<Team> allTeams)
-        {
-            if (allTeams == null || allTeams.Count == 0) return; // Can happen for Ladder tournaments
-
-            var topTeams = allTeams.Where(t => t != null).Take(3).ToList();
-            for (int place = 0; place < topTeams.Count; place++)
-            {
-                var team = topTeams[place];
-                switch (place)
-                {
-                    case 0:
-                        AwardFirstPlaceTournamentWinForMembers(team);
-                        break;
-                    case 1:
-                        AwardSecondPlaceTournamentWinForMembers(team);
-                        break;
-                    case 2:
-                        AwardThirdPlaceTournamentWinForMembers(team);
-                        break;
-                }
-            }
-        }
-
-        // TODO Still need this added to logic
-        public void AwardFirstPlaceTournamentWinForMembers(Team championTeam)
-        {
-            foreach (var member in championTeam.Members)
-            {
-                var profile = GetMemberProfile(member.DiscordId);
-                if (profile != null)
-                {
-                    profile.IncrementTournamentsWon();
-                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.FirstPlaceTournament));
-                }
-            }
-        }
-
-        // TODO Still need this added to logic
-        public void AwardSecondPlaceTournamentWinForMembers(Team runnerUpTeam)
-        {
-            foreach (var member in runnerUpTeam.Members)
-            {
-                var profile = GetMemberProfile(member.DiscordId);
-                if (profile != null)
-                {
-                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.SecondPlaceTournament));
-                }
-            }
-        }
-
-        // TODO Still need this added to logic
-        public void AwardThirdPlaceTournamentWinForMembers(Team thirdPlaceTeam)
-        {
-            foreach (var member in thirdPlaceTeam.Members)
-            {
-                var profile = GetMemberProfile(member.DiscordId);
-                if (profile != null)
-                {
-                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.ThirdPlaceTournament));
-                }
-            }
-        }
-
-        public void AwardCompletionTournamentForMembers(List<Member> allMembers)
-        {
-            foreach (var member in allMembers)
-            {
-                var profile = GetMemberProfile(member.DiscordId);
-                if (profile != null)
-                {
-                    profile.AddExperience(TournamentLevelGuide.GetExperienceForAction(TournamentExperienceAction.CompleteTournament));
-                }
-            }
-        }
-        #endregion
-
-        #region UT2004 Player Profile Related
-        public bool IsUT2004GUIDRegistered(string guid)
-        {
-            foreach (var memberProfileData in _dataManager.MemberProfileFiles)
-            {
-                if (memberProfileData.MemberProfile.RegisteredUT2004GUIDs.Contains(guid, StringComparer.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public bool DoesUT2004PlayerProfileExist(string playerGuid)
-        {
-            foreach (var file in _dataManager.UT2004PlayerProfileFiles)
-            {
-                if (file.PlayerProfile.Guid.Equals(playerGuid, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public UT2004PlayerProfile? GetUT2004PlayerProfile(string playerGuid)
-        {
-            return _dataManager.GetUT2004PlayerProfile(playerGuid);
-        }
-        #endregion
     }
 }

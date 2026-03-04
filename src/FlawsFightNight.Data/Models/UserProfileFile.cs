@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 namespace FlawsFightNight.Data.Models
 {
     [SafeForSerialization]
-    public class MemberProfileFile
+    public class UserProfileFile
     {
-        public MemberProfile MemberProfile { get; set; }
-        public MemberProfileFile() { }
+        public UserProfile UserProfile { get; set; }
+        public UserProfileFile() { }
     }
 }

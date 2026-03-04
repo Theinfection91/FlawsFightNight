@@ -18,6 +18,7 @@ namespace FlawsFightNight.Managers
 
         }
 
+        // New Data System
         public async Task SaveTournament(Tournament tournament)
         {
             foreach (var tournamentData in _dataManager.TournamentDataFiles)
@@ -37,6 +38,7 @@ namespace FlawsFightNight.Managers
             await _dataManager.LoadTournamentDataFiles();
         }
 
+        // TODO All references need to be updated to await this method and if need be made async all the way up the call stack
         public async Task SaveAndReloadTournamentDataFiles(Tournament tournament)
         {
             await SaveTournament(tournament);
@@ -45,6 +47,16 @@ namespace FlawsFightNight.Managers
 
         public bool IsTournamentNameUnique(string tournamentName)
         {
+            //List<Tournament> tournaments = _dataManager.TournamentsDatabaseFile.Tournaments;
+            //foreach (Tournament tournament in tournaments)
+            //{
+            //    if (tournament.Name.Equals(tournamentName, StringComparison.OrdinalIgnoreCase))
+            //    {
+            //        return false;
+            //    }
+            //}
+            //return true; // Team name is unique across all tournaments
+
             foreach (var dataFile in _dataManager.TournamentDataFiles)
             {
                 if (dataFile.Tournament.Name.Equals(tournamentName, StringComparison.OrdinalIgnoreCase))

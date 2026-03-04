@@ -51,15 +51,15 @@ namespace FlawsFightNight.Managers
         private readonly StatLogMatchResultHandler _statLogMatchResultsHandler;
 
         // User Profile Files
-        public List<MemberProfileFile> MemberProfileFiles { get; private set; } = new();
-        private readonly MemberProfileHandler _memberProfileHandler;
+        public List<UserProfileFile> UserProfileFiles { get; private set; } = new();
+        private readonly UserProfileHandler _userProfileHandler;
 
         // UT2004 Player Profile File
         public List<UT2004PlayerProfileFile> UT2004PlayerProfileFiles { get; private set; }
         private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
         #endregion
 
-        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
+        public DataManager(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, UserProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
         {
             DiscordClient = client;
 
@@ -70,7 +70,7 @@ namespace FlawsFightNight.Managers
             _tournamentDataHandler = tournamentDataHandler;
             _processedLogNamesHandler = processedLogNamesHandler;
             _statLogMatchResultsHandler = statLogMatchResultHandler;
-            _memberProfileHandler = userProfileHandler;
+            _userProfileHandler = userProfileHandler;
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
         }
         #endregion
@@ -86,7 +86,7 @@ namespace FlawsFightNight.Managers
             await _tournamentDataHandler.InitializePendingPathAsync();
             await _processedLogNamesHandler.InitializePendingPathAsync();
             await _statLogMatchResultsHandler.InitializePendingPathAsync();
-            await _memberProfileHandler.InitializePendingPathAsync();
+            await _userProfileHandler.InitializePendingPathAsync();
             await _ut2004PlayerProfileHandler.InitializePendingPathAsync();
 
             // After all pending paths are initialized, load the data from those paths
@@ -96,7 +96,7 @@ namespace FlawsFightNight.Managers
             await LoadPermissionsConfigFile();
             await LoadProcessedLogNamesFile();
             await LoadTournamentDataFiles();
-            await LoadAllMemberProfileFiles();
+            await LoadAllUserProfileFiles();
             await LoadAllUT2004PlayerProfileFiles();
         }
         #endregion
@@ -287,68 +287,40 @@ namespace FlawsFightNight.Managers
         }
         #endregion
 
-        #region Member Profile Files
-        public async Task LoadAllMemberProfileFiles()
+        #region User Profile Files
+        public async Task LoadAllUserProfileFiles()
         {
-            MemberProfileFiles = await _memberProfileHandler.LoadAll("*.json", "MemberProfiles");
+            UserProfileFiles = await _userProfileHandler.LoadAll("*.json", "UserProfiles");
         }
 
-        public async Task<MemberProfileFile> LoadMemberProfileFile(ulong discordId)
+        public async Task<UserProfileFile> LoadUserProfileFile(ulong discordId)
         {
-            await _memberProfileHandler.SetFilePath(PathOption.MemberProfiles, $"{discordId}.json");
-            return await _memberProfileHandler.Load();
+            await _userProfileHandler.SetFilePath(PathOption.UserProfiles, $"{discordId}.json");
+            return await _userProfileHandler.Load();
         }
 
-        public MemberProfileFile CreateNewMemberProfileFile(MemberProfile memberProfile)
+        public async Task SaveUserProfileFile(UserProfile userProfile)
         {
-            return new MemberProfileFile()
+            var userProfileFile = new UserProfileFile()
             {
-                MemberProfile = memberProfile
+                UserProfile = userProfile
             };
+            await _userProfileHandler.SetFilePath(PathOption.UserProfiles, $"{userProfile.DiscordId}.json");
+            await _userProfileHandler.Save(userProfileFile);
         }
 
-        public void AddNewMemberProfileFile(MemberProfileFile memberProfile)
+        public async Task<UserProfile?> GetUserProfile(ulong discordId)
         {
-            MemberProfileFiles.Add(memberProfile);
-        }
-
-        public async Task SaveMemberProfileFile(MemberProfile userProfile)
-        {
-            try
+            foreach (var profileFile in UserProfileFiles)
             {
-                var userProfileFile = new MemberProfileFile()
+                if (profileFile.UserProfile.DiscordId == discordId)
                 {
-                    MemberProfile = userProfile
-                };
-                await _memberProfileHandler.SetFilePath(PathOption.MemberProfiles, $"{userProfile.DiscordId}.json");
-                await _memberProfileHandler.Save(userProfileFile);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error saving member profile for Discord ID {userProfile.DiscordId}: {ex.Message}");
-            }
-        }
-
-        public async Task SaveAllMemberProfileFiles()
-        {
-            foreach (var profileFile in MemberProfileFiles)
-            {
-                await _memberProfileHandler.SetFilePath(PathOption.MemberProfiles, $"{profileFile.MemberProfile.DiscordId}.json");
-                await _memberProfileHandler.Save(profileFile);
-            }
-        }
-
-        public MemberProfile? GetMemberProfile(ulong discordId)
-        {
-            foreach (var profileFile in MemberProfileFiles)
-            {
-                if (profileFile.MemberProfile.DiscordId == discordId)
-                {
-                    return profileFile.MemberProfile;
+                    return profileFile.UserProfile;
                 }
             }
             return null;
         }
+
 
         #endregion
 
@@ -373,7 +345,7 @@ namespace FlawsFightNight.Managers
             await _ut2004PlayerProfileHandler.Save(playerProfileFile);
         }
 
-        public UT2004PlayerProfile? GetUT2004PlayerProfile(string playerGuid)
+        public async Task<UT2004PlayerProfile> GetUT2004PlayerProfile(string playerGuid)
         {
 
             foreach (var profileFile in UT2004PlayerProfileFiles)
