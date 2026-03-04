@@ -16,12 +16,11 @@ namespace FlawsFightNight.Bot.Autocomplete
 {
     public class AutocompleteCache
     {
-        // Add Managers as needed here
-        private readonly AdminConfigurationService _configManager;
+        private readonly AdminConfigurationService _adminConfigService;
         private readonly MatchService _matchService;
         private readonly TeamService _teamService;
         private readonly TournamentService _tournamentService;
-        private readonly MemberService _memberManager;
+        private readonly MemberService _memberService;
 
         // Autocomplete Data
         private List<Match> _allMatches = new();
@@ -39,14 +38,13 @@ namespace FlawsFightNight.Bot.Autocomplete
         private List<MemberProfile> _memberProfiles = new();
 
 
-        public AutocompleteCache(AdminConfigurationService configManager, MatchService matchService, TeamService teamService, TournamentService tournamentService, MemberService memberManager)
+        public AutocompleteCache(AdminConfigurationService adminConfigService, MatchService matchService, TeamService teamService, TournamentService tournamentService, MemberService memberService)
         {
-            // Initialize Managers here
-            _configManager = configManager;
+            _adminConfigService = adminConfigService;
             _matchService = matchService;
             _teamService = teamService;
             _tournamentService = tournamentService;
-            _memberManager = memberManager;
+            _memberService = memberService;
 
             // Initialize Autocomplete Data
             Update();
@@ -54,7 +52,7 @@ namespace FlawsFightNight.Bot.Autocomplete
 
         public void Update()
         {
-            // Refresh autocomplete data from managers
+            // Refresh autocomplete data from services
             _allMatches = _matchService.GetAllActiveMatches();
             _allPostMatches = _matchService.GetAllPostMatches();
             _roundRobinPostMatches = _matchService.GetAllRoundRobinPostMatches();
@@ -66,8 +64,8 @@ namespace FlawsFightNight.Bot.Autocomplete
             _roundRobinTeams = _teamService.GetAllRoundRobinTeams();
             _roundBasedTeams = _teamService.GetAllRoundBasedTeams();
             _allTeams = _teamService.GetAllTeams();
-            _ftpCredentials = _configManager.GetFTPCredentials()!;
-            _memberProfiles = _memberManager.GetAllMemberProfiles();
+            _ftpCredentials = _adminConfigService.GetFTPCredentials()!;
+            _memberProfiles = _memberService.GetAllMemberProfiles();
         }
 
         public List<AutocompleteResult> GetMatchIdsMatchingInput(string input)
@@ -220,7 +218,7 @@ namespace FlawsFightNight.Bot.Autocomplete
         {
             // Get all teams from all tournaments
             // If the input is empty or only whitespace, return all teams sorted alphabetically
-            // Must use the cache data and not call the manager directly
+            // Must use the cache data and not call the services directly
             if (string.IsNullOrWhiteSpace(input))
             {
                 return _ladderTeams
@@ -414,9 +412,9 @@ namespace FlawsFightNight.Bot.Autocomplete
                     return new List<AutocompleteResult>();
                 }
 
-                // Prefer the cached member profiles; fall back to manager lookup if missing
+                // Prefer the cached member profiles; fall back to service lookup if missing
                 var profile = _memberProfiles.FirstOrDefault(p => p.DiscordId == discordId)
-                              ?? _memberManager.GetMemberProfile(discordId);
+                              ?? _memberService.GetMemberProfile(discordId);
 
                 if (profile == null || profile.RegisteredUT2004GUIDs == null || profile.RegisteredUT2004GUIDs.Count == 0)
                     return new List<AutocompleteResult>();

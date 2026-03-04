@@ -16,15 +16,15 @@ namespace FlawsFightNight.Commands.TournamentCommands
         private readonly EmbedFactory _embedFactory;
         private readonly GitBackupService _gitBackupService;
         private readonly MatchService _matchService;
-        private readonly MemberService _memberManager;
+        private readonly MemberService _memberService;
         private readonly TournamentService _tournamentService;
 
-        public StartTournamentHandler(EmbedFactory embedFactory, GitBackupService gitBackupService, MatchService matchService, MemberService memberManager, TournamentService tournamentService) : base("Start Tournament")
+        public StartTournamentHandler(EmbedFactory embedFactory, GitBackupService gitBackupService, MatchService matchService, MemberService memberService, TournamentService tournamentService) : base("Start Tournament")
         {
             _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
             _matchService = matchService;
-            _memberManager = memberManager;
+            _memberService = memberService;
             _tournamentService = tournamentService;
         }
 
@@ -43,7 +43,7 @@ namespace FlawsFightNight.Commands.TournamentCommands
             tournament.Start();
 
             // Update member stats for all members in the tournament before starting
-            _memberManager.IncrementMembersTournamentsPlayed(tournament.GetAllMembers());
+            _memberService.IncrementMembersTournamentsPlayed(tournament.GetAllMembers());
 
             // Build match schedules if applicable and start tournament
             if (tournament is NormalRoundRobinTournament normalRRTournament)
@@ -60,7 +60,7 @@ namespace FlawsFightNight.Commands.TournamentCommands
 
             // Save and reload databases
             await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
-            await _memberManager.SaveAndReloadMemberProfiles();
+            await _memberService.SaveAndReloadMemberProfiles();
 
             // Backup to git repo
             _gitBackupService.EnqueueBackup();

@@ -16,24 +16,24 @@ namespace FlawsFightNight.Commands.TeamCommands
 {
     public class RegisterTeamHandler : CommandHandler
     {
-        private readonly AdminConfigurationService _configManager;
+        private readonly AdminConfigurationService _adminConfigService;
         private readonly EmbedFactory _embedFactory;
         private readonly GitBackupService _gitBackupService;
-        private readonly MemberService _memberManager;
+        private readonly MemberService _memberService;
         private readonly TournamentService _tournamentService;
         private readonly TeamService _teamService;
 
-        public RegisterTeamHandler(AdminConfigurationService configManager,
+        public RegisterTeamHandler(AdminConfigurationService adminConfigService,
                                  EmbedFactory embedFactory,
                                  GitBackupService gitBackupService,
-                                 MemberService memberManager,
+                                 MemberService memberService,
                                  TournamentService tournamentService,
                                  TeamService teamService) : base("Register Team")
         {
-            _configManager = configManager;
+            _adminConfigService = adminConfigService;
             _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
-            _memberManager = memberManager;
+            _memberService = memberService;
             _tournamentService = tournamentService;
             _teamService = teamService;
         }
@@ -68,19 +68,19 @@ namespace FlawsFightNight.Commands.TeamCommands
             }
 
             // Check if member count is valid based on the tournament's team size
-            if (!_memberManager.IsMemberCountCorrect(members.Count, tournament.TeamSize))
+            if (!_memberService.IsMemberCountCorrect(members.Count, tournament.TeamSize))
             {
                 return _embedFactory.ErrorEmbed(Name, $"The number of members ({members.Count}) does not match the required team size ({tournament.TeamSize}) for the tournament '{tournament.Name}'.");
             }
 
             // Convert IUser list to Member objects list
-            List<Member> convertedMembersList = _memberManager.ConvertIUsersToMembers(members);
+            List<Member> convertedMembersList = _memberService.ConvertIUsersToMembers(members);
 
 
             // Check if all members are valid and not already registered in the tournament (If they are, check if they are in debug admin list)
             foreach (Member member in convertedMembersList)
             {
-                if (_memberManager.IsMemberRegisteredInTournament(member.DiscordId, tournament) && !_configManager.IsDiscordIdInDebugAdminList(member.DiscordId))
+                if (_memberService.IsMemberRegisteredInTournament(member.DiscordId, tournament) && !_adminConfigService.IsDiscordIdInDebugAdminList(member.DiscordId))
                 {
                     return _embedFactory.ErrorEmbed(Name, $"Member '{member.DisplayName}' (ID: {member.DiscordId}) is already registered in the tournament '{tournament.Name}'. Each member can only be part of one team per tournament.");
                 }
@@ -95,10 +95,10 @@ namespace FlawsFightNight.Commands.TeamCommands
             // Check if all members have a profile made, if not create one for them
             foreach (var member in convertedMembersList)
             {
-                if (!_memberManager.DoesMemberProfileExist(member.DiscordId))
+                if (!_memberService.DoesMemberProfileExist(member.DiscordId))
                 {
-                    var memberProfile = _memberManager.CreateMemberProfile(member.DiscordId, member.DisplayName);
-                    _memberManager.AddProfileToDatabase(memberProfile);
+                    var memberProfile = _memberService.CreateMemberProfile(member.DiscordId, member.DisplayName);
+                    _memberService.AddProfileToDatabase(memberProfile);
                 }
             }
 
@@ -134,12 +134,12 @@ namespace FlawsFightNight.Commands.TeamCommands
             // Give members credit for tournament participation in LIVE DSR and Ladder tournaments since they can join mid tournament
             if (tournament is DSRLadderTournament && tournament.CanEnd(out _) || tournament is NormalLadderTournament && tournament.CanEnd(out _))
             {
-                _memberManager.IncrementMembersTournamentsPlayed(newTeam.Members);
+                _memberService.IncrementMembersTournamentsPlayed(newTeam.Members);
             }
 
             // Save and reload the databases
             await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);
-            await _memberManager.SaveAndReloadMemberProfiles();
+            await _memberService.SaveAndReloadMemberProfiles();
 
             // Backup to git repo
             _gitBackupService.EnqueueBackup();

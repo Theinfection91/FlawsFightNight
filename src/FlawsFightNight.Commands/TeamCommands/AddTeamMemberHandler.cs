@@ -13,18 +13,18 @@ namespace FlawsFightNight.Commands.TeamCommands
     {
         private readonly EmbedFactory _embedFactory;
         private readonly GitBackupService _gitBackupService;
-        private readonly MemberService _memberManager;
+        private readonly MemberService _memberService;
         private readonly TeamService _teamService;
         private readonly TournamentService _tournamentService;
         public AddTeamMemberHandler(EmbedFactory embedFactory,
                                   GitBackupService gitBackupService,
-                                  MemberService memberManager,
+                                  MemberService memberService,
                                   TeamService teamService,
                                   TournamentService tournamentService) : base("Add Member")
         {
             _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
-            _memberManager = memberManager;
+            _memberService = memberService;
             _teamService = teamService;
             _tournamentService = tournamentService;
         }
@@ -48,7 +48,7 @@ namespace FlawsFightNight.Commands.TeamCommands
                 return _embedFactory.ErrorEmbed(Name, $"The team {teamName} cannot accept {membersToAdd.Count} new members because it would exceed the team size of {tournament.TeamSize}. It currently has {team.Members.Count} members.");
             }
 
-            var convertedMembersList = _memberManager.ConvertIUsersToMembers(membersToAdd);
+            var convertedMembersList = _memberService.ConvertIUsersToMembers(membersToAdd);
             team.AddMembers(convertedMembersList);
 
             await _tournamentService.SaveAndReloadTournamentDataFiles(tournament);

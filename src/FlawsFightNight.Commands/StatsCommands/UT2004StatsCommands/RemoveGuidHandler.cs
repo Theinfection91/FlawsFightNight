@@ -14,20 +14,20 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
     {
         private readonly EmbedFactory _embedFactory;
         private readonly GitBackupService _gitBackupService;
-        private readonly MemberService _memberManager;
+        private readonly MemberService _memberService;
 
         public RemoveGuidHandler(EmbedFactory embedFactory,
                                GitBackupService gitBackupService,
-                               MemberService memberManager) : base("Remove UT2004 GUID")
+                               MemberService memberService) : base("Remove UT2004 GUID")
         {
             _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
-            _memberManager = memberManager;
+            _memberService = memberService;
         }
 
         public async Task<Embed> RemoveGuidProcess(SocketInteractionContext context, string guid)
         {
-            var memberProfile = _memberManager.GetMemberProfile(context.User.Id)!;
+            var memberProfile = _memberService.GetMemberProfile(context.User.Id)!;
             if (memberProfile == null)
             {
                 return _embedFactory.ErrorEmbed(Name, "An error occurred while retrieving your member profile. Please try again later.");
@@ -47,7 +47,7 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
             }
             memberProfile.RemoveUT2004GUID(guid);
 
-            await _memberManager.SaveAndReloadMemberProfiles();
+            await _memberService.SaveAndReloadMemberProfiles();
             _gitBackupService.EnqueueBackup();
 
             return _embedFactory.GenericEmbed(Name, $"The GUID `{guid}` has been successfully removed from your profile.", Color.DarkGreen);

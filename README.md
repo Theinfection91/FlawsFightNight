@@ -98,7 +98,7 @@ This ensures long-term data persistence and seamless migration between systems.
 
 - **Language:** C# (.NET 8.0)
 - **Platform:** Discord.NET API
-- **Backup:** Git Integration (via `GitBackupManager`)
+- **Backup:** Git Integration (via `GitBackupService`)
 - **Status:** Active development
 
 ---

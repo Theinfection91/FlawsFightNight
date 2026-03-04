@@ -13,8 +13,8 @@ namespace FlawsFightNight.Services
 {
     public class TournamentService : BaseDataDriven
     {
-        public TournamentService(DataContext dataManager) : base("TournamentService", dataManager)
-        {
+        public TournamentService(DataContext dataContext) : base("TournamentService", dataContext)
+        {   
 
         }
 
@@ -96,8 +96,6 @@ namespace FlawsFightNight.Services
         {
             if (isCaseSensitive)
             {
-                //return _dataManager.TournamentsDatabaseFile.Tournaments
-                //    .Any(t => t.Id.Equals(tournamentId));
                 foreach (var dataFile in _dataContext.TournamentDataFiles)
                 {
                     if (dataFile.Tournament.Id.Equals(tournamentId))
@@ -121,7 +119,6 @@ namespace FlawsFightNight.Services
 
         public List<Tournament> GetAllTournaments()
         {
-            //return _dataManager.TournamentsDatabaseFile.Tournaments;
             return _dataContext.GetTournaments();
         }
 
@@ -164,8 +161,6 @@ namespace FlawsFightNight.Services
 
         public Tournament? GetTournamentById(string tournamentId)
         {
-            //return _dataManager.TournamentsDatabaseFile.Tournaments
-            //    .FirstOrDefault(t => t.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
             foreach (var dataFile in _dataContext.TournamentDataFiles)
             {
                 if (dataFile.Tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase))

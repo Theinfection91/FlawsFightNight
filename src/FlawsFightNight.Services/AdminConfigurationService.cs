@@ -16,7 +16,7 @@ namespace FlawsFightNight.Services
         public event EventHandler? FTPCredentialsChanged;
         public event EventHandler? CancelFTPSetupProcess;
         private CancellationTokenSource? _ftpSetupCts;
-        public AdminConfigurationService(DiscordSocketClient client, DataContext dataManager) : base("AdminConfigurationService", dataManager)
+        public AdminConfigurationService(DiscordSocketClient client, DataContext dataService) : base("AdminConfigurationService", dataService)
         {
             _client = client;
 
@@ -32,8 +32,8 @@ namespace FlawsFightNight.Services
             {
                 if (!IsValidBotTokenSet())
                 {
-                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Incorrect Bot Token found in Discord Credentials\\discord_credentials.json");
-                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Please enter your Bot Token now (This can be changed manually in Discord Credentials\\discord_credentials.json as well if entered incorrectly and a connection can not be established): ");
+                    Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Incorrect Bot Token found in Discord Credentials\\discord_credentials.json");
+                    Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Please enter your Bot Token now (This can be changed manually in Discord Credentials\\discord_credentials.json as well if entered incorrectly and a connection can not be established): ");
                     string? botToken = Console.ReadLine();
                     if (IsValidBotToken(botToken))
                     {
@@ -69,9 +69,9 @@ namespace FlawsFightNight.Services
             {
                 if (!IsGuildIdSet())
                 {
-                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Incorrect Guild Id found in Discord Credentials\\discord_credentials.json");
-                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Please set a valid Guild ID for SlashCommands.");
-                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Select a guild from the list below: ");
+                    Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Incorrect Guild Id found in Discord Credentials\\discord_credentials.json");
+                    Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Please set a valid Guild ID for SlashCommands.");
+                    Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Select a guild from the list below: ");
                     foreach (var guild in _client.Guilds)
                     {
                         Console.WriteLine($"Guild: {guild.Name} (ID: {guild.Id})");
@@ -162,27 +162,27 @@ namespace FlawsFightNight.Services
             {
                 if (!IsGitPatTokenSet())
                 {
-                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter your Git PAT Token now if you want to have online backup storage through a GitHub repo you control.\nIf you wish to skip this feature for now, enter 0 for the PAT token.\nRefer to documentation for more help with the Git Backup Storage.");
+                    Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Enter your Git PAT Token now if you want to have online backup storage through a GitHub repo you control.\nIf you wish to skip this feature for now, enter 0 for the PAT token.\nRefer to documentation for more help with the Git Backup Storage.");
                     string? gitPatToken = Console.ReadLine();
                     if (!gitPatToken.Equals("0") && gitPatToken.Length > 15)
                     {
                         _dataContext.GitHubCredentialFile.GitPatToken = gitPatToken;
-                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Git PAT Token accepted. Now give the https url path to your Git repo. It will look something like this: https://github.com/YourUsername/YourGitStorageRepo.git");
+                        Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Git PAT Token accepted. Now give the https url path to your Git repo. It will look something like this: https://github.com/YourUsername/YourGitStorageRepo.git");
                         string? gitUrlPath = Console.ReadLine();
                         _dataContext.GitHubCredentialFile.GitUrlPath = gitUrlPath;
-                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Repo Url set to: {gitUrlPath}\nYou can manually change your token and url path in the Credentials/github_credentials.json file as well.");
+                        Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Repo Url set to: {gitUrlPath}\nYou can manually change your token and url path in the Credentials/github_credentials.json file as well.");
                         await _dataContext.SaveAndReloadGitHubCredentialFile();
                         IsGitBackupProcessComplete = true;
                     }
                     else
                     {
-                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Git Backup Storage was not set up. You can manually change your token and url path in the Credentials/github_credentials.json file.");
+                        Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Git Backup Storage was not set up. You can manually change your token and url path in the Credentials/github_credentials.json file.");
                         IsGitBackupProcessComplete = true;
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Non-default value found for GitPatToken in Credentials/github_credentials.json file. Skipping backup setup process. If you entered in the token or url incorrectly, you can manually change it in the Credentials/github_credentials.json file for now.");
+                    Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Non-default value found for GitPatToken in Credentials/github_credentials.json file. Skipping backup setup process. If you entered in the token or url incorrectly, you can manually change it in the Credentials/github_credentials.json file for now.");
                     IsGitBackupProcessComplete = true;
                 }
             }
@@ -224,7 +224,7 @@ namespace FlawsFightNight.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - [ConfigManager] Error notifying FTP credentials change: {ex.Message}");
+                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Error notifying FTP credentials change: {ex.Message}");
 
             }
         }
@@ -243,12 +243,12 @@ namespace FlawsFightNight.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] Error cancelling FTP setup token: {ex.Message}");
+                    Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Error cancelling FTP setup token: {ex.Message}");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - [ConfigManager] Error notifying cancel FTP setup process: {ex.Message}");
+                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Error notifying cancel FTP setup process: {ex.Message}");
             }
         }
 
@@ -263,12 +263,12 @@ namespace FlawsFightNight.Services
             {
                 if (existingCredential.ServerName.Equals(credential.ServerName, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] An FTP credential with the server name '{credential.ServerName}' already exists. Please choose a different server name.");
+                    Console.WriteLine($"{DateTime.Now} - [AdminConfigService] An FTP credential with the server name '{credential.ServerName}' already exists. Please choose a different server name.");
                     return;
                 }
                 if (existingCredential.IPAddress != null && credential.IPAddress != null && existingCredential.IPAddress.Equals(credential.IPAddress, StringComparison.OrdinalIgnoreCase) && _ftpDebugMode == false)
                 {
-                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] An FTP credential with the IP address '{credential.IPAddress}' already exists. Please choose a different IP address.");
+                    Console.WriteLine($"{DateTime.Now} - [AdminConfigService] An FTP credential with the IP address '{credential.IPAddress}' already exists. Please choose a different IP address.");
                     return;
                 }
             }
@@ -311,8 +311,8 @@ namespace FlawsFightNight.Services
                 _ftpSetupCts = new CancellationTokenSource();
                 var token = _ftpSetupCts.Token;
 
-                Console.WriteLine($"{DateTime.Now} - [ConfigManager] No FTP credentials found in Credentials/ftp_credentials.json file. If you want to use FTP features, please enter in your FTP credential information now.");
-                Console.WriteLine($"{DateTime.Now} - [ConfigManager] If you want to skip this for now, simply enter 0 for the server name when prompted.");
+                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] No FTP credentials found in Credentials/ftp_credentials.json file. If you want to use FTP features, please enter in your FTP credential information now.");
+                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] If you want to skip this for now, simply enter 0 for the server name when prompted.");
                 bool IsFTPSetupComplete = false;
 
                 // Replace the previous ReadLineCancelableAsync implementation with this polling-based, cancellation-aware reader.
@@ -366,7 +366,7 @@ namespace FlawsFightNight.Services
                 {
                     while (!IsFTPSetupComplete)
                     {
-                        Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter a server name for this FTP credential (This is just a name to identify the credential, it does not have to match anything on the actual FTP server): ");
+                        Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Enter a server name for this FTP credential (This is just a name to identify the credential, it does not have to match anything on the actual FTP server): ");
                         string? serverName;
                         try
                         {
@@ -374,18 +374,18 @@ namespace FlawsFightNight.Services
                         }
                         catch (OperationCanceledException)
                         {
-                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled before server name entry.");
+                            Console.WriteLine($"{DateTime.Now} - [AdminConfigService] FTP setup cancelled before server name entry.");
                             break;
                         }
 
                         if (serverName != null && serverName.Equals("0"))
                         {
-                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup skipped. You can manually add your FTP credentials later by editing the Credentials/ftp_credentials.json file or by using the AddFTPCredential method in this ConfigManager class.");
+                            Console.WriteLine($"{DateTime.Now} - [AdminConfigService] FTP setup skipped. You can manually add your FTP credentials later by editing the Credentials/ftp_credentials.json file or by using the AddFTPCredential method in this AdminConfigService class.");
                             IsFTPSetupComplete = true;
                         }
                         else
                         {
-                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the IP address for this FTP credential (This should be the actual IP address of the FTP server): ");
+                            Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Enter the IP address for this FTP credential (This should be the actual IP address of the FTP server): ");
                             string? ipAddress;
                             try
                             {
@@ -393,11 +393,11 @@ namespace FlawsFightNight.Services
                             }
                             catch (OperationCanceledException)
                             {
-                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled while reading IP address.");
+                                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] FTP setup cancelled while reading IP address.");
                                 break;
                             }
 
-                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the port number for this FTP credential (This should be the actual port number of the FTP server, default is usually 21): ");
+                            Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Enter the port number for this FTP credential (This should be the actual port number of the FTP server, default is usually 21): ");
                             int port;
                             try
                             {
@@ -406,11 +406,11 @@ namespace FlawsFightNight.Services
                             }
                             catch (OperationCanceledException)
                             {
-                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled while reading port.");
+                                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] FTP setup cancelled while reading port.");
                                 break;
                             }
 
-                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the username for this FTP credential (This should be the actual username for the FTP server): ");
+                            Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Enter the username for this FTP credential (This should be the actual username for the FTP server): ");
                             string? username;
                             try
                             {
@@ -418,11 +418,11 @@ namespace FlawsFightNight.Services
                             }
                             catch (OperationCanceledException)
                             {
-                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled while reading username.");
+                                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] FTP setup cancelled while reading username.");
                                 break;
                             }
 
-                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the password for this FTP credential (This should be the actual password for the FTP server): ");
+                            Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Enter the password for this FTP credential (This should be the actual password for the FTP server): ");
                             string? password;
                             try
                             {
@@ -430,11 +430,11 @@ namespace FlawsFightNight.Services
                             }
                             catch (OperationCanceledException)
                             {
-                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled while reading password.");
+                                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] FTP setup cancelled while reading password.");
                                 break;
                             }
 
-                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Enter the user logs directory path for this FTP credential (This should be the directory path on the FTP server where user logs are stored): ");
+                            Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Enter the user logs directory path for this FTP credential (This should be the directory path on the FTP server where user logs are stored): ");
                             string? userLogsDirectoryPath;
                             try
                             {
@@ -442,7 +442,7 @@ namespace FlawsFightNight.Services
                             }
                             catch (OperationCanceledException)
                             {
-                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled while reading user logs directory.");
+                                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] FTP setup cancelled while reading user logs directory.");
                                 break;
                             }
 
@@ -450,10 +450,10 @@ namespace FlawsFightNight.Services
                             if (newCredential != null)
                             {
                                 await AddFTPCredential(newCredential);
-                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP credential for server '{serverName}' added successfully.");
+                                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] FTP credential for server '{serverName}' added successfully.");
                             }
 
-                            Console.WriteLine($"{DateTime.Now} - [ConfigManager] Do you want to add another FTP credential? (y/n): ");
+                            Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Do you want to add another FTP credential? (y/n): ");
                             try
                             {
                                 string? addAnother = await ReadLineCancelableAsync(token);
@@ -463,13 +463,13 @@ namespace FlawsFightNight.Services
                                 }
                                 else
                                 {
-                                    Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup complete. You can always add more credentials later by running the FTP Setup Discord Command then come back to the console.");
+                                    Console.WriteLine($"{DateTime.Now} - [AdminConfigService] FTP setup complete. You can always add more credentials later by running the FTP Setup Discord Command then come back to the console.");
                                     IsFTPSetupComplete = true;
                                 }
                             }
                             catch (OperationCanceledException)
                             {
-                                Console.WriteLine($"{DateTime.Now} - [ConfigManager] FTP setup cancelled while asking to add another.");
+                                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] FTP setup cancelled while asking to add another.");
                                 break;
                             }
                         }

@@ -13,18 +13,18 @@ namespace FlawsFightNight.Commands.TeamCommands
     {
         private readonly EmbedFactory _embedFactory;
         private readonly GitBackupService _gitBackupService;
-        private readonly MemberService _memberManager;
+        private readonly MemberService _memberService;
         private readonly TeamService _teamService;
         private readonly TournamentService _tournamentService;
         public RemoveTeamMemberHandler(EmbedFactory embedFactory,
                                      GitBackupService gitBackupService,
-                                     MemberService memberManager,
+                                     MemberService memberService,
                                      TeamService teamService,
                                      TournamentService tournamentService) : base("Remove Member")
         {
             _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
-            _memberManager = memberManager;
+            _memberService = memberService;
             _teamService = teamService;
             _tournamentService = tournamentService;
         }
@@ -38,7 +38,7 @@ namespace FlawsFightNight.Commands.TeamCommands
             var team = _teamService.GetTeamByName(teamName);
             var tournament = _tournamentService.GetTournamentFromTeamName(teamName);
 
-            var convertedMembersList = _memberManager.ConvertIUsersToMembers(membersToRemove);
+            var convertedMembersList = _memberService.ConvertIUsersToMembers(membersToRemove);
             if (!team.ContainsMembers(convertedMembersList, out var missingMembers))
             {
                 return _embedFactory.ErrorEmbed(Name, $"The team '{teamName}' does not contain all of the specified members to remove. Missing members: {string.Join(", ", missingMembers.Select(m => m.DisplayName))}. Please check the member list and try again.");

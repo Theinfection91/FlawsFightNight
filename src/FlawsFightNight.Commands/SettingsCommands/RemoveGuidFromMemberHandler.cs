@@ -12,31 +12,31 @@ namespace FlawsFightNight.Commands.SettingsCommands
     {
         private readonly EmbedFactory _embedFactory;
         private readonly GitBackupService _gitBackupService;
-        private readonly MemberService _memberManager;
-        private readonly UT2004StatsService _ut2004StatsManager;
+        private readonly MemberService _memberService;
+        private readonly UT2004StatsService _ut2004StatsService;
 
-        public RemoveGuidFromMemberHandler(EmbedFactory embedFactory, GitBackupService gitBackupService, MemberService memberManager, UT2004StatsService ut2004StatsManager) : base("Remove GUID From Member")
+        public RemoveGuidFromMemberHandler(EmbedFactory embedFactory, GitBackupService gitBackupService, MemberService memberService, UT2004StatsService ut2004StatsService) : base("Remove GUID From Member")
         {
             _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
-            _memberManager = memberManager;
-            _ut2004StatsManager = ut2004StatsManager;
+            _memberService = memberService;
+            _ut2004StatsService = ut2004StatsService;
         }
 
         public async Task<Embed?> RemoveGuidFromMemberProcess(IUser member, string guid)
         {
-            if (!_memberManager.DoesMemberProfileExist(member.Id))
+            if (!_memberService.DoesMemberProfileExist(member.Id))
             {
-                var newProfile = _memberManager.CreateMemberProfile(member.Id, member.Username);
-                _memberManager.AddProfileToDatabase(newProfile);
+                var newProfile = _memberService.CreateMemberProfile(member.Id, member.Username);
+                _memberService.AddProfileToDatabase(newProfile);
 
-                await _memberManager.SaveAndReloadMemberProfiles();
+                await _memberService.SaveAndReloadMemberProfiles();
                 _gitBackupService.EnqueueBackup();
 
                 return _embedFactory.ErrorEmbed(Name, "Member profile did not exist, but has now been created and a GUID can be added. A GUID can not be removed from a profile that didn't exist until now.");
             }
 
-            var memberProfile = _memberManager.GetMemberProfile(member.Id);
+            var memberProfile = _memberService.GetMemberProfile(member.Id);
             if (memberProfile == null)
             {
                 return _embedFactory.ErrorEmbed(Name, "Member profile not found.");
@@ -50,10 +50,10 @@ namespace FlawsFightNight.Commands.SettingsCommands
             if (memberProfile.RegisteredUT2004GUIDs.Count is not 0)
             {
                 // Testing: Trigger rebuild when removing a secondary GUID
-                await _ut2004StatsManager.RebuildPlayerProfiles();
+                await _ut2004StatsService.RebuildPlayerProfiles();
             }
 
-            await _memberManager.SaveAndReloadMemberProfiles();
+            await _memberService.SaveAndReloadMemberProfiles();
             _gitBackupService.EnqueueBackup();
 
             return _embedFactory.GenericEmbed(Name, $"Successfully removed GUID `{guid}` from member {member.Username}.", Color.DarkGreen);

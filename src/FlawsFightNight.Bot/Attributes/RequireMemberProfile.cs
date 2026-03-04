@@ -11,30 +11,30 @@ namespace FlawsFightNight.Bot.Attributes
     {
         public override async Task<PreconditionResult> CheckRequirementsAsync(IInteractionContext context, ICommandInfo commandInfo, IServiceProvider services)
         {
-            // Resolve MemberManager from DI
-            var memberManager = services.GetService(typeof(MemberService)) as MemberService;
-            if (memberManager == null)
-                return PreconditionResult.FromError("MemberManager is not available in the service provider.");
+            // Resolve memberService from DI
+            var memberService = services.GetService(typeof(MemberService)) as MemberService;
+            if (memberService == null)
+                return PreconditionResult.FromError("memberService is not available in the service provider.");
 
             var userId = context.User.Id;
 
             // If profile exists, succeed
-            if (memberManager.DoesMemberProfileExist(userId))
+            if (memberService.DoesMemberProfileExist(userId))
                 return PreconditionResult.FromSuccess();
 
             // Create profile for invoking user
-            var gitBackupManager = services.GetService(typeof(GitBackupService)) as GitBackupService;
-            if (gitBackupManager == null) 
-                return PreconditionResult.FromError("GitBackupManager is not available in the service provider.");
+            var gitBackupService = services.GetService(typeof(GitBackupService)) as GitBackupService;
+            if (gitBackupService == null) 
+                return PreconditionResult.FromError("gitBackupService is not available in the service provider.");
             string displayName = (context.User as SocketGuildUser)?.DisplayName ?? context.User.Username;
-            var profile = memberManager.CreateMemberProfile(userId, displayName);
-            memberManager.AddProfileToDatabase(profile);
+            var profile = memberService.CreateMemberProfile(userId, displayName);
+            memberService.AddProfileToDatabase(profile);
 
             // Persist and reload data (await async save)
             try
             {
-                await memberManager.SaveAndReloadMemberProfiles();
-                gitBackupManager.EnqueueBackup();
+                await memberService.SaveAndReloadMemberProfiles();
+                gitBackupService.EnqueueBackup();
             }
             catch (Exception ex)
             {

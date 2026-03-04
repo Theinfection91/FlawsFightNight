@@ -33,7 +33,7 @@ namespace FlawsFightNight.Services
         private readonly DiscordSocketClient _client;
         private EmbedFactory _embedFactory;
 
-        public MatchService(DataContext dataManager, DiscordSocketClient client, EmbedFactory embedFactory) : base("MatchService", dataManager)
+        public MatchService(DataContext dataContext, DiscordSocketClient client, EmbedFactory embedFactory) : base("MatchService", dataContext)
         {
             _client = client;
             _embedFactory = embedFactory;

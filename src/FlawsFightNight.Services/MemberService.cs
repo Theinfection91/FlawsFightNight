@@ -15,7 +15,7 @@ namespace FlawsFightNight.Services
 {
     public class MemberService : BaseDataDriven
     {
-        public MemberService(DataContext dataManager) : base("MemberService", dataManager)
+        public MemberService(DataContext dataContext) : base("MemberService", dataContext)
         {
 
         }

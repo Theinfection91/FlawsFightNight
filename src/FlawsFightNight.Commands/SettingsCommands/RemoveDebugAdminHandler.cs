@@ -11,26 +11,26 @@ namespace FlawsFightNight.Commands.SettingsCommands
 {
     public class RemoveDebugAdminHandler : CommandHandler
     {
-        private AdminConfigurationService _configManager;
+        private AdminConfigurationService _adminConfigService;
         private EmbedFactory _embedFactory;
         private GitBackupService _gitBackupService;
 
-        public RemoveDebugAdminHandler(AdminConfigurationService configManager, EmbedFactory embedFactory, GitBackupService gitBackupService) : base("Remove Debug Admin")
+        public RemoveDebugAdminHandler(AdminConfigurationService adminConfigService, EmbedFactory embedFactory, GitBackupService gitBackupService) : base("Remove Debug Admin")
         {
-            _configManager = configManager;
+            _adminConfigService = adminConfigService;
             _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
         }
         public async Task<Embed> RemoveDebugAdminProcess(ulong userId)
         {
-            if (!_configManager.IsDiscordIdInDebugAdminList(userId))
+            if (!_adminConfigService.IsDiscordIdInDebugAdminList(userId))
             {
                 return _embedFactory.ErrorEmbed(Name, "User is not a Debug Admin.");
             }
             else
             {
                 // This will also save the file
-                await _configManager.RemoveDiscordIdFromDebugAdminList(userId);
+                await _adminConfigService.RemoveDiscordIdFromDebugAdminList(userId);
 
                 // Backup to git repo
                 _gitBackupService.EnqueueBackup();

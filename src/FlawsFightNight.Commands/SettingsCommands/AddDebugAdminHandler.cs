@@ -11,27 +11,27 @@ namespace FlawsFightNight.Commands.SettingsCommands
 {
     public class AddDebugAdminHandler : CommandHandler
     {
-        private AdminConfigurationService _configManager;
+        private AdminConfigurationService _adminConfigService;
         private EmbedFactory _embedFactory;
         private GitBackupService _gitBackupService;
 
-        public AddDebugAdminHandler(AdminConfigurationService configManager, EmbedFactory embedFactory, GitBackupService gitBackupService) : base("Add Debug Admin")
+        public AddDebugAdminHandler(AdminConfigurationService adminConfigService, EmbedFactory embedFactory, GitBackupService gitBackupService) : base("Add Debug Admin")
         {
-            _configManager = configManager;
+            _adminConfigService = adminConfigService;
             _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
         }
 
         public async Task<Embed> AddDebugAdminProcess(ulong userId)
         {
-            if (_configManager.IsDiscordIdInDebugAdminList(userId))
+            if (_adminConfigService.IsDiscordIdInDebugAdminList(userId))
             {
                 return _embedFactory.ErrorEmbed(Name, "User is already a Debug Admin.");
             }
             else
             {
                 // This will also save the file
-                await _configManager.AddDiscordIdToDebugAdminList(userId);
+                await _adminConfigService.AddDiscordIdToDebugAdminList(userId);
 
                 // Backup to git repo
                 _gitBackupService.EnqueueBackup();

@@ -24,7 +24,7 @@ namespace FlawsFightNight.Bot
         private DiscordSocketClient _client;
         private CommandService _commands;
         private InteractionService _interactionService;
-        private AdminConfigurationService _configManager;
+        private AdminConfigurationService _adminConfigService;
 
         private bool _gitBackupSetupComplete = false;
         private bool _ftpSetupComplete = false;
@@ -72,7 +72,7 @@ namespace FlawsFightNight.Bot
 
             int pos = 0;
 
-            if (msg.HasStringPrefix(_configManager.GetCommandPrefix(), ref pos) ||
+            if (msg.HasStringPrefix(_adminConfigService.GetCommandPrefix(), ref pos) ||
                 msg.HasMentionPrefix(_client.CurrentUser, ref pos))
             {
                 var ctx = new SocketCommandContext(_client, msg);
@@ -159,7 +159,7 @@ namespace FlawsFightNight.Bot
 
                     ///
 
-                    // Managers
+                    // Services
                     services.AddSingleton<AdminConfigurationService>();
                     services.AddSingleton<DataContext>();
                     services.AddSingleton<EmbedFactory>();
@@ -193,36 +193,34 @@ namespace FlawsFightNight.Bot
                 })
                 .Build();
 
-            // Initialize data and stats managers before starting hosted services to ensure they have the data they need when they start
+            // Initialize data and stats services before starting hosted services to ensure they have the data they need when they start
             using (var scope = host.Services.CreateScope())
             {
-                var dataManager = scope.ServiceProvider.GetRequiredService<DataContext>();
-                var ut2004StatsManager = scope.ServiceProvider.GetRequiredService<UT2004StatsService>();
-                await dataManager.InitializeAsync();
-                await ut2004StatsManager.InitializeAsync();
+                var dataContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+                var ut2004StatsService = scope.ServiceProvider.GetRequiredService<UT2004StatsService>();
+                await dataContext.InitializeAsync();
+                await ut2004StatsService.InitializeAsync();
             }
 
             // Prep config
             _services = host.Services;
-            _configManager = _services.GetRequiredService<AdminConfigurationService>();
-            await _configManager.SetDiscordTokenProcess();
-            await _configManager.SetGitBackupProcess();
+            _adminConfigService = _services.GetRequiredService<AdminConfigurationService>();
+            await _adminConfigService.SetDiscordTokenProcess();
+            await _adminConfigService.SetGitBackupProcess();
 
             // Run interactive Git backup setup in background (clone/restore prompts)
             var gitBackupService = _services.GetRequiredService<GitBackupService>();
-            var configManager = _services.GetRequiredService<AdminConfigurationService>();
+            var adminConfigService = _services.GetRequiredService<AdminConfigurationService>();
             while (!_gitBackupSetupComplete)
             {
                 await gitBackupService.RunInteractiveSetup();
-                _gitBackupSetupComplete = configManager.IsGitPatTokenSet();
+                _gitBackupSetupComplete = adminConfigService.IsGitPatTokenSet();
             }
 
-            // Run interactive FTP setup in background (add credentials prompts)
-            var ftpSetupManager = _services.GetRequiredService<AdminConfigurationService>();
             while (!_ftpSetupComplete)
             {
-                await ftpSetupManager.FTPSetupProcess();
-                _ftpSetupComplete = ftpSetupManager.IsFTPCredentialsSet();
+                await adminConfigService.FTPSetupProcess();
+                _ftpSetupComplete = adminConfigService.IsFTPCredentialsSet();
             }
 
             // Discord services
@@ -262,15 +260,15 @@ namespace FlawsFightNight.Bot
                 return Task.CompletedTask;
             };
 
-            await _client.LoginAsync(TokenType.Bot, _configManager.GetDiscordToken());
+            await _client.LoginAsync(TokenType.Bot, _adminConfigService.GetDiscordToken());
             await _client.StartAsync();
 
             await ready.Task;
 
             // Slash commands
             await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
-            await _configManager.SetGuildIdProcess();
-            await _interactionService.RegisterCommandsToGuildAsync(_configManager.GetGuildId());
+            await _adminConfigService.SetGuildIdProcess();
+            await _interactionService.RegisterCommandsToGuildAsync(_adminConfigService.GetGuildId());
 
             Console.WriteLine($"{DateTime.Now} - [Discord] Bot logged in as: {_client.CurrentUser}");
         }

@@ -11,10 +11,10 @@ namespace FlawsFightNight.Services
         public required string Name { get; set; }
         internal DataContext _dataContext;
 
-        public BaseDataDriven(string name, DataContext dataManager)
+        public BaseDataDriven(string name, DataContext dataContext)
         {
             Name = name;
-            _dataContext = dataManager;
+            _dataContext = dataContext;
         }
     }
 }

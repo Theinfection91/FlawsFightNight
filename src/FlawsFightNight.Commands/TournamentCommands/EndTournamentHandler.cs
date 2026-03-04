@@ -19,14 +19,14 @@ namespace FlawsFightNight.Commands.TournamentCommands
         private readonly EmbedFactory _embedFactory;
         private readonly GitBackupService _gitBackupService;
         private readonly MatchService _matchService;
-        private readonly MemberService _memberManager;
+        private readonly MemberService _memberService;
         private readonly TournamentService _tournamentService;
-        public EndTournamentHandler(EmbedFactory embedFactory, GitBackupService gitBackupService, MatchService matchService, MemberService memberManager, TournamentService tournamentService) : base("End Tournament")
+        public EndTournamentHandler(EmbedFactory embedFactory, GitBackupService gitBackupService, MatchService matchService, MemberService memberService, TournamentService tournamentService) : base("End Tournament")
         {
             _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
             _matchService = matchService;
-            _memberManager = memberManager;
+            _memberService = memberService;
             _tournamentService = tournamentService;
         }
 
@@ -41,7 +41,7 @@ namespace FlawsFightNight.Commands.TournamentCommands
             }
 
             // Award completion experience to all members
-            _memberManager.AwardCompletionTournamentForMembers(tournament.GetAllMembers());
+            _memberService.AwardCompletionTournamentForMembers(tournament.GetAllMembers());
 
             // Handle Normal and Open Round Robin Tournaments
             if (tournament is ITieBreakerRankSystem tbTournament)
@@ -68,7 +68,7 @@ namespace FlawsFightNight.Commands.TournamentCommands
                     _tournamentService.ApplyTieBreakerRankings(tournament, tiedTeams, winnerTeamName);
 
                     // Handle tournament end awards (1st, 2nd, 3rd place)
-                    _memberManager.HandleTournamentEndAwards(tournament.Teams);
+                    _memberService.HandleTournamentEndAwards(tournament.Teams);
 
                     // End the tournament
                     tournament.End();
@@ -84,7 +84,7 @@ namespace FlawsFightNight.Commands.TournamentCommands
                 else
                 {
                     // Handle tournament end awards (1st, 2nd, 3rd place)
-                    _memberManager.HandleTournamentEndAwards(tournament.Teams);
+                    _memberService.HandleTournamentEndAwards(tournament.Teams);
 
                     // End the tournament, no tie breaker needed
                     tournament.End();
@@ -103,7 +103,7 @@ namespace FlawsFightNight.Commands.TournamentCommands
             if (tournament is NormalLadderTournament ladderTournament)
             {
                 // Handle tournament end awards (1st, 2nd, 3rd place)
-                _memberManager.HandleTournamentEndAwards(tournament.Teams);
+                _memberService.HandleTournamentEndAwards(tournament.Teams);
 
                 // End the tournament, normal ladder tournaments can be ended as long as they are running
                 ladderTournament.End();
@@ -121,7 +121,7 @@ namespace FlawsFightNight.Commands.TournamentCommands
             if (tournament is DSRLadderTournament dsrTournament)
             {
                 // Handle tournament end awards (1st, 2nd, 3rd place)
-                _memberManager.HandleTournamentEndAwards(tournament.Teams);
+                _memberService.HandleTournamentEndAwards(tournament.Teams);
 
                 // End the tournament, DSR tournaments can be ended as long as they are running
                 dsrTournament.End();

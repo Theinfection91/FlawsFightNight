@@ -12,7 +12,7 @@ namespace FlawsFightNight.Services
 {
     public class TeamService : BaseDataDriven
     {
-        public TeamService(DataContext dataManager) : base("TeamService", dataManager)
+        public TeamService(DataContext dataContext) : base("TeamService", dataContext)
         {
 
         }

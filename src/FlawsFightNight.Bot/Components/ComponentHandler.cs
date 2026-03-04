@@ -11,14 +11,14 @@ namespace FlawsFightNight.Bot.Components
     public class ComponentHandler : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly EmbedFactory _embedFactory;
-        private readonly AdminConfigurationService _configManager;
-        private readonly MemberService _memberManager;
+        private readonly AdminConfigurationService _adminConfigService;
+        private readonly MemberService _memberService;
 
-        public ComponentHandler(EmbedFactory embedFactory, AdminConfigurationService configManager, MemberService memberManager)
+        public ComponentHandler(EmbedFactory embedFactory, AdminConfigurationService adminConfigService, MemberService memberService)
         {
             _embedFactory = embedFactory;
-            _configManager = configManager;
-            _memberManager = memberManager;
+            _adminConfigService = adminConfigService;
+            _memberService = memberService;
         }
 
         private bool IsAuthorizedUser(ulong expectedUserId) => Context.User.Id == expectedUserId;
@@ -51,7 +51,7 @@ namespace FlawsFightNight.Bot.Components
                 {
                     try
                     {
-                        await _configManager.FTPSetupProcess(isUserInit: true);
+                        await _adminConfigService.FTPSetupProcess(isUserInit: true);
                         Console.WriteLine($"{DateTime.Now} - [ComponentHandler] FTP setup completed via Discord command.");
                     }
                     catch (Exception ex)
@@ -116,7 +116,7 @@ namespace FlawsFightNight.Bot.Components
                 {
                     try
                     {
-                        _configManager.NotifyCancelFTPSetupProcess();
+                        _adminConfigService.NotifyCancelFTPSetupProcess();
                     }
                     catch (Exception ex)
                     {
@@ -170,7 +170,7 @@ namespace FlawsFightNight.Bot.Components
 
             try
             {
-                var memberProfile = _memberManager.GetMemberProfile(invokingUserId);
+                var memberProfile = _memberService.GetMemberProfile(invokingUserId);
                 if (memberProfile == null || memberProfile.RegisteredUT2004GUIDs.Count == 0)
                 {
                     await RespondAsync(embed: _embedFactory.ErrorEmbed("UT2004 Profile", "No UT2004 GUID registered to your account."), ephemeral: true);
@@ -178,7 +178,7 @@ namespace FlawsFightNight.Bot.Components
                 }
 
                 var guid = memberProfile.RegisteredUT2004GUIDs.First();
-                var utProfile = _memberManager.GetUT2004PlayerProfile(guid);
+                var utProfile = _memberService.GetUT2004PlayerProfile(guid);
                 if (utProfile == null)
                 {
                     await RespondAsync(embed: _embedFactory.ErrorEmbed("UT2004 Profile", $"No stats found for GUID `{guid}`."), ephemeral: true);

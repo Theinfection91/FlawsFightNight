@@ -10,27 +10,27 @@ namespace FlawsFightNight.Commands.SettingsCommands
 {
     public class RemoveFTPCredentialsHandler : CommandHandler
     {
-        private readonly AdminConfigurationService _configManager;
+        private readonly AdminConfigurationService _adminConfigService;
         private readonly EmbedFactory _embedFactory;
-        public RemoveFTPCredentialsHandler(AdminConfigurationService configManager, EmbedFactory embedFactory) : base("Remove FTP Credentials")
+        public RemoveFTPCredentialsHandler(AdminConfigurationService adminConfigService, EmbedFactory embedFactory) : base("Remove FTP Credentials")
         {
-            _configManager = configManager;
+            _adminConfigService = adminConfigService;
             _embedFactory = embedFactory;
         }
         public async Task<Embed> RemoveFTPCredentialsProcess(string ftpServerName)
         {
-            if (!_configManager.IsFTPCredentialsSet())
+            if (!_adminConfigService.IsFTPCredentialsSet())
             {
                 return _embedFactory.ErrorEmbed("No FTP credentials are currently set.");
             }
 
-            var ftpCredential = _configManager.GetFTPCredentials()!.FirstOrDefault(c => c.ServerName == ftpServerName);
+            var ftpCredential = _adminConfigService.GetFTPCredentials()!.FirstOrDefault(c => c.ServerName == ftpServerName);
             if (ftpCredential == null) 
             {
                 return _embedFactory.ErrorEmbed("Invalid FTP credential server name.");
             }
 
-            await _configManager.RemoveFTPCredential(ftpCredential);
+            await _adminConfigService.RemoveFTPCredential(ftpCredential);
             //return _embedFactory.GenericEmbed("FTP Credential Removed", $"FTP credential ({ftpCredential.Id} - {ftpCredential.ServerName} - {ftpCredential.Username} ({ftpCredential.IPAddress}:{ftpCredential.Port})) removed successfully.");
             return _embedFactory.GenericEmbed("FTP Credential Removed", $"FTP credential ({ftpCredential.ServerName} - ({ftpCredential.IPAddress}:{ftpCredential.Port})) removed successfully.", Color.Green);
         }

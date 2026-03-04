@@ -14,7 +14,7 @@ namespace FlawsFightNight.Services
 {
     public class FTPStatsService : BackgroundService
     {
-        private readonly AdminConfigurationService _configManager;
+        private readonly AdminConfigurationService _adminConfigService;
         private readonly GitBackupService _gitBackupService;
         private readonly UT2004StatsService _ut2004StatsService;
 
@@ -22,16 +22,16 @@ namespace FlawsFightNight.Services
         private Dictionary<FTPCredential, AsyncFtpClient> _ftpClients = new();
         private bool IsClientsConfigured = false;
 
-        public FTPStatsService(AdminConfigurationService configManager, DiscordSocketClient client, GitBackupService gitBackupService, UT2004StatsService uT2004StatsManager)
+        public FTPStatsService(AdminConfigurationService adminConfigService, DiscordSocketClient client, GitBackupService gitBackupService, UT2004StatsService ut2004StatsService)
         {
-            _configManager = configManager;
+            _adminConfigService = adminConfigService;
             _gitBackupService = gitBackupService;
-            _ut2004StatsService = uT2004StatsManager;
+            _ut2004StatsService = ut2004StatsService;
 
             _discordClient = client;
 
             ConfigureFTPClients();
-            _configManager.FTPCredentialsChanged += OnFTPCredentialsChanged!;
+            _adminConfigService.FTPCredentialsChanged += OnFTPCredentialsChanged!;
         }
 
         private void OnFTPCredentialsChanged(object sender, EventArgs e)
@@ -49,7 +49,7 @@ namespace FlawsFightNight.Services
 
         public void ConfigureFTPClients()
         {
-            if (!_configManager.IsFTPCredentialsSet())
+            if (!_adminConfigService.IsFTPCredentialsSet())
             {
                 Console.WriteLine($"{DateTime.Now} - [FTPStatsService] FTP credentials are not set. Please rerun FTP setup and handle it in Console, not Discord.");
                 return;
@@ -57,7 +57,7 @@ namespace FlawsFightNight.Services
             try
             {
                 _ftpClients.Clear();
-                var creds = _configManager.GetFTPCredentials();
+                var creds = _adminConfigService.GetFTPCredentials();
                 foreach (var cred in creds)
                 {
                     var client = new AsyncFtpClient(host: cred.IPAddress, user: cred.Username, pass: cred.Password, port: cred.Port);
@@ -184,11 +184,11 @@ namespace FlawsFightNight.Services
                         else
                         {
                             // Testing
-                            //await _ut2004StatsManager.RebuildPlayerProfiles();
+                            //await _ut2004StatsService.RebuildPlayerProfiles();
                         }
                     }
                     // Testing
-                    //await _ut2004StatsManager.RebuildPlayerProfiles();
+                    //await _ut2004StatsService.RebuildPlayerProfiles();
                 }
                 catch (FtpCommandException ftpEx)
                 {

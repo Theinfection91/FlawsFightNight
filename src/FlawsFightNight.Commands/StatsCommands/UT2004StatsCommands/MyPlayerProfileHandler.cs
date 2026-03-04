@@ -9,17 +9,17 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
     public class MyPlayerProfileHandler : CommandHandler
     {
         private readonly EmbedFactory _embedFactory;
-        private readonly MemberService _memberManager;
+        private readonly MemberService _memberService;
 
-        public MyPlayerProfileHandler(EmbedFactory embedFactory, MemberService memberManager) : base("My Player Profile")
+        public MyPlayerProfileHandler(EmbedFactory embedFactory, MemberService memberService) : base("My Player Profile")
         {
             _embedFactory = embedFactory;
-            _memberManager = memberManager;
+            _memberService = memberService;
         }
 
         public Task<(Embed embed, bool hasProfile)> MyPlayerProfileProcess(ulong discordId)
         {
-            var memberProfile = _memberManager.GetMemberProfile(discordId);
+            var memberProfile = _memberService.GetMemberProfile(discordId);
             if (memberProfile == null || memberProfile.RegisteredUT2004GUIDs.Count == 0)
             {
                 return Task.FromResult<(Embed, bool)>((
@@ -28,7 +28,7 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
             }
 
             var guid = memberProfile.RegisteredUT2004GUIDs.First();
-            var utProfile = _memberManager.GetUT2004PlayerProfile(guid);
+            var utProfile = _memberService.GetUT2004PlayerProfile(guid);
             if (utProfile == null)
             {
                 return Task.FromResult<(Embed, bool)>((

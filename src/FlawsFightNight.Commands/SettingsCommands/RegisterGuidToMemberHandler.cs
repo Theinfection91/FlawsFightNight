@@ -14,25 +14,25 @@ namespace FlawsFightNight.Commands.SettingsCommands
     {
         private readonly EmbedFactory _embedFactory;
         private readonly GitBackupService _gitBackupService;
-        private readonly MemberService _memberManager;
-        private readonly UT2004StatsService _ut2004StatsManager;
+        private readonly MemberService _memberService;
+        private readonly UT2004StatsService _ut2004StatsService;
 
-        public RegisterGuidToMemberHandler(EmbedFactory embedFactory, GitBackupService gitBackupService, MemberService memberManager, UT2004StatsService ut2004StatsManager) : base("Register GUID To Member")
+        public RegisterGuidToMemberHandler(EmbedFactory embedFactory, GitBackupService gitBackupService, MemberService memberService, UT2004StatsService ut2004StatsService) : base("Register GUID To Member")
         {
             _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
-            _memberManager = memberManager;
-            _ut2004StatsManager = ut2004StatsManager;
+            _memberService = memberService;
+            _ut2004StatsService = ut2004StatsService;
         }
 
         public async Task<Embed?> RegisterGuidToMemberProcess(IUser member, string guid)
         {
-            if (!_memberManager.DoesMemberProfileExist(member.Id))
+            if (!_memberService.DoesMemberProfileExist(member.Id))
             {
-                var newProfile = _memberManager.CreateMemberProfile(member.Id, member.Username);
-                _memberManager.AddProfileToDatabase(newProfile);
+                var newProfile = _memberService.CreateMemberProfile(member.Id, member.Username);
+                _memberService.AddProfileToDatabase(newProfile);
             }
-            var memberProfile = _memberManager.GetMemberProfile(member.Id);
+            var memberProfile = _memberService.GetMemberProfile(member.Id);
             if (memberProfile == null)
             {
                 return _embedFactory.ErrorEmbed(Name, "Member profile not found.");
@@ -46,10 +46,10 @@ namespace FlawsFightNight.Commands.SettingsCommands
             if (memberProfile.RegisteredUT2004GUIDs.Count > 1)
             {
                 // Testing SeamlessRatings: for now calling it this way but will see how well it works and will optimize later. Need to have checks in place to avoid unnecessary calls of rebuilding profiles and to avoid performance issues.
-                await _ut2004StatsManager.RebuildPlayerProfiles();
+                await _ut2004StatsService.RebuildPlayerProfiles();
             }
 
-            await _memberManager.SaveAndReloadMemberProfiles();
+            await _memberService.SaveAndReloadMemberProfiles();
             _gitBackupService.EnqueueBackup();
 
             return _embedFactory.GenericEmbed(Name, $"Successfully registered GUID `{guid}` to member {(member as SocketGuildUser)!.DisplayName}.", Color.DarkGreen);

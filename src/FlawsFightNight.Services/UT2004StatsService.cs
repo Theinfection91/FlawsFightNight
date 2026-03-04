@@ -25,7 +25,7 @@ namespace FlawsFightNight.Services
         private const int MinTAMMatchesBeforePeak = 3;
         private const int MinBRMatchesBeforePeak = 3;
 
-        public UT2004StatsService(DataContext dataManager, UT2004LogParser logParser, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsService", dataManager)
+        public UT2004StatsService(DataContext dataContext, UT2004LogParser logParser, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsService", dataContext)
         {
             _logParser = logParser;
             _ratingService = ratingService;
@@ -169,8 +169,8 @@ namespace FlawsFightNight.Services
                 .OrderBy(m => m.MatchDate)
                 .ToList();
 
-            Console.WriteLine($"[UT2004StatsManager] Processing {chronologicalMatches.Count} matches chronologically...");
-            Console.WriteLine($"[UT2004StatsManager] Date range: {chronologicalMatches.First().MatchDate:yyyy-MM-dd} to {chronologicalMatches.Last().MatchDate:yyyy-MM-dd}");
+            Console.WriteLine($"[UT2004StatsService] Processing {chronologicalMatches.Count} matches chronologically...");
+            Console.WriteLine($"[UT2004StatsService] Date range: {chronologicalMatches.First().MatchDate:yyyy-MM-dd} to {chronologicalMatches.Last().MatchDate:yyyy-MM-dd}");
 
             var profiles = new Dictionary<string, UT2004PlayerProfile>();
 
@@ -280,11 +280,11 @@ namespace FlawsFightNight.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[UT2004StatsManager] Error while generating/saving match summary for {match.FileName} on {match.MatchDate:yyyy-MM-dd}: {ex.Message}");
+                    Console.WriteLine($"[UT2004StatsService] Error while generating/saving match summary for {match.FileName} on {match.MatchDate:yyyy-MM-dd}: {ex.Message}");
                 }
 
                 if (processedCount % 100 == 0)
-                    Console.WriteLine($"[UT2004StatsManager] Processed {processedCount}/{chronologicalMatches.Count} matches...");
+                    Console.WriteLine($"[UT2004StatsService] Processed {processedCount}/{chronologicalMatches.Count} matches...");
             }
 
             // DEBUG: Print final stats for any merged profiles so you can verify totals look correct
@@ -303,7 +303,7 @@ namespace FlawsFightNight.Services
                 Console.WriteLine($"[SeamlessRatings] ==========================\n");
             }
 
-            Console.WriteLine($"[UT2004StatsManager] Saving {profiles.Count} player profiles...");
+            Console.WriteLine($"[UT2004StatsService] Saving {profiles.Count} player profiles...");
 
             await GenerateAndPersistMatchSummaries();
 
@@ -323,7 +323,7 @@ namespace FlawsFightNight.Services
 
         public async Task RebuildPlayerProfiles()
         {
-            Console.WriteLine($"[UT2004StatsManager] Rebuilding player profiles from scratch...");
+            Console.WriteLine($"[UT2004StatsService] Rebuilding player profiles from scratch...");
 
             _eloService.SkippedYoungPlayers = 0;
             _ratingService.SkippedImbalancedMatches = 0;
@@ -346,7 +346,7 @@ namespace FlawsFightNight.Services
             var allMatches = await GetAllProcessedStatLogs();
             if (allMatches == null || allMatches.Count == 0)
             {
-                Console.WriteLine("[UT2004StatsManager] No processed stat logs found.");
+                Console.WriteLine("[UT2004StatsService] No processed stat logs found.");
                 return;
             }
 
@@ -354,7 +354,7 @@ namespace FlawsFightNight.Services
             int updated = 0;
             int skipped = 0;
 
-            Console.WriteLine($"[UT2004StatsManager] Generating summaries for {allMatches.Count} matches...");
+            Console.WriteLine($"[UT2004StatsService] Generating summaries for {allMatches.Count} matches...");
 
             foreach (var match in allMatches.OrderBy(m => m.MatchDate))
             {
@@ -394,15 +394,15 @@ namespace FlawsFightNight.Services
 
                     updated++;
                     if (updated % 100 == 0)
-                        Console.WriteLine($"[UT2004StatsManager] Summaries updated: {updated}");
+                        Console.WriteLine($"[UT2004StatsService] Summaries updated: {updated}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[UT2004StatsManager] Error saving summary for {match.FileName} ({match.MatchDate:yyyy-MM-dd}): {ex.Message}");
+                    Console.WriteLine($"[UT2004StatsService] Error saving summary for {match.FileName} ({match.MatchDate:yyyy-MM-dd}): {ex.Message}");
                 }
             }
 
-            Console.WriteLine($"[UT2004StatsManager] Done. Updated: {updated}, Skipped (already present): {skipped}");
+            Console.WriteLine($"[UT2004StatsService] Done. Updated: {updated}, Skipped (already present): {skipped}");
         }
 
         public async Task PrintAllPlayerRatings()

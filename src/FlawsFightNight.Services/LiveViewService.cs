@@ -20,13 +20,13 @@ namespace FlawsFightNight.Services
         public LiveViewService(
             DiscordSocketClient client,
             EmbedFactory embedFactory,
-            GitBackupService gitBackupManager,
-            DataContext dataManager)
+            GitBackupService gitBackupService,
+            DataContext dataContext)
         {
             _client = client;
             _embedFactory = embedFactory;
-            _gitBackupService = gitBackupManager;
-            _dataContext = dataManager;
+            _gitBackupService = gitBackupService;
+            _dataContext = dataContext;
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)

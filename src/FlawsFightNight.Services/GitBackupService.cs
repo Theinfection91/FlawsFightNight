@@ -26,9 +26,9 @@ namespace FlawsFightNight.Services
         private readonly Channel<bool> _backupChannel = Channel.CreateUnbounded<bool>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
         private readonly Task _backupWorker;
 
-        public GitBackupService(AdminConfigurationService configManager, DataContext dataManager) : base("GitBackupService", dataManager)
+        public GitBackupService(AdminConfigurationService adminConfigService, DataContext dataContext) : base("GitBackupService", dataContext)
         {
-            _adminConfigService = configManager;
+            _adminConfigService = adminConfigService;
 
             // Grab info from GitHub Credential File
             _remoteUrl = _dataContext.GitHubCredentialFile.GitUrlPath;
@@ -45,7 +45,7 @@ namespace FlawsFightNight.Services
             }
             else
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Git PAT Token not set. Can not initialize the repo in 'BackupRepo'.");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Git PAT Token not set. Can not initialize the repo in 'BackupRepo'.");
             }
 
             // Start background worker for queued backups (long-running)
@@ -79,7 +79,7 @@ namespace FlawsFightNight.Services
             if (!Directory.Exists(repoPath))
             {
                 Directory.CreateDirectory(repoPath);
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Directory created: {repoPath}");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Directory created: {repoPath}");
             }
 
             return repoPath;
@@ -91,13 +91,13 @@ namespace FlawsFightNight.Services
             {
                 if (Repository.IsValid(_repoPath))
                 {
-                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Valid repository found at '{_repoPath}'.");
+                    Console.WriteLine($"{DateTime.Now} - GitBackupService - Valid repository found at '{_repoPath}'.");
                     _isInitialized = true;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error validating repository: {ex.Message}");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Error validating repository: {ex.Message}");
             }
         }
 
@@ -105,7 +105,7 @@ namespace FlawsFightNight.Services
         {
             try
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - No local repo found. Cloning repository...");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - No local repo found. Cloning repository...");
 
                 var options = new CloneOptions
                 {
@@ -118,12 +118,12 @@ namespace FlawsFightNight.Services
                         },
                         OnProgress = output =>
                         {
-                            Console.Write($"\r{DateTime.Now} - GitBackupManager - {output}                    ");
+                            Console.Write($"\r{DateTime.Now} - GitBackupService - {output}                    ");
                             return true;
                         },
                         OnTransferProgress = progress =>
                         {
-                            Console.Write($"\r{DateTime.Now} - GitBackupManager - Receiving: {progress.ReceivedObjects}/{progress.TotalObjects} ({progress.ReceivedBytes / 1024} KB)   ");
+                            Console.Write($"\r{DateTime.Now} - GitBackupService - Receiving: {progress.ReceivedObjects}/{progress.TotalObjects} ({progress.ReceivedBytes / 1024} KB)   ");
                             return true;
                         }
                     },
@@ -131,7 +131,7 @@ namespace FlawsFightNight.Services
                     {
                         if (totalSteps > 0)
                         {
-                            Console.Write($"\r{DateTime.Now} - GitBackupManager - Checkout: {completedSteps}/{totalSteps}   ");
+                            Console.Write($"\r{DateTime.Now} - GitBackupService - Checkout: {completedSteps}/{totalSteps}   ");
                         }
                     }
                 };
@@ -140,27 +140,27 @@ namespace FlawsFightNight.Services
                 await Task.Run(() => Repository.Clone(_remoteUrl, _repoPath, options), _shutdownToken.Token).ConfigureAwait(false);
 
                 Console.WriteLine(); // New line after progress
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Repository cloned successfully.");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Repository cloned successfully.");
 
                 await PromptForDataRestore().ConfigureAwait(false);
             }
             catch (LibGit2SharpException ex)
             {
-                Console.WriteLine($"\n{DateTime.Now} - GitBackupManager - Error cloning repository: {ex.Message}");
+                Console.WriteLine($"\n{DateTime.Now} - GitBackupService - Error cloning repository: {ex.Message}");
             }
             catch (OperationCanceledException)
             {
-                Console.WriteLine($"\n{DateTime.Now} - GitBackupManager - Clone operation cancelled.");
+                Console.WriteLine($"\n{DateTime.Now} - GitBackupService - Clone operation cancelled.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"\n{DateTime.Now} - GitBackupManager - Error during repository initialization: {ex.Message}");
+                Console.WriteLine($"\n{DateTime.Now} - GitBackupService - Error during repository initialization: {ex.Message}");
             }
         }
 
         private async Task PromptForDataRestore()
         {
-            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Do you want to use the newly cloned backup data from the repository as your Database?");
+            Console.WriteLine($"{DateTime.Now} - GitBackupService - Do you want to use the newly cloned backup data from the repository as your Database?");
             Console.WriteLine("NOTE - This will overwrite data currently present in your JSON files in 'Databases'. This cannot be reversed.");
             Console.WriteLine("\nHINT: Enter Y if your backup repo is more up-to-date, N if your local 'Databases' folder is more current.");
 
@@ -179,32 +179,32 @@ namespace FlawsFightNight.Services
 
                     if (string.IsNullOrWhiteSpace(userInput))
                     {
-                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Invalid input. Please enter Y or N.");
+                        Console.WriteLine($"{DateTime.Now} - GitBackupService - Invalid input. Please enter Y or N.");
                         continue;
                     }
 
                     switch (userInput.ToLower().Trim())
                     {
                         case "y":
-                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Copying files from 'BackupRepo' to 'Databases'...");
+                            Console.WriteLine($"{DateTime.Now} - GitBackupService - Copying files from 'BackupRepo' to 'Databases'...");
                             await CopyFilesFromBackupRepoToDatabases().ConfigureAwait(false);
                             await _dataContext.LoadTournamentDataFiles().ConfigureAwait(false);
                             await _dataContext.LoadPermissionsConfigFile().ConfigureAwait(false);
-                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Data restored successfully.");
+                            Console.WriteLine($"{DateTime.Now} - GitBackupService - Data restored successfully.");
                             return;
 
                         case "n":
-                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Skipped data restore. Local files will be used.");
+                            Console.WriteLine($"{DateTime.Now} - GitBackupService - Skipped data restore. Local files will be used.");
                             return;
 
                         default:
-                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Invalid input: '{userInput}'. Please enter Y or N.");
+                            Console.WriteLine($"{DateTime.Now} - GitBackupService - Invalid input: '{userInput}'. Please enter Y or N.");
                             break;
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Input timeout. Defaulting to 'N' - keeping local files.");
+                    Console.WriteLine($"{DateTime.Now} - GitBackupService - Input timeout. Defaulting to 'N' - keeping local files.");
                     return;
                 }
             }
@@ -234,11 +234,11 @@ namespace FlawsFightNight.Services
             }
             catch (IOException ex)
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error copying file {source}: {ex.Message}");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Error copying file {source}: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Unexpected error copying {source}: {ex.Message}");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Unexpected error copying {source}: {ex.Message}");
             }
         }
 
@@ -289,7 +289,7 @@ namespace FlawsFightNight.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during backup process: {ex.Message}");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Error during backup process: {ex.Message}");
             }
         }
 
@@ -340,7 +340,7 @@ namespace FlawsFightNight.Services
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Failed to delete {relativePath}: {ex.Message}");
+                            Console.WriteLine($"{DateTime.Now} - GitBackupService - Failed to delete {relativePath}: {ex.Message}");
                         }
                     }
                 }
@@ -368,18 +368,18 @@ namespace FlawsFightNight.Services
                         try
                         {
                             Directory.Delete(repoDir, recursive: false);
-                            //Console.WriteLine($"{DateTime.Now} - GitBackupManager - Deleted stale folder: {relativePath}");
+                            //Console.WriteLine($"{DateTime.Now} - GitBackupService - Deleted stale folder: {relativePath}");
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Failed to delete directory {relativePath}: {ex.Message}");
+                            Console.WriteLine($"{DateTime.Now} - GitBackupService - Failed to delete directory {relativePath}: {ex.Message}");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during cleanup: {ex.Message}");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Error during cleanup: {ex.Message}");
             }
         }
 
@@ -413,7 +413,7 @@ namespace FlawsFightNight.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error copying files from BackupRepo to Databases: {ex.Message}");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Error copying files from BackupRepo to Databases: {ex.Message}");
             }
         }
 
@@ -437,7 +437,7 @@ namespace FlawsFightNight.Services
 
                     if (!repo.RetrieveStatus().IsDirty)
                     {
-                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - No changes detected; nothing to backup.");
+                        Console.WriteLine($"{DateTime.Now} - GitBackupService - No changes detected; nothing to backup.");
                         return;
                     }
 
@@ -454,20 +454,20 @@ namespace FlawsFightNight.Services
                     };
 
                     repo.Network.Push(repo.Branches["main"], options);
-                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Backup pushed successfully.");
+                    Console.WriteLine($"{DateTime.Now} - GitBackupService - Backup pushed successfully.");
                 }, _shutdownToken.Token).ConfigureAwait(false);
             }
             catch (LibGit2SharpException ex)
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during push: {ex.Message}");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Error during push: {ex.Message}");
             }
             catch (OperationCanceledException)
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Backup operation cancelled.");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Backup operation cancelled.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during backup: {ex.Message}");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Error during backup: {ex.Message}");
             }
         }
 
@@ -505,7 +505,7 @@ namespace FlawsFightNight.Services
             {
                 if (!_adminConfigService.IsGitPatTokenSet())
                 {
-                    Console.WriteLine($"{DateTime.Now} - GitBackupManager - Git PAT Token not set. Git Backup Storage not enabled.");
+                    Console.WriteLine($"{DateTime.Now} - GitBackupService - Git PAT Token not set. Git Backup Storage not enabled.");
                     return;
                 }
 
@@ -521,11 +521,11 @@ namespace FlawsFightNight.Services
             }
             catch (OperationCanceledException)
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Backup operation cancelled.");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Backup operation cancelled.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error during CopyAndBackupFilesToGit: {ex.Message}");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Error during CopyAndBackupFilesToGit: {ex.Message}");
             }
         }
 
@@ -549,20 +549,20 @@ namespace FlawsFightNight.Services
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"{DateTime.Now} - GitBackupManager - Error in background backup worker: {ex.Message}");
+                        Console.WriteLine($"{DateTime.Now} - GitBackupService - Error in background backup worker: {ex.Message}");
                     }
                 }
             }
             catch (OperationCanceledException) { /* expected on shutdown */ }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - GitBackupManager - Backup worker terminated unexpectedly: {ex.Message}");
+                Console.WriteLine($"{DateTime.Now} - GitBackupService - Backup worker terminated unexpectedly: {ex.Message}");
             }
         }
 
         public void Shutdown()
         {
-            Console.WriteLine($"{DateTime.Now} - GitBackupManager - Shutting down...");
+            Console.WriteLine($"{DateTime.Now} - GitBackupService - Shutting down...");
             _shutdownToken.Cancel();
 
             try
