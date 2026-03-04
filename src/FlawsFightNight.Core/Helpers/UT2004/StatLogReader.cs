@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Helpers.UT2004
 {
-    public class StatLogViewer
+    public class StatLogReader
     {
-        public StatLogViewer()
+        public StatLogReader()
         {
 
         }
