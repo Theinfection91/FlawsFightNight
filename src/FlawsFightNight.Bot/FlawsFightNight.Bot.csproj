@@ -50,7 +50,7 @@
   <ItemGroup>
     <ProjectReference Include="..\FlawsFightNight.CommandsLogic\FlawsFightNight.CommandsLogic.csproj" />
     <ProjectReference Include="..\FlawsFightNight.Core\FlawsFightNight.Core.csproj" />
-    <ProjectReference Include="..\FlawsFightNight.Data\FlawsFightNight.Data.csproj" />
+    <ProjectReference Include="..\FlawsFightNight.Data\FlawsFightNight.IO.csproj" />
     <ProjectReference Include="..\FlawsFightNight.Services\FlawsFightNight.Services.csproj" />
   </ItemGroup>
 

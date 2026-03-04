@@ -10,7 +10,7 @@ using FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands;
 using FlawsFightNight.CommandsLogic.TeamCommands;
 using FlawsFightNight.CommandsLogic.TournamentCommands;
 using FlawsFightNight.Core.Helpers.UT2004;
-using FlawsFightNight.Data.Handlers;
+using FlawsFightNight.IO.Handlers;
 using FlawsFightNight.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

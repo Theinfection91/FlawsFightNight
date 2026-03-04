@@ -1,5 +1,5 @@
 ﻿using FlawsFightNight.Core.Attributes;
-using FlawsFightNight.Data.Interfaces;
+using FlawsFightNight.IO.Interfaces;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Data.Models
+namespace FlawsFightNight.IO.Models
 {
     [SafeForSerialization]
     public class FTPCredential : IEncryptable

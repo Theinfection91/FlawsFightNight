@@ -3,7 +3,7 @@ using Discord.WebSocket;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
-using FlawsFightNight.Data.Models;
+using FlawsFightNight.IO.Models;
 using FlawsFightNight.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;

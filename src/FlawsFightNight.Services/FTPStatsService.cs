@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using FlawsFightNight.Data.Models;
+using FlawsFightNight.IO.Models;
 using FluentFTP;
 using FluentFTP.Exceptions;
 using Microsoft.Extensions.Hosting;

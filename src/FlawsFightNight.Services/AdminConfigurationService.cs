@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.WebSocket;
-using FlawsFightNight.Data.Models;
+using FlawsFightNight.IO.Models;
 
 namespace FlawsFightNight.Services
 {

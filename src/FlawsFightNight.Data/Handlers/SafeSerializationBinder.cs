@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 
-namespace FlawsFightNight.Data.Handlers
+namespace FlawsFightNight.IO.Handlers
 {
     public class SafeSerializationBinder : ISerializationBinder
     {

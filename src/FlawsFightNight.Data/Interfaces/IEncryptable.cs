@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Data.Interfaces
+namespace FlawsFightNight.IO.Interfaces
 {
     public interface IEncryptable
     {

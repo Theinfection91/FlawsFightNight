@@ -1,8 +1,6 @@
 ﻿using Discord.WebSocket;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
-using FlawsFightNight.Data.Models;
-using FlawsFightNight.Data.Handlers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +9,8 @@ using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
+using FlawsFightNight.IO.Handlers;
+using FlawsFightNight.IO.Models;
 
 namespace FlawsFightNight.Services
 {
