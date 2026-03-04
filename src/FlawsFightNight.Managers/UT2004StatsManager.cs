@@ -16,24 +16,26 @@ namespace FlawsFightNight.Managers
         private readonly UT2004LogParser _logParser;
         private readonly OpenSkillRatingService _ratingService;
         private readonly UTStatsDBEloRatingService _eloService;
+        private readonly SeamlessRatingsMapper _ratingsMapper;
         private int _iCTFStatLogIdCounter = 0;
         private int _TAMStatLogIdCounter = 0;
         private int _iBRStatLogIdCounter = 0;
 
-        // Minimum matches in a given mode before its ELO peak starts being recorded.
-        // Prevents the very first 1-2 matches from locking in a permanent peak.
-        // Kept low for TAM/BR since many players never reach 20 matches in those modes,
-        // which was causing Peak=0.0 while Rating>0 (misleading display bug).
         private const int MinCTFMatchesBeforePeak = 10;
         private const int MinTAMMatchesBeforePeak = 3;
         private const int MinBRMatchesBeforePeak = 3;
 
-        public UT2004StatsManager(DataManager dataManager, UT2004LogParser logParser, OpenSkillRatingService ratingService) : base("UT2004StatsManager", dataManager)
+        public UT2004StatsManager(DataManager dataManager, UT2004LogParser logParser, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsManager", dataManager)
         {
             _logParser = logParser;
             _ratingService = ratingService;
-            _eloService = new UTStatsDBEloRatingService();
-            GetStatLogCounts().Wait();
+            _ratingsMapper = ratingsMapper;
+            _eloService = eloService;
+        }
+
+        public async Task InitializeAsync()
+        {   
+            await GetStatLogCounts();
         }
 
         #region Stat Log Processing
@@ -138,6 +140,29 @@ namespace FlawsFightNight.Managers
         #region Player Profile Building with OpenSkill and ELO
         public async Task SetupPlayerProfiles()
         {
+            // Prime the SeamlessRatings alias map
+            var memberProfiles = _dataManager.MemberProfileFiles
+                .Select(f => f.MemberProfile)
+                .ToList();
+            _ratingsMapper.BuildAliasMap(memberProfiles);
+
+            // DEBUG: Print alias map so you can verify correct GUID → primary mappings
+            if (_ratingsMapper.HasAliases)
+            {
+                Console.WriteLine($"[SeamlessRatings] Active aliases detected — merged GUIDs will be treated as one identity.");
+                foreach (var profile in memberProfiles.Where(p => p.RegisteredUT2004GUIDs?.Count >= 2))
+                {
+                    string primary = profile.RegisteredUT2004GUIDs[0];
+                    Console.WriteLine($"[SeamlessRatings] Player: {profile.DisplayName} | Primary GUID: {primary}");
+                    foreach (var guid in profile.RegisteredUT2004GUIDs.Skip(1))
+                        Console.WriteLine($"[SeamlessRatings]   Alias: {guid} → {primary}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"[SeamlessRatings] No aliases active — all GUIDs treated independently.");
+            }
+
             var allMatchStats = await GetAllProcessedStatLogs();
 
             var chronologicalMatches = allMatchStats
@@ -149,6 +174,9 @@ namespace FlawsFightNight.Managers
 
             var profiles = new Dictionary<string, UT2004PlayerProfile>();
 
+            // DEBUG: Track which raw GUIDs got merged into a primary during the replay
+            var mergeLog = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
             int processedCount = 0;
             foreach (var match in chronologicalMatches)
             {
@@ -159,11 +187,19 @@ namespace FlawsFightNight.Managers
                 {
                     foreach (var playerStats in team.Where(p => !p.IsBot))
                     {
-                        if (!profiles.ContainsKey(playerStats.Guid))
-                            profiles[playerStats.Guid] = new UT2004PlayerProfile(playerStats.Guid);
+                        var resolvedGuid = _ratingsMapper.Resolve(playerStats.Guid);
 
-                        // UPDATED: pass match date so FirstSeen/LastPlayed are recorded correctly
-                        profiles[playerStats.Guid].UpdateStatsFromMatch(playerStats, match.GameMode, match.MatchDate);
+                        // DEBUG: Log the first time we see a GUID get merged
+                        if (resolvedGuid != playerStats.Guid && !mergeLog.ContainsKey(playerStats.Guid))
+                        {
+                            mergeLog[playerStats.Guid] = resolvedGuid;
+                            Console.WriteLine($"[SeamlessRatings] First merge hit in replay — raw: {playerStats.Guid} → primary: {resolvedGuid} (match: {match.FileName}, date: {match.MatchDate:yyyy-MM-dd})");
+                        }
+
+                        if (!profiles.ContainsKey(resolvedGuid))
+                            profiles[resolvedGuid] = new UT2004PlayerProfile(resolvedGuid);
+
+                        profiles[resolvedGuid].UpdateStatsFromMatch(playerStats, match.GameMode, match.MatchDate);
                     }
                 }
 
@@ -178,7 +214,8 @@ namespace FlawsFightNight.Managers
                 {
                     foreach (var playerStats in team.Where(p => !p.IsBot))
                     {
-                        if (!profiles.TryGetValue(playerStats.Guid, out var profile))
+                        var resolvedGuid = _ratingsMapper.Resolve(playerStats.Guid);
+                        if (!profiles.TryGetValue(resolvedGuid, out var profile))
                             continue;
 
                         switch (match.GameMode)
@@ -199,7 +236,6 @@ namespace FlawsFightNight.Managers
                     }
                 }
 
-                // NEW: build per-player ELO changes for this match and persist a generated summary on the match
                 try
                 {
                     var eloChanges = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
@@ -209,7 +245,8 @@ namespace FlawsFightNight.Managers
                         foreach (var playerStats in team.Where(p => !p.IsBot))
                         {
                             if (string.IsNullOrEmpty(playerStats.Guid)) continue;
-                            if (!profiles.TryGetValue(playerStats.Guid, out var profile)) continue;
+                            var resolvedGuid = _ratingsMapper.Resolve(playerStats.Guid);
+                            if (!profiles.TryGetValue(resolvedGuid, out var profile)) continue;
 
                             double change = match.GameMode switch
                             {
@@ -219,16 +256,14 @@ namespace FlawsFightNight.Managers
                                 _ => 0.0
                             };
 
-                            if (!eloChanges.ContainsKey(playerStats.Guid))
-                                eloChanges[playerStats.Guid] = change;
+                            if (!eloChanges.ContainsKey(resolvedGuid))
+                                eloChanges[resolvedGuid] = change;
                         }
                     }
 
-                    // Generate and store the summary on the stat log (RuleBasedMatchSummarizer sets match.MatchSummary too)
                     var summarizer = new RuleBasedMatchSummarizer();
                     summarizer.Summarize(match, profiles, eloChanges);
 
-                    // Persist the updated stat log (with MatchSummary) back to disk
                     await _dataManager.SaveStatLogMatchResultFile(match);
                 }
                 catch (Exception ex)
@@ -240,6 +275,22 @@ namespace FlawsFightNight.Managers
                     Console.WriteLine($"[UT2004StatsManager] Processed {processedCount}/{chronologicalMatches.Count} matches...");
             }
 
+            // DEBUG: Print final stats for any merged profiles so you can verify totals look correct
+            if (mergeLog.Count > 0)
+            {
+                Console.WriteLine($"\n[SeamlessRatings] ===== MERGE SUMMARY =====");
+                Console.WriteLine($"[SeamlessRatings] {mergeLog.Count} alias GUID(s) were merged during this replay.");
+                var affectedPrimaries = mergeLog.Values.Distinct().ToList();
+                foreach (var primaryGuid in affectedPrimaries)
+                {
+                    if (!profiles.TryGetValue(primaryGuid, out var merged)) continue;
+                    Console.WriteLine($"[SeamlessRatings] Merged Profile → GUID: {primaryGuid} | Name: {merged.CurrentName}");
+                    Console.WriteLine($"  Total Matches: CTF={merged.TotalCTFMatches} TAM={merged.TotalTAMMatches} BR={merged.TotalBRMatches}");
+                    Console.WriteLine($"  CTF ELO: {merged.CaptureTheFlagElo.Rating:F1} | TAM ELO: {merged.TAMElo.Rating:F1} | BR ELO: {merged.BombingRunElo.Rating:F1}");
+                }
+                Console.WriteLine($"[SeamlessRatings] ==========================\n");
+            }
+
             Console.WriteLine($"[UT2004StatsManager] Saving {profiles.Count} player profiles...");
 
             await GenerateAndPersistMatchSummaries();
@@ -248,24 +299,6 @@ namespace FlawsFightNight.Managers
                 await _dataManager.SaveUT2004PlayerProfileFile(profile);
 
             await _dataManager.LoadAllUT2004PlayerProfileFiles();
-            //int openSkillSkipped = _ratingService.SkippedImbalancedMatches + _ratingService.SkippedInsufficientPlayers;
-            //int openSkillRated = chronologicalMatches.Count - openSkillSkipped;
-            //double openSkillSkipPct = (double)openSkillSkipped / chronologicalMatches.Count * 100;
-            //Console.WriteLine($"\n[UT2004StatsManager] ===== RATING SUMMARY =====");
-            //Console.WriteLine($"[UT2004StatsManager] Total matches processed: {chronologicalMatches.Count}");
-            //Console.WriteLine($"\n[UT2004StatsManager] --- OpenSkill Ratings ---");
-            //Console.WriteLine($"[UT2004StatsManager] Matches rated:              {openSkillRated}");
-            //Console.WriteLine($"[UT2004StatsManager] Skipped (unequal teams):    {_ratingService.SkippedImbalancedMatches}");
-            //Console.WriteLine($"[UT2004StatsManager] Skipped (not enough players): {_ratingService.SkippedInsufficientPlayers}");
-            //Console.WriteLine($"[UT2004StatsManager] Total skipped:              {openSkillSkipped} ({openSkillSkipPct:F1}%)");
-            //Console.WriteLine($"\n[UT2004StatsManager] --- UTStatsDB ELO Ratings ---");
-            //Console.WriteLine($"[UT2004StatsManager] Matches rated:              {chronologicalMatches.Count}");
-            //Console.WriteLine($"[UT2004StatsManager] Skipped (young players):    {_eloService.SkippedYoungPlayers}");
-            //Console.WriteLine($"[UT2004StatsManager] Peak thresholds — CTF: {MinCTFMatchesBeforePeak}, TAM: {MinTAMMatchesBeforePeak}, BR: {MinBRMatchesBeforePeak}");
-            //Console.WriteLine($"\n[UT2004StatsManager] Player profiles updated:   {profiles.Count}");
-            //Console.WriteLine($"[UT2004StatsManager] ==========================\n");
-
-            //await PrintAllPlayerRatings();
         }
 
         public async Task RebuildPlayerProfiles()
@@ -320,7 +353,8 @@ namespace FlawsFightNight.Managers
                         foreach (var p in team.Where(x => x != null && !x.IsBot))
                         {
                             if (string.IsNullOrEmpty(p.Guid)) continue;
-                            if (!profiles.TryGetValue(p.Guid, out var prof)) continue;
+                            var resolved = _ratingsMapper.Resolve(p.Guid);
+                            if (!profiles.TryGetValue(resolved, out var prof)) continue;
 
                             double change = match.GameMode switch
                             {
@@ -330,7 +364,7 @@ namespace FlawsFightNight.Managers
                                 _ => 0.0
                             };
 
-                            eloChanges[p.Guid] = change;
+                            eloChanges[resolved] = change;
                         }
                     }
 

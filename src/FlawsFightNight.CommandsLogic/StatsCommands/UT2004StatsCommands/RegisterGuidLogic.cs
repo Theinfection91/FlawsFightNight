@@ -16,11 +16,16 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
         private readonly EmbedManager _embedManager;
         private readonly GitBackupManager _gitBackupManager;
         private readonly MemberManager _memberManager;
-        public RegisterGuidLogic(EmbedManager embedManager, GitBackupManager gitBackupManager, MemberManager memberManager) : base("Register GUID")
+        private readonly UT2004StatsManager _ut2004StatsManager;
+        public RegisterGuidLogic(EmbedManager embedManager,
+                                 GitBackupManager gitBackupManager,
+                                 MemberManager memberManager,
+                                 UT2004StatsManager ut2004StatsManager) : base("Register GUID")
         {
             _embedManager = embedManager;
             _gitBackupManager = gitBackupManager;
             _memberManager = memberManager;
+            _ut2004StatsManager = ut2004StatsManager;
         }
         public async Task<Embed> RegisterGuidProcess(SocketInteractionContext context, string guid)
         {
@@ -35,6 +40,11 @@ namespace FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands
                 return _embedManager.ErrorEmbed(Name, "An error occurred while retrieving your member profile. Please try again later.");
             }
             memberProfile.RegisterUT2004GUID(guid);
+            if (memberProfile.RegisteredUT2004GUIDs.Count > 1)
+            {
+                // Testing SeamlessRatings: for now calling it this way but will see how well it works and will optimize later. Need to have checks in place to avoid unnecessary calls of rebuilding profiles and to avoid performance issues.
+                await _ut2004StatsManager.RebuildPlayerProfiles();
+            }
 
             //var utProfile = _memberManager.GetUT2004PlayerProfile(guid);
             //if (utProfile == null) 

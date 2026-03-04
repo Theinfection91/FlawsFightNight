@@ -1,6 +1,7 @@
 using OpenSkillSharp.Models;
 using OpenSkillSharp.Rating;
 using FlawsFightNight.Core.Enums.UT2004;
+using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
 
 namespace FlawsFightNight.Managers
@@ -12,14 +13,16 @@ namespace FlawsFightNight.Managers
     public class OpenSkillRatingService
     {
         private readonly PlackettLuce _model;
+        private readonly SeamlessRatingsMapper _ratingsMapper;
         private const double Tau = 0.0083;
         private const int MinHumansPerTeam = 1;
 
         public int SkippedImbalancedMatches { get; set; }
         public int SkippedInsufficientPlayers { get; set; }
 
-        public OpenSkillRatingService()
+        public OpenSkillRatingService(SeamlessRatingsMapper ratingsMapper)
         {
+            _ratingsMapper = ratingsMapper;
             _model = new PlackettLuce
             {
                 Mu = 25.0,
@@ -64,10 +67,11 @@ namespace FlawsFightNight.Managers
 
                 foreach (var player in humanPlayers)
                 {
-                    var profile = profiles[player.Guid!];
+                    var resolvedGuid = _ratingsMapper.Resolve(player.Guid!);
+                    var profile = profiles[resolvedGuid];
                     profile.GetMuSigma(match.GameMode, out double mu, out double sigma);
                     players.Add(new Rating { Mu = mu, Sigma = sigma });
-                    guids.Add(player.Guid!);
+                    guids.Add(resolvedGuid);
                 }
 
                 teams.Add(new Team { Players = players });
