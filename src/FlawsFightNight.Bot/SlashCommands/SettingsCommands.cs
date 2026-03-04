@@ -3,14 +3,13 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Components;
-using FlawsFightNight.Bot.PreconditionAttributes;
-using FlawsFightNight.CommandsLogic.SetCommands;
-using FlawsFightNight.CommandsLogic.SettingsCommands;
+using FlawsFightNight.Bot.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Commands.SettingsCommands;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
@@ -18,9 +17,9 @@ namespace FlawsFightNight.Bot.SlashCommands
     [RequireGuildAdmin]
     public class SettingsCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        private AddDebugAdminLogic _addDebugAdminLogic;
-        private RemoveDebugAdminLogic _removeDebugAdminLogic;
-        public SettingsCommands(AddDebugAdminLogic addDebugAdminLogic, RemoveDebugAdminLogic removeDebugAdminLogic)
+        private AddDebugAdminHandler _addDebugAdminLogic;
+        private RemoveDebugAdminHandler _removeDebugAdminLogic;
+        public SettingsCommands(AddDebugAdminHandler addDebugAdminLogic, RemoveDebugAdminHandler removeDebugAdminLogic)
         {
             _addDebugAdminLogic = addDebugAdminLogic;
             _removeDebugAdminLogic = removeDebugAdminLogic;
@@ -65,9 +64,9 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("matches_channel_id", "Set or remove the channel ID for matches of a specified tournament")]
         public class MatchesChannelCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private SetMatchesChannelLogic _setMatchesChannelLogic;
-            private RemoveMatchesChannelLogic _removeMatchesChannelLogic;
-            public MatchesChannelCommands(SetMatchesChannelLogic setMatchesChannelLogic, RemoveMatchesChannelLogic removeMatchesChannelLogic)
+            private SetMatchesChannelHandler _setMatchesChannelLogic;
+            private RemoveMatchesChannelHandler _removeMatchesChannelLogic;
+            public MatchesChannelCommands(SetMatchesChannelHandler setMatchesChannelLogic, RemoveMatchesChannelHandler removeMatchesChannelLogic)
             {
                 _setMatchesChannelLogic = setMatchesChannelLogic;
                 _removeMatchesChannelLogic = removeMatchesChannelLogic;
@@ -113,10 +112,10 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("standings_channel_id", "Set or remove the channel ID for standings of a specified tournament")]
         public class StandingsChannelCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private SetStandingsChannelLogic _setStandingsChannelLogic;
-            private RemoveStandingsChannelLogic _removeStandingsChannelLogic;
+            private SetStandingsChannelHandler _setStandingsChannelLogic;
+            private RemoveStandingsChannelHandler _removeStandingsChannelLogic;
 
-            public StandingsChannelCommands(SetStandingsChannelLogic setStandingsChannelLogic, RemoveStandingsChannelLogic removeStandingsChannelLogic)
+            public StandingsChannelCommands(SetStandingsChannelHandler setStandingsChannelLogic, RemoveStandingsChannelHandler removeStandingsChannelLogic)
             {
                 _setStandingsChannelLogic = setStandingsChannelLogic;
                 _removeStandingsChannelLogic = removeStandingsChannelLogic;
@@ -162,9 +161,9 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("teams_channel_id", "Set or remove the channel ID for teams of a specified tournament")]
         public class TeamsChannelCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private SetTeamsChannelLogic _setTeamsChannelLogic;
-            private RemoveTeamsChannelLogic _removeTeamsChannelLogic;
-            public TeamsChannelCommands(SetTeamsChannelLogic setTeamsChannelLogic, RemoveTeamsChannelLogic removeTeamsChannelLogic)
+            private SetTeamsChannelHandler _setTeamsChannelLogic;
+            private RemoveTeamsChannelHandler _removeTeamsChannelLogic;
+            public TeamsChannelCommands(SetTeamsChannelHandler setTeamsChannelLogic, RemoveTeamsChannelHandler removeTeamsChannelLogic)
             {
                 _setTeamsChannelLogic = setTeamsChannelLogic;
                 _removeTeamsChannelLogic = removeTeamsChannelLogic;
@@ -208,8 +207,8 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class FTPStatsServiceCommands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
-            private RemoveFTPCredentialsLogic _removeFTPCredentialsLogic;
-            public FTPStatsServiceCommands(AutocompleteCache autocompleteCache, RemoveFTPCredentialsLogic removeFTPCredentialsLogic)
+            private RemoveFTPCredentialsHandler _removeFTPCredentialsLogic;
+            public FTPStatsServiceCommands(AutocompleteCache autocompleteCache, RemoveFTPCredentialsHandler removeFTPCredentialsLogic)
             {
                 _autocompleteCache = autocompleteCache;
                 _removeFTPCredentialsLogic = removeFTPCredentialsLogic;
@@ -269,9 +268,9 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class UT2004Commands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
-            private readonly RegisterGuidToMemberLogic _registerGuidToMemberLogic;
-            private readonly RemoveGuidFromMemberLogic _removeGuidFromMemberLogic;
-            public UT2004Commands(AutocompleteCache autocompleteCache, RegisterGuidToMemberLogic registerGuidToMemberLogic, RemoveGuidFromMemberLogic removeGuidFromMemberLogic)
+            private readonly RegisterGuidToMemberHandler _registerGuidToMemberLogic;
+            private readonly RemoveGuidFromMemberHandler _removeGuidFromMemberLogic;
+            public UT2004Commands(AutocompleteCache autocompleteCache, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic)
             {
                 _autocompleteCache = autocompleteCache;
                 _registerGuidToMemberLogic = registerGuidToMemberLogic;

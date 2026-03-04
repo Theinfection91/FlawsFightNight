@@ -1,14 +1,14 @@
 ﻿using Discord.Interactions;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Components;
-using FlawsFightNight.Bot.PreconditionAttributes;
-using FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands;
-using FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands;
+using FlawsFightNight.Bot.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Commands.StatsCommands.TournamentStatsCommands;
+using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
@@ -25,8 +25,8 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("tournament", "Commands related to tournament statistics.")]
         public class TournamentStatsCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private readonly MyTournamentProfileLogic _myTournamentProfileLogic;
-            public TournamentStatsCommands(MyTournamentProfileLogic myTournamentProfileLogic)
+            private readonly MyTournamentProfileHandler _myTournamentProfileLogic;
+            public TournamentStatsCommands(MyTournamentProfileHandler myTournamentProfileLogic)
             {
                 _myTournamentProfileLogic = myTournamentProfileLogic;
             }
@@ -44,10 +44,10 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class UT2004StatsCommands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
-            private readonly MyPlayerProfileLogic _myPlayerProfileLogic;
-            private readonly RegisterGuidLogic _registerGuidLogic;
-            private readonly RemoveGuidLogic _removeGuidLogic;
-            public UT2004StatsCommands(AutocompleteCache autocompleteCache, MyPlayerProfileLogic myPlayerProfileLogic, RegisterGuidLogic registerGuidLogic, RemoveGuidLogic removeGuidLogic)
+            private readonly MyPlayerProfileHandler _myPlayerProfileLogic;
+            private readonly RegisterGuidHandler _registerGuidLogic;
+            private readonly RemoveGuidHandler _removeGuidLogic;
+            public UT2004StatsCommands(AutocompleteCache autocompleteCache, MyPlayerProfileHandler myPlayerProfileLogic, RegisterGuidHandler registerGuidLogic, RemoveGuidHandler removeGuidLogic)
             {
                 _autocompleteCache = autocompleteCache;
                 _myPlayerProfileLogic = myPlayerProfileLogic;

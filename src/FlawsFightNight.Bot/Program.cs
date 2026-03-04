@@ -3,16 +3,15 @@ using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
-using FlawsFightNight.CommandsLogic.MatchCommands;
-using FlawsFightNight.CommandsLogic.SetCommands;
-using FlawsFightNight.CommandsLogic.SettingsCommands;
-using FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands;
-using FlawsFightNight.CommandsLogic.StatsCommands.UT2004StatsCommands;
-using FlawsFightNight.CommandsLogic.TeamCommands;
-using FlawsFightNight.CommandsLogic.TournamentCommands;
+using FlawsFightNight.Commands.MatchCommands;
+using FlawsFightNight.Commands.SettingsCommands;
+using FlawsFightNight.Commands.StatsCommands.TournamentStatsCommands;
+using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
+using FlawsFightNight.Commands.TeamCommands;
+using FlawsFightNight.Commands.TournamentCommands;
 using FlawsFightNight.Core.Helpers.UT2004;
-using FlawsFightNight.Data.Handlers;
-using FlawsFightNight.Managers;
+using FlawsFightNight.IO.Handlers;
+using FlawsFightNight.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
@@ -25,7 +24,7 @@ namespace FlawsFightNight.Bot
         private DiscordSocketClient _client;
         private CommandService _commands;
         private InteractionService _interactionService;
-        private ConfigManager _configManager;
+        private AdminConfigurationService _configManager;
 
         private bool _gitBackupSetupComplete = false;
         private bool _ftpSetupComplete = false;
@@ -110,66 +109,66 @@ namespace FlawsFightNight.Bot
                     /// Command Logic ///
                     
                         // Match Commands
-                        services.AddSingleton<CancelChallengeLogic>();
-                        services.AddSingleton<EditMatchLogic>();
-                        services.AddSingleton<ReportWinLogic>();
-                        services.AddSingleton<SendChallengeLogic>();
+                        services.AddSingleton<CancelChallengeHandler>();
+                        services.AddSingleton<EditMatchHandler>();
+                        services.AddSingleton<ReportWinHandler>();
+                        services.AddSingleton<SendChallengeHandler>();
 
                         // Settings Commands
-                        services.AddSingleton<AddDebugAdminLogic>();
-                        services.AddSingleton<RegisterGuidToMemberLogic>();
-                        services.AddSingleton<RemoveGuidFromMemberLogic>();
-                        services.AddSingleton<RemoveDebugAdminLogic>();
-                        services.AddSingleton<RemoveFTPCredentialsLogic>();
-                        services.AddSingleton<RemoveMatchesChannelLogic>();
-                        services.AddSingleton<RemoveStandingsChannelLogic>();
-                        services.AddSingleton<RemoveTeamsChannelLogic>();
-                        services.AddSingleton<SetMatchesChannelLogic>();
-                        services.AddSingleton<SetStandingsChannelLogic>();
-                        services.AddSingleton<SetTeamsChannelLogic>();
+                        services.AddSingleton<AddDebugAdminHandler>();
+                        services.AddSingleton<RegisterGuidToMemberHandler>();
+                        services.AddSingleton<RemoveGuidFromMemberHandler>();
+                        services.AddSingleton<RemoveDebugAdminHandler>();
+                        services.AddSingleton<RemoveFTPCredentialsHandler>();
+                        services.AddSingleton<RemoveMatchesChannelHandler>();
+                        services.AddSingleton<RemoveStandingsChannelHandler>();
+                        services.AddSingleton<RemoveTeamsChannelHandler>();
+                        services.AddSingleton<SetMatchesChannelHandler>();
+                        services.AddSingleton<SetStandingsChannelHandler>();
+                        services.AddSingleton<SetTeamsChannelHandler>();
 
                         // Stat Commands
-                        services.AddSingleton<MyPlayerProfileLogic>();
-                        services.AddSingleton<MyTournamentProfileLogic>();
-                        services.AddSingleton<RegisterGuidLogic>();
-                        services.AddSingleton<RemoveGuidLogic>();
+                        services.AddSingleton<MyPlayerProfileHandler>();
+                        services.AddSingleton<MyTournamentProfileHandler>();
+                        services.AddSingleton<RegisterGuidHandler>();
+                        services.AddSingleton<RemoveGuidHandler>();
 
                         // Team Commands
-                        services.AddSingleton<RegisterTeamLogic>();
-                        services.AddSingleton<SetTeamRankLogic>();
-                        services.AddSingleton<AddTeamLossLogic>();
-                        services.AddSingleton<AddTeamMemberLogic>();
-                        services.AddSingleton<AddTeamWinLogic>();
-                        services.AddSingleton<DeleteTeamLogic>();
-                        services.AddSingleton<RemoveTeamLossLogic>();
-                        services.AddSingleton<RemoveTeamMemberLogic>();
-                        services.AddSingleton<RemoveTeamWinLogic>();
+                        services.AddSingleton<RegisterTeamHandler>();
+                        services.AddSingleton<SetTeamRankHandler>();
+                        services.AddSingleton<AddTeamLossHandler>();
+                        services.AddSingleton<AddTeamMemberHandler>();
+                        services.AddSingleton<AddTeamWinHandler>();
+                        services.AddSingleton<DeleteTeamHandler>();
+                        services.AddSingleton<RemoveTeamLossHandler>();
+                        services.AddSingleton<RemoveTeamMemberHandler>();
+                        services.AddSingleton<RemoveTeamWinHandler>();
 
                         // Tournament Commands
-                        services.AddSingleton<CreateTournamentLogic>();
-                        services.AddSingleton<DeleteTournamentLogic>();
-                        services.AddSingleton<EndTournamentLogic>();
-                        services.AddSingleton<LockInRoundLogic>();
-                        services.AddSingleton<LockTeamsLogic>();
-                        services.AddSingleton<NextRoundLogic>();
-                        services.AddSingleton<SetupRoundRobinTournamentLogic>();
-                        services.AddSingleton<ShowAllTournamentsLogic>();
-                        services.AddSingleton<StartTournamentLogic>();
-                        services.AddSingleton<UnlockRoundLogic>();
-                        services.AddSingleton<UnlockTeamsLogic>();
+                        services.AddSingleton<CreateTournamentHandler>();
+                        services.AddSingleton<DeleteTournamentHandler>();
+                        services.AddSingleton<EndTournamentHandler>();
+                        services.AddSingleton<LockInRoundHandler>();
+                        services.AddSingleton<LockTeamsHandler>();
+                        services.AddSingleton<NextRoundHandler>();
+                        services.AddSingleton<SetupRoundRobinTournamentHandler>();
+                        services.AddSingleton<ShowAllTournamentsHandler>();
+                        services.AddSingleton<StartTournamentHandler>();
+                        services.AddSingleton<UnlockRoundHandler>();
+                        services.AddSingleton<UnlockTeamsHandler>();
 
                     ///
 
                     // Managers
-                    services.AddSingleton<ConfigManager>();
-                    services.AddSingleton<DataManager>();
-                    services.AddSingleton<EmbedManager>();
-                    services.AddSingleton<GitBackupManager>();
-                    services.AddSingleton<MatchManager>();
-                    services.AddSingleton<MemberManager>();
-                    services.AddSingleton<UT2004StatsManager>();
-                    services.AddSingleton<TeamManager>();
-                    services.AddSingleton<TournamentManager>();
+                    services.AddSingleton<AdminConfigurationService>();
+                    services.AddSingleton<DataContext>();
+                    services.AddSingleton<EmbedFactory>();
+                    services.AddSingleton<GitBackupService>();
+                    services.AddSingleton<MatchService>();
+                    services.AddSingleton<MemberService>();
+                    services.AddSingleton<UT2004StatsService>();
+                    services.AddSingleton<TeamService>();
+                    services.AddSingleton<TournamentService>();
 
                     // Hosted services 
                     services.AddHostedService<LiveViewService>();
@@ -197,29 +196,29 @@ namespace FlawsFightNight.Bot
             // Initialize data and stats managers before starting hosted services to ensure they have the data they need when they start
             using (var scope = host.Services.CreateScope())
             {
-                var dataManager = scope.ServiceProvider.GetRequiredService<DataManager>();
-                var ut2004StatsManager = scope.ServiceProvider.GetRequiredService<UT2004StatsManager>();
+                var dataManager = scope.ServiceProvider.GetRequiredService<DataContext>();
+                var ut2004StatsManager = scope.ServiceProvider.GetRequiredService<UT2004StatsService>();
                 await dataManager.InitializeAsync();
                 await ut2004StatsManager.InitializeAsync();
             }
 
             // Prep config
             _services = host.Services;
-            _configManager = _services.GetRequiredService<ConfigManager>();
+            _configManager = _services.GetRequiredService<AdminConfigurationService>();
             await _configManager.SetDiscordTokenProcess();
             await _configManager.SetGitBackupProcess();
 
             // Run interactive Git backup setup in background (clone/restore prompts)
-            var gitBackupManager = _services.GetRequiredService<GitBackupManager>();
-            var configManager = _services.GetRequiredService<ConfigManager>();
+            var gitBackupService = _services.GetRequiredService<GitBackupService>();
+            var configManager = _services.GetRequiredService<AdminConfigurationService>();
             while (!_gitBackupSetupComplete)
             {
-                await gitBackupManager.RunInteractiveSetup();
+                await gitBackupService.RunInteractiveSetup();
                 _gitBackupSetupComplete = configManager.IsGitPatTokenSet();
             }
 
             // Run interactive FTP setup in background (add credentials prompts)
-            var ftpSetupManager = _services.GetRequiredService<ConfigManager>();
+            var ftpSetupManager = _services.GetRequiredService<AdminConfigurationService>();
             while (!_ftpSetupComplete)
             {
                 await ftpSetupManager.FTPSetupProcess();

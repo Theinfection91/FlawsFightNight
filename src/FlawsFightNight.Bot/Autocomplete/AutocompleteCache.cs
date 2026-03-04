@@ -3,8 +3,8 @@ using Discord.WebSocket;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
-using FlawsFightNight.Data.Models;
-using FlawsFightNight.Managers;
+using FlawsFightNight.IO.Models;
+using FlawsFightNight.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -17,11 +17,11 @@ namespace FlawsFightNight.Bot.Autocomplete
     public class AutocompleteCache
     {
         // Add Managers as needed here
-        private readonly ConfigManager _configManager;
-        private readonly MatchManager _matchManager;
-        private readonly TeamManager _teamManager;
-        private readonly TournamentManager _tournamentManager;
-        private readonly MemberManager _memberManager;
+        private readonly AdminConfigurationService _configManager;
+        private readonly MatchService _matchService;
+        private readonly TeamService _teamService;
+        private readonly TournamentService _tournamentService;
+        private readonly MemberService _memberManager;
 
         // Autocomplete Data
         private List<Match> _allMatches = new();
@@ -39,13 +39,13 @@ namespace FlawsFightNight.Bot.Autocomplete
         private List<MemberProfile> _memberProfiles = new();
 
 
-        public AutocompleteCache(ConfigManager configManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager, MemberManager memberManager)
+        public AutocompleteCache(AdminConfigurationService configManager, MatchService matchService, TeamService teamService, TournamentService tournamentService, MemberService memberManager)
         {
             // Initialize Managers here
             _configManager = configManager;
-            _matchManager = matchManager;
-            _teamManager = teamManager;
-            _tournamentManager = tournamentManager;
+            _matchService = matchService;
+            _teamService = teamService;
+            _tournamentService = tournamentService;
             _memberManager = memberManager;
 
             // Initialize Autocomplete Data
@@ -55,17 +55,17 @@ namespace FlawsFightNight.Bot.Autocomplete
         public void Update()
         {
             // Refresh autocomplete data from managers
-            _allMatches = _matchManager.GetAllActiveMatches();
-            _allPostMatches = _matchManager.GetAllPostMatches();
-            _roundRobinPostMatches = _matchManager.GetAllRoundRobinPostMatches();
-            _allTournaments = _tournamentManager.GetAllTournaments();
-            _ladderTournaments = _tournamentManager.GetAllLadderTournaments();
-            _roundRobinTournaments = _tournamentManager.GetAllRoundRobinTournaments();
-            //_eliminationTournaments = _tournamentManager.GetAllEliminationTournaments();
-            _ladderTeams = _teamManager.GetAllLadderTeams();
-            _roundRobinTeams = _teamManager.GetAllRoundRobinTeams();
-            _roundBasedTeams = _teamManager.GetAllRoundBasedTeams();
-            _allTeams = _teamManager.GetAllTeams();
+            _allMatches = _matchService.GetAllActiveMatches();
+            _allPostMatches = _matchService.GetAllPostMatches();
+            _roundRobinPostMatches = _matchService.GetAllRoundRobinPostMatches();
+            _allTournaments = _tournamentService.GetAllTournaments();
+            _ladderTournaments = _tournamentService.GetAllLadderTournaments();
+            _roundRobinTournaments = _tournamentService.GetAllRoundRobinTournaments();
+            //_eliminationTournaments = _tournamentService.GetAllEliminationTournaments();
+            _ladderTeams = _teamService.GetAllLadderTeams();
+            _roundRobinTeams = _teamService.GetAllRoundRobinTeams();
+            _roundBasedTeams = _teamService.GetAllRoundBasedTeams();
+            _allTeams = _teamService.GetAllTeams();
             _ftpCredentials = _configManager.GetFTPCredentials()!;
             _memberProfiles = _memberManager.GetAllMemberProfiles();
         }
@@ -224,7 +224,7 @@ namespace FlawsFightNight.Bot.Autocomplete
             if (string.IsNullOrWhiteSpace(input))
             {
                 return _ladderTeams
-                    //.OrderBy(team => _tournamentManager.GetTournamentFromTeamName(team.Name).Name)
+                    //.OrderBy(team => _tournamentService.GetTournamentFromTeamName(team.Name).Name)
                     .OrderBy(team => _ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.Name)
                     .ThenBy(team => team.Rank)
                     .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.Name} ({_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.TeamSizeFormat} {_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.GetFormattedType()})", team.Name))

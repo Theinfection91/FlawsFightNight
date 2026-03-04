@@ -1,9 +1,9 @@
 ﻿using Discord.Interactions;
 using FlawsFightNight.Bot.Autocomplete;
-using FlawsFightNight.CommandsLogic.TeamCommands;
-using FlawsFightNight.CommandsLogic.TournamentCommands;
+using FlawsFightNight.Commands.TeamCommands;
+using FlawsFightNight.Commands.TournamentCommands;
 using FlawsFightNight.Core.Models;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Services;
 using System;
 using System.Threading.Tasks;
 
@@ -12,32 +12,32 @@ namespace FlawsFightNight.Bot.Modals
     public class ModalHandler : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly AutocompleteCache _autocompleteCache;
-        private readonly DeleteTeamLogic _deleteTeamLogic;
-        private readonly DeleteTournamentLogic _deleteTournamentLogic;
-        private readonly EmbedManager _embedManager;
-        private readonly EndTournamentLogic _endTournamentLogic;
-        private readonly StartTournamentLogic _startTournamentLogic;
-        private readonly TeamManager _teamManager;
-        private readonly TournamentManager _tournamentManager;
+        private readonly DeleteTeamHandler _deleteTeamLogic;
+        private readonly DeleteTournamentHandler _deleteTournamentLogic;
+        private readonly EmbedFactory _embedFactory;
+        private readonly EndTournamentHandler _endTournamentLogic;
+        private readonly StartTournamentHandler _startTournamentLogic;
+        private readonly TeamService _teamService;
+        private readonly TournamentService _tournamentService;
 
         public ModalHandler(
             AutocompleteCache autocompleteCache,
-            DeleteTeamLogic deleteTeamLogic,
-            DeleteTournamentLogic deleteTournamentLogic,
-            EmbedManager embedManager,
-            EndTournamentLogic endTournamentLogic,
-            StartTournamentLogic startTournamentLogic,
-            TeamManager teamManager,
-            TournamentManager tournamentManager)
+            DeleteTeamHandler deleteTeamLogic,
+            DeleteTournamentHandler deleteTournamentLogic,
+            EmbedFactory embedFactory,
+            EndTournamentHandler endTournamentLogic,
+            StartTournamentHandler startTournamentLogic,
+            TeamService teamService,
+            TournamentService tournamentService)
         {
             _autocompleteCache = autocompleteCache;
             _deleteTeamLogic = deleteTeamLogic;
             _deleteTournamentLogic = deleteTournamentLogic;
-            _embedManager = embedManager;
+            _embedFactory = embedFactory;
             _endTournamentLogic = endTournamentLogic;
             _startTournamentLogic = startTournamentLogic;
-            _teamManager = teamManager;
-            _tournamentManager = tournamentManager;
+            _teamService = teamService;
+            _tournamentService = tournamentService;
         }
 
         #region Team Delete
@@ -50,14 +50,14 @@ namespace FlawsFightNight.Bot.Modals
 
                 if (modal.TeamNameOne != modal.TeamNameTwo)
                 {
-                    await FollowupAsync(embed: _embedManager.ErrorEmbed(modal.Title,
+                    await FollowupAsync(embed: _embedFactory.ErrorEmbed(modal.Title,
                         "The Team Names do not match. Please try again. The inputs are case sensitive."));
                     return;
                 }
 
-                if (!_teamManager.DoesTeamExist(modal.TeamNameOne, true))
+                if (!_teamService.DoesTeamExist(modal.TeamNameOne, true))
                 {
-                    await FollowupAsync(embed: _embedManager.ErrorEmbed(modal.Title,
+                    await FollowupAsync(embed: _embedFactory.ErrorEmbed(modal.Title,
                         $"No team found with the name: {modal.TeamNameOne}. Please check the name and try again. This is also case sensitive."));
                     return;
                 }
@@ -84,14 +84,14 @@ namespace FlawsFightNight.Bot.Modals
 
                 if (modal.TournamentIdOne != modal.TournamentIdTwo)
                 {
-                    await FollowupAsync(embed: _embedManager.ErrorEmbed(modal.Title,
+                    await FollowupAsync(embed: _embedFactory.ErrorEmbed(modal.Title,
                         "The Tournament IDs do not match. Please try again. The inputs are case sensitive so the T must be uppercase."));
                     return;
                 }
 
-                if (!_tournamentManager.IsTournamentIdInDatabase(modal.TournamentIdOne, true))
+                if (!_tournamentService.IsTournamentIdInDatabase(modal.TournamentIdOne, true))
                 {
-                    await FollowupAsync(embed: _embedManager.ErrorEmbed(modal.Title,
+                    await FollowupAsync(embed: _embedFactory.ErrorEmbed(modal.Title,
                         $"No tournament found with ID: {modal.TournamentIdOne}. Please check the ID and try again. This is also case sensitive and the T must be uppercase."));
                     return;
                 }
@@ -116,14 +116,14 @@ namespace FlawsFightNight.Bot.Modals
 
                 if (modal.TournamentIdOne != modal.TournamentIdTwo)
                 {
-                    await FollowupAsync(embed: _embedManager.ErrorEmbed(modal.Title,
+                    await FollowupAsync(embed: _embedFactory.ErrorEmbed(modal.Title,
                         "The Tournament IDs do not match. Please try again. The inputs are case sensitive so the T must be uppercase."));
                     return;
                 }
 
-                if (!_tournamentManager.IsTournamentIdInDatabase(modal.TournamentIdOne, true))
+                if (!_tournamentService.IsTournamentIdInDatabase(modal.TournamentIdOne, true))
                 {
-                    await FollowupAsync(embed: _embedManager.ErrorEmbed(modal.Title,
+                    await FollowupAsync(embed: _embedFactory.ErrorEmbed(modal.Title,
                         $"No tournament found with ID: {modal.TournamentIdOne}. Please check the ID and try again. This is also case sensitive and the T must be uppercase."));
                     return;
                 }
@@ -148,14 +148,14 @@ namespace FlawsFightNight.Bot.Modals
 
                 if (modal.TournamentIdOne != modal.TournamentIdTwo)
                 {
-                    await FollowupAsync(embed: _embedManager.ErrorEmbed(modal.Title,
+                    await FollowupAsync(embed: _embedFactory.ErrorEmbed(modal.Title,
                         "The Tournament IDs do not match. Please try again. The inputs are case sensitive so the T must be uppercase."));
                     return;
                 }
 
-                if (!_tournamentManager.IsTournamentIdInDatabase(modal.TournamentIdOne, true))
+                if (!_tournamentService.IsTournamentIdInDatabase(modal.TournamentIdOne, true))
                 {
-                    await FollowupAsync(embed: _embedManager.ErrorEmbed(modal.Title,
+                    await FollowupAsync(embed: _embedFactory.ErrorEmbed(modal.Title,
                         $"No tournament found with ID: {modal.TournamentIdOne}. Please check the ID and try again. This is also case sensitive and the T must be uppercase."));
                     return;
                 }
