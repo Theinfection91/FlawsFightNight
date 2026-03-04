@@ -17,7 +17,7 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("tournament", "Commands related to tournaments like creating, removal, etc.")]
     public class TournamentCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        private AutocompleteCache _autocompleteCache;
+        private readonly AutocompleteCache _autocompleteCache;
         private CreateTournamentLogic _createTournamentLogic;
         private LockInRoundLogic _lockInRoundLogic;
         private LockTeamsLogic _lockTeamsLogic;

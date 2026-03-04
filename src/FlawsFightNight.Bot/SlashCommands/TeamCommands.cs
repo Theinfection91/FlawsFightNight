@@ -15,7 +15,7 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("team", "Commands related to teams like creating, removal, etc.")]
     public class TeamCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        private AutocompleteCache _autocompleteCache;
+        private readonly AutocompleteCache _autocompleteCache;
         private RegisterTeamLogic _registerTeamLogic;
         private SetTeamRankLogic _setTeamRankLogic;
 
@@ -132,7 +132,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("add", "Commands related to addings things to a team.")]
         public class TeamAddCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private AutocompleteCache _autocompleteCache;
+            private readonly AutocompleteCache _autocompleteCache;
             private AddTeamLossLogic _addTeamLossLogic;
             private AddTeamWinLogic _addTeamWinLogic;
             private AddTeamMemberLogic _addTeamMemberLogic;
@@ -251,7 +251,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("remove", "Commands related to removing things to a team.")]
         public class TeamRemoveCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private AutocompleteCache _autocompleteCache;
+            private readonly AutocompleteCache _autocompleteCache;
             private RemoveTeamLossLogic _removeTeamLossLogic;
             private RemoveTeamWinLogic _removeTeamWinLogic;
             private RemoveTeamMemberLogic _removeTeamMemberLogic;

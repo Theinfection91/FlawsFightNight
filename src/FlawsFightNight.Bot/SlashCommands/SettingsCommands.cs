@@ -207,7 +207,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("ftp_stats_service", "Re-run FTP Setup Process in Console and remove FTP credentials")]
         public class FTPStatsServiceCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private AutocompleteCache _autocompleteCache;
+            private readonly AutocompleteCache _autocompleteCache;
             private RemoveFTPCredentialsLogic _removeFTPCredentialsLogic;
             public FTPStatsServiceCommands(AutocompleteCache autocompleteCache, RemoveFTPCredentialsLogic removeFTPCredentialsLogic)
             {

@@ -15,7 +15,7 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("match", "Commands related to matches like reporting who won, admin editing, challenges for ladders, etc.")]
     public class MatchCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        private AutocompleteCache _autocompleteCache;
+        private readonly AutocompleteCache _autocompleteCache;
         private EditMatchLogic _editMatchLogic;
         private ReportWinLogic _reportWinLogic;
 
@@ -73,7 +73,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("challenge", "Challenge related match commands for ladder tournaments.")]
         public class MatchesChannelCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private AutocompleteCache _autocompleteCache;
+            private readonly AutocompleteCache _autocompleteCache;
             private SendChallengeLogic _sendChallengeLogic;
             private CancelChallengeLogic _cancelChallengeLogic;
             public MatchesChannelCommands(AutocompleteCache autocompleteCache, SendChallengeLogic sendChallengeLogic, CancelChallengeLogic cancelChallengeLogic)
