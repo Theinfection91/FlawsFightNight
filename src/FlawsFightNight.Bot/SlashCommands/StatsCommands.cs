@@ -1,4 +1,5 @@
 ﻿using Discord.Interactions;
+using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Components;
 using FlawsFightNight.Bot.PreconditionAttributes;
 using FlawsFightNight.CommandsLogic.StatsCommands.TournamentStatsCommands;
@@ -42,11 +43,13 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("ut2004", "Commands related to UT2004 statistics.")]
         public class UT2004StatsCommands : InteractionModuleBase<SocketInteractionContext>
         {
+            private readonly AutocompleteCache _autocompleteCache;
             private readonly MyPlayerProfileLogic _myPlayerProfileLogic;
             private readonly RegisterGuidLogic _registerGuidLogic;
             private readonly RemoveGuidLogic _removeGuidLogic;
-            public UT2004StatsCommands(MyPlayerProfileLogic myPlayerProfileLogic, RegisterGuidLogic registerGuidLogic, RemoveGuidLogic removeGuidLogic)
+            public UT2004StatsCommands(AutocompleteCache autocompleteCache, MyPlayerProfileLogic myPlayerProfileLogic, RegisterGuidLogic registerGuidLogic, RemoveGuidLogic removeGuidLogic)
             {
+                _autocompleteCache = autocompleteCache;
                 _myPlayerProfileLogic = myPlayerProfileLogic;
                 _registerGuidLogic = registerGuidLogic;
                 _removeGuidLogic = removeGuidLogic;
@@ -59,6 +62,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync(ephemeral: true);
                 var embed = await _registerGuidLogic.RegisterGuidProcess(Context, guid);
                 await FollowupAsync(embed: embed, ephemeral: true);
+                _autocompleteCache.Update();
             }
 
             [SlashCommand("remove_guid", "Removes a UT2004 GUID from your account.")]
@@ -68,6 +72,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 await DeferAsync(ephemeral: true);
                 var embed = await _removeGuidLogic.RemoveGuidProcess(Context, guid);
                 await FollowupAsync(embed: embed, ephemeral: true);
+                _autocompleteCache.Update();
             }
 
             [SlashCommand("my_player", "Displays your UT2004 player profile with statistics and achievements.")]

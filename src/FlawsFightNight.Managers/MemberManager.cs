@@ -131,6 +131,11 @@ namespace FlawsFightNight.Managers
             return _dataManager.GetMemberProfile(discordId);
         }
 
+        public List<MemberProfile> GetAllMemberProfiles()
+        {
+            return _dataManager.MemberProfileFiles.Select(file => file.MemberProfile).ToList();
+        }
+
         #region Tournament Specific Stats
         public void IncrementMembersTournamentsPlayed(List<Member> members)
         {

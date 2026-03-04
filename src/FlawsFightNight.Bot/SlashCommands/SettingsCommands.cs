@@ -207,9 +207,11 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("ftp_stats_service", "Re-run FTP Setup Process in Console and remove FTP credentials")]
         public class FTPStatsServiceCommands : InteractionModuleBase<SocketInteractionContext>
         {
+            private AutocompleteCache _autocompleteCache;
             private RemoveFTPCredentialsLogic _removeFTPCredentialsLogic;
-            public FTPStatsServiceCommands(RemoveFTPCredentialsLogic removeFTPCredentialsLogic)
+            public FTPStatsServiceCommands(AutocompleteCache autocompleteCache, RemoveFTPCredentialsLogic removeFTPCredentialsLogic)
             {
+                _autocompleteCache = autocompleteCache;
                 _removeFTPCredentialsLogic = removeFTPCredentialsLogic;
             }
             [SlashCommand("run_setup", "Re-run the FTP Setup Process in Console to add FTP credentials or change FTP server")]
@@ -220,6 +222,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await DeferAsync(ephemeral: true);
                     var components = ComponentFactory.CreateConfirmationCancelButtons("runftp", Context.User.Id);
                     await FollowupAsync("⚠️ **This will re-run FTP setup in the console.\n\nRepeat: Setup is done in the console, not Discord. If console cannot be reached and this was done by mistake then this can be terminated by using `/settings ftp_stats_service cancel_setup`**\n\nAre you sure you want to continue?", components: components.Build(), ephemeral: true);
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
@@ -236,6 +239,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await DeferAsync(ephemeral: true);
                     var result = await _removeFTPCredentialsLogic.RemoveFTPCredentialsProcess(ftpServerName);
                     await FollowupAsync(embed: result, ephemeral: true);
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
@@ -264,22 +268,26 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("ut2004", "Admin commands related to UT2004 data")]
         public class UT2004Commands : InteractionModuleBase<SocketInteractionContext>
         {
+            private readonly AutocompleteCache _autocompleteCache;
             private readonly RegisterGuidToMemberLogic _registerGuidToMemberLogic;
             private readonly RemoveGuidFromMemberLogic _removeGuidFromMemberLogic;
-            public UT2004Commands(RegisterGuidToMemberLogic registerGuidToMemberLogic, RemoveGuidFromMemberLogic removeGuidFromMemberLogic)
+            public UT2004Commands(AutocompleteCache autocompleteCache, RegisterGuidToMemberLogic registerGuidToMemberLogic, RemoveGuidFromMemberLogic removeGuidFromMemberLogic)
             {
+                _autocompleteCache = autocompleteCache;
                 _registerGuidToMemberLogic = registerGuidToMemberLogic;
                 _removeGuidFromMemberLogic = removeGuidFromMemberLogic;
             }
 
             [SlashCommand("register_guid", "Register a GUID to a Member's profile")]
-            public async Task RegisterGuidToMemberAsync(IUser member, string guid)
+            public async Task RegisterGuidToMemberAsync([Summary("member", "The member to register the GUID to")] IUser member,
+                                                        [Summary("guid", "The GUID to register")] string guid)
             {
                 try
                 {
                     await DeferAsync(ephemeral: true);
                     var result = await _registerGuidToMemberLogic.RegisterGuidToMemberProcess(member, guid);
                     await FollowupAsync(embed: result, ephemeral: true);
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
@@ -289,13 +297,15 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("remove_guid", "Remove a GUID from a Member's profile")]
-            public async Task RemoveGuidFromMemberAsync(IUser member, string guid)
+            public async Task RemoveGuidFromMemberAsync([Summary("member", "The member to remove the GUID from")] IUser member,
+                                                        [Summary("guid", "The GUID to remove"), Autocomplete(typeof(MemberUT2004GuidAutocomplete))] string guid)
             {
                 try
                 {
                     await DeferAsync(ephemeral: true);
                     var result = await _removeGuidFromMemberLogic.RemoveGuidFromMemberProcess(member, guid);
                     await FollowupAsync(embed: result, ephemeral: true);
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {

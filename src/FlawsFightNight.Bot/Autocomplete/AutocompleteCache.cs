@@ -21,6 +21,7 @@ namespace FlawsFightNight.Bot.Autocomplete
         private readonly MatchManager _matchManager;
         private readonly TeamManager _teamManager;
         private readonly TournamentManager _tournamentManager;
+        private readonly MemberManager _memberManager;
 
         // Autocomplete Data
         private List<Match> _allMatches = new();
@@ -35,21 +36,23 @@ namespace FlawsFightNight.Bot.Autocomplete
         private List<Team> _roundRobinTeams = new();
         private List<Team> _allTeams = new();
         private List<FTPCredential> _ftpCredentials = new();
+        private List<MemberProfile> _memberProfiles = new();
 
 
-        public AutocompleteCache(ConfigManager configManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager)
+        public AutocompleteCache(ConfigManager configManager, MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager, MemberManager memberManager)
         {
             // Initialize Managers here
             _configManager = configManager;
             _matchManager = matchManager;
             _teamManager = teamManager;
             _tournamentManager = tournamentManager;
+            _memberManager = memberManager;
 
             // Initialize Autocomplete Data
-            UpdateCache();
+            Update();
         }
 
-        public void UpdateCache()
+        public void Update()
         {
             // Refresh autocomplete data from managers
             _allMatches = _matchManager.GetAllActiveMatches();
@@ -64,6 +67,7 @@ namespace FlawsFightNight.Bot.Autocomplete
             _roundBasedTeams = _teamManager.GetAllRoundBasedTeams();
             _allTeams = _teamManager.GetAllTeams();
             _ftpCredentials = _configManager.GetFTPCredentials()!;
+            _memberProfiles = _memberManager.GetAllMemberProfiles();
         }
 
         public List<AutocompleteResult> GetMatchIdsMatchingInput(string input)
@@ -383,7 +387,7 @@ namespace FlawsFightNight.Bot.Autocomplete
                 {
                     return _allTeams
                         .OrderBy(team => team.Name)
-                        .Select (team => new AutocompleteResult(team.Name, team.Name))
+                        .Select(team => new AutocompleteResult(team.Name, team.Name))
                         .ToList();
                 }
                 // Filter all teams based on the input (case-insensitive)
@@ -397,6 +401,40 @@ namespace FlawsFightNight.Bot.Autocomplete
             catch (Exception ex)
             {
                 Console.WriteLine($"Error generating teams for add/remove member suggestions: {ex.Message}");
+                return new List<AutocompleteResult>();
+            }
+        }
+
+        public List<AutocompleteResult> GetMemberUT2004Guids(ulong discordId)
+        {
+            try
+            {
+                if (discordId == 0)
+                {
+                    return new List<AutocompleteResult>();
+                }
+
+                // Prefer the cached member profiles; fall back to manager lookup if missing
+                var profile = _memberProfiles.FirstOrDefault(p => p.DiscordId == discordId)
+                              ?? _memberManager.GetMemberProfile(discordId);
+
+                if (profile == null || profile.RegisteredUT2004GUIDs == null || profile.RegisteredUT2004GUIDs.Count == 0)
+                    return new List<AutocompleteResult>();
+
+                // Show GUIDs with a small hint for the primary (index 0 = oldest/primary)
+                var results = profile.RegisteredUT2004GUIDs
+                    .Select((g, idx) =>
+                    {
+                        var label = idx == 0 ? $"{g} (primary)" : g;
+                        return new AutocompleteResult(label, g);
+                    })
+                    .ToList();
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating UT2004 GUID suggestions: {ex.Message}");
                 return new List<AutocompleteResult>();
             }
         }
