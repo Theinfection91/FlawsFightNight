@@ -313,11 +313,53 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
             }
 
-            [SlashCommand("last_logs", "Get the last X compiled StatLogs.")]
+            [SlashCommand("read_log", "Read a specific log by it's ID#")]
+            public async Task ReadLogByIdAsync(string logId)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    await FollowupAsync($"Retrieving log with ID: {logId}", ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("logs_by_date", "Get compiled StatLogs ID for a specific date")]
+            public async Task StatLogsByDateAsync(int year, int month, int day)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    if (year < 2000 || year > DateTime.Now.Year) { await FollowupAsync("Invalid year.", ephemeral: true); return; }
+                    if (month < 1 || month > 12) { await FollowupAsync("Month must be 1-12.", ephemeral: true); return; }
+                    if (day < 1 || day > DateTime.DaysInMonth(year, month)) { await FollowupAsync("Invalid day for the given month/year.", ephemeral: true); return; }
+
+                    var date = new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc);
+
+                    await FollowupAsync($"Retrieving compiled StatLogs for date: {date:yyyy-MM-dd}", ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("last_logs", "Get the last 1 to 25 compiled StatLog ID's")]
             public async Task LastStatLogAsync(int amount)
             {
                 try
                 {
+                    if (amount < 1 || amount > 25)
+                    {
+                        await FollowupAsync("Amount must be between 1 and 25.", ephemeral: true);
+                        return;
+                    }
+
                     await DeferAsync(ephemeral: true);
                     await FollowupAsync($"Retrieving the last {amount} compiled StatLogs", ephemeral: true);
                 }

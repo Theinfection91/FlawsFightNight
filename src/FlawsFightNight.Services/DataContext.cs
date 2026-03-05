@@ -285,6 +285,18 @@ namespace FlawsFightNight.Services
                     return 0;
             }
         }
+
+        public async Task<List<UT2004StatLog>> GetAllStatLogs()
+        {
+            List<UT2004StatLog> statLogs = new();
+            var iCTFFiles = await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iCTF");
+            var TAMFiles = await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/TAM");
+            var iBRFiles = await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iBR");
+            statLogs.AddRange(iCTFFiles.Select(f => f.StatLog));
+            statLogs.AddRange(TAMFiles.Select(f => f.StatLog));
+            statLogs.AddRange(iBRFiles.Select(f => f.StatLog));
+            return statLogs;
+        }
         #endregion
 
         #region Member Profile Files
