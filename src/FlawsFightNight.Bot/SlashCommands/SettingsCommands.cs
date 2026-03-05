@@ -312,6 +312,21 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
+
+            [SlashCommand("last_logs", "Get the last X compiled StatLogs.")]
+            public async Task LastStatLogAsync(int amount)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    await FollowupAsync($"Retrieving the last {amount} compiled StatLogs", ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
         }
     }
 }

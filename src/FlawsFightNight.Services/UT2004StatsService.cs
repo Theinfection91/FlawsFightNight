@@ -57,12 +57,14 @@ namespace FlawsFightNight.Services
             return false;
         }
 
-        public async Task<bool> ProcessLogFile(Stream fileStream, string fileName)
+        public async Task<bool> ProcessLogFile(Stream fileStream, string fileName, string serverName, string serverAddress)
         {
             var statLog = await _logParser.Parse<UT2004StatLog>(fileStream);
             if (statLog != null)
             {
                 statLog.FileName = Path.ChangeExtension(fileName, ".json");
+                statLog.ServerName = serverName;
+                statLog.IPAddress = serverAddress;
                 statLog.Players = statLog.Players.Select(teamList =>
                     teamList.OrderByDescending(p => p.Score).ToList()
                 ).ToList();

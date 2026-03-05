@@ -10,6 +10,8 @@ namespace FlawsFightNight.Core.Models.Stats
     [SafeForSerialization]
     public abstract class StatLog
     {
+        public string ServerName { get; set; }
+        public string IPAddress { get; set; }
         public StatLog() { }
     }
 }
