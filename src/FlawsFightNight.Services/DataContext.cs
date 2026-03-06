@@ -286,6 +286,29 @@ namespace FlawsFightNight.Services
             }
         }
 
+        public async Task<List<UT2004StatLog>> GetStatLogsByGameMode(UT2004GameMode gameMode)
+        {
+            List<UT2004StatLog> statLogs = new();
+            switch (gameMode)
+            {
+                case UT2004GameMode.iCTF:
+                    var iCTFFiles = await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iCTF");
+                    statLogs.AddRange(iCTFFiles.Select(f => f.StatLog));
+                    break;
+                case UT2004GameMode.TAM:
+                    var TAMFiles = await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/TAM");
+                    statLogs.AddRange(TAMFiles.Select(f => f.StatLog));
+                    break;
+                case UT2004GameMode.iBR:
+                    var iBRFiles = await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iBR");
+                    statLogs.AddRange(iBRFiles.Select(f => f.StatLog));
+                    break;
+                default:
+                    break;
+            }
+            return statLogs;
+        }
+
         public async Task<List<UT2004StatLog>> GetAllStatLogs()
         {
             List<UT2004StatLog> statLogs = new();

@@ -5,6 +5,7 @@ using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Commands.MatchCommands;
 using FlawsFightNight.Commands.SettingsCommands;
+using FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands;
 using FlawsFightNight.Commands.StatsCommands.TournamentStatsCommands;
 using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
 using FlawsFightNight.Commands.TeamCommands;
@@ -107,55 +108,56 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<AutocompleteCache>();
 
                     /// Command Logic ///
-                    
-                        // Match Commands
-                        services.AddSingleton<CancelChallengeHandler>();
-                        services.AddSingleton<EditMatchHandler>();
-                        services.AddSingleton<ReportWinHandler>();
-                        services.AddSingleton<SendChallengeHandler>();
 
-                        // Settings Commands
-                        services.AddSingleton<AddDebugAdminHandler>();
-                        services.AddSingleton<RegisterGuidToMemberHandler>();
-                        services.AddSingleton<RemoveGuidFromMemberHandler>();
-                        services.AddSingleton<RemoveDebugAdminHandler>();
-                        services.AddSingleton<RemoveFTPCredentialsHandler>();
-                        services.AddSingleton<RemoveMatchesChannelHandler>();
-                        services.AddSingleton<RemoveStandingsChannelHandler>();
-                        services.AddSingleton<RemoveTeamsChannelHandler>();
-                        services.AddSingleton<SetMatchesChannelHandler>();
-                        services.AddSingleton<SetStandingsChannelHandler>();
-                        services.AddSingleton<SetTeamsChannelHandler>();
+                    // Match Commands
+                    services.AddSingleton<CancelChallengeHandler>();
+                    services.AddSingleton<EditMatchHandler>();
+                    services.AddSingleton<ReportWinHandler>();
+                    services.AddSingleton<SendChallengeHandler>();
 
-                        // Stat Commands
-                        services.AddSingleton<MyPlayerProfileHandler>();
-                        services.AddSingleton<MyTournamentProfileHandler>();
-                        services.AddSingleton<RegisterGuidHandler>();
-                        services.AddSingleton<RemoveGuidHandler>();
+                    // Settings Commands
+                    services.AddSingleton<AddDebugAdminHandler>();
+                    services.AddSingleton<RegisterGuidToMemberHandler>();
+                    services.AddSingleton<RemoveGuidFromMemberHandler>();
+                    services.AddSingleton<RemoveDebugAdminHandler>();
+                    services.AddSingleton<RemoveFTPCredentialsHandler>();
+                    services.AddSingleton<RemoveMatchesChannelHandler>();
+                    services.AddSingleton<RemoveStandingsChannelHandler>();
+                    services.AddSingleton<RemoveTeamsChannelHandler>();
+                    services.AddSingleton<StatLogsByDateHandler>();
+                    services.AddSingleton<SetMatchesChannelHandler>();
+                    services.AddSingleton<SetStandingsChannelHandler>();
+                    services.AddSingleton<SetTeamsChannelHandler>();
 
-                        // Team Commands
-                        services.AddSingleton<RegisterTeamHandler>();
-                        services.AddSingleton<SetTeamRankHandler>();
-                        services.AddSingleton<AddTeamLossHandler>();
-                        services.AddSingleton<AddTeamMemberHandler>();
-                        services.AddSingleton<AddTeamWinHandler>();
-                        services.AddSingleton<DeleteTeamHandler>();
-                        services.AddSingleton<RemoveTeamLossHandler>();
-                        services.AddSingleton<RemoveTeamMemberHandler>();
-                        services.AddSingleton<RemoveTeamWinHandler>();
+                    // Stat Commands
+                    services.AddSingleton<MyPlayerProfileHandler>();
+                    services.AddSingleton<MyTournamentProfileHandler>();
+                    services.AddSingleton<RegisterGuidHandler>();
+                    services.AddSingleton<RemoveGuidHandler>();
 
-                        // Tournament Commands
-                        services.AddSingleton<CreateTournamentHandler>();
-                        services.AddSingleton<DeleteTournamentHandler>();
-                        services.AddSingleton<EndTournamentHandler>();
-                        services.AddSingleton<LockInRoundHandler>();
-                        services.AddSingleton<LockTeamsHandler>();
-                        services.AddSingleton<NextRoundHandler>();
-                        services.AddSingleton<SetupRoundRobinTournamentHandler>();
-                        services.AddSingleton<ShowAllTournamentsHandler>();
-                        services.AddSingleton<StartTournamentHandler>();
-                        services.AddSingleton<UnlockRoundHandler>();
-                        services.AddSingleton<UnlockTeamsHandler>();
+                    // Team Commands
+                    services.AddSingleton<RegisterTeamHandler>();
+                    services.AddSingleton<SetTeamRankHandler>();
+                    services.AddSingleton<AddTeamLossHandler>();
+                    services.AddSingleton<AddTeamMemberHandler>();
+                    services.AddSingleton<AddTeamWinHandler>();
+                    services.AddSingleton<DeleteTeamHandler>();
+                    services.AddSingleton<RemoveTeamLossHandler>();
+                    services.AddSingleton<RemoveTeamMemberHandler>();
+                    services.AddSingleton<RemoveTeamWinHandler>();
+
+                    // Tournament Commands
+                    services.AddSingleton<CreateTournamentHandler>();
+                    services.AddSingleton<DeleteTournamentHandler>();
+                    services.AddSingleton<EndTournamentHandler>();
+                    services.AddSingleton<LockInRoundHandler>();
+                    services.AddSingleton<LockTeamsHandler>();
+                    services.AddSingleton<NextRoundHandler>();
+                    services.AddSingleton<SetupRoundRobinTournamentHandler>();
+                    services.AddSingleton<ShowAllTournamentsHandler>();
+                    services.AddSingleton<StartTournamentHandler>();
+                    services.AddSingleton<UnlockRoundHandler>();
+                    services.AddSingleton<UnlockTeamsHandler>();
 
                     ///
 

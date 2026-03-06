@@ -6,11 +6,8 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Helpers.UT2004
 {
-    public class StatLogReader
+    public static class StatLogReader
     {
-        public StatLogReader()
-        {
-
-        }
+        
     }
 }

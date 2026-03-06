@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Commands.SettingsCommands;
+using FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
@@ -268,11 +269,13 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class UT2004Commands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
+            private readonly StatLogsByDateHandler _statLogsByDateHandler;
             private readonly RegisterGuidToMemberHandler _registerGuidToMemberLogic;
             private readonly RemoveGuidFromMemberHandler _removeGuidFromMemberLogic;
-            public UT2004Commands(AutocompleteCache autocompleteCache, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic)
+            public UT2004Commands(AutocompleteCache autocompleteCache, StatLogsByDateHandler statLogsByDateHandler, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic)
             {
                 _autocompleteCache = autocompleteCache;
+                _statLogsByDateHandler = statLogsByDateHandler;
                 _registerGuidToMemberLogic = registerGuidToMemberLogic;
                 _removeGuidFromMemberLogic = removeGuidFromMemberLogic;
             }
@@ -328,8 +331,8 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
             }
 
-            [SlashCommand("logs_by_date", "Get compiled StatLogs ID for a specific date")]
-            public async Task StatLogsByDateAsync(int year, int month, int day)
+            [SlashCommand("logs_by_date", "Get compiled all stat log ID#'s for a specific day")]
+            public async Task StatLogsByDateAsync(int year, int month, int day, string serverName = null)
             {
                 try
                 {
@@ -339,8 +342,9 @@ namespace FlawsFightNight.Bot.SlashCommands
                     if (day < 1 || day > DateTime.DaysInMonth(year, month)) { await FollowupAsync("Invalid day for the given month/year.", ephemeral: true); return; }
 
                     var date = new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc);
+                    var result = await _statLogsByDateHandler.GetStatLogsByDate(date, serverName);
 
-                    await FollowupAsync($"Retrieving compiled StatLogs for date: {date:yyyy-MM-dd}", ephemeral: true);
+                    await FollowupAsync(result, ephemeral: true);
                 }
                 catch (Exception ex)
                 {
@@ -354,13 +358,12 @@ namespace FlawsFightNight.Bot.SlashCommands
             {
                 try
                 {
+                    await DeferAsync(ephemeral: true);
                     if (amount < 1 || amount > 25)
                     {
                         await FollowupAsync("Amount must be between 1 and 25.", ephemeral: true);
                         return;
                     }
-
-                    await DeferAsync(ephemeral: true);
                     await FollowupAsync($"Retrieving the last {amount} compiled StatLogs", ephemeral: true);
                 }
                 catch (Exception ex)

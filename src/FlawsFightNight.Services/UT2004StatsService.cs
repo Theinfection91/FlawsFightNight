@@ -423,5 +423,17 @@ namespace FlawsFightNight.Services
             }
         }
         #endregion
+
+        #region Admin StatLog Controls
+        public async Task<string> GetStatLogIDsOnDate(DateTime date, string serverName = null)
+        {
+            var allLogs = await GetAllProcessedStatLogs();
+            var filteredLogs = allLogs.Where(log =>
+                log.MatchDate.Date == date.Date &&
+                (string.IsNullOrEmpty(serverName) || log.ServerName.Equals(serverName, StringComparison.OrdinalIgnoreCase))
+            );
+            return string.Join(", ", filteredLogs.Select(log => log.Id));
+        }
+        #endregion
     }
 }
