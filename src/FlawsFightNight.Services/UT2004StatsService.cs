@@ -8,11 +8,14 @@ using System.IO;
 using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
+using Discord.WebSocket;
 
 namespace FlawsFightNight.Services
 {
     public class UT2004StatsService : BaseDataDriven
     {
+        private readonly DiscordSocketClient _client;
+
         private readonly UT2004LogParser _logParser;
         private readonly OpenSkillRatingService _ratingService;
         private readonly UTStatsDBEloRatingService _eloService;
@@ -25,8 +28,9 @@ namespace FlawsFightNight.Services
         private const int MinTAMMatchesBeforePeak = 3;
         private const int MinBRMatchesBeforePeak = 3;
 
-        public UT2004StatsService(DataContext dataContext, UT2004LogParser logParser, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsService", dataContext)
+        public UT2004StatsService(DataContext dataContext, DiscordSocketClient client, UT2004LogParser logParser, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsService", dataContext)
         {
+            _client = client;
             _logParser = logParser;
             _ratingService = ratingService;
             _ratingsMapper = ratingsMapper;
@@ -34,7 +38,7 @@ namespace FlawsFightNight.Services
         }
 
         public async Task InitializeAsync()
-        {   
+        {
             await GetStatLogCounts();
         }
 
@@ -265,8 +269,8 @@ namespace FlawsFightNight.Services
                             double change = match.GameMode switch
                             {
                                 UT2004GameMode.iCTF => profile.CaptureTheFlagElo.Change,
-                                UT2004GameMode.TAM  => profile.TAMElo.Change,
-                                UT2004GameMode.iBR  => profile.BombingRunElo.Change,
+                                UT2004GameMode.TAM => profile.TAMElo.Change,
+                                UT2004GameMode.iBR => profile.BombingRunElo.Change,
                                 _ => 0.0
                             };
 
@@ -432,7 +436,35 @@ namespace FlawsFightNight.Services
                 log.MatchDate.Date == date.Date &&
                 (string.IsNullOrEmpty(serverName) || log.ServerName.Equals(serverName, StringComparison.OrdinalIgnoreCase))
             );
-            return string.Join(", ", filteredLogs.Select(log => log.Id));
+            //return all on same line
+            return string.Join("", filteredLogs.Select(log => $"{log.Id} ({log.ServerName ?? "Unknown Server"} - {log.MatchDate:yyyy-MM-dd HH:mm:ss})\n"));
+        }
+
+        public async Task<Dictionary<string, string>> GetStatLogByID(string statLogID)
+        {
+            var allLogs = await GetAllProcessedStatLogs();
+            var log = allLogs.FirstOrDefault(l => l.Id.Equals(statLogID, StringComparison.OrdinalIgnoreCase));
+            if (log != null)
+            {
+                var idAndLog = new Dictionary<string, string>();
+                idAndLog[log.Id] = StatLogReader.ReadStatLog(log);
+                return idAndLog;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public async Task SendStatLogDM(ulong discordId, string statLogID, string message)
+        {
+            var bytes = Encoding.UTF8.GetBytes(message ?? string.Empty);
+            using var ms = new MemoryStream(bytes) { Position = 0 };
+
+            var user = await _client.GetUserAsync(discordId) as SocketUser;
+            if (user == null) return;
+            var dmChannel = await user.CreateDMChannelAsync();
+            await dmChannel.SendFileAsync(ms, $"{statLogID}.txt", $"Here is the stat log you requested: {statLogID}");
         }
         #endregion
     }

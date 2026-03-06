@@ -117,6 +117,7 @@ namespace FlawsFightNight.Bot
 
                     // Settings Commands
                     services.AddSingleton<AddDebugAdminHandler>();
+                    services.AddSingleton<GetLogsByIDHandler>();
                     services.AddSingleton<RegisterGuidToMemberHandler>();
                     services.AddSingleton<RemoveGuidFromMemberHandler>();
                     services.AddSingleton<RemoveDebugAdminHandler>();

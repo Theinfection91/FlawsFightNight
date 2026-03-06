@@ -269,12 +269,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class UT2004Commands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
+            private readonly GetLogsByIDHandler _getLogsByIDHandler;
             private readonly StatLogsByDateHandler _statLogsByDateHandler;
             private readonly RegisterGuidToMemberHandler _registerGuidToMemberLogic;
             private readonly RemoveGuidFromMemberHandler _removeGuidFromMemberLogic;
-            public UT2004Commands(AutocompleteCache autocompleteCache, StatLogsByDateHandler statLogsByDateHandler, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic)
+            public UT2004Commands(AutocompleteCache autocompleteCache, GetLogsByIDHandler getLogsByIDHandler, StatLogsByDateHandler statLogsByDateHandler, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic)
             {
                 _autocompleteCache = autocompleteCache;
+                _getLogsByIDHandler = getLogsByIDHandler;
                 _statLogsByDateHandler = statLogsByDateHandler;
                 _registerGuidToMemberLogic = registerGuidToMemberLogic;
                 _removeGuidFromMemberLogic = removeGuidFromMemberLogic;
@@ -316,13 +318,18 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
             }
 
-            [SlashCommand("read_log", "Read a specific log by it's ID#")]
-            public async Task ReadLogByIdAsync(string logId)
+            [SlashCommand("get_log", "Get up to 10 different logs by their ID# DMed to the user")]
+            public async Task GetLogByIdAsync(string firstLog, string secondLog = null, string thirdLog = null, string fourthLog = null, string fifthLog = null, string sixthLog = null, string seventhLog = null, string eighthLog = null, string ninthLog = null, string tenthLog = null)
             {
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    await FollowupAsync($"Retrieving log with ID: {logId}", ephemeral: true);
+                    var logIds = new List<string> { firstLog, secondLog, thirdLog, fourthLog, fifthLog, sixthLog, seventhLog, eighthLog, ninthLog, tenthLog }
+                                 .Where(id => !string.IsNullOrWhiteSpace(id))
+                                 .ToList();
+                    
+                    var result = await _getLogsByIDHandler.GetLogsByID(Context, logIds);
+                    await FollowupAsync(result, ephemeral: true);
                 }
                 catch (Exception ex)
                 {
