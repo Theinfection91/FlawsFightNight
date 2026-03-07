@@ -50,6 +50,10 @@ namespace FlawsFightNight.Services
         // Stat Log files are lazy loaded
         private readonly StatLogMatchResultHandler _statLogMatchResultsHandler;
 
+        // Stat Log Index File (lightweight Id + MatchDate + ServerName lookup)
+        public StatLogIndexFile StatLogIndexFile { get; private set; }
+        private readonly StatLogIndexHandler _statLogIndexHandler;
+
         // User Profile Files
         public List<MemberProfileFile> MemberProfileFiles { get; private set; } = new();
         private readonly MemberProfileHandler _memberProfileHandler;
@@ -59,7 +63,7 @@ namespace FlawsFightNight.Services
         private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
         #endregion
 
-        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
+        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, StatLogIndexHandler statLogIndexHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
         {
             DiscordClient = client;
 
@@ -70,6 +74,7 @@ namespace FlawsFightNight.Services
             _tournamentDataHandler = tournamentDataHandler;
             _processedLogNamesHandler = processedLogNamesHandler;
             _statLogMatchResultsHandler = statLogMatchResultHandler;
+            _statLogIndexHandler = statLogIndexHandler;
             _memberProfileHandler = userProfileHandler;
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
         }
@@ -249,26 +254,40 @@ namespace FlawsFightNight.Services
 
         public async Task SaveStatLogMatchResultFile(UT2004StatLog statLog)
         {
-            switch (statLog.GameMode)
+            // File name is now the stat log ID (e.g. "iCTF000015.json") so we can load
+            // a single file directly by ID without scanning every file in the directory.
+            PathOption pathOption = statLog.GameMode switch
             {
-                case UT2004GameMode.iCTF:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.iCTFStatLogs, statLog.FileName);
-                    break;
-                case UT2004GameMode.TAM:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.TAMStatLogs, statLog.FileName);
-                    break;
-                case UT2004GameMode.iBR:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.iBRStatLogs, statLog.FileName);
-                    break;
-                default:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.iCTFStatLogs, statLog.FileName);
-                    break;
-            }
-            var statLogMatchResultsFile = new StatLogMatchResultsFile()
-            {
-                StatLog = statLog
+                UT2004GameMode.iCTF => PathOption.iCTFStatLogs,
+                UT2004GameMode.TAM  => PathOption.TAMStatLogs,
+                UT2004GameMode.iBR  => PathOption.iBRStatLogs,
+                _                   => PathOption.iCTFStatLogs
             };
-            await _statLogMatchResultsHandler.Save(statLogMatchResultsFile);
+
+            await _statLogMatchResultsHandler.SetFilePath(pathOption, $"{statLog.Id}.json");
+            await _statLogMatchResultsHandler.Save(new StatLogMatchResultsFile { StatLog = statLog });
+        }
+
+        /// <summary>
+        /// Loads a single stat log by ID without scanning the entire directory.
+        /// Derives the mode subdirectory from the ID prefix (e.g. "iCTF", "TAM", "iBR").
+        /// </summary>
+        public async Task<UT2004StatLog?> LoadStatLogByID(string statLogID)
+        {
+            PathOption pathOption;
+
+            if (statLogID.StartsWith("iCTF", StringComparison.OrdinalIgnoreCase))
+                pathOption = PathOption.iCTFStatLogs;
+            else if (statLogID.StartsWith("TAM", StringComparison.OrdinalIgnoreCase))
+                pathOption = PathOption.TAMStatLogs;
+            else if (statLogID.StartsWith("iBR", StringComparison.OrdinalIgnoreCase))
+                pathOption = PathOption.iBRStatLogs;
+            else
+                return null;
+
+            await _statLogMatchResultsHandler.SetFilePath(pathOption, $"{statLogID}.json");
+            var file = await _statLogMatchResultsHandler.Load();
+            return file?.StatLog;
         }
 
         public async Task<int> GetStatLogCount(UT2004GameMode gameMode)
@@ -406,6 +425,16 @@ namespace FlawsFightNight.Services
             };
             await _ut2004PlayerProfileHandler.SetFilePath(PathOption.UT2004PlayerProfiles, $"{playerProfile.Guid}.json");
             await _ut2004PlayerProfileHandler.Save(playerProfileFile);
+
+            // Keep the in-memory list in sync so same-session lookups (e.g. profileNames
+            // in GetStatLogByID) can resolve profiles that were just created or updated.
+            var existing = UT2004PlayerProfileFiles
+                .FirstOrDefault(f => f.PlayerProfile?.Guid != null &&
+                                     f.PlayerProfile.Guid.Equals(playerProfile.Guid, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+                existing.PlayerProfile = playerProfile;
+            else
+                UT2004PlayerProfileFiles.Add(playerProfileFile);
         }
 
         public UT2004PlayerProfile? GetUT2004PlayerProfile(string playerGuid)
@@ -445,6 +474,35 @@ namespace FlawsFightNight.Services
         {
             await _ftpCredentialHandler.Save(FTPCredentialFile);
             await LoadFTPCredentialFiles();
+        }
+        #endregion
+
+        #region Stat Log Index
+        public async Task LoadStatLogIndexFile()
+        {
+            await _statLogIndexHandler.SetFilePath(PathOption.Databases, "stat_log_index.json");
+            StatLogIndexFile = await _statLogIndexHandler.Load();
+        }
+
+        public async Task SaveStatLogIndexFile()
+        {
+            await _statLogIndexHandler.SetFilePath(PathOption.Databases, "stat_log_index.json");
+            await _statLogIndexHandler.Save(StatLogIndexFile);
+        }
+
+        public async Task AddStatLogIndexEntry(StatLogIndexEntry entry)
+        {
+            if (StatLogIndexFile == null)
+                await LoadStatLogIndexFile();
+
+            StatLogIndexFile.Entries.Add(entry);
+            await SaveStatLogIndexFile();
+        }
+
+        public async Task RebuildStatLogIndex(List<StatLogIndexEntry> entries)
+        {
+            StatLogIndexFile = new StatLogIndexFile { Entries = entries };
+            await SaveStatLogIndexFile();
         }
         #endregion
     }

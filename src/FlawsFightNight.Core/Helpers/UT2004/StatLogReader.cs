@@ -10,7 +10,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 {
     public static class StatLogReader
     {
-        private const string Divider    = "================================================";
+        private const string Divider     = "================================================";
         private const string ThinDivider = "------------------------------------------------";
 
         /// <summary>
@@ -27,6 +27,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             WriteHeader(log, sb);
             WriteTeams(log, sb, profileNames);
             WriteKillMatrix(log, sb, profileNames);
+            WriteTimeline(log, sb, profileNames);
 
             return sb.ToString();
         }
@@ -68,6 +69,12 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 return;
             }
 
+            // If no player in the entire match is marked as a winner it's a draw (e.g. 0-0 map change)
+            bool anyWinner = log.Players
+                .Where(t => t != null)
+                .SelectMany(t => t)
+                .Any(p => p.IsWinner);
+
             string[] teamLabels = { "RED TEAM", "BLUE TEAM" };
 
             for (int t = 0; t < log.Players.Count; t++)
@@ -76,7 +83,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 if (team == null || team.Count == 0) continue;
 
                 string label  = t < teamLabels.Length ? teamLabels[t] : $"TEAM {t}";
-                string result = team.Any(p => p.IsWinner) ? "WINNER" : "LOSER";
+                string result = team.Any(p => p.IsWinner) ? "WINNER"
+                              : anyWinner                 ? "LOSER"
+                              :                            "DRAW";
 
                 sb.AppendLine(Divider);
                 sb.AppendLine($"  {label}  [{result}]");
@@ -84,16 +93,30 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
                 foreach (UTPlayerMatchStats player in team.OrderBy(p => p.Placement))
                 {
-                    WritePlayer(player, log.GameMode, sb, profileNames);
+                    List<MatchEvent>? playerEvents = null;
+                    if (log.Timeline != null && player.Guid != null)
+                    {
+                        playerEvents = log.Timeline
+                            .Where(e => e.ActorGuid == player.Guid || e.TargetGuid == player.Guid)
+                            .ToList();
+                    }
+
+                    WritePlayer(player, log.GameMode, sb, profileNames, anyWinner, playerEvents);
                 }
             }
         }
 
-        private static void WritePlayer(UTPlayerMatchStats p, UT2004GameMode mode, StringBuilder sb, IReadOnlyDictionary<string, string>? profileNames)
+        private static void WritePlayer(
+            UTPlayerMatchStats p,
+            UT2004GameMode mode,
+            StringBuilder sb,
+            IReadOnlyDictionary<string, string>? profileNames,
+            bool anyWinner,
+            List<MatchEvent>? playerEvents = null)
         {
             int    mins    = p.TotalTimeSeconds / 60;
             int    secs    = p.TotalTimeSeconds % 60;
-            string winLoss = p.IsWinner ? "WIN" : "LOSS";
+            string winLoss = p.IsWinner ? "WIN" : (anyWinner ? "LOSS" : "DRAW");
             string botTag  = p.IsBot ? "  [BOT]" : string.Empty;
             string name    = ResolvePlayerName(p.Guid, p.LastKnownName, profileNames);
 
@@ -103,6 +126,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             sb.AppendLine($"      Score      : {p.Score}  |  Kills: {p.Kills}  |  Deaths: {p.Deaths}  |  Suicides: {p.Suicides}  |  Headshots: {p.Headshots}");
             sb.AppendLine($"      K/D        : {p.GetKillDeathRatio():F2}  |  Best Streak: {p.BestKillStreak}  |  Best Multi-Kill: {p.BestMultiKill}");
             sb.AppendLine($"      Accuracy   : {p.GetOverallAccuracy():F2}%");
+
+            WritePlayerTimeline(p, sb, playerEvents);
 
             switch (mode)
             {
@@ -119,6 +144,49 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             WriteWeaponStats(p, sb);
             sb.AppendLine();
+        }
+
+        /// <summary>
+        /// Writes per-player kill/death timestamps and notable event highlights
+        /// extracted from the match timeline.
+        /// </summary>
+        private static void WritePlayerTimeline(UTPlayerMatchStats p, StringBuilder sb, List<MatchEvent>? playerEvents)
+        {
+            if (playerEvents == null || playerEvents.Count == 0 || p.Guid == null) return;
+
+            List<string> killTimes = playerEvents
+                .Where(e => e.EventType == "Kill" && e.ActorGuid == p.Guid)
+                .OrderBy(e => e.GameTimeSeconds)
+                .Select(e => FormatGameTime(e.GameTimeSeconds))
+                .ToList();
+
+            List<string> deathTimes = playerEvents
+                .Where(e => (e.EventType == "Kill"    && e.TargetGuid == p.Guid) ||
+                            (e.EventType == "Suicide" && e.ActorGuid  == p.Guid))
+                .OrderBy(e => e.GameTimeSeconds)
+                .Select(e => FormatGameTime(e.GameTimeSeconds))
+                .ToList();
+
+            List<string> highlights = playerEvents
+                .Where(e => e.ActorGuid == p.Guid && e.EventType is
+                    "FirstBlood" or "Spree" or "MultiKill" or "Overkill" or
+                    "FlagCapture" or "FlagReturn" or "BombCapture")
+                .OrderBy(e => e.GameTimeSeconds)
+                .Select(e =>
+                {
+                    string detail = e.Detail != null ? $" ({e.Detail})" : string.Empty;
+                    return $"[{FormatGameTime(e.GameTimeSeconds)}] {e.EventType}{detail}";
+                })
+                .ToList();
+
+            if (killTimes.Count > 0)
+                sb.AppendLine($"      Kill Times : {string.Join("  ", killTimes)}");
+
+            if (deathTimes.Count > 0)
+                sb.AppendLine($"      Death Times: {string.Join("  ", deathTimes)}");
+
+            if (highlights.Count > 0)
+                sb.AppendLine($"      Highlights : {string.Join("  |  ", highlights)}");
         }
 
         private static void WriteTAMStats(UTPlayerMatchStats p, StringBuilder sb)
@@ -185,7 +253,82 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             sb.AppendLine();
         }
 
+        /// <summary>
+        /// Writes a full chronological event listing for the match, starting from game start (t ≥ 0).
+        /// Null actor/target names in stored events are resolved via the GUID lookup so that matches
+        /// with a missing <c>LastKnownName</c> in the JSON still display correctly.
+        /// </summary>
+        private static void WriteTimeline(UT2004StatLog log, StringBuilder sb, IReadOnlyDictionary<string, string>? profileNames = null)
+        {
+            if (log.Timeline == null || log.Timeline.Count == 0) return;
+
+            List<MatchEvent> events = log.Timeline
+                .Where(e => e.GameTimeSeconds >= 0)
+                .ToList();
+
+            if (events.Count == 0) return;
+
+            // Build lookup once so null-named events (e.g. stored before profileNames existed)
+            // still resolve to a readable name via the GUID.
+            Dictionary<string, string> lookup = BuildGuidNameLookup(log, profileNames);
+
+            sb.AppendLine(Divider);
+            sb.AppendLine($"  MATCH TIMELINE  ({events.Count} events)");
+            sb.AppendLine(Divider);
+
+            foreach (MatchEvent e in events)
+            {
+                string time      = FormatGameTime(e.GameTimeSeconds);
+                string eventType = e.EventType.PadRight(18);
+
+                bool   hasTarget   = !string.IsNullOrEmpty(e.TargetGuid) || !string.IsNullOrEmpty(e.TargetName);
+                string actorDisplay = ResolveEventName(e.ActorName, e.ActorGuid, lookup);
+                string body;
+
+                if (hasTarget)
+                {
+                    string targetDisplay = ResolveEventName(e.TargetName, e.TargetGuid, lookup, "?");
+                    body = $"{(string.IsNullOrEmpty(actorDisplay) ? "?" : actorDisplay)} → {targetDisplay}";
+                }
+                else
+                {
+                    body = actorDisplay;
+                }
+
+                string detail = !string.IsNullOrEmpty(e.Detail) ? $"  ({e.Detail})" : string.Empty;
+
+                sb.AppendLine($"  [{time}] {eventType} {body}{detail}");
+            }
+
+            sb.AppendLine();
+        }
+
         // ── Helpers ──────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Formats a game-relative timestamp as <c>MM:SS</c>.
+        /// Negative values (pre-game) are formatted as <c>-MM:SS</c>.
+        /// </summary>
+        private static string FormatGameTime(double seconds)
+        {
+            bool   negative = seconds < 0;
+            double abs      = Math.Abs(seconds);
+            int    mins     = (int)(abs / 60);
+            int    secs     = (int)(abs % 60);
+            return negative ? $"-{mins:D2}:{secs:D2}" : $"{mins:D2}:{secs:D2}";
+        }
+
+        /// <summary>
+        /// Resolves a display name for a <see cref="MatchEvent"/> actor or target.
+        /// Prefers the stored name, then the GUID lookup, then <paramref name="fallback"/>.
+        /// </summary>
+        private static string ResolveEventName(string? name, string? guid, Dictionary<string, string> lookup, string fallback = "")
+        {
+            if (!string.IsNullOrEmpty(name)) return name;
+            if (guid != null && lookup.TryGetValue(guid, out string? resolved) && !string.IsNullOrEmpty(resolved))
+                return resolved;
+            return fallback;
+        }
 
         /// <summary>
         /// Resolves a display name for a player, falling back to the profile lookup then a

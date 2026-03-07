@@ -74,6 +74,12 @@ namespace FlawsFightNight.Services
                 ).ToList();
                 statLog.Id = await GenerateStatLogId(statLog.GameMode);
                 await _dataContext.SaveStatLogMatchResultFile(statLog);
+                await _dataContext.AddStatLogIndexEntry(new StatLogIndexEntry
+                {
+                    Id = statLog.Id,
+                    MatchDate = statLog.MatchDate,
+                    ServerName = statLog.ServerName
+                });
                 await MarkLogFileAsProcessed(fileName);
                 return true;
             }
@@ -431,37 +437,50 @@ namespace FlawsFightNight.Services
         #region Admin StatLog Controls
         public async Task<string> GetStatLogIDsOnDate(DateTime date, string serverName = null)
         {
-            var allLogs = await GetAllProcessedStatLogs();
-            var filteredLogs = allLogs.Where(log =>
-                log.MatchDate.Date == date.Date &&
-                (string.IsNullOrEmpty(serverName) || log.ServerName.Equals(serverName, StringComparison.OrdinalIgnoreCase))
-            );
-            //return all on same line
-            return string.Join("", filteredLogs.Select(log => $"{log.Id} ({log.ServerName ?? "Unknown Server"} - {log.MatchDate:yyyy-MM-dd HH:mm:ss})\n"));
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var entries = _dataContext.StatLogIndexFile?.Entries;
+            if (entries == null || entries.Count == 0)
+                return string.Empty;
+
+            // Use a date range (avoids allocating Date for every entry)
+            var start = date.Date;
+            var end = start.AddDays(1);
+
+            var sb = new StringBuilder();
+            bool matchServer = !string.IsNullOrWhiteSpace(serverName);
+
+            foreach (var e in entries)
+            {
+                if (e == null) continue;
+                var md = e.MatchDate;
+                if (md < start || md >= end) continue;
+                if (matchServer && !(e.ServerName?.Equals(serverName, StringComparison.OrdinalIgnoreCase) == true)) continue;
+
+                sb.AppendFormat("{0} ({1} - {2:yyyy-MM-dd HH:mm:ss})\n", e.Id, e.ServerName ?? "Unknown Server", md);
+            }
+
+            return sb.ToString();
         }
 
         public async Task<Dictionary<string, string>> GetStatLogByID(string statLogID)
         {
-            var allLogs = await GetAllProcessedStatLogs();
-            var log = allLogs.FirstOrDefault(l => l.Id.Equals(statLogID, StringComparison.OrdinalIgnoreCase));
-            if (log != null)
-            {
-                var profileNames = _dataContext.UT2004PlayerProfileFiles?
-                    .Where(f => f?.PlayerProfile != null && !string.IsNullOrEmpty(f.PlayerProfile.Guid))
-                    .ToDictionary(
-                        f => f.PlayerProfile.Guid,
-                        f => f.PlayerProfile.CurrentName,
-                        StringComparer.OrdinalIgnoreCase)
-                    ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var log = await _dataContext.LoadStatLogByID(statLogID);
+            if (log == null) return null;
 
-                var idAndLog = new Dictionary<string, string>();
-                idAndLog[log.Id] = StatLogReader.ReadStatLog(log, profileNames);
-                return idAndLog;
-            }
-            else
+            var profileNames = _dataContext.UT2004PlayerProfileFiles?
+                .Where(f => f?.PlayerProfile != null && !string.IsNullOrEmpty(f.PlayerProfile.Guid))
+                .ToDictionary(
+                    f => f.PlayerProfile.Guid,
+                    f => f.PlayerProfile.CurrentName,
+                    StringComparer.OrdinalIgnoreCase)
+                ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            return new Dictionary<string, string>
             {
-                return null;
-            }
+                [log.Id] = StatLogReader.ReadStatLog(log, profileNames)
+            };
         }
 
         public async Task SendStatLogDM(ulong discordId, string statLogID, string message)
