@@ -154,7 +154,7 @@ namespace FlawsFightNight.Services
                                 }
                                 await using (var fileStream = await ExecuteWithDataConnectionFallback(client, () => client.OpenRead(item.FullName, token: token), token))
                                 {
-                                    bool wasValid = await _ut2004StatsService.ProcessLogFile(fileStream, item.Name);
+                                    bool wasValid = await _ut2004StatsService.ProcessLogFile(fileStream, item.Name, cred.ServerName, cred.IPAddress);
                                     string message;
                                     if (wasValid)
                                     {

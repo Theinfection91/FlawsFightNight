@@ -39,6 +39,11 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         // Kill matrix: killerGuid -> (victimGuid -> count)
         private Dictionary<string, Dictionary<string, int>> _killMatch = new();
 
+        // Timeline of in-game events
+        private List<MatchEvent> _timeline = new();
+
+        private double GameTime(double timestamp) => Math.Round(timestamp - _gameStartTime, 2);
+
         public async Task<T?> Parse<T>(Stream fileStream)
         {
             if (typeof(T) == typeof(UT2004StatLog))
@@ -65,7 +70,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     if (!double.TryParse(parts[0], out timestamp))
                         continue;
 
-                    _lastEventTimestamp = timestamp; // update last seen timestamp
+                    _lastEventTimestamp = timestamp;
                     string eventType = parts[1];
 
                     switch (eventType)
@@ -107,11 +112,11 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                             break;
 
                         case "G": // Game Event
-                            ParseGameEvent(parts);
+                            ParseGameEvent(parts, timestamp);
                             break;
 
                         case "T": // Team Score
-                            ParseTeamScore(parts);
+                            ParseTeamScore(parts, timestamp);
                             break;
 
                         case "K": // Kill
@@ -165,6 +170,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _lastBallCarrierSeqNum = null;
             _lastEventTimestamp = 0.0;
             _killMatch.Clear();
+            _timeline.Clear();
         }
 
         private void ParseNewGame(string[] parts)
@@ -403,7 +409,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
         }
 
-        private void ParseGameEvent(string[] parts)
+        private void ParseGameEvent(string[] parts, double timestamp)
         {
             if (parts.Length < 4) return;
 
@@ -438,16 +444,24 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
                 case "NewRound":
                     if (_currentGameMode == UT2004GameMode.TAM)
-                    {
-                        HandleTAMNewRound(parts);
-                    }
+                        HandleTAMNewRound(parts, timestamp);
                     break;
 
                 case "flag_taken":
                     if (parts.Length >= 5 && int.TryParse(parts[3], out int ftSeq))
                     {
                         if (_activePlayersBySeqNum.TryGetValue(ftSeq, out var player))
+                        {
                             player.FlagGrabs++;
+                            _timeline.Add(new MatchEvent
+                            {
+                                GameTimeSeconds = GameTime(timestamp),
+                                EventType = "FlagGrab",
+                                ActorName = player.LastKnownName,
+                                ActorGuid = player.Guid,
+                                Detail = parts.Length >= 5 ? $"Team {parts[4]} flag" : null
+                            });
+                        }
                     }
                     break;
 
@@ -455,7 +469,17 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     if (parts.Length >= 5 && int.TryParse(parts[3], out int fpSeq))
                     {
                         if (_activePlayersBySeqNum.TryGetValue(fpSeq, out var player))
+                        {
                             player.FlagPickups++;
+                            _timeline.Add(new MatchEvent
+                            {
+                                GameTimeSeconds = GameTime(timestamp),
+                                EventType = "FlagPickup",
+                                ActorName = player.LastKnownName,
+                                ActorGuid = player.Guid,
+                                Detail = parts.Length >= 5 ? $"Team {parts[4]} flag" : null
+                            });
+                        }
                     }
                     break;
 
@@ -463,13 +487,61 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     if (parts.Length >= 5 && int.TryParse(parts[3], out int fdSeq))
                     {
                         if (_activePlayersBySeqNum.TryGetValue(fdSeq, out var player))
+                        {
                             player.FlagDrops++;
+                            _timeline.Add(new MatchEvent
+                            {
+                                GameTimeSeconds = GameTime(timestamp),
+                                EventType = "FlagDrop",
+                                ActorName = player.LastKnownName,
+                                ActorGuid = player.Guid,
+                                Detail = parts.Length >= 5 ? $"Team {parts[4]} flag" : null
+                            });
+                        }
                     }
                     break;
 
                 case "flag_captured":
+                    if (parts.Length >= 5 && int.TryParse(parts[3], out int fcSeq))
+                    {
+                        if (_activePlayersBySeqNum.TryGetValue(fcSeq, out var player))
+                        {
+                            _timeline.Add(new MatchEvent
+                            {
+                                GameTimeSeconds = GameTime(timestamp),
+                                EventType = "FlagCapture",
+                                ActorName = player.LastKnownName,
+                                ActorGuid = player.Guid,
+                                Detail = parts.Length >= 5 ? $"Team {parts[4]} flag" : null
+                            });
+                        }
+                    }
+                    break;
+
                 case "flag_returned":
+                    if (parts.Length >= 5 && int.TryParse(parts[3], out int frSeq))
+                    {
+                        if (_activePlayersBySeqNum.TryGetValue(frSeq, out var player))
+                        {
+                            _timeline.Add(new MatchEvent
+                            {
+                                GameTimeSeconds = GameTime(timestamp),
+                                EventType = "FlagReturn",
+                                ActorName = player.LastKnownName,
+                                ActorGuid = player.Guid,
+                                Detail = parts.Length >= 5 ? $"Team {parts[4]} flag" : null
+                            });
+                        }
+                    }
+                    break;
+
                 case "flag_returned_timeout":
+                    _timeline.Add(new MatchEvent
+                    {
+                        GameTimeSeconds = GameTime(timestamp),
+                        EventType = "FlagReturnTimeout",
+                        Detail = parts.Length >= 5 ? $"Team {parts[4]} flag" : null
+                    });
                     break;
 
                 case "bomb_pickup":
@@ -479,6 +551,13 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                         {
                             player.BombPickups++;
                             _lastBallCarrierSeqNum = bpSeq;
+                            _timeline.Add(new MatchEvent
+                            {
+                                GameTimeSeconds = GameTime(timestamp),
+                                EventType = "BombPickup",
+                                ActorName = player.LastKnownName,
+                                ActorGuid = player.Guid
+                            });
                             if (_expandedDebugLogging)
                                 Console.WriteLine($"{player.LastKnownName} picked up the bomb");
                         }
@@ -493,6 +572,13 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                             player.BombDrops++;
                             if (_lastBallCarrierSeqNum == bdSeq)
                                 _lastBallCarrierSeqNum = null;
+                            _timeline.Add(new MatchEvent
+                            {
+                                GameTimeSeconds = GameTime(timestamp),
+                                EventType = "BombDrop",
+                                ActorName = player.LastKnownName,
+                                ActorGuid = player.Guid
+                            });
                             if (_expandedDebugLogging)
                                 Console.WriteLine($"{player.LastKnownName} dropped the bomb");
                         }
@@ -506,6 +592,13 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                         {
                             player.BombTaken++;
                             _lastBallCarrierSeqNum = btSeq;
+                            _timeline.Add(new MatchEvent
+                            {
+                                GameTimeSeconds = GameTime(timestamp),
+                                EventType = "BombTaken",
+                                ActorName = player.LastKnownName,
+                                ActorGuid = player.Guid
+                            });
                             if (_expandedDebugLogging)
                                 Console.WriteLine($"{player.LastKnownName} took the bomb");
                         }
@@ -533,7 +626,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                         {
                             var en = eventName.ToLowerInvariant();
                             if (en.Contains("cap"))
+                            {
                                 p.BallCaptures++;
+                                _timeline.Add(new MatchEvent
+                                {
+                                    GameTimeSeconds = GameTime(timestamp),
+                                    EventType = "BombCapture",
+                                    ActorName = p.LastKnownName,
+                                    ActorGuid = p.Guid
+                                });
+                            }
                             else if (en.Contains("assist"))
                                 p.BallScoreAssists++;
                             else if (en.Contains("thrown"))
@@ -547,7 +649,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
         }
 
-        private void HandleTAMNewRound(string[] parts)
+        private void HandleTAMNewRound(string[] parts, double timestamp)
         {
             if (parts.Length >= 5 && int.TryParse(parts[4], out int roundNum))
             {
@@ -561,18 +663,23 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 }
 
                 foreach (var player in _activePlayersBySeqNum.Values.Where(p => !p.IsBot))
-                {
                     player.RoundsPlayed++;
-                }
 
                 _lastKillerSeqNum = null;
+
+                _timeline.Add(new MatchEvent
+                {
+                    GameTimeSeconds = GameTime(timestamp),
+                    EventType = "RoundStart",
+                    Detail = $"Round {roundNum}"
+                });
 
                 if (_expandedDebugLogging)
                     Console.WriteLine($"TAM Round {roundNum} starting...");
             }
         }
 
-        private void ParseTeamScore(string[] parts)
+        private void ParseTeamScore(string[] parts, double timestamp)
         {
             if (parts.Length < 5) return;
             if (!int.TryParse(parts[2], out int teamId))
@@ -604,9 +711,14 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 _roundWinsByTeam[teamId]++;
 
                 foreach (var player in _activePlayersBySeqNum.Values.Where(p => p.Team == teamId && !p.IsBot))
-                {
                     player.RoundsWon++;
-                }
+
+                _timeline.Add(new MatchEvent
+                {
+                    GameTimeSeconds = GameTime(timestamp),
+                    EventType = "RoundWin",
+                    Detail = $"Team {teamId} wins round {_currentRoundNumber}"
+                });
 
                 if (_expandedDebugLogging)
                     Console.WriteLine($"Team {teamId} won round {_currentRoundNumber}! Total rounds won: {_roundWinsByTeam[teamId]}");
@@ -631,6 +743,14 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (killerSeqNum == -1 || killerSeqNum == victimSeqNum)
             {
                 victim.Suicides++;
+                _timeline.Add(new MatchEvent
+                {
+                    GameTimeSeconds = GameTime(timestamp),
+                    EventType = "Suicide",
+                    ActorName = victim.LastKnownName,
+                    ActorGuid = victim.Guid,
+                    Detail = weapon
+                });
                 if (_expandedDebugLogging)
                     Console.WriteLine($"{victim.LastKnownName} committed suicide");
                 return;
@@ -646,16 +766,14 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 killer.WeaponKills[weapon] = 0;
             killer.WeaponKills[weapon]++;
 
-            if (damageType.IndexOf("headshot", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                damageType.IndexOf("UTComp_SSRHeadshot", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
+            bool isHeadshot = damageType.IndexOf("headshot", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                              damageType.IndexOf("UTComp_SSRHeadshot", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            if (isHeadshot)
                 killer.Headshots++;
-            }
 
             if (_currentGameMode == UT2004GameMode.TAM)
-            {
                 _lastKillerSeqNum = killerSeqNum;
-            }
 
             // Register into kill matrix (use current GUIDs if available)
             string killerGuid = killer.Guid ?? string.Empty;
@@ -672,6 +790,17 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     cnt = 0;
                 inner[victimGuid] = cnt + 1;
             }
+
+            _timeline.Add(new MatchEvent
+            {
+                GameTimeSeconds = GameTime(timestamp),
+                EventType = "Kill",
+                ActorName = killer.LastKnownName,
+                ActorGuid = killer.Guid,
+                TargetName = victim.LastKnownName,
+                TargetGuid = victim.Guid,
+                Detail = isHeadshot ? $"{weapon} (Headshot)" : weapon
+            });
 
             if (_expandedDebugLogging)
                 Console.WriteLine($"{killer.LastKnownName} killed {victim.LastKnownName} with {weapon} ({damageType})");
@@ -787,18 +916,31 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (!_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
                 return;
 
-            // Canonical UTStatsDB behavior: count occurrences of spree and multikill levels.
             if (eventType.StartsWith("spree_"))
             {
                 if (int.TryParse(eventType.Substring("spree_".Length), out int streakLevel))
-                player.BestKillStreak = Math.Max(player.BestKillStreak, streakLevel);
-
-                // Map absolute streak to spree index used by UTStatsDB:
-                // 5-9 -> index 0, 10-14 -> index 1, ..., 30+ -> index 5
-                if (streakLevel >= 5)
                 {
-                    int spreeIndex = Math.Min((streakLevel - 5) / 5, 5);
-                    player.SpreeCounts[spreeIndex]++;
+                    player.BestKillStreak = Math.Max(player.BestKillStreak, streakLevel);
+
+                    if (streakLevel >= 5)
+                    {
+                        int spreeIndex = Math.Min((streakLevel - 5) / 5, 5);
+                        player.SpreeCounts[spreeIndex]++;
+                    }
+
+                    string[] spreeNames = { "Killing Spree", "Rampage", "Dominating", "Unstoppable", "Godlike", "Wicked Sick" };
+                    string spreeDetail = streakLevel >= 1 && streakLevel <= spreeNames.Length
+                        ? spreeNames[streakLevel - 1]
+                        : $"Level {streakLevel} Spree";
+
+                    _timeline.Add(new MatchEvent
+                    {
+                        GameTimeSeconds = GameTime(timestamp),
+                        EventType = "Spree",
+                        ActorName = player.LastKnownName,
+                        ActorGuid = player.Guid,
+                        Detail = spreeDetail
+                    });
                 }
 
                 if (_expandedDebugLogging)
@@ -810,12 +952,25 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 {
                     player.BestMultiKill = Math.Max(player.BestMultiKill, multiLevel);
 
-                    // Map multi to index: 2->0, 3->1, ..., 8+ -> 6
                     if (multiLevel >= 2)
                     {
                         int multiIndex = Math.Min(multiLevel - 2, 6);
                         player.MultiCounts[multiIndex]++;
                     }
+
+                    string[] multiNames = { "Double Kill", "Multi Kill", "Ultra Kill", "Monster Kill", "Ludicrous Kill", "Holy Shit", "Wicked Sick" };
+                    string multiDetail = multiLevel >= 1 && multiLevel <= multiNames.Length
+                        ? multiNames[multiLevel - 1]
+                        : $"x{multiLevel + 1}";
+
+                    _timeline.Add(new MatchEvent
+                    {
+                        GameTimeSeconds = GameTime(timestamp),
+                        EventType = "MultiKill",
+                        ActorName = player.LastKnownName,
+                        ActorGuid = player.Guid,
+                        Detail = multiDetail
+                    });
 
                     if (_expandedDebugLogging)
                         Console.WriteLine($"{player.LastKnownName} achieved {eventType} (multi index recorded).");
@@ -823,11 +978,27 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
             else if (eventType == "first_blood")
             {
+                _timeline.Add(new MatchEvent
+                {
+                    GameTimeSeconds = GameTime(timestamp),
+                    EventType = "FirstBlood",
+                    ActorName = player.LastKnownName,
+                    ActorGuid = player.Guid
+                });
+
                 if (_expandedDebugLogging)
                     Console.WriteLine($"{player.LastKnownName} drew first blood!");
             }
             else if (eventType == "Overkill")
             {
+                _timeline.Add(new MatchEvent
+                {
+                    GameTimeSeconds = GameTime(timestamp),
+                    EventType = "Overkill",
+                    ActorName = player.LastKnownName,
+                    ActorGuid = player.Guid
+                });
+
                 if (_expandedDebugLogging)
                     Console.WriteLine($"{player.LastKnownName} got Overkill!");
             }
@@ -909,8 +1080,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             // Use GUID dictionary to get unique players (handles reconnects)
             var uniquePlayers = _activePlayersByGuid.Values.ToList();
-            var humanPlayers = uniquePlayers.Where(p => !p.IsBot).ToList();
-            var botPlayers = uniquePlayers.Where(p => p.IsBot).ToList();
+            var humanPlayers  = uniquePlayers.Where(p => !p.IsBot).ToList();
+            var botPlayers    = uniquePlayers.Where(p => p.IsBot).ToList();
 
             // Rule 1: No bots allowed
             if (botPlayers.Any())
@@ -940,16 +1111,31 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 return false;
             }
 
-            // Rule 4: At least 3 kills must be recorded from each team (to prevent matches where players just connect and do nothing)
-            foreach ( var teamId in teamIds )
+            // Rule 4: Each team must have at least one player with 5+ kills.
+            // Prevents warmups and idle sessions from being recorded as real matches.
+            foreach (var teamId in teamIds)
             {
-                if (!humanPlayers.Any(p => p.Team == teamId && p.Kills >= 3))
+                if (!humanPlayers.Any(p => p.Team == teamId && p.Kills >= 5))
                 {
                     if (_simpleDebugLogging || _expandedDebugLogging)
                     {
-                        Console.WriteLine($"\nMatch INVALID: Team {teamId} doesn't have at least 3 kills recorded. " +
-                            $"Players on this team: {string.Join(", ", humanPlayers.Where(p => p.Team == teamId).Select(p => p.LastKnownName))}");
+                        Console.WriteLine($"\nMatch INVALID: Team {teamId} has no player with at least 5 kills. " +
+                            $"Players on this team: {string.Join(", ", humanPlayers.Where(p => p.Team == teamId).Select(p => $"{p.LastKnownName} ({p.Kills}K)"))}");
                     }
+                    return false;
+                }
+            }
+
+            // Rule 5: Mode-specific objective minimums.
+            // iCTF requires at least 3 total flag captures across both teams — anything fewer
+            // is a warmup or a match that never actually got going.
+            if (_currentGameMode == UT2004GameMode.iCTF)
+            {
+                int totalCaps = humanPlayers.Sum(p => p.FlagCaptures);
+                if (totalCaps < 3)
+                {
+                    if (_simpleDebugLogging || _expandedDebugLogging)
+                        Console.WriteLine($"\nMatch INVALID: iCTF match only recorded {totalCaps} flag capture(s). At least 3 required.");
                     return false;
                 }
             }
@@ -963,22 +1149,17 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private UT2004StatLog BuildStatLog()
         {
             if (!ValidateMatchEligibility())
-            {
-                return null; // Return null to indicate invalid match
-            }
+                return null;
 
             if (_winningTeam.HasValue)
             {
                 foreach (var player in _activePlayersByGuid.Values)
                 {
                     if (player.Team == _winningTeam.Value)
-                    {
                         player.IsWinner = true;
-                    }
                 }
             }
 
-            // Calculate placement PER TEAM (using unique players from GUID dict)
             var playersByTeam = _activePlayersByGuid.Values
                 .GroupBy(p => p.Team)
                 .ToList();
@@ -1006,12 +1187,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             var statLog = new UT2004StatLog();
             foreach (var teamGroup in playersByTeam.OrderBy(g => g.Key))
-            {
                 statLog.Players.Add(teamGroup.ToList());
-            }
 
-            // Expose the collected kill matrix
             statLog.KillMatch = _killMatch;
+            statLog.Timeline = _timeline;
 
             if (_simpleDebugLogging)
             {

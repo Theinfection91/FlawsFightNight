@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Commands.SettingsCommands
+namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
 {
     public class RemoveGuidFromMemberHandler : CommandHandler
     {

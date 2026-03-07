@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using FlawsFightNight.Commands;
 using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
@@ -8,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FlawsFightNight.Commands.SettingsCommands
+namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
 {
     public class RegisterGuidToMemberHandler : CommandHandler
     {

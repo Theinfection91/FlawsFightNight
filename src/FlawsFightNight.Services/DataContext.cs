@@ -50,6 +50,14 @@ namespace FlawsFightNight.Services
         // Stat Log files are lazy loaded
         private readonly StatLogMatchResultHandler _statLogMatchResultsHandler;
 
+        // Stat Log Index File (lightweight Id + MatchDate + ServerName lookup)
+        public StatLogIndexFile StatLogIndexFile { get; private set; }
+        private readonly StatLogIndexHandler _statLogIndexHandler;
+
+        // Admin Ignored Logs File
+        public AdminIgnoredLogsFile AdminIgnoredLogsFile { get; private set; }
+        private readonly AdminIgnoredLogsHandler _adminIgnoredLogsHandler;
+
         // User Profile Files
         public List<MemberProfileFile> MemberProfileFiles { get; private set; } = new();
         private readonly MemberProfileHandler _memberProfileHandler;
@@ -59,7 +67,7 @@ namespace FlawsFightNight.Services
         private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
         #endregion
 
-        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
+        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, StatLogIndexHandler statLogIndexHandler, AdminIgnoredLogsHandler adminIgnoredLogsHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
         {
             DiscordClient = client;
 
@@ -70,6 +78,8 @@ namespace FlawsFightNight.Services
             _tournamentDataHandler = tournamentDataHandler;
             _processedLogNamesHandler = processedLogNamesHandler;
             _statLogMatchResultsHandler = statLogMatchResultHandler;
+            _statLogIndexHandler = statLogIndexHandler;
+            _adminIgnoredLogsHandler = adminIgnoredLogsHandler;
             _memberProfileHandler = userProfileHandler;
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
         }
@@ -86,6 +96,7 @@ namespace FlawsFightNight.Services
             await _tournamentDataHandler.InitializePendingPathAsync();
             await _processedLogNamesHandler.InitializePendingPathAsync();
             await _statLogMatchResultsHandler.InitializePendingPathAsync();
+            await _adminIgnoredLogsHandler.InitializePendingPathAsync();
             await _memberProfileHandler.InitializePendingPathAsync();
             await _ut2004PlayerProfileHandler.InitializePendingPathAsync();
 
@@ -96,6 +107,7 @@ namespace FlawsFightNight.Services
             await LoadPermissionsConfigFile();
             await LoadProcessedLogNamesFile();
             await LoadTournamentDataFiles();
+            await LoadAdminIgnoredLogsFile();
             await LoadAllMemberProfileFiles();
             await LoadAllUT2004PlayerProfileFiles();
         }
@@ -249,26 +261,40 @@ namespace FlawsFightNight.Services
 
         public async Task SaveStatLogMatchResultFile(UT2004StatLog statLog)
         {
-            switch (statLog.GameMode)
+            // File name is now the stat log ID (e.g. "iCTF000015.json") so we can load
+            // a single file directly by ID without scanning every file in the directory.
+            PathOption pathOption = statLog.GameMode switch
             {
-                case UT2004GameMode.iCTF:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.iCTFStatLogs, statLog.FileName);
-                    break;
-                case UT2004GameMode.TAM:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.TAMStatLogs, statLog.FileName);
-                    break;
-                case UT2004GameMode.iBR:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.iBRStatLogs, statLog.FileName);
-                    break;
-                default:
-                    await _statLogMatchResultsHandler.SetFilePath(PathOption.iCTFStatLogs, statLog.FileName);
-                    break;
-            }
-            var statLogMatchResultsFile = new StatLogMatchResultsFile()
-            {
-                StatLog = statLog
+                UT2004GameMode.iCTF => PathOption.iCTFStatLogs,
+                UT2004GameMode.TAM  => PathOption.TAMStatLogs,
+                UT2004GameMode.iBR  => PathOption.iBRStatLogs,
+                _                   => PathOption.iCTFStatLogs
             };
-            await _statLogMatchResultsHandler.Save(statLogMatchResultsFile);
+
+            await _statLogMatchResultsHandler.SetFilePath(pathOption, $"{statLog.Id}.json");
+            await _statLogMatchResultsHandler.Save(new StatLogMatchResultsFile { StatLog = statLog });
+        }
+
+        /// <summary>
+        /// Loads a single stat log by ID without scanning the entire directory.
+        /// Derives the mode subdirectory from the ID prefix (e.g. "iCTF", "TAM", "iBR").
+        /// </summary>
+        public async Task<UT2004StatLog?> LoadStatLogByID(string statLogID)
+        {
+            PathOption pathOption;
+
+            if (statLogID.StartsWith("iCTF", StringComparison.OrdinalIgnoreCase))
+                pathOption = PathOption.iCTFStatLogs;
+            else if (statLogID.StartsWith("TAM", StringComparison.OrdinalIgnoreCase))
+                pathOption = PathOption.TAMStatLogs;
+            else if (statLogID.StartsWith("iBR", StringComparison.OrdinalIgnoreCase))
+                pathOption = PathOption.iBRStatLogs;
+            else
+                return null;
+
+            await _statLogMatchResultsHandler.SetFilePath(pathOption, $"{statLogID}.json");
+            var file = await _statLogMatchResultsHandler.Load();
+            return file?.StatLog;
         }
 
         public async Task<int> GetStatLogCount(UT2004GameMode gameMode)
@@ -284,6 +310,41 @@ namespace FlawsFightNight.Services
                 default:
                     return 0;
             }
+        }
+
+        public async Task<List<UT2004StatLog>> GetStatLogsByGameMode(UT2004GameMode gameMode)
+        {
+            List<UT2004StatLog> statLogs = new();
+            switch (gameMode)
+            {
+                case UT2004GameMode.iCTF:
+                    var iCTFFiles = await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iCTF");
+                    statLogs.AddRange(iCTFFiles.Select(f => f.StatLog));
+                    break;
+                case UT2004GameMode.TAM:
+                    var TAMFiles = await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/TAM");
+                    statLogs.AddRange(TAMFiles.Select(f => f.StatLog));
+                    break;
+                case UT2004GameMode.iBR:
+                    var iBRFiles = await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iBR");
+                    statLogs.AddRange(iBRFiles.Select(f => f.StatLog));
+                    break;
+                default:
+                    break;
+            }
+            return statLogs;
+        }
+
+        public async Task<List<UT2004StatLog>> GetAllStatLogs()
+        {
+            List<UT2004StatLog> statLogs = new();
+            var iCTFFiles = await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iCTF");
+            var TAMFiles = await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/TAM");
+            var iBRFiles = await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs/iBR");
+            statLogs.AddRange(iCTFFiles.Select(f => f.StatLog));
+            statLogs.AddRange(TAMFiles.Select(f => f.StatLog));
+            statLogs.AddRange(iBRFiles.Select(f => f.StatLog));
+            return statLogs;
         }
         #endregion
 
@@ -363,6 +424,7 @@ namespace FlawsFightNight.Services
             await _ut2004PlayerProfileHandler.SetFilePath(PathOption.UT2004PlayerProfiles, $"{playerGuid}.json");
             return await _ut2004PlayerProfileHandler.Load();
         }
+
         public async Task SaveUT2004PlayerProfileFile(UT2004PlayerProfile playerProfile)
         {
             var playerProfileFile = new UT2004PlayerProfileFile()
@@ -371,11 +433,20 @@ namespace FlawsFightNight.Services
             };
             await _ut2004PlayerProfileHandler.SetFilePath(PathOption.UT2004PlayerProfiles, $"{playerProfile.Guid}.json");
             await _ut2004PlayerProfileHandler.Save(playerProfileFile);
+
+            // Keep the in-memory list in sync so same-session lookups (e.g. profileNames
+            // in GetStatLogByID) can resolve profiles that were just created or updated.
+            var existing = UT2004PlayerProfileFiles
+                .FirstOrDefault(f => f.PlayerProfile?.Guid != null &&
+                                     f.PlayerProfile.Guid.Equals(playerProfile.Guid, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+                existing.PlayerProfile = playerProfile;
+            else
+                UT2004PlayerProfileFiles.Add(playerProfileFile);
         }
 
         public UT2004PlayerProfile? GetUT2004PlayerProfile(string playerGuid)
         {
-
             foreach (var profileFile in UT2004PlayerProfileFiles)
             {
                 if (profileFile.PlayerProfile.Guid.Equals(playerGuid, StringComparison.OrdinalIgnoreCase))
@@ -410,6 +481,75 @@ namespace FlawsFightNight.Services
         {
             await _ftpCredentialHandler.Save(FTPCredentialFile);
             await LoadFTPCredentialFiles();
+        }
+        #endregion
+
+        #region Stat Log Index
+        public async Task LoadStatLogIndexFile()
+        {
+            await _statLogIndexHandler.SetFilePath(PathOption.Databases, "stat_log_index.json");
+            StatLogIndexFile = await _statLogIndexHandler.Load();
+        }
+
+        public async Task SaveStatLogIndexFile()
+        {
+            await _statLogIndexHandler.SetFilePath(PathOption.Databases, "stat_log_index.json");
+            await _statLogIndexHandler.Save(StatLogIndexFile);
+        }
+
+        public async Task AddStatLogIndexEntry(StatLogIndexEntry entry)
+        {
+            if (StatLogIndexFile == null)
+                await LoadStatLogIndexFile();
+
+            StatLogIndexFile.Entries.Add(entry);
+            await SaveStatLogIndexFile();
+        }
+
+        public async Task RebuildStatLogIndex(List<StatLogIndexEntry> entries)
+        {
+            StatLogIndexFile = new StatLogIndexFile { Entries = entries };
+            await SaveStatLogIndexFile();
+        }
+        #endregion
+
+        #region Admin Ignored Logs
+        public async Task LoadAdminIgnoredLogsFile()
+        {
+            await _adminIgnoredLogsHandler.SetFilePath(PathOption.Databases, "admin_ignored_logs.json");
+            AdminIgnoredLogsFile = await _adminIgnoredLogsHandler.Load();
+        }
+
+        public async Task SaveAdminIgnoredLogsFile()
+        {
+            await _adminIgnoredLogsHandler.SetFilePath(PathOption.Databases, "admin_ignored_logs.json");
+            await _adminIgnoredLogsHandler.Save(AdminIgnoredLogsFile);
+        }
+
+        public async Task AddAdminIgnoredLogEntry(AdminIgnoredLogEntry entry)
+        {
+            if (AdminIgnoredLogsFile == null)
+                await LoadAdminIgnoredLogsFile();
+
+            if (!AdminIgnoredLogsFile.Entries.Any(e => e.StatLogId.Equals(entry.StatLogId, StringComparison.OrdinalIgnoreCase)))
+            {
+                AdminIgnoredLogsFile.Entries.Add(entry);
+                await SaveAdminIgnoredLogsFile();
+            }
+        }
+
+        public async Task RemoveAdminIgnoredLogEntry(string statLogId)
+        {
+            if (AdminIgnoredLogsFile == null)
+                await LoadAdminIgnoredLogsFile();
+
+            AdminIgnoredLogsFile.Entries.RemoveAll(e => e.StatLogId.Equals(statLogId, StringComparison.OrdinalIgnoreCase));
+            await SaveAdminIgnoredLogsFile();
+        }
+
+        public bool IsStatLogIgnored(string statLogId)
+        {
+            return AdminIgnoredLogsFile?.Entries.Any(e => e.StatLogId.Equals(statLogId, StringComparison.OrdinalIgnoreCase)) ?? false;
         }
         #endregion
     }

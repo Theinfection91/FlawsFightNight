@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Commands.SettingsCommands;
+using FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
@@ -268,13 +269,24 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class UT2004Commands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
+            private readonly GetLogsByIDHandler _getLogsByIDHandler;
+            private readonly IgnoreLogsByIDHandler _ignoreLogsByIDHandler;
+            private readonly AllowLogsByIDHandler _allowLogsByIDHandler;
+            private readonly StatLogsByDateHandler _statLogsByDateHandler;
             private readonly RegisterGuidToMemberHandler _registerGuidToMemberLogic;
             private readonly RemoveGuidFromMemberHandler _removeGuidFromMemberLogic;
-            public UT2004Commands(AutocompleteCache autocompleteCache, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic)
+            private readonly LastStatLogsHandler _lastStatLogsHandler;
+
+            public UT2004Commands(AutocompleteCache autocompleteCache, GetLogsByIDHandler getLogsByIDHandler, IgnoreLogsByIDHandler ignoreLogsByIDHandler, AllowLogsByIDHandler allowLogsByIDHandler, StatLogsByDateHandler statLogsByDateHandler, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic, LastStatLogsHandler lastStatLogsHandler)
             {
                 _autocompleteCache = autocompleteCache;
+                _getLogsByIDHandler = getLogsByIDHandler;
+                _ignoreLogsByIDHandler = ignoreLogsByIDHandler;
+                _allowLogsByIDHandler = allowLogsByIDHandler;
+                _statLogsByDateHandler = statLogsByDateHandler;
                 _registerGuidToMemberLogic = registerGuidToMemberLogic;
                 _removeGuidFromMemberLogic = removeGuidFromMemberLogic;
+                _lastStatLogsHandler = lastStatLogsHandler;
             }
 
             [SlashCommand("register_guid", "Register a GUID to a Member's profile")]
@@ -305,6 +317,116 @@ namespace FlawsFightNight.Bot.SlashCommands
                     var result = await _removeGuidFromMemberLogic.RemoveGuidFromMemberProcess(member, guid);
                     await FollowupAsync(embed: result, ephemeral: true);
                     _autocompleteCache.Update();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("get_log", "Get up to 10 different logs by their ID# DMed to the user")]
+            public async Task GetLogByIdAsync(string firstLog, string secondLog = null, string thirdLog = null, string fourthLog = null, string fifthLog = null, string sixthLog = null, string seventhLog = null, string eighthLog = null, string ninthLog = null, string tenthLog = null)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var logIds = new List<string> { firstLog, secondLog, thirdLog, fourthLog, fifthLog, sixthLog, seventhLog, eighthLog, ninthLog, tenthLog }
+                                 .Where(id => !string.IsNullOrWhiteSpace(id))
+                                 .ToList();
+
+                    var result = await _getLogsByIDHandler.GetLogsByID(Context, logIds);
+                    await FollowupAsync(result, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("logs_by_date", "Get all stat log ID#'s for a specific day")]
+            public async Task StatLogsByDateAsync(int year, int month, int day, string serverName = null)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    if (year < 2000 || year > DateTime.Now.Year) { await FollowupAsync("Invalid year.", ephemeral: true); return; }
+                    if (month < 1 || month > 12) { await FollowupAsync("Month must be 1-12.", ephemeral: true); return; }
+                    if (day < 1 || day > DateTime.DaysInMonth(year, month)) { await FollowupAsync("Invalid day for the given month/year.", ephemeral: true); return; }
+
+                    var date = new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc);
+                    var result = await _statLogsByDateHandler.GetStatLogsByDate(date, serverName);
+
+                    if (string.IsNullOrWhiteSpace(result))
+                        await FollowupAsync("No stat logs found for that date.", ephemeral: true);
+                    else
+                        await FollowupAsync(result, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("last_logs", "Get the last 1 to 25 compiled StatLog ID's")]
+            public async Task LastStatLogAsync(int amount, string serverName = null)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    if (amount < 1 || amount > 25)
+                    {
+                        await FollowupAsync("Amount must be between 1 and 25.", ephemeral: true);
+                        return;
+                    }
+
+                    var result = await _lastStatLogsHandler.GetLastStatLogsProcess(amount, serverName);
+                    if (string.IsNullOrWhiteSpace(result))
+                        await FollowupAsync("No stat logs found.", ephemeral: true);
+                    else
+                        await FollowupAsync(result, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("ignore_logs", "Ignore up to 10 specific logs by their ID# so they won't be processed for stats")]
+            public async Task IgnoreLogsByIdAsync(string firstLog, string secondLog = null, string thirdLog = null, string fourthLog = null, string fifthLog = null, string sixthLog = null, string seventhLog = null, string eighthLog = null, string ninthLog = null, string tenthLog = null)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var logIds = new List<string> { firstLog, secondLog, thirdLog, fourthLog, fifthLog, sixthLog, seventhLog, eighthLog, ninthLog, tenthLog }
+                                 .Where(id => !string.IsNullOrWhiteSpace(id))
+                                 .ToList();
+
+                    var result = await _ignoreLogsByIDHandler.IgnoreLogsByIDProcess(Context, logIds);
+                    await FollowupAsync(embed: result, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("allow_logs", "Re-allow up to 10 previously ignored logs by their ID# so they count towards stats again")]
+            public async Task AllowLogsByIdAsync(string firstLog, string secondLog = null, string thirdLog = null, string fourthLog = null, string fifthLog = null, string sixthLog = null, string seventhLog = null, string eighthLog = null, string ninthLog = null, string tenthLog = null)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var logIds = new List<string> { firstLog, secondLog, thirdLog, fourthLog, fifthLog, sixthLog, seventhLog, eighthLog, ninthLog, tenthLog }
+                                 .Where(id => !string.IsNullOrWhiteSpace(id))
+                                 .ToList();
+
+                    var result = await _allowLogsByIDHandler.AllowLogsByIDProcess(Context, logIds);
+                    await FollowupAsync(embed: result, ephemeral: true);
                 }
                 catch (Exception ex)
                 {

@@ -8,11 +8,15 @@ using System.IO;
 using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
+using Discord.WebSocket;
+using Discord;
 
 namespace FlawsFightNight.Services
 {
     public class UT2004StatsService : BaseDataDriven
     {
+        private readonly DiscordSocketClient _client;
+
         private readonly UT2004LogParser _logParser;
         private readonly OpenSkillRatingService _ratingService;
         private readonly UTStatsDBEloRatingService _eloService;
@@ -25,8 +29,9 @@ namespace FlawsFightNight.Services
         private const int MinTAMMatchesBeforePeak = 3;
         private const int MinBRMatchesBeforePeak = 3;
 
-        public UT2004StatsService(DataContext dataContext, UT2004LogParser logParser, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsService", dataContext)
+        public UT2004StatsService(DataContext dataContext, DiscordSocketClient client, UT2004LogParser logParser, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsService", dataContext)
         {
+            _client = client;
             _logParser = logParser;
             _ratingService = ratingService;
             _ratingsMapper = ratingsMapper;
@@ -34,7 +39,7 @@ namespace FlawsFightNight.Services
         }
 
         public async Task InitializeAsync()
-        {   
+        {
             await GetStatLogCounts();
         }
 
@@ -57,17 +62,25 @@ namespace FlawsFightNight.Services
             return false;
         }
 
-        public async Task<bool> ProcessLogFile(Stream fileStream, string fileName)
+        public async Task<bool> ProcessLogFile(Stream fileStream, string fileName, string serverName, string serverAddress)
         {
             var statLog = await _logParser.Parse<UT2004StatLog>(fileStream);
             if (statLog != null)
             {
                 statLog.FileName = Path.ChangeExtension(fileName, ".json");
+                statLog.ServerName = serverName;
+                statLog.IPAddress = serverAddress;
                 statLog.Players = statLog.Players.Select(teamList =>
                     teamList.OrderByDescending(p => p.Score).ToList()
                 ).ToList();
                 statLog.Id = await GenerateStatLogId(statLog.GameMode);
                 await _dataContext.SaveStatLogMatchResultFile(statLog);
+                await _dataContext.AddStatLogIndexEntry(new StatLogIndexEntry
+                {
+                    Id = statLog.Id,
+                    MatchDate = statLog.MatchDate,
+                    ServerName = statLog.ServerName
+                });
                 await MarkLogFileAsProcessed(fileName);
                 return true;
             }
@@ -146,7 +159,6 @@ namespace FlawsFightNight.Services
                 .ToList();
             _ratingsMapper.BuildAliasMap(memberProfiles);
 
-            // DEBUG: Print alias map so you can verify correct GUID → primary mappings
             if (_ratingsMapper.HasAliases)
             {
                 Console.WriteLine($"[SeamlessRatings] Active aliases detected — merged GUIDs will be treated as one identity.");
@@ -163,13 +175,29 @@ namespace FlawsFightNight.Services
                 Console.WriteLine($"[SeamlessRatings] No aliases active — all GUIDs treated independently.");
             }
 
+            // Ensure the admin ignored logs file is loaded before filtering
+            if (_dataContext.AdminIgnoredLogsFile == null)
+                await _dataContext.LoadAdminIgnoredLogsFile();
+
             var allMatchStats = await GetAllProcessedStatLogs();
 
             var chronologicalMatches = allMatchStats
+                .Where(m => !_dataContext.IsStatLogIgnored(m.Id))
                 .OrderBy(m => m.MatchDate)
                 .ToList();
 
+            int ignoredCount = allMatchStats.Count - chronologicalMatches.Count;
+            if (ignoredCount > 0)
+                Console.WriteLine($"[UT2004StatsService] Skipping {ignoredCount} admin-ignored stat log(s) from profile calculations.");
+
             Console.WriteLine($"[UT2004StatsService] Processing {chronologicalMatches.Count} matches chronologically...");
+
+            if (chronologicalMatches.Count == 0)
+            {
+                Console.WriteLine($"[UT2004StatsService] No matches to process.");
+                return;
+            }
+
             Console.WriteLine($"[UT2004StatsService] Date range: {chronologicalMatches.First().MatchDate:yyyy-MM-dd} to {chronologicalMatches.Last().MatchDate:yyyy-MM-dd}");
 
             var profiles = new Dictionary<string, UT2004PlayerProfile>();
@@ -263,8 +291,8 @@ namespace FlawsFightNight.Services
                             double change = match.GameMode switch
                             {
                                 UT2004GameMode.iCTF => profile.CaptureTheFlagElo.Change,
-                                UT2004GameMode.TAM  => profile.TAMElo.Change,
-                                UT2004GameMode.iBR  => profile.BombingRunElo.Change,
+                                UT2004GameMode.TAM => profile.TAMElo.Change,
+                                UT2004GameMode.iBR => profile.BombingRunElo.Change,
                                 _ => 0.0
                             };
 
@@ -287,7 +315,6 @@ namespace FlawsFightNight.Services
                     Console.WriteLine($"[UT2004StatsService] Processed {processedCount}/{chronologicalMatches.Count} matches...");
             }
 
-            // DEBUG: Print final stats for any merged profiles so you can verify totals look correct
             if (mergeLog.Count > 0)
             {
                 Console.WriteLine($"\n[SeamlessRatings] ===== MERGE SUMMARY =====");
@@ -419,6 +446,213 @@ namespace FlawsFightNight.Services
                 Console.WriteLine($"  Total Matches - CTF: {profile.TotalCTFMatches}, TAM: {profile.TotalTAMMatches}, BR: {profile.TotalBRMatches}");
                 Console.WriteLine();
             }
+        }
+        #endregion
+
+        #region Admin StatLog Controls
+        public async Task<string> GetStatLogIDsOnDate(DateTime date, string serverName = null)
+        {
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var entries = _dataContext.StatLogIndexFile?.Entries;
+            if (entries == null || entries.Count == 0)
+                return string.Empty;
+
+            // Use a date range (avoids allocating Date for every entry)
+            var start = date.Date;
+            var end = start.AddDays(1);
+
+            var sb = new StringBuilder();
+            bool matchServer = !string.IsNullOrWhiteSpace(serverName);
+
+            foreach (var e in entries)
+            {
+                if (e == null) continue;
+                var md = e.MatchDate;
+                if (md < start || md >= end) continue;
+                if (matchServer && !(e.ServerName?.Equals(serverName, StringComparison.OrdinalIgnoreCase) == true)) continue;
+
+                sb.AppendFormat("{0} ({1} - {2:yyyy-MM-dd HH:mm:ss})\n", e.Id, e.ServerName ?? "Unknown Server", md);
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Return the last N indexed stat log IDs optionally filtered by server name (most recent first).
+        /// </summary>
+        public async Task<string> GetLastStatLogIDs(int amount, string serverName = null)
+        {
+            if (amount <= 0) return string.Empty;
+
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var entries = _dataContext.StatLogIndexFile?.Entries;
+            if (entries == null || entries.Count == 0)
+                return string.Empty;
+
+            var filtered = entries
+                .Where(e => string.IsNullOrWhiteSpace(serverName) || (e.ServerName?.Equals(serverName, StringComparison.OrdinalIgnoreCase) == true))
+                .OrderByDescending(e => e.MatchDate)
+                .Take(amount)
+                .ToList();
+
+            if (filtered.Count == 0)
+                return string.Empty;
+
+            var sb = new StringBuilder();
+            foreach (var e in filtered)
+            {
+                var ignored = _dataContext.IsStatLogIgnored(e.Id) ? " [IGNORED]" : "";
+                sb.AppendFormat("{0} ({1} - {2:yyyy-MM-dd HH:mm:ss}){3}\n", e.Id, e.ServerName ?? "Unknown Server", e.MatchDate, ignored);
+            }
+
+            return sb.ToString();
+        }
+
+        public async Task<Dictionary<string, string>> GetStatLogByID(string statLogID)
+        {
+            var log = await _dataContext.LoadStatLogByID(statLogID);
+            if (log == null) return null;
+
+            var profileNames = _dataContext.UT2004PlayerProfileFiles?
+                .Where(f => f?.PlayerProfile != null && !string.IsNullOrEmpty(f.PlayerProfile.Guid))
+                .ToDictionary(
+                    f => f.PlayerProfile.Guid,
+                    f => f.PlayerProfile.CurrentName,
+                    StringComparer.OrdinalIgnoreCase)
+                ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            return new Dictionary<string, string>
+            {
+                [log.Id] = StatLogReader.ReadStatLog(log, profileNames)
+            };
+        }
+
+        public async Task SendStatLogDM(ulong discordId, Dictionary<string, string> statLogs)
+        {
+            if (statLogs == null || statLogs.Count == 0) return;
+
+            var user = await _client.GetUserAsync(discordId) as SocketUser;
+            if (user == null) return;
+
+            var dmChannel = await user.CreateDMChannelAsync();
+
+            const int MaxFilesPerMessage = 10;
+            var entries = statLogs.ToList();
+
+            for (int i = 0; i < entries.Count; i += MaxFilesPerMessage)
+            {
+                var batch = entries.Skip(i).Take(MaxFilesPerMessage).ToList();
+                var attachments = new List<FileAttachment>();
+
+                try
+                {
+                    foreach (var kvp in batch)
+                    {
+                        var bytes = Encoding.UTF8.GetBytes(kvp.Value ?? string.Empty);
+                        attachments.Add(new FileAttachment(new MemoryStream(bytes), $"{kvp.Key}.txt"));
+                    }
+
+                    string caption = batch.Count == 1
+                        ? $"Here is the stat log you requested: {batch[0].Key}"
+                        : $"Here are {batch.Count} stat log(s) you requested.";
+
+                    await dmChannel.SendFilesAsync(attachments, caption);
+                }
+                finally
+                {
+                    foreach (var attachment in attachments)
+                        attachment.Dispose();
+                }
+            }
+        }
+
+        public async Task<(List<string> Succeeded, List<string> AlreadyIgnored, List<string> NotFound)> IgnoreStatLogsByID(List<string> statLogIDs, ulong adminDiscordId, string adminName)
+        {
+            if (_dataContext.AdminIgnoredLogsFile == null)
+                await _dataContext.LoadAdminIgnoredLogsFile();
+
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var succeeded = new List<string>();
+            var alreadyIgnored = new List<string>();
+            var notFound = new List<string>();
+
+            var indexedIds = _dataContext.StatLogIndexFile?.Entries
+                .Select(e => e.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase)
+                ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var id in statLogIDs)
+            {
+                if (!indexedIds.Contains(id))
+                {
+                    notFound.Add(id);
+                    continue;
+                }
+
+                if (_dataContext.IsStatLogIgnored(id))
+                {
+                    alreadyIgnored.Add(id);
+                    continue;
+                }
+
+                await _dataContext.AddAdminIgnoredLogEntry(new AdminIgnoredLogEntry
+                {
+                    StatLogId = id,
+                    AdminDiscordID = adminDiscordId,
+                    AdminName = adminName,
+                    IgnoredAt = DateTime.UtcNow
+                });
+
+                succeeded.Add(id);
+            }
+
+            Console.WriteLine($"[UT2004StatsService] IgnoreStatLogsByID — Ignored: {succeeded.Count}, Already ignored: {alreadyIgnored.Count}, Not found: {notFound.Count}");
+            return (succeeded, alreadyIgnored, notFound);
+        }
+
+        public async Task<(List<string> Succeeded, List<string> AlreadyAllowed, List<string> NotFound)> AllowStatLogsByID(List<string> statLogIDs)
+        {
+            if (_dataContext.AdminIgnoredLogsFile == null)
+                await _dataContext.LoadAdminIgnoredLogsFile();
+
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var succeeded = new List<string>();
+            var alreadyAllowed = new List<string>();
+            var notFound = new List<string>();
+
+            var indexedIds = _dataContext.StatLogIndexFile?.Entries
+                .Select(e => e.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase)
+                ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var id in statLogIDs)
+            {
+                if (!indexedIds.Contains(id))
+                {
+                    notFound.Add(id);
+                    continue;
+                }
+
+                if (!_dataContext.IsStatLogIgnored(id))
+                {
+                    alreadyAllowed.Add(id);
+                    continue;
+                }
+
+                await _dataContext.RemoveAdminIgnoredLogEntry(id);
+                succeeded.Add(id);
+            }
+
+            Console.WriteLine($"[UT2004StatsService] AllowStatLogsByID — Re-allowed: {succeeded.Count}, Already allowed: {alreadyAllowed.Count}, Not found: {notFound.Count}");
+            return (succeeded, alreadyAllowed, notFound);
         }
         #endregion
     }

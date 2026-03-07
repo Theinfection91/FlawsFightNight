@@ -13,6 +13,17 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         {
             if (match == null) return string.Empty;
 
+            string GetName(UTPlayerMatchStats p)
+            {
+                if (!string.IsNullOrWhiteSpace(p.LastKnownName))
+                    return p.LastKnownName;
+
+                if (p.Guid != null && profiles.TryGetValue(p.Guid, out var prof) && !string.IsNullOrWhiteSpace(prof.CurrentName))
+                    return prof.CurrentName;
+
+                return "Unknown";
+            }
+
             var sb = new StringBuilder();
             var players = match.Players?.SelectMany(t => t).Where(p => p != null).ToList() ?? new List<UTPlayerMatchStats>();
 
@@ -66,7 +77,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 if (p.BestMultiKill >= 3) streaks.Add($"Multi x{p.BestMultiKill}");
                 string streakStr = streaks.Any() ? string.Join(", ", streaks) : "-";
 
-                sb.AppendLine($"| {p.LastKnownName} | {teamName} | {p.Kills} | {p.Deaths} | {caps} | {retDen} | {streakStr} |");
+                sb.AppendLine($"| {GetName(p)} | {teamName} | {p.Kills} | {p.Deaths} | {caps} | {retDen} | {streakStr} |");
             }
             sb.AppendLine();
 
@@ -78,14 +89,14 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (topKiller != null)
             {
                 string teamName = topKiller.Team == 0 ? "Red" : topKiller.Team == 1 ? "Blue" : topKiller.Team.ToString();
-                sb.AppendLine($"* **{topKiller.LastKnownName} ({teamName})**: The statistical powerhouse of the match. Led the server in total kills ({topKiller.Kills}).");
+                sb.AppendLine($"* **{GetName(topKiller)} ({teamName})**: The statistical powerhouse of the match. Led the server in total kills ({topKiller.Kills}).");
             }
 
             var topObj = players.OrderByDescending(p => p.FlagCaptures + p.BallCaptures + p.FlagReturns).FirstOrDefault();
             if (topObj != null && topObj != topKiller && (topObj.FlagCaptures > 0 || topObj.FlagReturns > 0))
             {
                 string teamName = topObj.Team == 0 ? "Red" : topObj.Team == 1 ? "Blue" : topObj.Team.ToString();
-                sb.AppendLine($"* **{topObj.LastKnownName} ({teamName})**: The most efficient objective player. Secured {topObj.FlagCaptures + topObj.BallCaptures} captures and {topObj.FlagReturns} returns.");
+                sb.AppendLine($"* **{GetName(topObj)} ({teamName})**: The most efficient objective player. Secured {topObj.FlagCaptures + topObj.BallCaptures} captures and {topObj.FlagReturns} returns.");
             }
             sb.AppendLine();
 
@@ -95,19 +106,19 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             sb.AppendLine("|---|---|---|");
 
             int totalHs = players.Sum(p => p.Headshots);
-            var hsLeaders = players.Where(p => p.Headshots > 0).OrderByDescending(p => p.Headshots).Take(2).Select(p => $"{p.LastKnownName} ({p.Headshots})");
+            var hsLeaders = players.Where(p => p.Headshots > 0).OrderByDescending(p => p.Headshots).Take(2).Select(p => $"{GetName(p)} ({p.Headshots})");
             if (totalHs > 0) sb.AppendLine($"| Headshots | {totalHs} | {string.Join(", ", hsLeaders)} |");
 
             int totalDenials = players.Sum(p => p.FlagDenials);
-            var denLeaders = players.Where(p => p.FlagDenials > 0).OrderByDescending(p => p.FlagDenials).Take(2).Select(p => $"{p.LastKnownName} ({p.FlagDenials})");
+            var denLeaders = players.Where(p => p.FlagDenials > 0).OrderByDescending(p => p.FlagDenials).Take(2).Select(p => $"{GetName(p)} ({p.FlagDenials})");
             if (totalDenials > 0) sb.AppendLine($"| Flag Denials | {totalDenials} | {string.Join(", ", denLeaders)} |");
 
             int totalProt = players.Sum(p => p.TeamProtectFrags);
-            var protLeaders = players.Where(p => p.TeamProtectFrags > 0).OrderByDescending(p => p.TeamProtectFrags).Take(2).Select(p => $"{p.LastKnownName} ({p.TeamProtectFrags})");
+            var protLeaders = players.Where(p => p.TeamProtectFrags > 0).OrderByDescending(p => p.TeamProtectFrags).Take(2).Select(p => $"{GetName(p)} ({p.TeamProtectFrags})");
             if (totalProt > 0) sb.AppendLine($"| Team Protections | {totalProt} | {string.Join(", ", protLeaders)} |");
 
             int totalMulti = players.Sum(p => p.BestMultiKill);
-            var multiLeaders = players.Where(p => p.BestMultiKill > 1).OrderByDescending(p => p.BestMultiKill).Take(2).Select(p => $"{p.LastKnownName} (x{p.BestMultiKill})");
+            var multiLeaders = players.Where(p => p.BestMultiKill > 1).OrderByDescending(p => p.BestMultiKill).Take(2).Select(p => $"{GetName(p)} (x{p.BestMultiKill})");
             if (totalMulti > 0) sb.AppendLine($"| Multi-Kills | - | {string.Join(", ", multiLeaders)} |");
             sb.AppendLine();
 
@@ -123,23 +134,23 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             foreach (var ep in effPlayers)
             {
                 string teamName = ep.Player.Team == 0 ? "Red" : ep.Player.Team == 1 ? "Blue" : ep.Player.Team.ToString();
-                sb.AppendLine($"* **{ep.Player.LastKnownName} ({teamName})**: {ep.Eff:F2} (Kills: {ep.Player.Kills}, Objectives: {ep.Obj})");
+                sb.AppendLine($"* **{GetName(ep.Player)} ({teamName})**: {ep.Eff:F2} (Kills: {ep.Player.Kills}, Objectives: {ep.Obj})");
             }
             sb.AppendLine();
 
             // 7. Combat Roles Visualization
             sb.AppendLine("## Combat Roles Visualization");
             var frontline = players.OrderByDescending(p => p.Kills + p.Deaths).FirstOrDefault();
-            if (frontline != null) sb.AppendLine($"* **Frontline Aggressor**: {frontline.LastKnownName} (Most kills/deaths)");
+            if (frontline != null) sb.AppendLine($"* **Frontline Aggressor**: {GetName(frontline)} (Most kills/deaths)");
 
             var objSpec = players.OrderByDescending(p => p.FlagReturns + p.FlagDenials + p.FlagCaptures).FirstOrDefault();
-            if (objSpec != null) sb.AppendLine($"* **Objective Specialist**: {objSpec.LastKnownName} (Most returns/denials/caps)");
+            if (objSpec != null) sb.AppendLine($"* **Objective Specialist**: {GetName(objSpec)} (Most returns/denials/caps)");
 
             var finisher = players.OrderByDescending(p => p.FlagCaptures + p.FlagCaptureFirstTouch).FirstOrDefault();
-            if (finisher != null) sb.AppendLine($"* **The Finisher**: {finisher.LastKnownName} (Secured the most captures/touches)");
+            if (finisher != null) sb.AppendLine($"* **The Finisher**: {GetName(finisher)} (Secured the most captures/touches)");
 
             var support = players.OrderByDescending(p => p.TeamProtectFrags + p.FlagCaptureAssists).FirstOrDefault();
-            if (support != null) sb.AppendLine($"* **Support/Roamer**: {support.LastKnownName} (Most protections/assists)");
+            if (support != null) sb.AppendLine($"* **Support/Roamer**: {GetName(support)} (Most protections/assists)");
             sb.AppendLine();
 
             // 8. Current Standings (ELO)
@@ -173,13 +184,12 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     else if (p == support) role = "Support";
 
                     string changeStr = change >= 0 ? $"+{change:F2}" : $"{change:F2}";
-                    sb.AppendLine($"| {rank++} | {p.LastKnownName} | {currentElo:F0} | {changeStr} | {role} |");
+                    sb.AppendLine($"| {rank++} | {GetName(p)} | {currentElo:F0} | {changeStr} | {role} |");
                 }
                 sb.AppendLine();
             }
 
             var result = sb.ToString();
-            // Persist the generated summary on the match so callers don't need to pass eloChanges explicitly
             match.MatchSummary = result;
             return result;
         }
