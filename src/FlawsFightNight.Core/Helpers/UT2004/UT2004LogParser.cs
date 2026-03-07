@@ -15,7 +15,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private const bool _simpleDebugLogging = false;
         private const bool _expandedDebugLogging = false;
 
-        // State tracking for current match
         private Dictionary<int, UTPlayerMatchStats> _activePlayersBySeqNum = new();
         private Dictionary<string, UTPlayerMatchStats> _activePlayersByGuid = new(); // Track by GUID for reconnects
         private Dictionary<int, int> _teamScores = new();
@@ -24,8 +23,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private double _gameStartTime = 0;
         private DateTime _matchStartTime = DateTime.MinValue;
         private UT2004GameMode _currentGameMode = default;
-
-        // Track last seen timestamp (seconds) for end-of-file flush
+        private int _computedMatchDurationSeconds = 0;
         private double _lastEventTimestamp = 0.0;
 
         // TAM-specific tracking
@@ -1080,8 +1078,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             // Use GUID dictionary to get unique players (handles reconnects)
             var uniquePlayers = _activePlayersByGuid.Values.ToList();
-            var humanPlayers  = uniquePlayers.Where(p => !p.IsBot).ToList();
-            var botPlayers    = uniquePlayers.Where(p => p.IsBot).ToList();
+            var humanPlayers = uniquePlayers.Where(p => !p.IsBot).ToList();
+            var botPlayers = uniquePlayers.Where(p => p.IsBot).ToList();
 
             // Rule 1: No bots allowed
             if (botPlayers.Any())
@@ -1111,37 +1109,60 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 return false;
             }
 
-            // Rule 4: Each team must have at least one player with 5+ kills.
-            // Prevents warmups and idle sessions from being recorded as real matches.
+            // Rule 4: Each team must have 5 kills total EACH
             foreach (var teamId in teamIds)
             {
-                if (!humanPlayers.Any(p => p.Team == teamId && p.Kills >= 5))
+                int teamKills = humanPlayers.Where(p => p.Team == teamId).Sum(p => p.Kills);
+                if (teamKills < 5)
                 {
                     if (_simpleDebugLogging || _expandedDebugLogging)
                     {
-                        Console.WriteLine($"\nMatch INVALID: Team {teamId} has no player with at least 5 kills. " +
-                            $"Players on this team: {string.Join(", ", humanPlayers.Where(p => p.Team == teamId).Select(p => $"{p.LastKnownName} ({p.Kills}K)"))}");
+                        Console.WriteLine($"\nMatch INVALID: Team {teamId} has only {teamKills} total kills. " +
+                            $"Players on Team {teamId}: {string.Join(", ", humanPlayers.Where(p => p.Team == teamId).Select(p => p.LastKnownName))}");
                     }
                     return false;
                 }
             }
 
+            // Compute authoritative match duration (seconds)
+            // Prefer SG (game start) -> last event span when available; otherwise fall back to max individual play time.
+            int matchDurationSeconds = 0;
+            if (_gameStarted && _gameStartTime > 0 && _lastEventTimestamp > _gameStartTime)
+            {
+                matchDurationSeconds = (int)Math.Round(_lastEventTimestamp - _gameStartTime);
+            }
+            else
+            {
+                matchDurationSeconds = humanPlayers.Any() ? humanPlayers.Max(p => p.TotalTimeSeconds) : 0;
+            }
+
+            // Store computed duration for later use (BuildStatLog will copy into the stat object)
+            _computedMatchDurationSeconds = Math.Max(0, matchDurationSeconds);
+
             // Rule 5: Mode-specific objective minimums.
-            // iCTF requires at least 3 total flag captures across both teams — anything fewer
-            // is a warmup or a match that never actually got going.
             if (_currentGameMode == UT2004GameMode.iCTF)
             {
-                int totalCaps = humanPlayers.Sum(p => p.FlagCaptures);
-                if (totalCaps < 3)
+                if (humanPlayers.Sum(p => p.FlagCaptures) < 1)
                 {
                     if (_simpleDebugLogging || _expandedDebugLogging)
-                        Console.WriteLine($"\nMatch INVALID: iCTF match only recorded {totalCaps} flag capture(s). At least 3 required.");
+                    {
+                        Console.WriteLine($"\nMatch INVALID: iCTF match with no flag captures. Total Caps: {humanPlayers.Sum(p => p.FlagCaptures)}");
+                    }
+                    return false;
+                }
+
+                if (_computedMatchDurationSeconds < 300)
+                {
+                    if (_simpleDebugLogging || _expandedDebugLogging)
+                    {
+                        Console.WriteLine($"\nMatch INVALID: iCTF match with insufficient match duration. Match Duration: {_computedMatchDurationSeconds} seconds");
+                    }
                     return false;
                 }
             }
 
             if (_simpleDebugLogging || _expandedDebugLogging)
-                Console.WriteLine($"\nMatch VALID: {humanPlayers.Count} human players across {teamIds.Count} teams, 0 bots");
+                Console.WriteLine($"\nMatch VALID: {humanPlayers.Count} human players across {teamIds.Count} teams, 0 bots; Duration: {_computedMatchDurationSeconds}s");
 
             return true;
         }
@@ -1207,6 +1228,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             statLog.MatchDate = _matchStartTime != DateTime.MinValue ? _matchStartTime : DateTime.UtcNow;
             statLog.GameMode = _currentGameMode;
+            statLog.MatchDurationSeconds = _computedMatchDurationSeconds;
 
             return statLog;
         }
