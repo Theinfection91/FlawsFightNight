@@ -54,6 +54,10 @@ namespace FlawsFightNight.Services
         public StatLogIndexFile StatLogIndexFile { get; private set; }
         private readonly StatLogIndexHandler _statLogIndexHandler;
 
+        // Admin Ignored Logs File
+        public AdminIgnoredLogsFile AdminIgnoredLogsFile { get; private set; }
+        private readonly AdminIgnoredLogsHandler _adminIgnoredLogsHandler;
+
         // User Profile Files
         public List<MemberProfileFile> MemberProfileFiles { get; private set; } = new();
         private readonly MemberProfileHandler _memberProfileHandler;
@@ -63,7 +67,7 @@ namespace FlawsFightNight.Services
         private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
         #endregion
 
-        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, StatLogIndexHandler statLogIndexHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
+        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, StatLogIndexHandler statLogIndexHandler, AdminIgnoredLogsHandler adminIgnoredLogsHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
         {
             DiscordClient = client;
 
@@ -75,6 +79,7 @@ namespace FlawsFightNight.Services
             _processedLogNamesHandler = processedLogNamesHandler;
             _statLogMatchResultsHandler = statLogMatchResultHandler;
             _statLogIndexHandler = statLogIndexHandler;
+            _adminIgnoredLogsHandler = adminIgnoredLogsHandler;
             _memberProfileHandler = userProfileHandler;
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
         }
@@ -91,6 +96,7 @@ namespace FlawsFightNight.Services
             await _tournamentDataHandler.InitializePendingPathAsync();
             await _processedLogNamesHandler.InitializePendingPathAsync();
             await _statLogMatchResultsHandler.InitializePendingPathAsync();
+            await _adminIgnoredLogsHandler.InitializePendingPathAsync();
             await _memberProfileHandler.InitializePendingPathAsync();
             await _ut2004PlayerProfileHandler.InitializePendingPathAsync();
 
@@ -101,6 +107,7 @@ namespace FlawsFightNight.Services
             await LoadPermissionsConfigFile();
             await LoadProcessedLogNamesFile();
             await LoadTournamentDataFiles();
+            await LoadAdminIgnoredLogsFile();
             await LoadAllMemberProfileFiles();
             await LoadAllUT2004PlayerProfileFiles();
         }
@@ -417,6 +424,7 @@ namespace FlawsFightNight.Services
             await _ut2004PlayerProfileHandler.SetFilePath(PathOption.UT2004PlayerProfiles, $"{playerGuid}.json");
             return await _ut2004PlayerProfileHandler.Load();
         }
+
         public async Task SaveUT2004PlayerProfileFile(UT2004PlayerProfile playerProfile)
         {
             var playerProfileFile = new UT2004PlayerProfileFile()
@@ -439,7 +447,6 @@ namespace FlawsFightNight.Services
 
         public UT2004PlayerProfile? GetUT2004PlayerProfile(string playerGuid)
         {
-
             foreach (var profileFile in UT2004PlayerProfileFiles)
             {
                 if (profileFile.PlayerProfile.Guid.Equals(playerGuid, StringComparison.OrdinalIgnoreCase))
@@ -503,6 +510,46 @@ namespace FlawsFightNight.Services
         {
             StatLogIndexFile = new StatLogIndexFile { Entries = entries };
             await SaveStatLogIndexFile();
+        }
+        #endregion
+
+        #region Admin Ignored Logs
+        public async Task LoadAdminIgnoredLogsFile()
+        {
+            await _adminIgnoredLogsHandler.SetFilePath(PathOption.Databases, "admin_ignored_logs.json");
+            AdminIgnoredLogsFile = await _adminIgnoredLogsHandler.Load();
+        }
+
+        public async Task SaveAdminIgnoredLogsFile()
+        {
+            await _adminIgnoredLogsHandler.SetFilePath(PathOption.Databases, "admin_ignored_logs.json");
+            await _adminIgnoredLogsHandler.Save(AdminIgnoredLogsFile);
+        }
+
+        public async Task AddAdminIgnoredLogEntry(AdminIgnoredLogEntry entry)
+        {
+            if (AdminIgnoredLogsFile == null)
+                await LoadAdminIgnoredLogsFile();
+
+            if (!AdminIgnoredLogsFile.Entries.Any(e => e.StatLogId.Equals(entry.StatLogId, StringComparison.OrdinalIgnoreCase)))
+            {
+                AdminIgnoredLogsFile.Entries.Add(entry);
+                await SaveAdminIgnoredLogsFile();
+            }
+        }
+
+        public async Task RemoveAdminIgnoredLogEntry(string statLogId)
+        {
+            if (AdminIgnoredLogsFile == null)
+                await LoadAdminIgnoredLogsFile();
+
+            AdminIgnoredLogsFile.Entries.RemoveAll(e => e.StatLogId.Equals(statLogId, StringComparison.OrdinalIgnoreCase));
+            await SaveAdminIgnoredLogsFile();
+        }
+
+        public bool IsStatLogIgnored(string statLogId)
+        {
+            return AdminIgnoredLogsFile?.Entries.Any(e => e.StatLogId.Equals(statLogId, StringComparison.OrdinalIgnoreCase)) ?? false;
         }
         #endregion
     }

@@ -158,7 +158,6 @@ namespace FlawsFightNight.Services
                 .ToList();
             _ratingsMapper.BuildAliasMap(memberProfiles);
 
-            // DEBUG: Print alias map so you can verify correct GUID → primary mappings
             if (_ratingsMapper.HasAliases)
             {
                 Console.WriteLine($"[SeamlessRatings] Active aliases detected — merged GUIDs will be treated as one identity.");
@@ -175,11 +174,20 @@ namespace FlawsFightNight.Services
                 Console.WriteLine($"[SeamlessRatings] No aliases active — all GUIDs treated independently.");
             }
 
+            // Ensure the admin ignored logs file is loaded before filtering
+            if (_dataContext.AdminIgnoredLogsFile == null)
+                await _dataContext.LoadAdminIgnoredLogsFile();
+
             var allMatchStats = await GetAllProcessedStatLogs();
 
             var chronologicalMatches = allMatchStats
+                .Where(m => !_dataContext.IsStatLogIgnored(m.Id))
                 .OrderBy(m => m.MatchDate)
                 .ToList();
+
+            int ignoredCount = allMatchStats.Count - chronologicalMatches.Count;
+            if (ignoredCount > 0)
+                Console.WriteLine($"[UT2004StatsService] Skipping {ignoredCount} admin-ignored stat log(s) from profile calculations.");
 
             Console.WriteLine($"[UT2004StatsService] Processing {chronologicalMatches.Count} matches chronologically...");
             Console.WriteLine($"[UT2004StatsService] Date range: {chronologicalMatches.First().MatchDate:yyyy-MM-dd} to {chronologicalMatches.Last().MatchDate:yyyy-MM-dd}");
@@ -299,7 +307,6 @@ namespace FlawsFightNight.Services
                     Console.WriteLine($"[UT2004StatsService] Processed {processedCount}/{chronologicalMatches.Count} matches...");
             }
 
-            // DEBUG: Print final stats for any merged profiles so you can verify totals look correct
             if (mergeLog.Count > 0)
             {
                 Console.WriteLine($"\n[SeamlessRatings] ===== MERGE SUMMARY =====");
@@ -492,6 +499,91 @@ namespace FlawsFightNight.Services
             if (user == null) return;
             var dmChannel = await user.CreateDMChannelAsync();
             await dmChannel.SendFileAsync(ms, $"{statLogID}.txt", $"Here is the stat log you requested: {statLogID}");
+        }
+
+        public async Task<(List<string> Succeeded, List<string> AlreadyIgnored, List<string> NotFound)> IgnoreStatLogsByID(List<string> statLogIDs, ulong adminDiscordId, string adminName)
+        {
+            if (_dataContext.AdminIgnoredLogsFile == null)
+                await _dataContext.LoadAdminIgnoredLogsFile();
+
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var succeeded = new List<string>();
+            var alreadyIgnored = new List<string>();
+            var notFound = new List<string>();
+
+            var indexedIds = _dataContext.StatLogIndexFile?.Entries
+                .Select(e => e.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase)
+                ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var id in statLogIDs)
+            {
+                if (!indexedIds.Contains(id))
+                {
+                    notFound.Add(id);
+                    continue;
+                }
+
+                if (_dataContext.IsStatLogIgnored(id))
+                {
+                    alreadyIgnored.Add(id);
+                    continue;
+                }
+
+                await _dataContext.AddAdminIgnoredLogEntry(new AdminIgnoredLogEntry
+                {
+                    StatLogId = id,
+                    AdminDiscordID = adminDiscordId,
+                    AdminName = adminName,
+                    IgnoredAt = DateTime.UtcNow
+                });
+
+                succeeded.Add(id);
+            }
+
+            Console.WriteLine($"[UT2004StatsService] IgnoreStatLogsByID — Ignored: {succeeded.Count}, Already ignored: {alreadyIgnored.Count}, Not found: {notFound.Count}");
+            return (succeeded, alreadyIgnored, notFound);
+        }
+
+        public async Task<(List<string> Succeeded, List<string> AlreadyAllowed, List<string> NotFound)> AllowStatLogsByID(List<string> statLogIDs)
+        {
+            if (_dataContext.AdminIgnoredLogsFile == null)
+                await _dataContext.LoadAdminIgnoredLogsFile();
+
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var succeeded = new List<string>();
+            var alreadyAllowed = new List<string>();
+            var notFound = new List<string>();
+
+            var indexedIds = _dataContext.StatLogIndexFile?.Entries
+                .Select(e => e.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase)
+                ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var id in statLogIDs)
+            {
+                if (!indexedIds.Contains(id))
+                {
+                    notFound.Add(id);
+                    continue;
+                }
+
+                if (!_dataContext.IsStatLogIgnored(id))
+                {
+                    alreadyAllowed.Add(id);
+                    continue;
+                }
+
+                await _dataContext.RemoveAdminIgnoredLogEntry(id);
+                succeeded.Add(id);
+            }
+
+            Console.WriteLine($"[UT2004StatsService] AllowStatLogsByID — Re-allowed: {succeeded.Count}, Already allowed: {alreadyAllowed.Count}, Not found: {notFound.Count}");
+            return (succeeded, alreadyAllowed, notFound);
         }
         #endregion
     }

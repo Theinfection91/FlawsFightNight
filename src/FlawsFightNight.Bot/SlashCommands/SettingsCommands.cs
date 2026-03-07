@@ -270,13 +270,18 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             private readonly AutocompleteCache _autocompleteCache;
             private readonly GetLogsByIDHandler _getLogsByIDHandler;
+            private readonly IgnoreLogsByIDHandler _ignoreLogsByIDHandler;
+            private readonly AllowLogsByIDHandler _allowLogsByIDHandler;
             private readonly StatLogsByDateHandler _statLogsByDateHandler;
             private readonly RegisterGuidToMemberHandler _registerGuidToMemberLogic;
             private readonly RemoveGuidFromMemberHandler _removeGuidFromMemberLogic;
-            public UT2004Commands(AutocompleteCache autocompleteCache, GetLogsByIDHandler getLogsByIDHandler, StatLogsByDateHandler statLogsByDateHandler, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic)
+
+            public UT2004Commands(AutocompleteCache autocompleteCache, GetLogsByIDHandler getLogsByIDHandler, IgnoreLogsByIDHandler ignoreLogsByIDHandler, AllowLogsByIDHandler allowLogsByIDHandler, StatLogsByDateHandler statLogsByDateHandler, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic)
             {
                 _autocompleteCache = autocompleteCache;
                 _getLogsByIDHandler = getLogsByIDHandler;
+                _ignoreLogsByIDHandler = ignoreLogsByIDHandler;
+                _allowLogsByIDHandler = allowLogsByIDHandler;
                 _statLogsByDateHandler = statLogsByDateHandler;
                 _registerGuidToMemberLogic = registerGuidToMemberLogic;
                 _removeGuidFromMemberLogic = removeGuidFromMemberLogic;
@@ -327,7 +332,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                     var logIds = new List<string> { firstLog, secondLog, thirdLog, fourthLog, fifthLog, sixthLog, seventhLog, eighthLog, ninthLog, tenthLog }
                                  .Where(id => !string.IsNullOrWhiteSpace(id))
                                  .ToList();
-                    
+
                     var result = await _getLogsByIDHandler.GetLogsByID(Context, logIds);
                     await FollowupAsync(result, ephemeral: true);
                 }
@@ -372,6 +377,46 @@ namespace FlawsFightNight.Bot.SlashCommands
                         return;
                     }
                     await FollowupAsync($"Retrieving the last {amount} compiled StatLogs", ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("ignore_logs", "Ignore up to 10 specific logs by their ID# so they won't be processed for stats")]
+            public async Task IgnoreLogsByIdAsync(string firstLog, string secondLog = null, string thirdLog = null, string fourthLog = null, string fifthLog = null, string sixthLog = null, string seventhLog = null, string eighthLog = null, string ninthLog = null, string tenthLog = null)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var logIds = new List<string> { firstLog, secondLog, thirdLog, fourthLog, fifthLog, sixthLog, seventhLog, eighthLog, ninthLog, tenthLog }
+                                 .Where(id => !string.IsNullOrWhiteSpace(id))
+                                 .ToList();
+
+                    var result = await _ignoreLogsByIDHandler.IgnoreLogsByIDProcess(Context, logIds);
+                    await FollowupAsync(embed: result, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("allow_logs", "Re-allow up to 10 previously ignored logs by their ID# so they count towards stats again")]
+            public async Task AllowLogsByIdAsync(string firstLog, string secondLog = null, string thirdLog = null, string fourthLog = null, string fifthLog = null, string sixthLog = null, string seventhLog = null, string eighthLog = null, string ninthLog = null, string tenthLog = null)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var logIds = new List<string> { firstLog, secondLog, thirdLog, fourthLog, fifthLog, sixthLog, seventhLog, eighthLog, ninthLog, tenthLog }
+                                 .Where(id => !string.IsNullOrWhiteSpace(id))
+                                 .ToList();
+
+                    var result = await _allowLogsByIDHandler.AllowLogsByIDProcess(Context, logIds);
+                    await FollowupAsync(embed: result, ephemeral: true);
                 }
                 catch (Exception ex)
                 {

@@ -117,7 +117,9 @@ namespace FlawsFightNight.Bot
 
                     // Settings Commands
                     services.AddSingleton<AddDebugAdminHandler>();
+                    services.AddSingleton<AllowLogsByIDHandler>();
                     services.AddSingleton<GetLogsByIDHandler>();
+                    services.AddSingleton<IgnoreLogsByIDHandler>();
                     services.AddSingleton<RegisterGuidToMemberHandler>();
                     services.AddSingleton<RemoveGuidFromMemberHandler>();
                     services.AddSingleton<RemoveDebugAdminHandler>();
@@ -178,6 +180,7 @@ namespace FlawsFightNight.Bot
                     services.AddHostedService<FTPStatsService>();
 
                     // Data handlers
+                    services.AddSingleton<AdminIgnoredLogsHandler>();
                     services.AddSingleton<DiscordCredentialHandler>();
                     services.AddSingleton<FTPCredentialHandler>();
                     services.AddSingleton<GitHubCredentialHandler>();
