@@ -446,8 +446,16 @@ namespace FlawsFightNight.Services
             var log = allLogs.FirstOrDefault(l => l.Id.Equals(statLogID, StringComparison.OrdinalIgnoreCase));
             if (log != null)
             {
+                var profileNames = _dataContext.UT2004PlayerProfileFiles?
+                    .Where(f => f?.PlayerProfile != null && !string.IsNullOrEmpty(f.PlayerProfile.Guid))
+                    .ToDictionary(
+                        f => f.PlayerProfile.Guid,
+                        f => f.PlayerProfile.CurrentName,
+                        StringComparer.OrdinalIgnoreCase)
+                    ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
                 var idAndLog = new Dictionary<string, string>();
-                idAndLog[log.Id] = StatLogReader.ReadStatLog(log);
+                idAndLog[log.Id] = StatLogReader.ReadStatLog(log, profileNames);
                 return idAndLog;
             }
             else

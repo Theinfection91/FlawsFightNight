@@ -16,13 +16,17 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         /// <summary>
         /// Returns a formatted, human-readable string of a <see cref="UT2004StatLog"/>.
         /// </summary>
-        public static string ReadStatLog(UT2004StatLog log)
+        /// <param name="profileNames">
+        /// Optional GUID → display-name fallback map (e.g. from <c>UT2004PlayerProfile.CurrentName</c>).
+        /// Used when a player's <c>LastKnownName</c> is null or empty in the stored log.
+        /// </param>
+        public static string ReadStatLog(UT2004StatLog log, IReadOnlyDictionary<string, string>? profileNames = null)
         {
             var sb = new StringBuilder();
 
             WriteHeader(log, sb);
-            WriteTeams(log, sb);
-            WriteKillMatrix(log, sb);
+            WriteTeams(log, sb, profileNames);
+            WriteKillMatrix(log, sb, profileNames);
 
             return sb.ToString();
         }
@@ -31,9 +35,12 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         /// Returns a UTF-8 encoded <see cref="MemoryStream"/> of the formatted stat log,
         /// ready to be sent as a .txt file attachment.
         /// </summary>
-        public static MemoryStream ReadStatLogAsStream(UT2004StatLog log)
+        /// <param name="profileNames">
+        /// Optional GUID → display-name fallback map. See <see cref="ReadStatLog"/>.
+        /// </param>
+        public static MemoryStream ReadStatLogAsStream(UT2004StatLog log, IReadOnlyDictionary<string, string>? profileNames = null)
         {
-            byte[] bytes = Encoding.UTF8.GetBytes(ReadStatLog(log));
+            byte[] bytes = Encoding.UTF8.GetBytes(ReadStatLog(log, profileNames));
             return new MemoryStream(bytes) { Position = 0 };
         }
 
@@ -53,7 +60,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             sb.AppendLine();
         }
 
-        private static void WriteTeams(UT2004StatLog log, StringBuilder sb)
+        private static void WriteTeams(UT2004StatLog log, StringBuilder sb, IReadOnlyDictionary<string, string>? profileNames)
         {
             if (log.Players == null || log.Players.Count == 0)
             {
@@ -77,20 +84,21 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
                 foreach (UTPlayerMatchStats player in team.OrderBy(p => p.Placement))
                 {
-                    WritePlayer(player, log.GameMode, sb);
+                    WritePlayer(player, log.GameMode, sb, profileNames);
                 }
             }
         }
 
-        private static void WritePlayer(UTPlayerMatchStats p, UT2004GameMode mode, StringBuilder sb)
+        private static void WritePlayer(UTPlayerMatchStats p, UT2004GameMode mode, StringBuilder sb, IReadOnlyDictionary<string, string>? profileNames)
         {
             int    mins    = p.TotalTimeSeconds / 60;
             int    secs    = p.TotalTimeSeconds % 60;
             string winLoss = p.IsWinner ? "WIN" : "LOSS";
             string botTag  = p.IsBot ? "  [BOT]" : string.Empty;
+            string name    = ResolvePlayerName(p.Guid, p.LastKnownName, profileNames);
 
             sb.AppendLine(ThinDivider);
-            sb.AppendLine($"  [{p.Placement}] {p.LastKnownName ?? "Unknown"}  (GUID: {p.Guid ?? "N/A"})  [{winLoss}]{botTag}");
+            sb.AppendLine($"  [{p.Placement}] {name}  (GUID: {p.Guid ?? "N/A"})  [{winLoss}]{botTag}");
             sb.AppendLine($"      Time       : {mins}m {secs}s");
             sb.AppendLine($"      Score      : {p.Score}  |  Kills: {p.Kills}  |  Deaths: {p.Deaths}  |  Suicides: {p.Suicides}  |  Headshots: {p.Headshots}");
             sb.AppendLine($"      K/D        : {p.GetKillDeathRatio():F2}  |  Best Streak: {p.BestKillStreak}  |  Best Multi-Kill: {p.BestMultiKill}");
@@ -150,11 +158,11 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
         }
 
-        private static void WriteKillMatrix(UT2004StatLog log, StringBuilder sb)
+        private static void WriteKillMatrix(UT2004StatLog log, StringBuilder sb, IReadOnlyDictionary<string, string>? profileNames)
         {
             if (log.KillMatch == null || log.KillMatch.Count == 0) return;
 
-            Dictionary<string, string> lookup = BuildGuidNameLookup(log);
+            Dictionary<string, string> lookup = BuildGuidNameLookup(log, profileNames);
 
             sb.AppendLine(Divider);
             sb.AppendLine("  KILL MATRIX");
@@ -179,9 +187,24 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
         // ── Helpers ──────────────────────────────────────────────────────────────
 
-        private static Dictionary<string, string> BuildGuidNameLookup(UT2004StatLog log)
+        /// <summary>
+        /// Resolves a display name for a player, falling back to the profile lookup then a
+        /// hard "Unknown" sentinel if no name is available at all.
+        /// </summary>
+        private static string ResolvePlayerName(string? guid, string? lastKnownName, IReadOnlyDictionary<string, string>? profileNames)
         {
-            var lookup = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(lastKnownName))
+                return lastKnownName;
+
+            if (guid != null && profileNames != null && profileNames.TryGetValue(guid, out string? profileName) && !string.IsNullOrWhiteSpace(profileName))
+                return profileName;
+
+            return "Unknown";
+        }
+
+        private static Dictionary<string, string> BuildGuidNameLookup(UT2004StatLog log, IReadOnlyDictionary<string, string>? profileNames)
+        {
+            var lookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (log.Players == null) return lookup;
 
             foreach (List<UTPlayerMatchStats> team in log.Players)
@@ -190,7 +213,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 foreach (UTPlayerMatchStats player in team)
                 {
                     if (player.Guid != null && !lookup.ContainsKey(player.Guid))
-                        lookup[player.Guid] = player.LastKnownName ?? player.Guid;
+                        lookup[player.Guid] = ResolvePlayerName(player.Guid, player.LastKnownName, profileNames);
                 }
             }
 

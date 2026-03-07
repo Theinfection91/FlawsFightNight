@@ -338,7 +338,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
             }
 
-            [SlashCommand("logs_by_date", "Get compiled all stat log ID#'s for a specific day")]
+            [SlashCommand("logs_by_date", "Get all stat log ID#'s for a specific day")]
             public async Task StatLogsByDateAsync(int year, int month, int day, string serverName = null)
             {
                 try
