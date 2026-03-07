@@ -471,6 +471,39 @@ namespace FlawsFightNight.Services
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Return the last N indexed stat log IDs optionally filtered by server name (most recent first).
+        /// </summary>
+        public async Task<string> GetLastStatLogIDs(int amount, string serverName = null)
+        {
+            if (amount <= 0) return string.Empty;
+
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var entries = _dataContext.StatLogIndexFile?.Entries;
+            if (entries == null || entries.Count == 0)
+                return string.Empty;
+
+            var filtered = entries
+                .Where(e => string.IsNullOrWhiteSpace(serverName) || (e.ServerName?.Equals(serverName, StringComparison.OrdinalIgnoreCase) == true))
+                .OrderByDescending(e => e.MatchDate)
+                .Take(amount)
+                .ToList();
+
+            if (filtered.Count == 0)
+                return string.Empty;
+
+            var sb = new StringBuilder();
+            foreach (var e in filtered)
+            {
+                var ignored = _dataContext.IsStatLogIgnored(e.Id) ? " [IGNORED]" : "";
+                sb.AppendFormat("{0} ({1} - {2:yyyy-MM-dd HH:mm:ss}){3}\n", e.Id, e.ServerName ?? "Unknown Server", e.MatchDate, ignored);
+            }
+
+            return sb.ToString();
+        }
+
         public async Task<Dictionary<string, string>> GetStatLogByID(string statLogID)
         {
             var log = await _dataContext.LoadStatLogByID(statLogID);

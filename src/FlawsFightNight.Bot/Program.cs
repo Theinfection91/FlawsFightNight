@@ -120,6 +120,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<AllowLogsByIDHandler>();
                     services.AddSingleton<GetLogsByIDHandler>();
                     services.AddSingleton<IgnoreLogsByIDHandler>();
+                    services.AddSingleton<LastStatLogsHandler>();
                     services.AddSingleton<RegisterGuidToMemberHandler>();
                     services.AddSingleton<RemoveGuidFromMemberHandler>();
                     services.AddSingleton<RemoveDebugAdminHandler>();

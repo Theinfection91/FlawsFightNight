@@ -63,7 +63,7 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
                 _gitBackupService.EnqueueBackup();
             }
 
-            Color resultColor = succeeded.Count > 0 ? Color.Orange : Color.LightGrey;
+            Color resultColor = succeeded.Count > 0 ? Color.Green : Color.LightGrey;
             return _embedFactory.GenericEmbed(Name, sb.ToString().TrimEnd(), resultColor, $"Actioned by {adminName}");
         }
     }

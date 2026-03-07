@@ -275,8 +275,9 @@ namespace FlawsFightNight.Bot.SlashCommands
             private readonly StatLogsByDateHandler _statLogsByDateHandler;
             private readonly RegisterGuidToMemberHandler _registerGuidToMemberLogic;
             private readonly RemoveGuidFromMemberHandler _removeGuidFromMemberLogic;
+            private readonly LastStatLogsHandler _lastStatLogsHandler;
 
-            public UT2004Commands(AutocompleteCache autocompleteCache, GetLogsByIDHandler getLogsByIDHandler, IgnoreLogsByIDHandler ignoreLogsByIDHandler, AllowLogsByIDHandler allowLogsByIDHandler, StatLogsByDateHandler statLogsByDateHandler, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic)
+            public UT2004Commands(AutocompleteCache autocompleteCache, GetLogsByIDHandler getLogsByIDHandler, IgnoreLogsByIDHandler ignoreLogsByIDHandler, AllowLogsByIDHandler allowLogsByIDHandler, StatLogsByDateHandler statLogsByDateHandler, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic, LastStatLogsHandler lastStatLogsHandler)
             {
                 _autocompleteCache = autocompleteCache;
                 _getLogsByIDHandler = getLogsByIDHandler;
@@ -285,6 +286,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 _statLogsByDateHandler = statLogsByDateHandler;
                 _registerGuidToMemberLogic = registerGuidToMemberLogic;
                 _removeGuidFromMemberLogic = removeGuidFromMemberLogic;
+                _lastStatLogsHandler = lastStatLogsHandler;
             }
 
             [SlashCommand("register_guid", "Register a GUID to a Member's profile")]
@@ -366,7 +368,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("last_logs", "Get the last 1 to 25 compiled StatLog ID's")]
-            public async Task LastStatLogAsync(int amount)
+            public async Task LastStatLogAsync(int amount, string serverName = null)
             {
                 try
                 {
@@ -376,7 +378,12 @@ namespace FlawsFightNight.Bot.SlashCommands
                         await FollowupAsync("Amount must be between 1 and 25.", ephemeral: true);
                         return;
                     }
-                    await FollowupAsync($"Retrieving the last {amount} compiled StatLogs", ephemeral: true);
+
+                    var result = await _lastStatLogsHandler.GetLastStatLogsProcess(amount, serverName);
+                    if (string.IsNullOrWhiteSpace(result))
+                        await FollowupAsync("No stat logs found.", ephemeral: true);
+                    else
+                        await FollowupAsync(result, ephemeral: true);
                 }
                 catch (Exception ex)
                 {
