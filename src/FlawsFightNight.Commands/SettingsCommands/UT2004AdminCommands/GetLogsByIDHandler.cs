@@ -22,18 +22,23 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
             foreach (string logID in logIDs)
             {
                 if (string.IsNullOrWhiteSpace(logID))
-                {
                     return $"Invalid log ID: '{logID}'. Please provide non-empty log IDs.";
-                }
             }
+
+            var allLogs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (string logID in logIDs)
             {
-                var msg = await _ut2004StatsService.GetStatLogByID(logID);
-                if (msg == null) continue;
-                await _ut2004StatsService.SendStatLogDM(context.User.Id, logID, msg[logID]);
+                var result = await _ut2004StatsService.GetStatLogByID(logID);
+                if (result != null)
+                    allLogs[logID] = result[logID];
             }
-            return $"Sent {logIDs.Count} log(s) in DM";
+
+            if (allLogs.Count == 0)
+                return "No valid stat logs found for the provided ID(s).";
+
+            await _ut2004StatsService.SendStatLogDM(context.User.Id, allLogs);
+            return $"Sent {allLogs.Count} log(s) in DM.";
         }
     }
 }

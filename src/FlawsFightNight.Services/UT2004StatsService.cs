@@ -9,6 +9,7 @@ using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
 using Discord.WebSocket;
+using Discord;
 
 namespace FlawsFightNight.Services
 {
@@ -523,15 +524,43 @@ namespace FlawsFightNight.Services
             };
         }
 
-        public async Task SendStatLogDM(ulong discordId, string statLogID, string message)
+        public async Task SendStatLogDM(ulong discordId, Dictionary<string, string> statLogs)
         {
-            var bytes = Encoding.UTF8.GetBytes(message ?? string.Empty);
-            using var ms = new MemoryStream(bytes) { Position = 0 };
+            if (statLogs == null || statLogs.Count == 0) return;
 
             var user = await _client.GetUserAsync(discordId) as SocketUser;
             if (user == null) return;
+
             var dmChannel = await user.CreateDMChannelAsync();
-            await dmChannel.SendFileAsync(ms, $"{statLogID}.txt", $"Here is the stat log you requested: {statLogID}");
+
+            const int MaxFilesPerMessage = 10;
+            var entries = statLogs.ToList();
+
+            for (int i = 0; i < entries.Count; i += MaxFilesPerMessage)
+            {
+                var batch = entries.Skip(i).Take(MaxFilesPerMessage).ToList();
+                var attachments = new List<FileAttachment>();
+
+                try
+                {
+                    foreach (var kvp in batch)
+                    {
+                        var bytes = Encoding.UTF8.GetBytes(kvp.Value ?? string.Empty);
+                        attachments.Add(new FileAttachment(new MemoryStream(bytes), $"{kvp.Key}.txt"));
+                    }
+
+                    string caption = batch.Count == 1
+                        ? $"Here is the stat log you requested: {batch[0].Key}"
+                        : $"Here are {batch.Count} stat log(s) you requested.";
+
+                    await dmChannel.SendFilesAsync(attachments, caption);
+                }
+                finally
+                {
+                    foreach (var attachment in attachments)
+                        attachment.Dispose();
+                }
+            }
         }
 
         public async Task<(List<string> Succeeded, List<string> AlreadyIgnored, List<string> NotFound)> IgnoreStatLogsByID(List<string> statLogIDs, ulong adminDiscordId, string adminName)
