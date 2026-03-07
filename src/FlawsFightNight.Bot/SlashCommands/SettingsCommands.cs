@@ -358,7 +358,10 @@ namespace FlawsFightNight.Bot.SlashCommands
                     var date = new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc);
                     var result = await _statLogsByDateHandler.GetStatLogsByDate(date, serverName);
 
-                    await FollowupAsync(result, ephemeral: true);
+                    if (string.IsNullOrWhiteSpace(result))
+                        await FollowupAsync("No stat logs found for that date.", ephemeral: true);
+                    else
+                        await FollowupAsync(result, ephemeral: true);
                 }
                 catch (Exception ex)
                 {

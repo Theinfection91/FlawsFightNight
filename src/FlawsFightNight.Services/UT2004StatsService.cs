@@ -191,6 +191,13 @@ namespace FlawsFightNight.Services
                 Console.WriteLine($"[UT2004StatsService] Skipping {ignoredCount} admin-ignored stat log(s) from profile calculations.");
 
             Console.WriteLine($"[UT2004StatsService] Processing {chronologicalMatches.Count} matches chronologically...");
+
+            if (chronologicalMatches.Count == 0)
+            {
+                Console.WriteLine($"[UT2004StatsService] No matches to process.");
+                return;
+            }
+
             Console.WriteLine($"[UT2004StatsService] Date range: {chronologicalMatches.First().MatchDate:yyyy-MM-dd} to {chronologicalMatches.Last().MatchDate:yyyy-MM-dd}");
 
             var profiles = new Dictionary<string, UT2004PlayerProfile>();
