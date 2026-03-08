@@ -21,6 +21,7 @@ namespace FlawsFightNight.Bot.Autocomplete
         private readonly TeamService _teamService;
         private readonly TournamentService _tournamentService;
         private readonly MemberService _memberService;
+        private readonly UT2004StatsService _ut2004StatsService;
 
         // Autocomplete Data
         private List<Match> _allMatches = new();
@@ -36,16 +37,17 @@ namespace FlawsFightNight.Bot.Autocomplete
         private List<Team> _allTeams = new();
         private List<FTPCredential> _ftpCredentials = new();
         private List<MemberProfile> _memberProfiles = new();
+        private List<string> _adminIgnoredLogs = new();
 
 
-        public AutocompleteCache(AdminConfigurationService adminConfigService, MatchService matchService, TeamService teamService, TournamentService tournamentService, MemberService memberService)
+        public AutocompleteCache(AdminConfigurationService adminConfigService, MatchService matchService, TeamService teamService, TournamentService tournamentService, MemberService memberService, UT2004StatsService ut2004StatsService)
         {
             _adminConfigService = adminConfigService;
             _matchService = matchService;
             _teamService = teamService;
             _tournamentService = tournamentService;
             _memberService = memberService;
-
+            _ut2004StatsService = ut2004StatsService;
             // Initialize Autocomplete Data
             Update();
         }
@@ -66,6 +68,7 @@ namespace FlawsFightNight.Bot.Autocomplete
             _allTeams = _teamService.GetAllTeams();
             _ftpCredentials = _adminConfigService.GetFTPCredentials()!;
             _memberProfiles = _memberService.GetAllMemberProfiles();
+            _adminIgnoredLogs = _ut2004StatsService.GetAdminIgnoredLogs()!;
         }
 
         public List<AutocompleteResult> GetMatchIdsMatchingInput(string input)
@@ -433,6 +436,32 @@ namespace FlawsFightNight.Bot.Autocomplete
             catch (Exception ex)
             {
                 Console.WriteLine($"Error generating UT2004 GUID suggestions: {ex.Message}");
+                return new List<AutocompleteResult>();
+            }
+        }
+
+        public List<AutocompleteResult> GetAllAdminIgnoredLogs(string input)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    return _adminIgnoredLogs
+                        .OrderBy(log => log)
+                        .Select(log => new AutocompleteResult(log, log))
+                        .ToList();
+                }
+                // Filter ignored logs based on the input (case-insensitive)
+                var matchingLogs = _adminIgnoredLogs
+                    .Where(log => log.Contains(input, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(log => log)
+                    .Select(log => new AutocompleteResult(log, log))
+                    .ToList();
+                return matchingLogs;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating admin ignored logs suggestions: {ex.Message}");
                 return new List<AutocompleteResult>();
             }
         }

@@ -74,6 +74,14 @@ namespace FlawsFightNight.Services
                     teamList.OrderByDescending(p => p.Score).ToList()
                 ).ToList();
                 statLog.Id = await GenerateStatLogId(statLog.GameMode);
+
+                // Ensure admin ignored logs are loaded so persisted StatLog reflects current admin state
+                if (_dataContext.AdminIgnoredLogsFile == null)
+                    await _dataContext.LoadAdminIgnoredLogsFile();
+
+                // Reflect admin-allowed/ignored state on the StatLog before saving
+                statLog.IsAllowedByAdmin = !_dataContext.IsStatLogIgnored(statLog.Id);
+
                 await _dataContext.SaveStatLogMatchResultFile(statLog);
                 await _dataContext.AddStatLogIndexEntry(new StatLogIndexEntry
                 {
@@ -145,7 +153,23 @@ namespace FlawsFightNight.Services
         public async Task<List<UT2004StatLog>> GetAllProcessedStatLogs()
         {
             var statLogFiles = await _dataContext.LoadAllStatLogMatchResultFiles();
-            return statLogFiles.Select(file => file.StatLog).ToList();
+
+            // Ensure admin ignore file is loaded so we can mark each StatLog correctly
+            if (_dataContext.AdminIgnoredLogsFile == null)
+                await _dataContext.LoadAdminIgnoredLogsFile();
+
+            var list = new List<UT2004StatLog>();
+            foreach (var file in statLogFiles)
+            {
+                var statLog = file.StatLog;
+                if (statLog == null) continue;
+
+                // Ensure the persisted StatLog's IsAllowedByAdmin reflects the admin ignore list
+                statLog.IsAllowedByAdmin = !_dataContext.IsStatLogIgnored(statLog.Id);
+                list.Add(statLog);
+            }
+
+            return list;
         }
 
         #endregion
@@ -182,7 +206,7 @@ namespace FlawsFightNight.Services
             var allMatchStats = await GetAllProcessedStatLogs();
 
             var chronologicalMatches = allMatchStats
-                .Where(m => !_dataContext.IsStatLogIgnored(m.Id))
+                .Where(m => !_dataContext.IsStatLogIgnored(m.Id) && m.IsAllowedByAdmin)
                 .OrderBy(m => m.MatchDate)
                 .ToList();
 
@@ -450,6 +474,19 @@ namespace FlawsFightNight.Services
         #endregion
 
         #region Admin StatLog Controls
+        public List<string> GetAdminIgnoredLogs()
+        {
+            if (_dataContext.AdminIgnoredLogsFile == null) return new List<string>();
+            return _dataContext.AdminIgnoredLogsFile?.Entries.Select(e => e.StatLogId).ToList() ?? new List<string>();
+
+        }
+
+        public bool DoesStatLogExist(string statLogID)
+        {
+            var entries = _dataContext.StatLogIndexFile?.Entries;
+            return entries != null && entries.Any(e => e.Id.Equals(statLogID, StringComparison.OrdinalIgnoreCase));
+        }
+
         public async Task<string> GetStatLogIDsOnDate(DateTime date, string serverName = null)
         {
             if (_dataContext.StatLogIndexFile == null)
@@ -609,6 +646,14 @@ namespace FlawsFightNight.Services
                     IgnoredAt = DateTime.UtcNow
                 });
 
+                // Persist IsAllowedByAdmin on the actual stat log file so future loads reflect admin intent
+                var statLog = await _dataContext.LoadStatLogByID(id);
+                if (statLog != null)
+                {
+                    statLog.IsAllowedByAdmin = false;
+                    await _dataContext.SaveStatLogMatchResultFile(statLog);
+                }
+
                 succeeded.Add(id);
             }
 
@@ -648,6 +693,15 @@ namespace FlawsFightNight.Services
                 }
 
                 await _dataContext.RemoveAdminIgnoredLogEntry(id);
+
+                // Persist IsAllowedByAdmin on the actual stat log file so future loads reflect admin intent
+                var statLog = await _dataContext.LoadStatLogByID(id);
+                if (statLog != null)
+                {
+                    statLog.IsAllowedByAdmin = true;
+                    await _dataContext.SaveStatLogMatchResultFile(statLog);
+                }
+
                 succeeded.Add(id);
             }
 

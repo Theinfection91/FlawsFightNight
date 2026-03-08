@@ -25,6 +25,13 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
                     return $"Invalid log ID: '{logID}'. Please provide non-empty log IDs.";
             }
 
+            foreach (var logID in logIDs)
+            {
+                var exists = _ut2004StatsService.DoesStatLogExist(logID);
+                if (!exists)
+                    return $"No stat log found for ID: '{logID}'. Please check the ID and try again.";
+            }
+
             var allLogs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (string logID in logIDs)

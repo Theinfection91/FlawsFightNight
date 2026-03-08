@@ -15,7 +15,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private const bool _simpleDebugLogging = false;
         private const bool _expandedDebugLogging = false;
 
-        // State tracking for current match
         private Dictionary<int, UTPlayerMatchStats> _activePlayersBySeqNum = new();
         private Dictionary<string, UTPlayerMatchStats> _activePlayersByGuid = new(); // Track by GUID for reconnects
         private Dictionary<int, int> _teamScores = new();
@@ -24,8 +23,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private double _gameStartTime = 0;
         private DateTime _matchStartTime = DateTime.MinValue;
         private UT2004GameMode _currentGameMode = default;
-
-        // Track last seen timestamp (seconds) for end-of-file flush
+        private int _computedMatchDurationSeconds = 0;
         private double _lastEventTimestamp = 0.0;
 
         // TAM-specific tracking
@@ -124,7 +122,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                             break;
 
                         case "S": // Score
-                            ParseScore(parts);
+                            ParseScore(parts, timestamp);
                             break;
 
                         case "P": // Special Event (sprees, multikills)
@@ -639,7 +637,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                             else if (en.Contains("assist"))
                                 p.BallScoreAssists++;
                             else if (en.Contains("thrown"))
+                            {
                                 p.BallThrownFinals++;
+                                _timeline.Add(new MatchEvent
+                                {
+                                    GameTimeSeconds = GameTime(timestamp),
+                                    EventType = "BombThrown",
+                                    ActorName = p.LastKnownName,
+                                    ActorGuid = p.Guid
+                                });
+                            }
 
                             if (_expandedDebugLogging)
                                 Console.WriteLine($"{p.LastKnownName} event {eventName} recorded (G line).");
@@ -806,7 +813,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 Console.WriteLine($"{killer.LastKnownName} killed {victim.LastKnownName} with {weapon} ({damageType})");
         }
 
-        private void ParseScore(string[] parts)
+        private void ParseScore(string[] parts, double timestamp)
         {
             if (parts.Length < 5) return;
             if (!int.TryParse(parts[2], out int seqNum)) return;
@@ -873,12 +880,30 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             {
                 // Suicide already handled in K parsing
             }
-            // BombingRun scoring
+            // BombingRun / iBR scoring — update counts AND add timeline events so summaries get timestamps
             else if (reasonLower.Contains("ball_cap_final") || reasonLower.Contains("ball_cap"))
             {
                 player.BallCaptures++;
                 if (_lastBallCarrierSeqNum == seqNum)
                     _lastBallCarrierSeqNum = null;
+
+                // Add timeline entry if we don't already have one at (nearly) the same time for this player
+                double evTime = GameTime(timestamp);
+                bool exists = _timeline.Any(e =>
+                    e.EventType == "BombCapture" &&
+                    Math.Abs(e.GameTimeSeconds - evTime) < 0.1 &&
+                    (e.ActorGuid != null && e.ActorGuid == player.Guid || e.ActorName == player.LastKnownName));
+
+                if (!exists)
+                {
+                    _timeline.Add(new MatchEvent
+                    {
+                        GameTimeSeconds = evTime,
+                        EventType = "BombCapture",
+                        ActorName = player.LastKnownName,
+                        ActorGuid = player.Guid
+                    });
+                }
             }
             else if (reasonLower.Contains("ball_score_assist") || reasonLower.Contains("ball_score"))
             {
@@ -887,6 +912,23 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             else if (reasonLower.Contains("ball_thrown_final") || reasonLower.Contains("ball_thrown"))
             {
                 player.BallThrownFinals++;
+
+                double evTime = GameTime(timestamp);
+                bool exists = _timeline.Any(e =>
+                    e.EventType == "BombThrown" &&
+                    Math.Abs(e.GameTimeSeconds - evTime) < 0.1 &&
+                    (e.ActorGuid != null && e.ActorGuid == player.Guid || e.ActorName == player.LastKnownName));
+
+                if (!exists)
+                {
+                    _timeline.Add(new MatchEvent
+                    {
+                        GameTimeSeconds = evTime,
+                        EventType = "BombThrown",
+                        ActorName = player.LastKnownName,
+                        ActorGuid = player.Guid
+                    });
+                }
             }
             else if (reasonLower.Contains("tdm_frag"))
             {
@@ -1041,7 +1083,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             if (_teamScores.Count > 0)
             {
-                _winningTeam = _teamScores.OrderByDescending(kvp => kvp.Value).First().Key;
+                // Correctly handle ties: if the top two teams have the same score, no one won (it's a draw).
+                var topTeams = _teamScores.OrderByDescending(kvp => kvp.Value).ToList();
+                if (topTeams.Count == 1 || topTeams[0].Value > topTeams[1].Value)
+                {
+                    _winningTeam = topTeams[0].Key;
+                }
+                else
+                {
+                    _winningTeam = null; // Explicit draw, no one gets marked IsWinner
+                }
             }
 
             if (_expandedDebugLogging)
@@ -1080,8 +1131,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             // Use GUID dictionary to get unique players (handles reconnects)
             var uniquePlayers = _activePlayersByGuid.Values.ToList();
-            var humanPlayers  = uniquePlayers.Where(p => !p.IsBot).ToList();
-            var botPlayers    = uniquePlayers.Where(p => p.IsBot).ToList();
+            var humanPlayers = uniquePlayers.Where(p => !p.IsBot).ToList();
+            var botPlayers = uniquePlayers.Where(p => p.IsBot).ToList();
 
             // Rule 1: No bots allowed
             if (botPlayers.Any())
@@ -1111,37 +1162,61 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 return false;
             }
 
-            // Rule 4: Each team must have at least one player with 5+ kills.
-            // Prevents warmups and idle sessions from being recorded as real matches.
+            // Rule 4: Each team must have 5 kills total EACH
             foreach (var teamId in teamIds)
             {
-                if (!humanPlayers.Any(p => p.Team == teamId && p.Kills >= 5))
+                int teamKills = humanPlayers.Where(p => p.Team == teamId).Sum(p => p.Kills);
+                if (teamKills < 5)
                 {
                     if (_simpleDebugLogging || _expandedDebugLogging)
                     {
-                        Console.WriteLine($"\nMatch INVALID: Team {teamId} has no player with at least 5 kills. " +
-                            $"Players on this team: {string.Join(", ", humanPlayers.Where(p => p.Team == teamId).Select(p => $"{p.LastKnownName} ({p.Kills}K)"))}");
+                        Console.WriteLine($"\nMatch INVALID: Team {teamId} has only {teamKills} total kills. " +
+                            $"Players on Team {teamId}: {string.Join(", ", humanPlayers.Where(p => p.Team == teamId).Select(p => p.LastKnownName))}");
                     }
                     return false;
                 }
             }
 
+            // Compute authoritative match duration (seconds)
+            // Prefer SG (game start) -> last event span when available; otherwise fall back to max individual play time.
+            int matchDurationSeconds = 0;
+            if (_gameStarted && _gameStartTime > 0 && _lastEventTimestamp > _gameStartTime)
+            {
+                matchDurationSeconds = (int)Math.Round(_lastEventTimestamp - _gameStartTime);
+            }
+            else
+            {
+                matchDurationSeconds = humanPlayers.Any() ? humanPlayers.Max(p => p.TotalTimeSeconds) : 0;
+            }
+
+            // Store computed duration for later use (BuildStatLog will copy into the stat object)
+            _computedMatchDurationSeconds = Math.Max(0, matchDurationSeconds);
+
             // Rule 5: Mode-specific objective minimums.
-            // iCTF requires at least 3 total flag captures across both teams — anything fewer
-            // is a warmup or a match that never actually got going.
             if (_currentGameMode == UT2004GameMode.iCTF)
             {
-                int totalCaps = humanPlayers.Sum(p => p.FlagCaptures);
-                if (totalCaps < 3)
+                if (humanPlayers.Sum(p => p.FlagCaptures) < 1)
                 {
                     if (_simpleDebugLogging || _expandedDebugLogging)
-                        Console.WriteLine($"\nMatch INVALID: iCTF match only recorded {totalCaps} flag capture(s). At least 3 required.");
+                        Console.WriteLine($"\nMatch INVALID: iCTF match with no flag captures.");
                     return false;
                 }
+                if (_computedMatchDurationSeconds < 300) return false;
+            }
+            else if (_currentGameMode == UT2004GameMode.iBR)
+            {
+                // In BR, they must have either ran the ball in OR tossed it in
+                if (humanPlayers.Sum(p => p.BallCaptures + p.BallThrownFinals) < 1)
+                {
+                    if (_simpleDebugLogging || _expandedDebugLogging)
+                        Console.WriteLine($"\nMatch INVALID: iBR match with no score goals.");
+                    return false;
+                }
+                if (_computedMatchDurationSeconds < 300) return false;
             }
 
             if (_simpleDebugLogging || _expandedDebugLogging)
-                Console.WriteLine($"\nMatch VALID: {humanPlayers.Count} human players across {teamIds.Count} teams, 0 bots");
+                Console.WriteLine($"\nMatch VALID: {humanPlayers.Count} human players across {teamIds.Count} teams, 0 bots; Duration: {_computedMatchDurationSeconds}s");
 
             return true;
         }
@@ -1191,6 +1266,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             statLog.KillMatch = _killMatch;
             statLog.Timeline = _timeline;
+            statLog.TeamScores = new Dictionary<int, int>(_teamScores); // <-- Add this line
 
             if (_simpleDebugLogging)
             {
@@ -1207,6 +1283,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             statLog.MatchDate = _matchStartTime != DateTime.MinValue ? _matchStartTime : DateTime.UtcNow;
             statLog.GameMode = _currentGameMode;
+            statLog.MatchDurationSeconds = _computedMatchDurationSeconds;
 
             return statLog;
         }

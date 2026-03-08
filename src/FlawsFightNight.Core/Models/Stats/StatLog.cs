@@ -12,7 +12,11 @@ namespace FlawsFightNight.Core.Models.Stats
     {
         public string ServerName { get; set; }
         public string IPAddress { get; set; }
-        public bool IsAllowedByAdmin { get; set; } = true;
-        public StatLog() { }
+        public bool IsAllowedByAdmin { get; set; }
+
+        protected StatLog()
+        {
+            IsAllowedByAdmin = true;
+        }
     }
 }
