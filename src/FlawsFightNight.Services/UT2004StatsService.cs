@@ -481,6 +481,12 @@ namespace FlawsFightNight.Services
 
         }
 
+        public bool DoesStatLogExist(string statLogID)
+        {
+            var entries = _dataContext.StatLogIndexFile?.Entries;
+            return entries != null && entries.Any(e => e.Id.Equals(statLogID, StringComparison.OrdinalIgnoreCase));
+        }
+
         public async Task<string> GetStatLogIDsOnDate(DateTime date, string serverName = null)
         {
             if (_dataContext.StatLogIndexFile == null)
