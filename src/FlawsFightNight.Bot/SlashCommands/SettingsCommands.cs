@@ -446,6 +446,27 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
+
+            [SlashCommand("tag_log", "Tag a log to a post-match in a tournament for easier reference")]
+            public async Task TagLogToMatchAsync(
+                                                 [Summary("log_id", "The log ID to tag to a match")] string logId,
+                                                 [Summary("tournament_id", "The tournament ID of the match to tag the log to"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
+                                                 [Summary("match_id", "The match ID of the match to tag the log to"), Autocomplete(typeof(TagLogToMatchAutocomplete))] string matchId)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    //var result = await _statLogsByDateHandler.TagLogToMatchProcess(logId, tournamentId, matchId);
+                    await FollowupAsync(//embed: result, 
+                        ephemeral: true);
+                    _autocompleteCache.Update();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
         }
     }
 }
