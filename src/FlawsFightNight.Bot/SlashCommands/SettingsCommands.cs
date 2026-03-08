@@ -407,6 +407,7 @@ namespace FlawsFightNight.Bot.SlashCommands
 
                     var result = await _ignoreLogsByIDHandler.IgnoreLogsByIDProcess(Context, logIds);
                     await FollowupAsync(embed: result, ephemeral: true);
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
@@ -416,8 +417,8 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("allow_logs", "Re-allow up to 10 previously ignored logs by their ID# so they count towards stats again")]
-            public async Task AllowLogsByIdAsync([Summary("first_log", "The first log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))]
-            string firstLog,
+            public async Task AllowLogsByIdAsync(
+                                                  [Summary("first_log", "The first log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string firstLog,
                                                   [Summary("second_log", "The second log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string secondLog = null,
                                                   [Summary("third_log", "The third log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string thirdLog = null,
                                                   [Summary("fourth_log", "The fourth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string fourthLog = null,
@@ -437,6 +438,7 @@ namespace FlawsFightNight.Bot.SlashCommands
 
                     var result = await _allowLogsByIDHandler.AllowLogsByIDProcess(Context, logIds);
                     await FollowupAsync(embed: result, ephemeral: true);
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {

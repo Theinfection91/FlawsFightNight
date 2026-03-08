@@ -24,6 +24,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         {
             var sb = new StringBuilder();
 
+            if (log.IsAllowedByAdmin == false) WriteIgnoreWarning(sb);
             WriteHeader(log, sb);
             WriteTeams(log, sb, profileNames);
             WriteKillMatrix(log, sb, profileNames);
@@ -46,6 +47,18 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         }
 
         // ── Section writers ──────────────────────────────────────────────────────
+
+        private static void WriteIgnoreWarning(StringBuilder sb)
+        {
+            sb.AppendLine(Divider);
+            sb.AppendLine("!!!  !  !!!\n");
+            sb.AppendLine("  WARNING: MATCH LOG IGNORED BY ADMIN\n");
+            sb.AppendLine("This match log is marked as IGNORED by an admin and does not contribute toward stats or ratings currently.");
+            sb.AppendLine("  WARNING: MATCH LOG IGNORED BY ADMIN\n");
+            sb.AppendLine("!!!  !  !!!");
+            sb.AppendLine(Divider);
+            sb.AppendLine();
+        }
 
         private static void WriteHeader(UT2004StatLog log, StringBuilder sb)
         {
