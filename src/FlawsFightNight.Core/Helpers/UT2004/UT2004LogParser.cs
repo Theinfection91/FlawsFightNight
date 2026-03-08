@@ -637,7 +637,17 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                             else if (en.Contains("assist"))
                                 p.BallScoreAssists++;
                             else if (en.Contains("thrown"))
+                            {
                                 p.BallThrownFinals++;
+                                // ADD THIS TIMELINE EVENT
+                                _timeline.Add(new MatchEvent
+                                {
+                                    GameTimeSeconds = GameTime(timestamp),
+                                    EventType = "BombThrown",
+                                    ActorName = p.LastKnownName,
+                                    ActorGuid = p.Guid
+                                });
+                            }
 
                             if (_expandedDebugLogging)
                                 Console.WriteLine($"{p.LastKnownName} event {eventName} recorded (G line).");
@@ -1039,7 +1049,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             if (_teamScores.Count > 0)
             {
-                _winningTeam = _teamScores.OrderByDescending(kvp => kvp.Value).First().Key;
+                // Correctly handle ties: if the top two teams have the same score, no one won (it's a draw).
+                var topTeams = _teamScores.OrderByDescending(kvp => kvp.Value).ToList();
+                if (topTeams.Count == 1 || topTeams[0].Value > topTeams[1].Value)
+                {
+                    _winningTeam = topTeams[0].Key;
+                }
+                else
+                {
+                    _winningTeam = null; // Explicit draw, no one gets marked IsWinner
+                }
             }
 
             if (_expandedDebugLogging)
@@ -1145,20 +1164,21 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 if (humanPlayers.Sum(p => p.FlagCaptures) < 1)
                 {
                     if (_simpleDebugLogging || _expandedDebugLogging)
-                    {
-                        Console.WriteLine($"\nMatch INVALID: iCTF match with no flag captures. Total Caps: {humanPlayers.Sum(p => p.FlagCaptures)}");
-                    }
+                        Console.WriteLine($"\nMatch INVALID: iCTF match with no flag captures.");
                     return false;
                 }
-
-                if (_computedMatchDurationSeconds < 300)
+                if (_computedMatchDurationSeconds < 300) return false;
+            }
+            else if (_currentGameMode == UT2004GameMode.iBR)
+            {
+                // In BR, they must have either ran the ball in OR tossed it in
+                if (humanPlayers.Sum(p => p.BallCaptures + p.BallThrownFinals) < 1)
                 {
                     if (_simpleDebugLogging || _expandedDebugLogging)
-                    {
-                        Console.WriteLine($"\nMatch INVALID: iCTF match with insufficient match duration. Match Duration: {_computedMatchDurationSeconds} seconds");
-                    }
+                        Console.WriteLine($"\nMatch INVALID: iBR match with no score goals.");
                     return false;
                 }
+                if (_computedMatchDurationSeconds < 300) return false;
             }
 
             if (_simpleDebugLogging || _expandedDebugLogging)
@@ -1212,6 +1232,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             statLog.KillMatch = _killMatch;
             statLog.Timeline = _timeline;
+            statLog.TeamScores = new Dictionary<int, int>(_teamScores); // <-- Add this line
 
             if (_simpleDebugLogging)
             {

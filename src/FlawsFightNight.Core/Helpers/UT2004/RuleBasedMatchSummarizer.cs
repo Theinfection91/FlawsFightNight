@@ -82,6 +82,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             public int Index { get; set; }
             public string Label { get; set; } = "";
             public List<UTPlayerMatchStats> Players { get; set; } = new();
+            public int ActualTeamScore { get; set; } // <-- Add this
             public int TotalScore { get; set; }
             public int TotalKills { get; set; }
             public int TotalDeaths { get; set; }
@@ -180,11 +181,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             for (int i = 0; i < match.Players.Count; i++)
             {
                 var teamPlayers = match.Players[i].Where(p => p != null).ToList();
+                int teamIndex = teamPlayers.FirstOrDefault()?.Team ?? i;
+                int actualScore = match.TeamScores?.TryGetValue(teamIndex, out var s) == true ? s : 0;
+
                 ctx.Teams.Add(new TeamInfo
                 {
-                    Index = i,
-                    Label = i == 0 ? "Red Team" : i == 1 ? "Blue Team" : $"Team {i}",
+                    Index = teamIndex,
+                    Label = teamIndex == 0 ? "Red Team" : teamIndex == 1 ? "Blue Team" : $"Team {teamIndex}",
                     Players = teamPlayers,
+                    ActualTeamScore = actualScore,
                     TotalScore = teamPlayers.Sum(p => p.Score),
                     TotalKills = teamPlayers.Sum(p => p.Kills),
                     TotalDeaths = teamPlayers.Sum(p => p.Deaths),
@@ -196,12 +201,13 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             // Score analysis
             var winner = ctx.Teams.FirstOrDefault(t => t.IsWinner);
             var loser = ctx.Teams.FirstOrDefault(t => !t.IsWinner);
-            bool useObjectiveScore = match.GameMode is UT2004GameMode.iCTF or UT2004GameMode.iBR;
 
             if (winner != null && loser != null)
             {
-                int winVal = useObjectiveScore ? winner.TotalCaps : winner.TotalScore;
-                int loseVal = useObjectiveScore ? loser.TotalCaps : loser.TotalScore;
+                // We no longer need to calculate 'useObjectiveScore' here at all. 
+                // We just rely directly on the game server's points.
+                int winVal = winner.ActualTeamScore;
+                int loseVal = loser.ActualTeamScore;
                 ctx.ScoreDiff = Math.Abs(winVal - loseVal);
                 ctx.ScoreRatio = loseVal > 0 ? (double)winVal / loseVal : (winVal > 0 ? 10.0 : 1.0);
             }
@@ -316,10 +322,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             var loser = ctx.Teams.FirstOrDefault(t => !t.IsWinner);
             if (winner != null && loser != null)
             {
-                bool useObj = match.GameMode is UT2004GameMode.iCTF or UT2004GameMode.iBR;
-                string scoreStr = useObj
-                    ? $"{winner.TotalCaps}-{loser.TotalCaps}"
-                    : $"{winner.TotalScore}-{loser.TotalScore}";
+                // Directly format using ActualTeamScore
+                string scoreStr = $"{winner.ActualTeamScore}-{loser.ActualTeamScore}";
                 sb.AppendLine($"**{winner.Label}** secured the victory **{scoreStr}** in {ctx.NarrativePhrase}.");
             }
             else if (ctx.IsDraw)
@@ -344,9 +348,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 string winTag = t.IsWinner ? " 🏆" : "";
                 string scoreLabel = ctx.Match.GameMode switch
                 {
-                    UT2004GameMode.iCTF => $"{t.TotalCaps} Caps",
-                    UT2004GameMode.iBR => $"{t.TotalCaps} Caps",
-                    _ => $"{t.TotalScore} Score"
+                    UT2004GameMode.TAM => $"{t.ActualTeamScore} Rounds Won",
+                    UT2004GameMode.iCTF => $"{t.ActualTeamScore} Caps",
+                    UT2004GameMode.iBR => $"{t.ActualTeamScore} Pts",
+                    _ => $"{t.ActualTeamScore} Score"
                 };
 
                 sb.AppendLine($"* **{t.Label}** (Team {t.Index}): {scoreLabel} — {t.TotalKills}K / {t.TotalDeaths}D{winTag}");
@@ -431,22 +436,34 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             foreach (var e in ctx.MultiKillEvents.Where(e => e.Detail is "Ultra Kill" or "Monster Kill" or "Ludicrous Kill" or "Holy Shit"))
             {
                 string actor = e.ActorName ?? ctx.NameByGuid(e.ActorGuid);
-                moments.Add((e.GameTimeSeconds, "💥", $"**{actor}** lands a **{e.Detail}** at {FmtTime(e.GameTimeSeconds)}", 8));
+                int pri = e.Detail is "Ludicrous Kill" or "Holy Shit" ? 9 : 8; // Prioritize the highest multi-kills
+                moments.Add((e.GameTimeSeconds, "💥", $"**{actor}** lands a **{e.Detail}** at {FmtTime(e.GameTimeSeconds)}", pri));
             }
 
-            // Flag / bomb captures
-            var capEvents = ctx.Timeline.Where(e => e.EventType is "FlagCapture" or "BombCapture").ToList();
+            // Flag / bomb captures - UPDATED TO INCLUDE BombThrown
+            var capEvents = ctx.Timeline.Where(e => e.EventType is "FlagCapture" or "BombCapture" or "BombThrown").ToList();
             if (capEvents.Count > 0)
             {
                 var first = capEvents.First();
                 string firstActor = first.ActorName ?? ctx.NameByGuid(first.ActorGuid);
-                moments.Add((first.GameTimeSeconds, "🚩", $"**{firstActor}** secures the first capture at {FmtTime(first.GameTimeSeconds)}", 6));
+                
+                // Use phrasing accurate to iBR vs ICTF
+                string firstAction = first.EventType == "BombThrown" ? "scores the first goal" 
+                    : first.EventType == "BombCapture" ? "runs the first ball in" 
+                    : "secures the first capture";
+                    
+                moments.Add((first.GameTimeSeconds, "🚩", $"**{firstActor}** {firstAction} at {FmtTime(first.GameTimeSeconds)}", 7));
 
                 if (capEvents.Count > 1)
                 {
                     var last = capEvents.Last();
                     string lastActor = last.ActorName ?? ctx.NameByGuid(last.ActorGuid);
-                    moments.Add((last.GameTimeSeconds, "🏆", $"**{lastActor}** delivers the decisive final capture at {FmtTime(last.GameTimeSeconds)}", 8));
+                    
+                    string lastAction = last.EventType == "BombThrown" ? "scores the decisive final goal" 
+                        : last.EventType == "BombCapture" ? "runs the decisive final ball in" 
+                        : "delivers the decisive final capture";
+                        
+                    moments.Add((last.GameTimeSeconds, "🏆", $"**{lastActor}** {lastAction} at {FmtTime(last.GameTimeSeconds)}", 10)); // Force to top priority so it is never pushed off the list
                 }
             }
 
@@ -872,8 +889,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             int totalDrops = ctx.Players.Sum(p => p.BombDrops);
             int totalTaken = ctx.Players.Sum(p => p.BombTaken);
 
-            sb.AppendLine($"* **Ball Captures**: {totalBallCaps} ({totalAssists} assisted, {totalThrown} thrown-in finals)");
-            sb.AppendLine($"* **Ball Movement**: {totalPickups} pickups, {totalDrops} drops, {totalTaken} taken");
+            sb.AppendLine($"* **Scoring**: {totalBallCaps} run-in caps, {totalThrown} thrown goals ({totalAssists} assisted)");
+            sb.AppendLine($"* **Ball Movement**: {totalPickups} pickups, {totalDrops} drops, {totalTaken} taken/stolen");
 
             // Per-team
             sb.AppendLine();
@@ -884,6 +901,29 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 int tPicks = t.Players.Sum(p => p.BombPickups);
                 sb.AppendLine($"* **{t.Label}**: {tCaps} caps, {tAssists} assists, {tPicks} pickups");
             }
+            
+            // Add Scoring Timeline
+            var scoreTimeline = ctx.Timeline.Where(e => e.EventType is "BombCapture" or "BombThrown").ToList();
+            if (scoreTimeline.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("**Scoring Timeline:**");
+                int runningRed = 0, runningBlue = 0;
+                foreach (var e in scoreTimeline)
+                {
+                    string actor = e.ActorName ?? ctx.NameByGuid(e.ActorGuid);
+                    var scorer = ctx.Players.FirstOrDefault(p => p.Guid == e.ActorGuid);
+                    
+                    int points = e.EventType == "BombCapture" ? 7 : 3;
+                    string action = e.EventType == "BombCapture" ? "runs the ball in" : "shoots a goal";
+                    
+                    if (scorer != null && scorer.Team == 0) runningRed += points;
+                    else if (scorer != null && scorer.Team == 1) runningBlue += points;
+                    
+                    sb.AppendLine($"  [{FmtTime(e.GameTimeSeconds)}] {actor} {action} (+{points}) — Score: Red {runningRed} - {runningBlue} Blue");
+                }
+            }
+            
             sb.AppendLine();
         }
 
@@ -1036,13 +1076,13 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             // Primary scorer — caps the ball
             if (p.BallCaptures >= 1 && (maxCaps == 0 || p.BallCaptures >= maxCaps * 0.5))
             {
-                string capDetail = p.BallThrownFinals > 0 ? $"{p.BallCaptures} caps, {p.BombPickups} pickups, {p.BallThrownFinals} thrown finals" : $"{p.BallCaptures} caps, {p.BombPickups} pickups";
+                string capDetail = p.BallThrownFinals > 0 ? $"{p.BallCaptures} run-in caps, {p.BombPickups} pickups, {p.BallThrownFinals} thrown goals" : $"{p.BallCaptures} run-in caps, {p.BombPickups} pickups";
                 return ("Ball Runner", "🏃", capDetail);
             }
 
             // Throws the ball in for goals (finisher without capping directly)
             if (p.BallThrownFinals >= 2)
-                return ("Clutch Scorer", "🎯", $"{p.BallThrownFinals} ball thrown finals, {p.BallScoreAssists} assists");
+                return ("Clutch Scorer", "🎯", $"{p.BallThrownFinals} thrown goals, {p.BallScoreAssists} assists");
 
             // Dominant fragger — high K/D and kill volume
             if (kd >= 1.6 && p.Kills >= avgKills)

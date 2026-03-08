@@ -17,6 +17,7 @@ namespace FlawsFightNight.Core.Models.UT2004
         public List<List<UTPlayerMatchStats>> Players { get; set; } = new();
         public Dictionary<string, Dictionary<string, int>> KillMatch { get; set; } = new();
         public List<MatchEvent> Timeline { get; set; } = new();
+        public Dictionary<int, int> TeamScores { get; set; } = new();
         public string? MatchSummary { get; set; }
         public int MatchDurationSeconds { get; set; }
 

@@ -1540,10 +1540,10 @@ namespace FlawsFightNight.Services
                 $"📈 **OpenSkill μ:** {profile.BombingRunRating.Mu:F2}  ·  **σ:** {profile.BombingRunRating.Sigma:F2}  ·  **Rating (μ−3σ):** {profile.BombingRunRating.Rating:F2}",
                 false);
 
-            embed.AddField("💣 Objective Stats",
-                $"**Ball Caps:** {profile.TotalBallCaptures}  ·  **Score Assists:** {profile.TotalBallScoreAssists}  ·  **Thrown Finals:** {profile.TotalBallThrownFinals}\n" +
-                $"**Bomb Pickups:** {profile.TotalBombPickups}  ·  **Bomb Drops:** {profile.TotalBombDrops}  ·  **Bomb Taken:** {profile.TotalBombTaken}  ·  **Bomb Return (T/O):** {profile.TotalBombReturnedTimeouts}\n" +
-                $"**Best Caps (match):** {profile.MostBallCapsInMatch}  ·  **Best Pickups (match):** {profile.MostBombPickupsInMatch}  ·  **Best Taken (match):** {profile.MostBombTakenInMatch}\n" +
+            embed.AddField("🏃 Ball Stats",
+                $"**Run-in Caps (7pts):** {profile.TotalBallCaptures}  ·  **Thrown Goals (3pts):** {profile.TotalBallThrownFinals}  ·  **Assists:** {profile.TotalBallScoreAssists}\n" +
+                $"**Ball Pickups:** {profile.TotalBombPickups}  ·  **Ball Drops:** {profile.TotalBombDrops}  ·  **Ball Steals:** {profile.TotalBombTaken}  ·  **Ball Timeouts:** {profile.TotalBombReturnedTimeouts}\n" +
+                $"**Best Caps (match):** {profile.MostBallCapsInMatch}  ·  **Best Pickups (match):** {profile.MostBombPickupsInMatch}  ·  **Best Steals (match):** {profile.MostBombTakenInMatch}\n" +
                 $"**Avg Caps/Match:** {profile.AverageBallCapsPerBRMatch:F2}  ·  **Avg Pickups/Match:** {profile.AverageBombPickupsPerBRMatch:F2}",
                 false);
 
