@@ -612,7 +612,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             foreach (var (title, player, team, reason) in awards)
             {
                 string teamTag = !string.IsNullOrEmpty(team) ? $" ({team})" : "";
-                sb.AppendLine($"* {title}: **{player}**{teamTag} — {reason}");
+                sb.AppendLine($"* {title} **{player}**{teamTag} — {reason}");
             }
             sb.AppendLine();
         }
@@ -962,7 +962,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         {
             sb.AppendLine("## Combat Role Classification");
 
-            double avgKills = ctx.Players.Average(p => (double)p.Kills);
+            double avgKills  = ctx.Players.Average(p => (double)p.Kills);
             double avgDeaths = ctx.Players.Average(p => (double)p.Deaths);
 
             foreach (var p in ctx.Players.OrderByDescending(p => p.Score))
@@ -970,81 +970,209 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 string name = ctx.Name(p);
                 string team = TeamLabel(p.Team);
 
-                // Calculate role weights
-                double kd = p.GetKillDeathRatio();
-                int objActions = p.FlagCaptures + p.BallCaptures + p.FlagReturns + p.FlagDenials + p.BallScoreAssists;
-                int supportActions = p.TeamProtectFrags + p.FlagCaptureAssists + p.CriticalFrags;
-                int defActions = p.FlagReturns + p.FlagDenials;
-                bool highEngagement = (p.Kills + p.Deaths) > (avgKills + avgDeaths) * 1.2;
-
-                string role, icon, reason;
-
-                if (ctx.Match.GameMode == UT2004GameMode.TAM)
+                (string role, string icon, string reason) = ctx.Match.GameMode switch
                 {
-                    // TAM-specific roles
-                    double dmgEff = p.TotalDamageTaken > 0 ? (double)p.TotalDamageDealt / p.TotalDamageTaken : 0;
-                    if (p.RoundEndingKills >= 2 && p.RoundEndingKills >= ctx.Players.Max(x => x.RoundEndingKills) * 0.75)
-                    {
-                        role = "Clutch Closer"; icon = "⚡"; reason = $"{p.RoundEndingKills} round-ending kills";
-                    }
-                    else if (kd >= 2.0 && p.Kills >= avgKills)
-                    {
-                        role = "Elite Slayer"; icon = "⚔️"; reason = $"{kd:F2} K/D, {p.TotalDamageDealt:N0} dmg";
-                    }
-                    else if (dmgEff >= 1.5 && p.TotalDamageDealt > 0)
-                    {
-                        role = "Efficient Fighter"; icon = "🎯"; reason = $"{dmgEff:F2} dmg ratio";
-                    }
-                    else if (p.TeamProtectFrags >= 2)
-                    {
-                        role = "Team Anchor"; icon = "🛡️"; reason = $"{p.TeamProtectFrags} protections";
-                    }
-                    else if (highEngagement)
-                    {
-                        role = "Frontline Brawler"; icon = "💥"; reason = $"{p.Kills}K/{p.Deaths}D in the thick of it";
-                    }
-                    else
-                    {
-                        role = "Roamer"; icon = "🔄"; reason = "balanced combat presence";
-                    }
-                }
-                else
-                {
-                    // iCTF / iBR roles
-                    int caps = p.FlagCaptures + p.BallCaptures;
-                    if (caps >= 2 && caps >= ctx.Players.Max(x => x.FlagCaptures + x.BallCaptures) * 0.6)
-                    {
-                        role = "Flag Runner"; icon = "🏃"; reason = $"{caps} captures, {p.FlagGrabs + p.BombPickups} grabs";
-                    }
-                    else if (defActions >= 3 && defActions >= ctx.Players.Max(x => x.FlagReturns + x.FlagDenials) * 0.6)
-                    {
-                        role = "Elite Defender"; icon = "🛡️"; reason = $"{p.FlagReturns} returns, {p.FlagDenials} denials";
-                    }
-                    else if (supportActions >= 3)
-                    {
-                        role = "Support"; icon = "🤝"; reason = $"{p.TeamProtectFrags} protections, {p.FlagCaptureAssists} assists";
-                    }
-                    else if (kd >= 2.0 && p.Kills >= avgKills && objActions <= 2)
-                    {
-                        role = "Pure Slayer"; icon = "⚔️"; reason = $"{kd:F2} K/D, focused on frags";
-                    }
-                    else if (highEngagement)
-                    {
-                        role = "Frontline Aggressor"; icon = "💥"; reason = $"{p.Kills + p.Deaths} combat engagements";
-                    }
-                    else if (objActions >= 2)
-                    {
-                        role = "Objective Specialist"; icon = "🏁"; reason = $"{objActions} objective actions";
-                    }
-                    else
-                    {
-                        role = "Roamer"; icon = "🔄"; reason = "balanced combat & positioning";
-                    }
-                }
+                    UT2004GameMode.TAM => ClassifyTAMRole(p, ctx, avgKills, avgDeaths),
+                    UT2004GameMode.iBR => ClassifyIBRRole(p, ctx, avgKills, avgDeaths),
+                    _                  => ClassifyICTFRole(p, ctx, avgKills, avgDeaths)
+                };
 
                 sb.AppendLine($"* {icon} **{name}** ({team}): **{role}** — {reason}");
             }
             sb.AppendLine();
+        }
+
+        private static (string role, string icon, string reason) ClassifyTAMRole(
+            UTPlayerMatchStats p, SummaryContext ctx, double avgKills, double avgDeaths)
+        {
+            double kd = p.GetKillDeathRatio();
+            bool   highEngagement = (p.Kills + p.Deaths) > (avgKills + avgDeaths) * 1.2;
+            double dmgEff         = p.TotalDamageTaken > 0 ? (double)p.TotalDamageDealt / p.TotalDamageTaken : 0;
+            int    maxREK         = ctx.Players.Max(x => x.RoundEndingKills);
+
+            if (p.Kills == 0 && p.Deaths == 0)
+                return ("Inactive", "💤", "no recorded actions");
+
+            if (maxREK > 0 && p.RoundEndingKills >= 2 && p.RoundEndingKills >= maxREK * 0.75)
+                return ("Clutch Closer", "⚡", $"{p.RoundEndingKills} round-ending kills");
+
+            if (kd >= 2.0 && p.Kills >= avgKills)
+                return ("Elite Slayer", "⚔️", $"{kd:F2} K/D, {p.TotalDamageDealt:N0} dmg");
+
+            if (dmgEff >= 1.5 && p.TotalDamageDealt > 0)
+                return ("Efficient Fighter", "🎯", $"{dmgEff:F2} dmg ratio");
+
+            if (highEngagement && kd >= 1.0)
+                return ("Frontline Enforcer", "💥", $"{p.Kills}K/{p.Deaths}D ({kd:F2} K/D)");
+
+            if (p.TeamProtectFrags >= 2)
+                return ("Team Anchor", "🛡️", $"{p.TeamProtectFrags} protections");
+
+            if (highEngagement)
+                return ("Frontline Brawler", "💥", $"{p.Kills}K/{p.Deaths}D");
+
+            return ("Roamer", "🔄", "balanced combat presence");
+        }
+
+        private static (string role, string icon, string reason) ClassifyIBRRole(
+            UTPlayerMatchStats p, SummaryContext ctx, double avgKills, double avgDeaths)
+        {
+            double kd = p.GetKillDeathRatio();
+            bool   highEngagement = (p.Kills + p.Deaths) > (avgKills + avgDeaths) * 1.2;
+            int    maxCaps        = ctx.Players.Max(x => x.BallCaptures);
+            int    maxCritFrags   = ctx.Players.Max(x => x.CriticalFrags);
+            int    maxPickups     = ctx.Players.Max(x => x.BombPickups);
+
+            if (p.Kills == 0 && p.Deaths == 0)
+                return ("Inactive", "💤", "no recorded actions");
+
+            // Primary scorer — caps the ball
+            if (p.BallCaptures >= 1 && (maxCaps == 0 || p.BallCaptures >= maxCaps * 0.5))
+            {
+                string capDetail = p.BallThrownFinals > 0 ? $"{p.BallCaptures} caps, {p.BombPickups} pickups, {p.BallThrownFinals} thrown finals" : $"{p.BallCaptures} caps, {p.BombPickups} pickups";
+                return ("Ball Runner", "🏃", capDetail);
+            }
+
+            // Throws the ball in for goals (finisher without capping directly)
+            if (p.BallThrownFinals >= 2)
+                return ("Clutch Scorer", "🎯", $"{p.BallThrownFinals} ball thrown finals, {p.BallScoreAssists} assists");
+
+            // Dominant fragger — high K/D and kill volume
+            if (kd >= 1.6 && p.Kills >= avgKills)
+                return ("Elite Fragger", "⚔️", $"{kd:F2} K/D, {p.Kills} kills");
+
+            // Carries the ball frequently AND pulls their weight in kills
+            if (maxPickups > 0 && p.BombPickups >= Math.Max(maxPickups * 0.35, 4) && p.Kills >= avgKills * 0.6)
+                return ("Ball Escort", "🛡️", $"{p.BombPickups} pickups, {p.Kills} cover kills");
+
+            // Kills near the ball — positionally dominant around objectives
+            // NOTE: CriticalFrags = kills near the bomb/ball; this is a combat role, not support
+            if (maxCritFrags > 0 && p.CriticalFrags >= Math.Max(maxCritFrags * 0.55, 3))
+                return ("Tactical Enforcer", "⚡", $"{p.CriticalFrags} critical frags near the ball");
+
+            // High combat presence with positive K/D
+            if (highEngagement && kd >= 1.0)
+                return ("Frontline Enforcer", "💥", $"{p.Kills + p.Deaths} engagements ({kd:F2} K/D)");
+
+            // High combat engagement but struggling
+            if (highEngagement)
+                return ("Frontline Fighter", "⚔️", $"{p.Kills}K/{p.Deaths}D");
+
+            // Runs the ball frequently without capping — creates space, draws pressure
+            if (maxPickups > 0 && p.BombPickups >= Math.Max(maxPickups * 0.25, 4))
+                return ("Ball Carrier", "🏃", $"{p.BombPickups} ball pickups");
+
+            // Genuine team support (never counted CriticalFrags here —that's combat)
+            if (p.TeamProtectFrags + p.BallScoreAssists >= 3 && (p.TeamProtectFrags > 0 || p.BallScoreAssists > 0))
+                return ("Support", "🤝", $"{p.TeamProtectFrags} protections, {p.BallScoreAssists} assists");
+
+            return ("Roamer", "🔄", "balanced combat & positioning");
+        }
+
+        private static (string role, string icon, string reason) ClassifyICTFRole(
+            UTPlayerMatchStats p, SummaryContext ctx, double avgKills, double avgDeaths)
+        {
+            double kd = p.GetKillDeathRatio();
+            bool   highEngagement = (p.Kills + p.Deaths) > (avgKills + avgDeaths) * 1.2;
+            int    maxCaps        = ctx.Players.Max(x => x.FlagCaptures);
+            int    maxDefActions  = ctx.Players.Max(x => x.FlagReturns + x.FlagDenials);
+            int    defActions     = p.FlagReturns + p.FlagDenials;
+            // NOTE: FlagCaptureAssists + TeamProtectFrags only — CriticalFrags is combat, not support
+            int    supportActions = p.TeamProtectFrags + p.FlagCaptureAssists;
+            int    objActions     = p.FlagCaptures + p.FlagReturns + p.FlagDenials + p.FlagCaptureAssists;
+
+            if (p.Kills == 0 && p.Deaths == 0)
+                return ("Inactive", "💤", "no recorded actions");
+
+            // Primary flag carrier
+            if (p.FlagCaptures >= 1 && (maxCaps == 0 || p.FlagCaptures >= maxCaps * 0.5))
+                return ("Flag Runner", "🏃", $"{p.FlagCaptures} captures, {p.FlagGrabs} grabs");
+
+            // Pure combat dominance — check BEFORE support
+            if (kd >= 2.0 && p.Kills >= avgKills && objActions <= 2)
+                return ("Pure Slayer", "⚔️", $"{kd:F2} K/D, focused on frags");
+
+            // High engagement with positive K/D — check BEFORE support
+            if (highEngagement && kd >= 1.0)
+                return ("Frontline Aggressor", "💥", $"{p.Kills + p.Deaths} engagements ({kd:F2} K/D)");
+
+            // Primary defender
+            if (defActions >= 3 && (maxDefActions == 0 || defActions >= maxDefActions * 0.5))
+                return ("Elite Defender", "🛡️", $"{p.FlagReturns} returns, {p.FlagDenials} denials");
+
+            // High engagement but negative K/D (brawler)
+            if (highEngagement)
+                return ("Frontline Brawler", "💥", $"{p.Kills}K/{p.Deaths}D");
+
+            // Kills near the flag — tactical positioning (combat role)
+            if (p.CriticalFrags >= 3)
+                return ("Critical Fragger", "⚡", $"{p.CriticalFrags} critical frags near flag");
+
+            // Assist-focused playmaker
+            if (p.FlagCaptureAssists >= 2)
+                return ("Playmaker", "🤝", $"{p.FlagCaptureAssists} cap assists");
+
+            // Genuine support (protections + assists, no CriticalFrags contamination)
+            if (supportActions >= 3 && supportActions > 0)
+                return ("Support", "🤝", $"{p.TeamProtectFrags} protections, {p.FlagCaptureAssists} assists");
+
+            if (objActions >= 2)
+                return ("Objective Specialist", "🏁", $"{objActions} objective actions");
+
+            return ("Roamer", "🔄", "balanced combat & positioning");
+        }
+
+        // ── Helpers ──────────────────────────────────────────────────────────────
+
+        private static string FmtTime(double seconds)
+        {
+            bool neg = seconds < 0;
+            double abs = Math.Abs(seconds);
+            int m = (int)(abs / 60);
+            int s = (int)(abs % 60);
+            return neg ? $"-{m:D2}:{s:D2}" : $"{m:D2}:{s:D2}";
+        }
+
+        private static string TeamLabel(int team) => team switch
+        {
+            0 => "Red",
+            1 => "Blue",
+            _ => $"Team {team}"
+        };
+
+        /// <summary>Maps a kill-streak count to the UT2004 spree title.</summary>
+        private static string SpreeTitle(int streak) => streak switch
+        {
+            >= 30 => "Wicked Sick",
+            >= 25 => "Godlike",
+            >= 20 => "Unstoppable",
+            >= 15 => "Dominating",
+            >= 10 => "Rampage",
+            >= 5 => "Killing Spree",
+            _ => $"{streak}-streak"
+        };
+
+        /// <summary>Maps a multi-kill level to the UT2004 multi-kill title.</summary>
+        private static string MultiTitle(int level) => level switch
+        {
+            >= 7 => "Wicked Sick",
+            6 => "Holy Shit",
+            5 => "Ludicrous Kill",
+            4 => "Monster Kill",
+            3 => "Ultra Kill",
+            2 => "Multi Kill",
+            1 => "Double Kill",
+            _ => $"x{level}"
+        };
+
+        /// <summary>Strips common weapon class prefixes for cleaner display.</summary>
+        private static string CleanWeaponName(string raw)
+        {
+            if (raw.StartsWith("NewNet_", StringComparison.OrdinalIgnoreCase))
+                return raw.Substring(7);
+            if (raw.Contains('.'))
+                return raw.Substring(raw.LastIndexOf('.') + 1);
+            return raw;
         }
 
         private static void WritePerformanceTiers(StringBuilder sb, SummaryContext ctx)
@@ -1177,59 +1305,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 sb.AppendLine($"| {rank++} | {ctx.Name(r.Player)} | {r.Elo:F0} | {changeIcon} {changeStr} | {r.Peak:F0}{peakFlag} | {r.Wins}W-{losses}L |");
             }
             sb.AppendLine();
-        }
-
-        // ── Helpers ──────────────────────────────────────────────────────────────
-
-        private static string FmtTime(double seconds)
-        {
-            bool neg = seconds < 0;
-            double abs = Math.Abs(seconds);
-            int m = (int)(abs / 60);
-            int s = (int)(abs % 60);
-            return neg ? $"-{m:D2}:{s:D2}" : $"{m:D2}:{s:D2}";
-        }
-
-        private static string TeamLabel(int team) => team switch
-        {
-            0 => "Red",
-            1 => "Blue",
-            _ => $"Team {team}"
-        };
-
-        /// <summary>Maps a kill-streak count to the UT2004 spree title.</summary>
-        private static string SpreeTitle(int streak) => streak switch
-        {
-            >= 30 => "Wicked Sick",
-            >= 25 => "Godlike",
-            >= 20 => "Unstoppable",
-            >= 15 => "Dominating",
-            >= 10 => "Rampage",
-            >= 5 => "Killing Spree",
-            _ => $"{streak}-streak"
-        };
-
-        /// <summary>Maps a multi-kill level to the UT2004 multi-kill title.</summary>
-        private static string MultiTitle(int level) => level switch
-        {
-            >= 7 => "Wicked Sick",
-            6 => "Holy Shit",
-            5 => "Ludicrous Kill",
-            4 => "Monster Kill",
-            3 => "Ultra Kill",
-            2 => "Multi Kill",
-            1 => "Double Kill",
-            _ => $"x{level}"
-        };
-
-        /// <summary>Strips common weapon class prefixes for cleaner display.</summary>
-        private static string CleanWeaponName(string raw)
-        {
-            if (raw.StartsWith("NewNet_", StringComparison.OrdinalIgnoreCase))
-                return raw.Substring(7);
-            if (raw.Contains('.'))
-                return raw.Substring(raw.LastIndexOf('.') + 1);
-            return raw;
         }
     }
 }
