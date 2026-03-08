@@ -474,6 +474,13 @@ namespace FlawsFightNight.Services
         #endregion
 
         #region Admin StatLog Controls
+        public List<string> GetAdminIgnoredLogs()
+        {
+            if (_dataContext.AdminIgnoredLogsFile == null) return new List<string>();
+            return _dataContext.AdminIgnoredLogsFile?.Entries.Select(e => e.StatLogId).ToList() ?? new List<string>();
+
+        }
+
         public async Task<string> GetStatLogIDsOnDate(DateTime date, string serverName = null)
         {
             if (_dataContext.StatLogIndexFile == null)
