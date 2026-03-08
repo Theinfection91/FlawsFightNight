@@ -111,6 +111,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     {
                         playerEvents = log.Timeline
                             .Where(e => e.ActorGuid == player.Guid || e.TargetGuid == player.Guid)
+                            .OrderBy(e => e.GameTimeSeconds)
                             .ToList();
                     }
 
@@ -183,7 +184,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             List<string> highlights = playerEvents
                 .Where(e => e.ActorGuid == p.Guid && e.EventType is
                     "FirstBlood" or "Spree" or "MultiKill" or "Overkill" or
-                    "FlagCapture" or "FlagReturn" or "BombCapture")
+                    "FlagCapture" or "FlagReturn" or "BombCapture" or "BombThrown" or "BombPickup" or "BombDrop" or "BombTaken")
                 .OrderBy(e => e.GameTimeSeconds)
                 .Select(e =>
                 {
@@ -277,6 +278,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             List<MatchEvent> events = log.Timeline
                 .Where(e => e.GameTimeSeconds >= 0)
+                .OrderBy(e => e.GameTimeSeconds)
                 .ToList();
 
             if (events.Count == 0) return;

@@ -16,7 +16,7 @@ namespace FlawsFightNight.Core.Models.UT2004
         /// <summary>
         /// Event category: Kill, Suicide, FirstBlood, Spree, MultiKill, Overkill,
         /// FlagGrab, FlagPickup, FlagDrop, FlagCapture, FlagReturn, FlagReturnTimeout,
-        /// BombPickup, BombDrop, BombTaken, BombCapture, RoundStart, RoundWin.
+        /// BombPickup, BombDrop, BombTaken, BombCapture, BombThrown, RoundStart, RoundWin.
         /// </summary>
         public string EventType { get; set; } = string.Empty;
 

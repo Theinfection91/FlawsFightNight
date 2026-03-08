@@ -122,7 +122,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                             break;
 
                         case "S": // Score
-                            ParseScore(parts);
+                            ParseScore(parts, timestamp);
                             break;
 
                         case "P": // Special Event (sprees, multikills)
@@ -639,7 +639,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                             else if (en.Contains("thrown"))
                             {
                                 p.BallThrownFinals++;
-                                // ADD THIS TIMELINE EVENT
                                 _timeline.Add(new MatchEvent
                                 {
                                     GameTimeSeconds = GameTime(timestamp),
@@ -814,7 +813,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 Console.WriteLine($"{killer.LastKnownName} killed {victim.LastKnownName} with {weapon} ({damageType})");
         }
 
-        private void ParseScore(string[] parts)
+        private void ParseScore(string[] parts, double timestamp)
         {
             if (parts.Length < 5) return;
             if (!int.TryParse(parts[2], out int seqNum)) return;
@@ -881,12 +880,30 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             {
                 // Suicide already handled in K parsing
             }
-            // BombingRun scoring
+            // BombingRun / iBR scoring — update counts AND add timeline events so summaries get timestamps
             else if (reasonLower.Contains("ball_cap_final") || reasonLower.Contains("ball_cap"))
             {
                 player.BallCaptures++;
                 if (_lastBallCarrierSeqNum == seqNum)
                     _lastBallCarrierSeqNum = null;
+
+                // Add timeline entry if we don't already have one at (nearly) the same time for this player
+                double evTime = GameTime(timestamp);
+                bool exists = _timeline.Any(e =>
+                    e.EventType == "BombCapture" &&
+                    Math.Abs(e.GameTimeSeconds - evTime) < 0.1 &&
+                    (e.ActorGuid != null && e.ActorGuid == player.Guid || e.ActorName == player.LastKnownName));
+
+                if (!exists)
+                {
+                    _timeline.Add(new MatchEvent
+                    {
+                        GameTimeSeconds = evTime,
+                        EventType = "BombCapture",
+                        ActorName = player.LastKnownName,
+                        ActorGuid = player.Guid
+                    });
+                }
             }
             else if (reasonLower.Contains("ball_score_assist") || reasonLower.Contains("ball_score"))
             {
@@ -895,6 +912,23 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             else if (reasonLower.Contains("ball_thrown_final") || reasonLower.Contains("ball_thrown"))
             {
                 player.BallThrownFinals++;
+
+                double evTime = GameTime(timestamp);
+                bool exists = _timeline.Any(e =>
+                    e.EventType == "BombThrown" &&
+                    Math.Abs(e.GameTimeSeconds - evTime) < 0.1 &&
+                    (e.ActorGuid != null && e.ActorGuid == player.Guid || e.ActorName == player.LastKnownName));
+
+                if (!exists)
+                {
+                    _timeline.Add(new MatchEvent
+                    {
+                        GameTimeSeconds = evTime,
+                        EventType = "BombThrown",
+                        ActorName = player.LastKnownName,
+                        ActorGuid = player.Guid
+                    });
+                }
             }
             else if (reasonLower.Contains("tdm_frag"))
             {

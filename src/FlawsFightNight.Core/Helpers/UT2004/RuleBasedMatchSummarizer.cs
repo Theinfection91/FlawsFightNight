@@ -440,16 +440,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 moments.Add((e.GameTimeSeconds, "💥", $"**{actor}** lands a **{e.Detail}** at {FmtTime(e.GameTimeSeconds)}", pri));
             }
 
-            // Flag / bomb captures - UPDATED TO INCLUDE BombThrown
+            // Flag / bomb captures
             var capEvents = ctx.Timeline.Where(e => e.EventType is "FlagCapture" or "BombCapture" or "BombThrown").ToList();
             if (capEvents.Count > 0)
             {
                 var first = capEvents.First();
                 string firstActor = first.ActorName ?? ctx.NameByGuid(first.ActorGuid);
-                
-                // Use phrasing accurate to iBR vs ICTF
-                string firstAction = first.EventType == "BombThrown" ? "scores the first goal" 
-                    : first.EventType == "BombCapture" ? "runs the first ball in" 
+
+                string firstAction = first.EventType == "BombThrown" ? "throws the first goal (3pts)" 
+                    : first.EventType == "BombCapture" ? "secures the first run-in cap (7pts)" 
                     : "secures the first capture";
                     
                 moments.Add((first.GameTimeSeconds, "🚩", $"**{firstActor}** {firstAction} at {FmtTime(first.GameTimeSeconds)}", 7));
@@ -459,11 +458,12 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     var last = capEvents.Last();
                     string lastActor = last.ActorName ?? ctx.NameByGuid(last.ActorGuid);
                     
-                    string lastAction = last.EventType == "BombThrown" ? "scores the decisive final goal" 
-                        : last.EventType == "BombCapture" ? "runs the decisive final ball in" 
+                    string lastAction = last.EventType == "BombThrown" ? "throws the decisive final goal" 
+                        : last.EventType == "BombCapture" ? "runs in the decisive final ball" 
                         : "delivers the decisive final capture";
-                        
-                    moments.Add((last.GameTimeSeconds, "🏆", $"**{lastActor}** {lastAction} at {FmtTime(last.GameTimeSeconds)}", 10)); // Force to top priority so it is never pushed off the list
+
+                    // Force to top priority so it is never pushed off the list
+                    moments.Add((last.GameTimeSeconds, "🏆", $"**{lastActor}** {lastAction} at {FmtTime(last.GameTimeSeconds)}", 10));
                 }
             }
 
@@ -897,34 +897,38 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             foreach (var t in ctx.Teams)
             {
                 int tCaps = t.Players.Sum(p => p.BallCaptures);
+                int tThrown = t.Players.Sum(p => p.BallThrownFinals);
                 int tAssists = t.Players.Sum(p => p.BallScoreAssists);
                 int tPicks = t.Players.Sum(p => p.BombPickups);
-                sb.AppendLine($"* **{t.Label}**: {tCaps} caps, {tAssists} assists, {tPicks} pickups");
+                sb.AppendLine($"* **{t.Label}**: {tCaps} run-ins, {tThrown} throws, {tAssists} assists, {tPicks} pickups");
             }
-            
-            // Add Scoring Timeline
-            var scoreTimeline = ctx.Timeline.Where(e => e.EventType is "BombCapture" or "BombThrown").ToList();
+
+            // Scoring Timeline — relies on parsed timeline events (BombCapture / BombThrown)
+            var scoreTimeline = ctx.Timeline
+                .Where(e => e.EventType is "BombCapture" or "BombThrown")
+                .OrderBy(e => e.GameTimeSeconds)
+                .ToList();
+
+            sb.AppendLine();
             if (scoreTimeline.Count > 0)
             {
-                sb.AppendLine();
                 sb.AppendLine("**Scoring Timeline:**");
                 int runningRed = 0, runningBlue = 0;
                 foreach (var e in scoreTimeline)
                 {
                     string actor = e.ActorName ?? ctx.NameByGuid(e.ActorGuid);
                     var scorer = ctx.Players.FirstOrDefault(p => p.Guid == e.ActorGuid);
-                    
+
                     int points = e.EventType == "BombCapture" ? 7 : 3;
-                    string action = e.EventType == "BombCapture" ? "runs the ball in" : "shoots a goal";
-                    
+                    string action = e.EventType == "BombCapture" ? "runs the ball in" : "throws a goal";
+
                     if (scorer != null && scorer.Team == 0) runningRed += points;
                     else if (scorer != null && scorer.Team == 1) runningBlue += points;
-                    
+
                     sb.AppendLine($"  [{FmtTime(e.GameTimeSeconds)}] {actor} {action} (+{points}) — Score: Red {runningRed} - {runningBlue} Blue");
                 }
+                sb.AppendLine();
             }
-            
-            sb.AppendLine();
         }
 
         private static void WriteMomentumAnalysis(StringBuilder sb, SummaryContext ctx)
