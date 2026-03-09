@@ -65,9 +65,13 @@ namespace FlawsFightNight.Services
         // UT2004 Player Profile File
         public List<UT2004PlayerProfileFile> UT2004PlayerProfileFiles { get; private set; }
         private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
+
+        // Tagged Tournament Matches File
+        public TaggedTournamentMatchesFile TaggedTournamentMatchesFile { get; private set; }
+        private readonly TaggedTournamentMatchesHandler _taggedTournamentMatchesHandler;
         #endregion
 
-        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, StatLogIndexHandler statLogIndexHandler, AdminIgnoredLogsHandler adminIgnoredLogsHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
+        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, StatLogIndexHandler statLogIndexHandler, AdminIgnoredLogsHandler adminIgnoredLogsHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler, TaggedTournamentMatchesHandler taggedTournamentMatchesHandler)
         {
             DiscordClient = client;
 
@@ -82,6 +86,7 @@ namespace FlawsFightNight.Services
             _adminIgnoredLogsHandler = adminIgnoredLogsHandler;
             _memberProfileHandler = userProfileHandler;
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
+            _taggedTournamentMatchesHandler = taggedTournamentMatchesHandler;
         }
         #endregion
 
@@ -99,6 +104,7 @@ namespace FlawsFightNight.Services
             await _adminIgnoredLogsHandler.InitializePendingPathAsync();
             await _memberProfileHandler.InitializePendingPathAsync();
             await _ut2004PlayerProfileHandler.InitializePendingPathAsync();
+            await _taggedTournamentMatchesHandler.InitializePendingPathAsync();
 
             // After all pending paths are initialized, load the data from those paths
             await LoadDiscordCredentialFile();
@@ -110,6 +116,7 @@ namespace FlawsFightNight.Services
             await LoadAdminIgnoredLogsFile();
             await LoadAllMemberProfileFiles();
             await LoadAllUT2004PlayerProfileFiles();
+            await LoadTaggedTournamentMatchesFile();
         }
         #endregion
 
@@ -550,6 +557,42 @@ namespace FlawsFightNight.Services
         public bool IsStatLogIgnored(string statLogId)
         {
             return AdminIgnoredLogsFile?.Entries.Any(e => e.StatLogId.Equals(statLogId, StringComparison.OrdinalIgnoreCase)) ?? false;
+        }
+        #endregion
+
+        #region Tagged Tournament Match Entries
+        public async Task LoadTaggedTournamentMatchesFile()
+        {
+            await _taggedTournamentMatchesHandler.SetFilePath(PathOption.Databases, "tagged_tournament_matches.json");
+            TaggedTournamentMatchesFile = await _taggedTournamentMatchesHandler.Load();
+        }
+
+        public async Task SaveTaggedTournamentMatchesFile()
+        {
+            await _taggedTournamentMatchesHandler.SetFilePath(PathOption.Databases, "tagged_tournament_matches.json");
+            await _taggedTournamentMatchesHandler.Save(TaggedTournamentMatchesFile);
+        }
+
+        public async Task AddTaggedTournamentMatchEntry(TaggedTournamentMatchEntry entry)
+        {
+            if (TaggedTournamentMatchesFile == null)
+                await LoadTaggedTournamentMatchesFile();
+
+            // Depending on how you structured TaggedTournamentMatchesFile, adjust the .Entries property as needed.
+            if (!TaggedTournamentMatchesFile.Entries.Any(e => e.StatLogId == entry.StatLogId && e.MatchId == entry.MatchId))
+            {
+                TaggedTournamentMatchesFile.Entries.Add(entry);
+                await SaveTaggedTournamentMatchesFile();
+            }
+        }
+
+        public async Task RemoveTaggedTournamentMatchEntry(string statLogId)
+        {
+            if (TaggedTournamentMatchesFile == null)
+                await LoadTaggedTournamentMatchesFile();
+
+            TaggedTournamentMatchesFile.Entries.RemoveAll(e => e.StatLogId.Equals(statLogId, StringComparison.OrdinalIgnoreCase));
+            await SaveTaggedTournamentMatchesFile();
         }
         #endregion
     }

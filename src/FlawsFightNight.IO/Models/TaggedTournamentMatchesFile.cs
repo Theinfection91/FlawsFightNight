@@ -9,7 +9,7 @@ namespace FlawsFightNight.IO.Models
 {
     public class TaggedTournamentMatchesFile
     {
-        public List<TaggedTournamentMatchEntry> TaggedTournamentMatchesEntries { get; set; } = new();
+        public List<TaggedTournamentMatchEntry> Entries { get; set; } = new();
 
         public TaggedTournamentMatchesFile() { }
     }
