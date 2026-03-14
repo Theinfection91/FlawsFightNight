@@ -639,14 +639,6 @@ namespace FlawsFightNight.Services
                     continue;
                 }
 
-                //await _dataContext.AddAdminIgnoredLogEntry(new AdminIgnoredLogEntry
-                //{
-                //    StatLogId = id,
-                //    AdminDiscordID = adminDiscordId,
-                //    AdminName = adminName,
-                //    IgnoredAt = DateTime.UtcNow
-                //});
-
                 var logIndex = _dataContext.GetStatLogIndexEntry(id);
                 logIndex.IsAdminIgnored = true;
                 logIndex.AdminDiscordID = adminDiscordId;
@@ -721,6 +713,34 @@ namespace FlawsFightNight.Services
 
             Console.WriteLine($"[UT2004StatsService] AllowStatLogsByID — Re-allowed: {succeeded.Count}, Already allowed: {alreadyAllowed.Count}, Not found: {notFound.Count}");
             return (succeeded, alreadyAllowed, notFound);
+        }
+
+        public bool IsTournamentMatchTagged(string tournamentId, string matchId)
+        {
+            return _dataContext.StatLogIndexFile.Entries.Any(e =>
+            e.Id == tournamentId && e.MatchId == matchId);
+        }
+
+        public async Task TagTournamentMatchToStatLog(string statLogID, string tournamentName, string tournamentID, string matchID)
+        {
+            var logIndex = _dataContext.GetStatLogIndexEntry(statLogID);
+            if (logIndex == null) return;
+
+            logIndex.TournamentName = tournamentName;
+            logIndex.TournamentId = tournamentID;
+            logIndex.MatchId = matchID;
+
+            await _dataContext.SaveAndReloadStatLogIndexFile();
+        }
+
+        public async Task UnTagTournamentMatchFromStatLog(string statLogID)
+        {
+            var logIndex = _dataContext.GetStatLogIndexEntry(statLogID);
+            if (logIndex == null) return;
+            logIndex.TournamentName = null;
+            logIndex.TournamentId = null;
+            logIndex.MatchId = null;
+            await _dataContext.SaveAndReloadStatLogIndexFile();
         }
         #endregion
     }

@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Services;
+﻿using Discord;
+using FlawsFightNight.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,11 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
         {
             _gitBackupService = gitBackupService;
             _ut2004StatsService = ut2004StatsService;
+        }
+
+        public async Task<Embed> TagLogToMatchProcess(string statLogId, string tournamentId, string matchId)
+        {
+            return null;
         }
     }
 }
