@@ -76,11 +76,11 @@ namespace FlawsFightNight.Services
                 statLog.Id = await GenerateStatLogId(statLog.GameMode);
 
                 // Ensure admin ignored logs are loaded so persisted StatLog reflects current admin state
-                if (_dataContext.AdminIgnoredLogsFile == null)
-                    await _dataContext.LoadAdminIgnoredLogsFile();
+                if (_dataContext.StatLogIndexFile == null)
+                    await _dataContext.LoadStatLogIndexFile();
 
                 // Reflect admin-allowed/ignored state on the StatLog before saving
-                statLog.IsAllowedByAdmin = !_dataContext.IsStatLogIgnored(statLog.Id);
+                statLog.IsAllowedByAdmin = !IsStatLogIgnored(statLog.Id);
 
                 await _dataContext.SaveStatLogMatchResultFile(statLog);
                 await _dataContext.AddStatLogIndexEntry(new StatLogIndexEntry
@@ -155,8 +155,8 @@ namespace FlawsFightNight.Services
             var statLogFiles = await _dataContext.LoadAllStatLogMatchResultFiles();
 
             // Ensure admin ignore file is loaded so we can mark each StatLog correctly
-            if (_dataContext.AdminIgnoredLogsFile == null)
-                await _dataContext.LoadAdminIgnoredLogsFile();
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
 
             var list = new List<UT2004StatLog>();
             foreach (var file in statLogFiles)
@@ -165,7 +165,7 @@ namespace FlawsFightNight.Services
                 if (statLog == null) continue;
 
                 // Ensure the persisted StatLog's IsAllowedByAdmin reflects the admin ignore list
-                statLog.IsAllowedByAdmin = !_dataContext.IsStatLogIgnored(statLog.Id);
+                statLog.IsAllowedByAdmin = !IsStatLogIgnored(statLog.Id);
                 list.Add(statLog);
             }
 
@@ -200,13 +200,13 @@ namespace FlawsFightNight.Services
             }
 
             // Ensure the admin ignored logs file is loaded before filtering
-            if (_dataContext.AdminIgnoredLogsFile == null)
-                await _dataContext.LoadAdminIgnoredLogsFile();
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
 
             var allMatchStats = await GetAllProcessedStatLogs();
 
             var chronologicalMatches = allMatchStats
-                .Where(m => !_dataContext.IsStatLogIgnored(m.Id) && m.IsAllowedByAdmin)
+                .Where(m => !IsStatLogIgnored(m.Id) && m.IsAllowedByAdmin)
                 .OrderBy(m => m.MatchDate)
                 .ToList();
 
@@ -474,11 +474,15 @@ namespace FlawsFightNight.Services
         #endregion
 
         #region Admin StatLog Controls
+        public bool IsStatLogIgnored(string statLogID)
+        {
+            return _dataContext.StatLogIndexFile.Entries.Any(e => e.Id.Equals(statLogID, StringComparison.OrdinalIgnoreCase) && e.IsAdminIgnored);
+        }
+
         public List<string> GetAdminIgnoredLogs()
         {
-            if (_dataContext.AdminIgnoredLogsFile == null) return new List<string>();
-            return _dataContext.AdminIgnoredLogsFile?.Entries.Select(e => e.StatLogId).ToList() ?? new List<string>();
-
+            if (_dataContext.StatLogIndexFile == null) return new List<string>();
+            return _dataContext.StatLogIndexFile.Entries.Where(e => e.IsAdminIgnored).Select(e => e.Id).ToList();
         }
 
         public bool DoesStatLogExist(string statLogID)
@@ -542,7 +546,7 @@ namespace FlawsFightNight.Services
             var sb = new StringBuilder();
             foreach (var e in filtered)
             {
-                var ignored = _dataContext.IsStatLogIgnored(e.Id) ? " [IGNORED]" : "";
+                var ignored = IsStatLogIgnored(e.Id) ? " [IGNORED]" : "";
                 sb.AppendFormat("{0} ({1} - {2:yyyy-MM-dd HH:mm:ss}){3}\n", e.Id, e.ServerName ?? "Unknown Server", e.MatchDate, ignored);
             }
 
@@ -609,9 +613,6 @@ namespace FlawsFightNight.Services
 
         public async Task<(List<string> Succeeded, List<string> AlreadyIgnored, List<string> NotFound)> IgnoreStatLogsByID(List<string> statLogIDs, ulong adminDiscordId, string adminName)
         {
-            if (_dataContext.AdminIgnoredLogsFile == null)
-                await _dataContext.LoadAdminIgnoredLogsFile();
-
             if (_dataContext.StatLogIndexFile == null)
                 await _dataContext.LoadStatLogIndexFile();
 
@@ -632,19 +633,26 @@ namespace FlawsFightNight.Services
                     continue;
                 }
 
-                if (_dataContext.IsStatLogIgnored(id))
+                if (IsStatLogIgnored(id))
                 {
                     alreadyIgnored.Add(id);
                     continue;
                 }
 
-                await _dataContext.AddAdminIgnoredLogEntry(new AdminIgnoredLogEntry
-                {
-                    StatLogId = id,
-                    AdminDiscordID = adminDiscordId,
-                    AdminName = adminName,
-                    IgnoredAt = DateTime.UtcNow
-                });
+                //await _dataContext.AddAdminIgnoredLogEntry(new AdminIgnoredLogEntry
+                //{
+                //    StatLogId = id,
+                //    AdminDiscordID = adminDiscordId,
+                //    AdminName = adminName,
+                //    IgnoredAt = DateTime.UtcNow
+                //});
+
+                var logIndex = _dataContext.GetStatLogIndexEntry(id);
+                logIndex.IsAdminIgnored = true;
+                logIndex.AdminDiscordID = adminDiscordId;
+                logIndex.AdminName = adminName;
+                logIndex.IgnoredAt = DateTime.UtcNow;
+                await _dataContext.SaveAndReloadStatLogIndexFile();
 
                 // Persist IsAllowedByAdmin on the actual stat log file so future loads reflect admin intent
                 var statLog = await _dataContext.LoadStatLogByID(id);
@@ -663,9 +671,6 @@ namespace FlawsFightNight.Services
 
         public async Task<(List<string> Succeeded, List<string> AlreadyAllowed, List<string> NotFound)> AllowStatLogsByID(List<string> statLogIDs)
         {
-            if (_dataContext.AdminIgnoredLogsFile == null)
-                await _dataContext.LoadAdminIgnoredLogsFile();
-
             if (_dataContext.StatLogIndexFile == null)
                 await _dataContext.LoadStatLogIndexFile();
 
@@ -686,13 +691,22 @@ namespace FlawsFightNight.Services
                     continue;
                 }
 
-                if (!_dataContext.IsStatLogIgnored(id))
+                if (!IsStatLogIgnored(id))
                 {
                     alreadyAllowed.Add(id);
                     continue;
                 }
 
-                await _dataContext.RemoveAdminIgnoredLogEntry(id);
+                var logIndex = _dataContext.GetStatLogIndexEntry(id);
+                if (logIndex != null)
+                {
+                    logIndex.IsAdminIgnored = false;
+                    logIndex.AdminDiscordID = 0;
+                    logIndex.AdminName = null;
+                    logIndex.IgnoredAt = DateTime.MinValue;
+                }
+
+                await _dataContext.SaveAndReloadStatLogIndexFile();
 
                 // Persist IsAllowedByAdmin on the actual stat log file so future loads reflect admin intent
                 var statLog = await _dataContext.LoadStatLogByID(id);

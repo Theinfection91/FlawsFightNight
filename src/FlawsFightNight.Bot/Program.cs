@@ -181,7 +181,6 @@ namespace FlawsFightNight.Bot
                     services.AddHostedService<FTPStatsService>();
 
                     // Data handlers
-                    services.AddSingleton<AdminIgnoredLogsHandler>();
                     services.AddSingleton<DiscordCredentialHandler>();
                     services.AddSingleton<FTPCredentialHandler>();
                     services.AddSingleton<GitHubCredentialHandler>();
@@ -189,7 +188,6 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<ProcessedLogNamesHandler>();
                     services.AddSingleton<StatLogIndexHandler>();
                     services.AddSingleton<StatLogMatchResultHandler>();
-                    services.AddSingleton<TaggedTournamentMatchesHandler>();
                     services.AddSingleton<TournamentDataHandler>();
                     services.AddSingleton<MemberProfileHandler>();
                     services.AddSingleton<UT2004PlayerProfileHandler>();
