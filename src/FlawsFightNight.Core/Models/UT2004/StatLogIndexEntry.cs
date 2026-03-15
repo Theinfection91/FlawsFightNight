@@ -21,5 +21,19 @@ namespace FlawsFightNight.Core.Models.UT2004
         public bool IsTagged => !string.IsNullOrEmpty(MatchId) && !string.IsNullOrEmpty(TournamentId);
 
         public StatLogIndexEntry() { }
+
+        public void TagTournamentMatch(string tournamentId, string matchId, string tournamentName)
+        {
+            TournamentId = tournamentId;
+            MatchId = matchId;
+            TournamentName = tournamentName;
+        }
+
+        public void UnTagTournamentMatch()
+        {
+            TournamentId = null;
+            MatchId = null;
+            TournamentName = null;
+        }
     }
 }

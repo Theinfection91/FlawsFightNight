@@ -721,14 +721,18 @@ namespace FlawsFightNight.Services
             e.Id == tournamentId && e.MatchId == matchId);
         }
 
+        public StatLogIndexEntry GetStatLogIndexEntryByTournamentMatch(string tournamentId, string matchId)
+        {
+            return _dataContext.StatLogIndexFile.Entries.FirstOrDefault(e =>
+                e.TournamentId == tournamentId && e.MatchId == matchId)!;
+        }
+
         public async Task TagTournamentMatchToStatLog(string statLogID, string tournamentName, string tournamentID, string matchID)
         {
             var logIndex = _dataContext.GetStatLogIndexEntry(statLogID);
             if (logIndex == null) return;
-
-            logIndex.TournamentName = tournamentName;
-            logIndex.TournamentId = tournamentID;
-            logIndex.MatchId = matchID;
+            
+            logIndex.TagTournamentMatch(tournamentID, matchID, tournamentName);
 
             await _dataContext.SaveAndReloadStatLogIndexFile();
         }
@@ -737,9 +741,7 @@ namespace FlawsFightNight.Services
         {
             var logIndex = _dataContext.GetStatLogIndexEntry(statLogID);
             if (logIndex == null) return;
-            logIndex.TournamentName = null;
-            logIndex.TournamentId = null;
-            logIndex.MatchId = null;
+            logIndex.UnTagTournamentMatch();
             await _dataContext.SaveAndReloadStatLogIndexFile();
         }
         #endregion
