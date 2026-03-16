@@ -465,5 +465,48 @@ namespace FlawsFightNight.Bot.Autocomplete
                 return new List<AutocompleteResult>();
             }
         }
+
+        public List<AutocompleteResult> GetMatchesForTagging(string tournamentId, string input)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(tournamentId))
+                {
+                    // If no tournament is selected yet, return none or you could optionally list all. 
+                    // Returning an instructive empty result or a message instructing to pick a tournament is good UX.
+                    return new List<AutocompleteResult>();
+                }
+
+                var tournament = _allTournaments.FirstOrDefault(t => t.Id == tournamentId);
+                if (tournament == null) 
+                    return new List<AutocompleteResult>();
+
+                var postMatches = tournament.MatchLog.GetAllPostMatches();
+
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    return postMatches
+                        .OrderBy(postMatch => postMatch.Id)
+                        .Select(postMatch => new AutocompleteResult($"#{postMatch.Id} | {postMatch.Winner} vs {postMatch.Loser}", postMatch.Id))
+                        .Take(25)
+                        .ToList();
+                }
+
+                // Filter post-matches based on the input (case-insensitive)
+                return postMatches
+                    .Where(postMatch => postMatch.Id.Contains(input, StringComparison.OrdinalIgnoreCase) ||
+                                        postMatch.Winner.Contains(input, StringComparison.OrdinalIgnoreCase) ||
+                                        postMatch.Loser.Contains(input, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(postMatch => postMatch.Id)
+                    .Select(postMatch => new AutocompleteResult($"#{postMatch.Id} | {postMatch.Winner} vs {postMatch.Loser}", postMatch.Id))
+                    .Take(25)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating matches for tagging suggestions: {ex.Message}");
+                return new List<AutocompleteResult>();
+            }
+        }
     }
 }

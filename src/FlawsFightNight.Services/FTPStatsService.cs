@@ -152,7 +152,10 @@ namespace FlawsFightNight.Services
                                     Console.Write($"\r{message.PadRight(100)}");
                                     continue;
                                 }
-                                await using (var fileStream = await ExecuteWithDataConnectionFallback(client, () => client.OpenRead(item.FullName, token: token), token))
+
+                                byte[] fileBytes = await ExecuteWithDataConnectionFallback(client, () => client.DownloadBytes(item.FullName, token), token);
+
+                                using (var fileStream = new MemoryStream(fileBytes))
                                 {
                                     bool wasValid = await _ut2004StatsService.ProcessLogFile(fileStream, item.Name, cred.ServerName, cred.IPAddress);
                                     string message;
