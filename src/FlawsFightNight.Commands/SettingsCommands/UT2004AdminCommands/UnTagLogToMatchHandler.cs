@@ -23,7 +23,13 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
         {
             if (!_ut2004StatsService.DoesStatLogExist(statLogId))
                 return _embedFactory.ErrorEmbed(Name, $"The provided stat log ID `{statLogId}` does not exist in the index.");
-            
+
+            if (!_ut2004StatsService.IsStatLogTaggedToTournamentMatch(statLogId))
+                return _embedFactory.ErrorEmbed(Name, $"The provided stat log ID `{statLogId}` is not currently tagged to any tournament match.");
+
+            await _ut2004StatsService.UnTagTournamentMatchFromStatLog(statLogId);
+            _gitBackupService.EnqueueBackup();
+
             return _embedFactory.GenericEmbed(Name + " Success", $"The stat log `{statLogId}` has been successfully untagged from its tournament match.", Color.DarkBlue);
         }
     }

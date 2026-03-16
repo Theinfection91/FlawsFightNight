@@ -717,21 +717,39 @@ namespace FlawsFightNight.Services
 
         public bool IsTournamentMatchTagged(string tournamentId, string matchId)
         {
-            return _dataContext.StatLogIndexFile.Entries.Any(e =>
-            e.Id == tournamentId && e.MatchId == matchId);
+            var entries = _dataContext.StatLogIndexFile?.Entries;
+            if (entries == null) return false;
+            return entries.Any(e =>
+                e.TournamentId != null && e.TournamentId.Equals(tournamentId, StringComparison.OrdinalIgnoreCase) &&
+                e.MatchId != null && e.MatchId.Equals(matchId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public bool IsStatLogTaggedToTournamentMatch(string statLogID)
+        {
+            var entries = _dataContext.StatLogIndexFile?.Entries;
+            if (entries == null) return false;
+            return entries.Any(e =>
+                e.Id.Equals(statLogID, StringComparison.OrdinalIgnoreCase) && e.IsTagged);
+        }
+
+        public StatLogIndexEntry GetStatLogIndexEntry(string statLogID)
+        {
+            return _dataContext.StatLogIndexFile?.Entries
+                .FirstOrDefault(e => e.Id.Equals(statLogID, StringComparison.OrdinalIgnoreCase))!;
         }
 
         public StatLogIndexEntry GetStatLogIndexEntryByTournamentMatch(string tournamentId, string matchId)
         {
-            return _dataContext.StatLogIndexFile.Entries.FirstOrDefault(e =>
-                e.TournamentId == tournamentId && e.MatchId == matchId)!;
+            return _dataContext.StatLogIndexFile?.Entries.FirstOrDefault(e =>
+                e.TournamentId != null && e.TournamentId.Equals(tournamentId, StringComparison.OrdinalIgnoreCase) &&
+                e.MatchId != null && e.MatchId.Equals(matchId, StringComparison.OrdinalIgnoreCase))!;
         }
 
         public async Task TagTournamentMatchToStatLog(string statLogID, string tournamentName, string tournamentID, string matchID)
         {
             var logIndex = _dataContext.GetStatLogIndexEntry(statLogID);
             if (logIndex == null) return;
-            
+
             logIndex.TagTournamentMatch(tournamentID, matchID, tournamentName);
 
             await _dataContext.SaveAndReloadStatLogIndexFile();

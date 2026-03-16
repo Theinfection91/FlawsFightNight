@@ -273,11 +273,13 @@ namespace FlawsFightNight.Bot.SlashCommands
             private readonly IgnoreLogsByIDHandler _ignoreLogsByIDHandler;
             private readonly AllowLogsByIDHandler _allowLogsByIDHandler;
             private readonly StatLogsByDateHandler _statLogsByDateHandler;
+            private readonly TagLogToMatchHandler _tagLogToMatchHandler;
             private readonly RegisterGuidToMemberHandler _registerGuidToMemberLogic;
             private readonly RemoveGuidFromMemberHandler _removeGuidFromMemberLogic;
             private readonly LastStatLogsHandler _lastStatLogsHandler;
+            private readonly UnTagLogToMatchHandler _unTagLogToMatchHandler;
 
-            public UT2004Commands(AutocompleteCache autocompleteCache, GetLogsByIDHandler getLogsByIDHandler, IgnoreLogsByIDHandler ignoreLogsByIDHandler, AllowLogsByIDHandler allowLogsByIDHandler, StatLogsByDateHandler statLogsByDateHandler, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic, LastStatLogsHandler lastStatLogsHandler)
+            public UT2004Commands(AutocompleteCache autocompleteCache, GetLogsByIDHandler getLogsByIDHandler, IgnoreLogsByIDHandler ignoreLogsByIDHandler, AllowLogsByIDHandler allowLogsByIDHandler, StatLogsByDateHandler statLogsByDateHandler, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic, LastStatLogsHandler lastStatLogsHandler, TagLogToMatchHandler tagLogToMatchHandler, UnTagLogToMatchHandler unTagLogToMatchHandler)
             {
                 _autocompleteCache = autocompleteCache;
                 _getLogsByIDHandler = getLogsByIDHandler;
@@ -287,6 +289,8 @@ namespace FlawsFightNight.Bot.SlashCommands
                 _registerGuidToMemberLogic = registerGuidToMemberLogic;
                 _removeGuidFromMemberLogic = removeGuidFromMemberLogic;
                 _lastStatLogsHandler = lastStatLogsHandler;
+                _tagLogToMatchHandler = tagLogToMatchHandler;
+                _unTagLogToMatchHandler = unTagLogToMatchHandler;
             }
 
             [SlashCommand("register_guid", "Register a GUID to a Member's profile")]
@@ -456,9 +460,26 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    //var result = await _statLogsByDateHandler.TagLogToMatchProcess(logId, tournamentId, matchId);
-                    await FollowupAsync(//embed: result, 
-                        ephemeral: true);
+                    var result = await _tagLogToMatchHandler.TagLogToMatchProcess(logId, tournamentId, matchId);
+                    await FollowupAsync(embed: result, ephemeral: true);
+                    _autocompleteCache.Update();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("untag_log", "Remove a log's tag from a post-match in a tournament")]
+            public async Task UnTagLogToMatchAsync(
+                                                 [Summary("log_id", "The log ID to untag from a match")] string logId)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var result = await _unTagLogToMatchHandler.UnTagLogFromMatchProcess(logId);
+                    await FollowupAsync(embed: result, ephemeral: true);
                     _autocompleteCache.Update();
                 }
                 catch (Exception ex)

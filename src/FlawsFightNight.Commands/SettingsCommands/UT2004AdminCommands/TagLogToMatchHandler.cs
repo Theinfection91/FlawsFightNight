@@ -15,8 +15,9 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
         private readonly TournamentService _tournamentService;
         private readonly MatchService _matchService;
         private readonly UT2004StatsService _ut2004StatsService;
-        public TagLogToMatchHandler(GitBackupService gitBackupService, TournamentService tournamentService, MatchService matchService, UT2004StatsService ut2004StatsService) : base("Tag Log To Match")
+        public TagLogToMatchHandler(EmbedFactory embedFactory, GitBackupService gitBackupService, TournamentService tournamentService, MatchService matchService, UT2004StatsService ut2004StatsService) : base("Tag Log To Match")
         {
+            _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
             _tournamentService = tournamentService;
             _matchService = matchService;
@@ -31,28 +32,28 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
             if (!_tournamentService.IsTournamentIdInDatabase(tournamentId))
                 return _embedFactory.ErrorEmbed(Name, $"The provided tournament ID `{tournamentId}` does not exist.");
 
-            if (!_matchService.IsMatchIdInDatabase(matchId))
-                return _embedFactory.ErrorEmbed(Name, $"The provided match ID `{matchId}` does not exist in the database.");
-
             var tournament = _tournamentService.GetTournamentById(tournamentId);
             var match = _matchService.GetPostMatchByIdInTournament(tournament!, matchId);
             if (match == null)
                 return _embedFactory.ErrorEmbed(Name, $"The provided match ID `{matchId}` does not exist in tournament `{tournamentId}`.");
 
             string previousTagInfo = string.Empty;
-            // If tagged to another match, untag from that match first before tagging to the new match
-            if (_ut2004StatsService.IsTournamentMatchTagged(tournament.Id, match.Id))
+
+            // If this tournament match is already tagged to a different stat log, untag it first
+            if (_ut2004StatsService.IsTournamentMatchTagged(tournamentId, matchId))
             {
-                var statLog = _ut2004StatsService.GetStatLogIndexEntryByTournamentMatch(tournament.Id, match.Id);
-                previousTagInfo = $"The stat log `{statLog.Id}` was previously tagged to the match `{statLog.MatchId}` in tournament `{statLog.TournamentId}`. It has been untagged from that match.";
-                statLog.UnTagTournamentMatch();
+                var existingEntry = _ut2004StatsService.GetStatLogIndexEntryByTournamentMatch(tournamentId, matchId);
+                if (existingEntry != null && !existingEntry.Id.Equals(statLogId, StringComparison.OrdinalIgnoreCase))
+                {
+                    previousTagInfo = $" Stat log `{existingEntry.Id}` was previously tagged to this match and has been untagged.";
+                    await _ut2004StatsService.UnTagTournamentMatchFromStatLog(existingEntry.Id);
+                }
             }
 
-            await _ut2004StatsService.TagTournamentMatchToStatLog(statLogId, tournament.Name, tournament.Id, match.Id);
-
+            await _ut2004StatsService.TagTournamentMatchToStatLog(statLogId, tournament.Name, tournamentId, matchId);
             _gitBackupService.EnqueueBackup();
 
-            return _embedFactory.GenericEmbed(Name + " Success", $"The stat log `{statLogId}` has been successfully tagged to the match `{matchId}` in tournament `{tournamentId}`. {previousTagInfo}", Color.DarkBlue);
+            return _embedFactory.GenericEmbed(Name + " Success", $"The stat log `{statLogId}` has been successfully tagged to match `{matchId}` in tournament `{tournamentId}`.{previousTagInfo}", Color.DarkBlue);
         }
     }
 }

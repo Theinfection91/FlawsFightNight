@@ -111,6 +111,7 @@ namespace FlawsFightNight.Services
             await LoadTournamentDataFiles();
             await LoadAllMemberProfileFiles();
             await LoadAllUT2004PlayerProfileFiles();
+            await LoadStatLogIndexFile();
         }
         #endregion
 
