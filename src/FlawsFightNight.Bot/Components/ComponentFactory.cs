@@ -32,5 +32,20 @@ namespace FlawsFightNight.Bot.Components
 
             return new ComponentBuilder().WithSelectMenu(selectMenu);
         }
+
+        public static ComponentBuilder CreateUT2004LeaderboardSelectMenu()
+        {
+            string selectId = $"ut2004leaderboard_select";
+
+            var selectMenu = new SelectMenuBuilder()
+                .WithCustomId(selectId)
+                .WithPlaceholder("📊 Select a leaderboard category...")
+                .AddOption("📊 General", "general", "Overall career stats and career bests")
+                .AddOption("🚩 iCTF", "ictf", "Capture the Flag leaderboard")
+                .AddOption("🎯 TAM", "tam", "Team Arena Master leaderboard")
+                .AddOption("💣 iBR", "ibr", "Bombing Run leaderboard");
+
+            return new ComponentBuilder().WithSelectMenu(selectMenu);
+        }
     }
 }

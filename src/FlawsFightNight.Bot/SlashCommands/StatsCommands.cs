@@ -94,16 +94,17 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("leaderboard", "Displays the interactive UT2004 player leaderboard.")]
-            public async Task LeaderboardAsync()
+            public async Task UserLevelLeaderboardAsync()
             {
                 await DeferAsync(ephemeral: true);
-                //var result = await _leaderboard.LeaderboardProcess();
-                await FollowupAsync(//embed: result,
+                //var result
+                //var components = ComponentFactory.CreateUT2004LeaderboardSelectMenu();
+                await FollowupAsync(//embed: result, components: components.Build(),
                     ephemeral: true);
             }
 
             [SlashCommand("match_summary", "Displays a summary of match by stat log ID.")]
-            public async Task MatchSummaryAsync(
+            public async Task DisplayMatchSummaryAsync(
                 [Summary("stat_log_id", "The stat log ID of the match.")] string statLogId)
             {
                 await DeferAsync(ephemeral: true);
