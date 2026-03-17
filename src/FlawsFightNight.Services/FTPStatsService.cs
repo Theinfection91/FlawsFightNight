@@ -172,10 +172,10 @@ namespace FlawsFightNight.Services
                                     Console.Write($"\r{message.PadRight(100)}");
                                 }
                                 // Every 50 files, add a newline for better readability
-                                if (processedCount % 50 == 0)
-                                {
-                                    Console.WriteLine(); // Move to new line
-                                }
+                                //if (processedCount % 50 == 0)
+                                //{
+                                //    Console.WriteLine(); // Move to new line
+                                //}
                             }
                             // Final summary on new line
                             Console.WriteLine();

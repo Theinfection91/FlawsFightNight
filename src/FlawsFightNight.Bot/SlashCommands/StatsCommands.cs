@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Commands.StatsCommands.TournamentStatsCommands;
 using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
+using Discord;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
@@ -90,6 +91,76 @@ namespace FlawsFightNight.Bot.SlashCommands
                 {
                     await FollowupAsync(embed: embed, ephemeral: true);
                 }
+            }
+
+            [SlashCommand("leaderboard", "Displays the interactive UT2004 player leaderboard.")]
+            public async Task LeaderboardAsync()
+            {
+                await DeferAsync(ephemeral: true);
+                //var result = await _leaderboard.LeaderboardProcess();
+                await FollowupAsync(//embed: result,
+                    ephemeral: true);
+            }
+
+            [SlashCommand("match_summary", "Displays a summary of match by stat log ID.")]
+            public async Task MatchSummaryAsync(
+                [Summary("stat_log_id", "The stat log ID of the match.")] string statLogId)
+            {
+                await DeferAsync(ephemeral: true);
+                //var result = await _matchSummary.MatchSummaryProcess(statLogId);
+                await FollowupAsync(//embed: result,
+                    ephemeral: true);
+            }
+
+            [SlashCommand("my_tournament_matches", "Display all log ID#'s for your tournament matches as long admins have tagged them.")]
+            public async Task MyTournamentMatchesAsync()
+            {
+                await DeferAsync(ephemeral: true);
+                //var result = await _myTournamentMatches.MyTournamentMatchesProcess(Context.User.Id);
+                await FollowupAsync(//embed: result,
+                    ephemeral: true);
+            }
+
+            [SlashCommand("request_all_matches", "Request all ID#'s that contain your GUID. Will be sent in a DM once ready")]
+            public async Task RequestAllMatchesAsync()
+            {
+                await DeferAsync(ephemeral: true);
+                //var result = await _requestAllMatches.RequestAllMatchesProcess(Context.User.Id);
+                await FollowupAsync(//embed: result,
+                    ephemeral: true);
+            }
+
+            [SlashCommand("compare", "Compares two UT2004 player profiles.")]
+            public async Task ComparePlayersAsync(
+                [Summary("player1", "The first player to compare.")] IUser player1,
+                [Summary("player2", "The second player to compare.")] IUser player2)
+            {
+                await DeferAsync(ephemeral: true);
+                //var result = await _comparePlayers.ComparePlayersProcess(player1, player2);
+                await FollowupAsync(//embed: result,
+                    ephemeral: true);
+            }
+
+            [SlashCommand("suggest_teams", "When given even number of players, suggests teams based on ratings. Handles 2v2 to 5v5.")]
+            public async Task SuggestTeamsAsync(
+                [Summary("player1", "The first player for matchmaking")] IUser firstPlayer,
+                [Summary("player2", "The second player for matchmaking")] IUser secondPlayer,
+                [Summary("player3", "The third player for matchmaking")] IUser thirdPlayer,
+                [Summary("player4", "The fourth player for matchmaking")] IUser fourthPlayer,
+                [Summary("player5", "The fifth player for matchmaking")] IUser fifthPlayer,
+                [Summary("player6", "The sixth player for matchmaking")] IUser sixthPlayer,
+                [Summary("player7", "The seventh player for matchmaking")] IUser seventhPlayer,
+                [Summary("player8", "The eighth player for matchmaking")] IUser eighthPlayer,
+                [Summary("player9", "The ninth player for matchmaking")] IUser ninthPlayer,
+                [Summary("player10", "The tenth player for matchmaking")] IUser tenthPlayer)
+            {
+                await DeferAsync(ephemeral: true);
+                var players = new List<IUser> { firstPlayer, secondPlayer, thirdPlayer, fourthPlayer, fifthPlayer, sixthPlayer, seventhPlayer, eighthPlayer, ninthPlayer, tenthPlayer }
+                    .Where(p => p != null)
+                    .ToList();
+                //var result = await _suggestTeams.ComparePlayersProcess(players);
+                await FollowupAsync(//embed: result,
+                    ephemeral: true);
             }
         }
     }
