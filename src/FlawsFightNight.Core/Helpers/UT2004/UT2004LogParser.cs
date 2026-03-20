@@ -56,11 +56,13 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         {
             ClearMatchState();
 
-            using (var reader = new StreamReader(fileStream))
+            using (var reader = new StreamReader(fileStream, Encoding.Latin1))
             {
                 string? line;
                 while ((line = await reader.ReadLineAsync()) != null)
                 {
+                    line = SanitizeUTString(line);
+
                     var parts = line.Split('\t');
                     if (parts.Length < 2) continue;
 
@@ -150,6 +152,32 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
                 return BuildStatLog();
             }
+        }
+
+        private string SanitizeUTString(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            var sb = new StringBuilder(input.Length);
+            foreach (char c in input)
+            {
+                // Remove Unicode replacement character (the )
+                if (c == '\uFFFD') continue;
+
+                // Keep Tab since it's used for the delimiter in UT2004 logs
+                if (c == '\t')
+                {
+                    sb.Append(c);
+                    continue;
+                }
+
+                // Remove invisible control characters 
+                // (Color codes in UT2004 usually start with ESC \u001B which is a control char)
+                if (char.IsControl(c)) continue;
+
+                sb.Append(c);
+            }
+            return sb.ToString();
         }
 
         private void ClearMatchState()

@@ -10,6 +10,7 @@ using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
 using Discord.WebSocket;
 using Discord;
+using Discord.Interactions;
 
 namespace FlawsFightNight.Services
 {
@@ -572,6 +573,13 @@ namespace FlawsFightNight.Services
             };
         }
 
+        public async Task<string> GetStatLogMatchSummary(string statLogID)
+        {
+            var log = await _dataContext.LoadStatLogByID(statLogID);
+            if (log == null) return null;
+            return log.MatchSummary!;
+        }
+
         public async Task SendStatLogDM(ulong discordId, Dictionary<string, string> statLogs)
         {
             if (statLogs == null || statLogs.Count == 0) return;
@@ -608,6 +616,22 @@ namespace FlawsFightNight.Services
                     foreach (var attachment in attachments)
                         attachment.Dispose();
                 }
+            }
+        }
+
+        public async Task SendMatchSummaryToChannel(SocketInteractionContext context, string statLogID)
+        {
+            var matchSummary = await GetStatLogMatchSummary(statLogID);
+            if (matchSummary == null) return;
+            var bytes = Encoding.UTF8.GetBytes(matchSummary);
+            var attachment = new FileAttachment(new MemoryStream(bytes), $"{statLogID}_summary.txt");
+            try
+            {
+                await context.Channel.SendFileAsync(attachment);
+            }
+            finally
+            {
+                attachment.Dispose();
             }
         }
 
