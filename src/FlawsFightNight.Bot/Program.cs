@@ -136,11 +136,15 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<UnTagLogToMatchHandler>();
 
                     // Stat Commands
+                    services.AddSingleton<ComparePlayersHandler>();
                     services.AddSingleton<DisplayMatchSummaryHandler>();
                     services.AddSingleton<MyPlayerProfileHandler>();
+                    services.AddSingleton<MyTournamentMatchesHandler>();
                     services.AddSingleton<MyTournamentProfileHandler>();
                     services.AddSingleton<RegisterGuidHandler>();
                     services.AddSingleton<RemoveGuidHandler>();
+                    services.AddSingleton<RequestAllMatchesHandler>();
+                    services.AddSingleton<UserLevelLeaderboardHandler>();
 
                     // Team Commands
                     services.AddSingleton<RegisterTeamHandler>();

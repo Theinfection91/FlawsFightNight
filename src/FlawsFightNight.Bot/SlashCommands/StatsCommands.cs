@@ -54,17 +54,34 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class UT2004StatsCommands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
+            private readonly ComparePlayersHandler _comparePlayersHandler;
             private readonly DisplayMatchSummaryHandler _displayMatchSummary;
             private readonly MyPlayerProfileHandler _myPlayerProfileLogic;
+            private readonly MyTournamentMatchesHandler _myTournamentMatchesHandler;
             private readonly RegisterGuidHandler _registerGuidLogic;
             private readonly RemoveGuidHandler _removeGuidLogic;
-            public UT2004StatsCommands(AutocompleteCache autocompleteCache, DisplayMatchSummaryHandler displayMatchSummaryHandler, MyPlayerProfileHandler myPlayerProfileLogic, RegisterGuidHandler registerGuidLogic, RemoveGuidHandler removeGuidLogic)
+            private readonly RequestAllMatchesHandler _requestAllMatchesHandler;
+            private readonly UserLevelLeaderboardHandler _leaderboardHandler;
+            public UT2004StatsCommands(
+                AutocompleteCache autocompleteCache,
+                ComparePlayersHandler comparePlayersHandler,
+                DisplayMatchSummaryHandler displayMatchSummaryHandler,
+                MyPlayerProfileHandler myPlayerProfileLogic,
+                MyTournamentMatchesHandler myTournamentMatchesHandler,
+                RegisterGuidHandler registerGuidLogic,
+                RemoveGuidHandler removeGuidLogic,
+                RequestAllMatchesHandler requestAllMatchesHandler,
+                UserLevelLeaderboardHandler leaderboardHandler)
             {
                 _autocompleteCache = autocompleteCache;
+                _comparePlayersHandler = comparePlayersHandler;
                 _displayMatchSummary = displayMatchSummaryHandler;
                 _myPlayerProfileLogic = myPlayerProfileLogic;
+                _myTournamentMatchesHandler = myTournamentMatchesHandler;
                 _registerGuidLogic = registerGuidLogic;
                 _removeGuidLogic = removeGuidLogic;
+                _requestAllMatchesHandler = requestAllMatchesHandler;
+                _leaderboardHandler = leaderboardHandler;
             }
 
             [SlashCommand("register_guid", "Registers a UT2004 GUID to link your player profile with your Discord account.")]
@@ -134,10 +151,17 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    //var result
-                    //var components = ComponentFactory.CreateUT2004LeaderboardSelectMenu();
-                    await FollowupAsync(//embed: result, components: components.Build(),
-                        ephemeral: true);
+                    var (embed, hasProfiles) = await _leaderboardHandler.Handle();
+
+                    if (hasProfiles)
+                    {
+                        var components = ComponentFactory.CreateUT2004LeaderboardSelectMenu();
+                        await FollowupAsync(embed: embed, components: components.Build(), ephemeral: true);
+                    }
+                    else
+                    {
+                        await FollowupAsync(embed: embed, ephemeral: true);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -178,9 +202,8 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    //var result = await _myTournamentMatches.MyTournamentMatchesProcess(Context.User.Id);
-                    await FollowupAsync(//embed: result,
-                        ephemeral: true);
+                    var embed = await _myTournamentMatchesHandler.Handle(Context.User.Id);
+                    await FollowupAsync(embed: embed, ephemeral: true);
                 }
                 catch (Exception ex)
                 {
@@ -195,9 +218,29 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    //var result = await _requestAllMatches.RequestAllMatchesProcess(Context.User.Id);
-                    await FollowupAsync(//embed: result,
-                        ephemeral: true);
+                    var (embed, fileContent, fileName) = await _requestAllMatchesHandler.Handle(Context.User.Id);
+
+                    if (fileContent != null && fileName != null)
+                    {
+                        try
+                        {
+                            var dmChannel = await Context.User.CreateDMChannelAsync();
+                            using var ms = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
+                            await dmChannel.SendFileAsync(new FileAttachment(ms, fileName), "Here are all your match IDs! 📋");
+                        }
+                        catch
+                        {
+                            embed = new EmbedBuilder()
+                                .WithTitle($"⚠️ {_requestAllMatchesHandler.Name} Error")
+                                .WithDescription("Could not send you a DM. Please make sure your DMs are open and try again.")
+                                .WithColor(Color.Red)
+                                .WithFooter("Please try again after correcting.")
+                                .WithTimestamp(DateTimeOffset.Now)
+                                .Build();
+                        }
+                    }
+
+                    await FollowupAsync(embed: embed, ephemeral: true);
                 }
                 catch (Exception ex)
                 {
@@ -214,9 +257,8 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    //var result = await _comparePlayers.ComparePlayersProcess(player1, player2);
-                    await FollowupAsync(//embed: result,
-                        ephemeral: true);
+                    var embed = await _comparePlayersHandler.Handle(player1, player2);
+                    await FollowupAsync(embed: embed, ephemeral: true);
                 }
                 catch (Exception ex)
                 {

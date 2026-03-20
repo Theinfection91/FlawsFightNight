@@ -787,5 +787,58 @@ namespace FlawsFightNight.Services
             await _dataContext.SaveAndReloadStatLogIndexFile();
         }
         #endregion
+
+        #region User Query Methods
+        public List<UT2004PlayerProfile> GetAllPrimaryPlayerProfiles()
+        {
+            return _dataContext.UT2004PlayerProfileFiles
+                .Where(f => f?.PlayerProfile != null && !_ratingsMapper.IsAlias(f.PlayerProfile.Guid))
+                .Select(f => f.PlayerProfile)
+                .ToList();
+        }
+
+        public async Task<List<string>> GetTournamentStatLogIdsByGuids(List<string> guids)
+        {
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var taggedEntries = _dataContext.StatLogIndexFile.Entries
+                .Where(e => e.IsTagged && !e.IsAdminIgnored)
+                .ToList();
+
+            if (taggedEntries.Count == 0) return new List<string>();
+
+            var guidSet = new HashSet<string>(guids, StringComparer.OrdinalIgnoreCase);
+            var results = new List<string>();
+
+            foreach (var entry in taggedEntries.OrderByDescending(e => e.MatchDate))
+            {
+                var statLog = await _dataContext.LoadStatLogByID(entry.Id);
+                if (statLog == null) continue;
+
+                bool hasGuid = statLog.Players.Any(team =>
+                    team.Any(p => !string.IsNullOrEmpty(p.Guid) && guidSet.Contains(p.Guid)));
+                if (hasGuid)
+                {
+                    results.Add($"{entry.Id} ({entry.TournamentName ?? "Unknown"} - Match: {entry.MatchId ?? "N/A"} - {entry.MatchDate:yyyy-MM-dd})");
+                }
+            }
+
+            return results;
+        }
+
+        public async Task<List<string>> GetAllStatLogIdsByGuids(List<string> guids)
+        {
+            var allLogs = await GetAllProcessedStatLogs();
+            var guidSet = new HashSet<string>(guids, StringComparer.OrdinalIgnoreCase);
+
+            return allLogs
+                .Where(log => log.Players.Any(team =>
+                    team.Any(p => !string.IsNullOrEmpty(p.Guid) && guidSet.Contains(p.Guid))))
+                .OrderByDescending(log => log.MatchDate)
+                .Select(log => $"{log.Id} ({log.GameModeName} - {log.ServerName ?? "Unknown"} - {log.MatchDate:yyyy-MM-dd HH:mm:ss})")
+                .ToList();
+        }
+        #endregion
     }
 }
