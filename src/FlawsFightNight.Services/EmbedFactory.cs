@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.MatchLogs;
@@ -1502,7 +1503,7 @@ namespace FlawsFightNight.Services
             embed.AddField("🎯 Record & Ratings",
                 $"**Matches:** {profile.TotalTAMMatches}  ·  **Wins:** {profile.TotalTAMWins}  ·  **Losses:** {profile.TotalTAMLosses}  ·  **Win Rate:** {profile.TAMWinRate:P1}\n" +
                 $"**Kills:** {profile.TotalTAMKills}  ·  **Deaths:** {profile.TotalTAMDeaths}  ·  **K/D:** {profile.TAMKDRatio:F2}  ·  **Headshots:** {profile.TotalTAMHeadshots}\n" +
-                $"**Score:** {profile.TotalTAMScore:N0}\n" +
+                $"**Score:** {profile.TotalTAMScore:N0}  ·  **Avg Score/Match:** {profile.AverageScorePerTAMMatch:F1}  ·  **Avg Kills/Match:** {profile.AverageKillsPerTAMMatch:F1}\n" +
                 $"🏅 **ELO:** {profile.TAMElo.Rating:F1} (Δ {tamEloChange})  ·  **Peak:** {profile.TAMElo.Peak:F1}{tamPeakDate}\n" +
                 $"📈 **OpenSkill μ:** {profile.TAMRating.Mu:F2}  ·  **σ:** {profile.TAMRating.Sigma:F2}  ·  **Rating (μ−3σ):** {profile.TAMRating.Rating:F2}",
                 false);
@@ -1548,6 +1549,61 @@ namespace FlawsFightNight.Services
                 false);
 
             return embed.Build();
+        }
+        #endregion
+
+        #region Suggestion Embeds
+        public Embed SuggestTeamsEmbed(
+            List<(string Name, double Score, bool HasProfile)> teamA,
+            List<(string Name, double Score, bool HasProfile)> teamB,
+            double diff, int teamSize, UT2004GameMode gameMode)
+        {
+            double teamATotal = teamA.Sum(p => p.Score);
+            double teamBTotal = teamB.Sum(p => p.Score);
+
+            string modeDisplay = gameMode switch
+            {
+                UT2004GameMode.iCTF => "🚩 iCTF",
+                UT2004GameMode.TAM  => "🎯 TAM",
+                UT2004GameMode.iBR  => "💣 iBR",
+                _                   => "🎮 General"
+            };
+
+            string ratingDescription = gameMode == UT2004GameMode.Unknown
+                ? "Balanced by composite OpenSkill rating (μ−3σ, weighted by matches played per mode)."
+                : $"Balanced by {modeDisplay} OpenSkill rating (μ−3σ).";
+
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚖️ Suggested {teamSize}v{teamSize} Teams — {modeDisplay}")
+                .WithDescription($"{ratingDescription}\n**Rating Differential:** {diff:F2}")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Team Suggester")
+                .WithCurrentTimestamp();
+
+            embed.AddField("🔵 Team A", BuildSuggestTeamField(teamA, teamATotal, teamSize), false);
+            embed.AddField("🔴 Team B", BuildSuggestTeamField(teamB, teamBTotal, teamSize), false);
+
+            if (teamA.Any(p => !p.HasProfile) || teamB.Any(p => !p.HasProfile))
+                embed.AddField("⚠️ Note",
+                    "One or more players have no UT2004 profile or registered GUID and were treated as rating **0** for balancing.",
+                    false);
+
+            return embed.Build();
+        }
+
+        private static string BuildSuggestTeamField(
+            List<(string Name, double Score, bool HasProfile)> team,
+            double total, int teamSize)
+        {
+            var sb = new StringBuilder();
+            foreach (var (name, score, hasProfile) in team.OrderByDescending(p => p.Score))
+            {
+                string ratingText = hasProfile ? $"{score:F2}" : "⚠️ Unrated";
+                sb.AppendLine($"• **{name}** — {ratingText}");
+            }
+            sb.AppendLine("─────────────────");
+            sb.AppendLine($"**Total:** {total:F2}  ·  **Avg:** {total / teamSize:F2}");
+            return sb.ToString().TrimEnd();
         }
         #endregion
     }

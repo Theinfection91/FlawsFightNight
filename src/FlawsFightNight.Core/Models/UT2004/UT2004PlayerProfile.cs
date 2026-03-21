@@ -132,6 +132,8 @@ namespace FlawsFightNight.Core.Models.UT2004
         public double AverageDamagePerMatch => TotalTAMMatches > 0 ? (double)TotalDamageDealt / TotalTAMMatches : 0;
         public double AverageDamagePerRound => TotalRoundsPlayed > 0 ? (double)TotalDamageDealt / TotalRoundsPlayed : 0;
         public double AverageRoundsWonPerMatch => TotalTAMMatches > 0 ? (double)TotalRoundsWon / TotalTAMMatches : 0;
+        public double AverageScorePerTAMMatch => TotalTAMMatches > 0 ? (double)TotalTAMScore / TotalTAMMatches : 0;
+        public double AverageKillsPerTAMMatch => TotalTAMMatches > 0 ? (double)TotalTAMKills / TotalTAMMatches : 0;
         public double DamageEfficiency => TotalDamageTaken > 0 ? (double)TotalDamageDealt / TotalDamageTaken : TotalDamageDealt;
         public double OverallWeaponAccuracy
         {

@@ -2,6 +2,7 @@
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Components;
 using FlawsFightNight.Bot.Attributes;
+using FlawsFightNight.Core.Enums.UT2004;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,7 +62,9 @@ namespace FlawsFightNight.Bot.SlashCommands
             private readonly RegisterGuidHandler _registerGuidLogic;
             private readonly RemoveGuidHandler _removeGuidLogic;
             private readonly RequestAllMatchesHandler _requestAllMatchesHandler;
+            private readonly SuggestTeamsHandler _suggestTeamsHandler;
             private readonly UserLevelLeaderboardHandler _leaderboardHandler;
+
             public UT2004StatsCommands(
                 AutocompleteCache autocompleteCache,
                 ComparePlayersHandler comparePlayersHandler,
@@ -71,6 +74,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 RegisterGuidHandler registerGuidLogic,
                 RemoveGuidHandler removeGuidLogic,
                 RequestAllMatchesHandler requestAllMatchesHandler,
+                SuggestTeamsHandler suggestTeamsHandler,
                 UserLevelLeaderboardHandler leaderboardHandler)
             {
                 _autocompleteCache = autocompleteCache;
@@ -81,6 +85,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 _registerGuidLogic = registerGuidLogic;
                 _removeGuidLogic = removeGuidLogic;
                 _requestAllMatchesHandler = requestAllMatchesHandler;
+                _suggestTeamsHandler = suggestTeamsHandler;
                 _leaderboardHandler = leaderboardHandler;
             }
 
@@ -269,16 +274,21 @@ namespace FlawsFightNight.Bot.SlashCommands
 
             [SlashCommand("suggest_teams", "When given even number of players, suggests teams based on ratings. Handles 2v2 to 5v5.")]
             public async Task SuggestTeamsAsync(
+                [Summary("game_mode", "The game mode to base team ratings on.")]
+                [Choice("iCTF", 1)]
+                [Choice("TAM", 2)]
+                [Choice("iBR", 3)]
+                [Choice("General", 4)] int gameMode,
                 [Summary("player1", "The first player for matchmaking")] IUser firstPlayer,
                 [Summary("player2", "The second player for matchmaking")] IUser secondPlayer,
                 [Summary("player3", "The third player for matchmaking")] IUser thirdPlayer,
                 [Summary("player4", "The fourth player for matchmaking")] IUser fourthPlayer,
-                [Summary("player5", "The fifth player for matchmaking")] IUser fifthPlayer,
-                [Summary("player6", "The sixth player for matchmaking")] IUser sixthPlayer,
-                [Summary("player7", "The seventh player for matchmaking")] IUser seventhPlayer,
-                [Summary("player8", "The eighth player for matchmaking")] IUser eighthPlayer,
-                [Summary("player9", "The ninth player for matchmaking")] IUser ninthPlayer,
-                [Summary("player10", "The tenth player for matchmaking")] IUser tenthPlayer)
+                [Summary("player5", "The fifth player for matchmaking")] IUser fifthPlayer = null,
+                [Summary("player6", "The sixth player for matchmaking")] IUser sixthPlayer = null,
+                [Summary("player7", "The seventh player for matchmaking")] IUser seventhPlayer = null,
+                [Summary("player8", "The eighth player for matchmaking")] IUser eighthPlayer = null,
+                [Summary("player9", "The ninth player for matchmaking")] IUser ninthPlayer = null,
+                [Summary("player10", "The tenth player for matchmaking")] IUser tenthPlayer = null)
             {
                 try
                 {
@@ -286,9 +296,9 @@ namespace FlawsFightNight.Bot.SlashCommands
                     var players = new List<IUser> { firstPlayer, secondPlayer, thirdPlayer, fourthPlayer, fifthPlayer, sixthPlayer, seventhPlayer, eighthPlayer, ninthPlayer, tenthPlayer }
                         .Where(p => p != null)
                         .ToList();
-                    //var result = await _suggestTeams.ComparePlayersProcess(players);
-                    await FollowupAsync(//embed: result,
-                        ephemeral: true);
+                    var mode = gameMode == 4 ? UT2004GameMode.Unknown : (UT2004GameMode)gameMode;
+                    var embed = _suggestTeamsHandler.Handle(players, mode);
+                    await FollowupAsync(embed: embed.Result, ephemeral: true);
                 }
                 catch (Exception ex)
                 {

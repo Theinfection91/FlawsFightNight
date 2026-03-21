@@ -144,6 +144,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<RegisterGuidHandler>();
                     services.AddSingleton<RemoveGuidHandler>();
                     services.AddSingleton<RequestAllMatchesHandler>();
+                    services.AddSingleton<SuggestTeamsHandler>();
                     services.AddSingleton<UserLevelLeaderboardHandler>();
 
                     // Team Commands
