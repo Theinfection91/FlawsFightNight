@@ -1,10 +1,9 @@
 ﻿using Discord;
+using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
 using FlawsFightNight.Services;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
@@ -13,93 +12,106 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
     {
         private readonly EmbedFactory _embedFactory;
         private readonly MemberService _memberService;
+        private readonly OpenSkillRatingService _openSkillService;
 
-        public ComparePlayersHandler(EmbedFactory embedFactory, MemberService memberService) : base("Compare Players")
+        public ComparePlayersHandler(EmbedFactory embedFactory, MemberService memberService, OpenSkillRatingService openSkillRatingService) : base("Compare Players")
         {
             _embedFactory = embedFactory;
             _memberService = memberService;
+            _openSkillService = openSkillRatingService;
         }
 
-        public Task<Embed> Handle(IUser player1, IUser player2)
+        public async Task<(Embed embed, bool hasBothProfiles)> Handle(IUser player1, IUser player2)
         {
             if (player1.Id == player2.Id)
-                return Task.FromResult(_embedFactory.ErrorEmbed(Name, "You can't compare a player with themselves. Pick two different players!"));
+                return (_embedFactory.ErrorEmbed(Name, "You can't compare a player with themselves. Pick two different players!"), false);
 
             var member1 = _memberService.GetMemberProfile(player1.Id);
             var member2 = _memberService.GetMemberProfile(player2.Id);
 
             if (member1 == null || member1.RegisteredUT2004GUIDs.Count == 0)
-                return Task.FromResult(_embedFactory.ErrorEmbed(Name, $"**{player1.Username}** does not have a registered UT2004 GUID."));
+                return (_embedFactory.ErrorEmbed(Name, $"**{player1.Username}** does not have a registered UT2004 GUID."), false);
             if (member2 == null || member2.RegisteredUT2004GUIDs.Count == 0)
-                return Task.FromResult(_embedFactory.ErrorEmbed(Name, $"**{player2.Username}** does not have a registered UT2004 GUID."));
+                return (_embedFactory.ErrorEmbed(Name, $"**{player2.Username}** does not have a registered UT2004 GUID."), false);
 
             var profile1 = _memberService.GetUT2004PlayerProfile(member1.RegisteredUT2004GUIDs.First());
             var profile2 = _memberService.GetUT2004PlayerProfile(member2.RegisteredUT2004GUIDs.First());
 
             if (profile1 == null)
-                return Task.FromResult(_embedFactory.ErrorEmbed(Name, $"No UT2004 stats found for **{player1.Username}**. Stats may not have been processed yet."));
+                return (_embedFactory.ErrorEmbed(Name, $"No UT2004 stats found for **{player1.Username}**. Stats may not have been processed yet."), false);
             if (profile2 == null)
-                return Task.FromResult(_embedFactory.ErrorEmbed(Name, $"No UT2004 stats found for **{player2.Username}**. Stats may not have been processed yet."));
+                return (_embedFactory.ErrorEmbed(Name, $"No UT2004 stats found for **{player2.Username}**. Stats may not have been processed yet."), false);
 
-            return Task.FromResult(BuildComparisonEmbed(profile1, profile2));
+            double winProb1 = ComputeWinProb(profile1, profile2, UT2004GameMode.Unknown);
+            return (_embedFactory.ComparePlayersOverviewEmbed(profile1, profile2, winProb1), true);
         }
 
-        private Embed BuildComparisonEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2)
+        /// <summary>
+        /// Resolves a section embed for a component interaction by Discord user IDs.
+        /// Returns null if either player's profile cannot be resolved.
+        /// </summary>
+        public Embed? HandleSection(ulong player1Id, ulong player2Id, string section)
         {
-            var embed = new EmbedBuilder()
-                .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName}")
-                .WithDescription($"Head-to-head stat comparison\n*Left = **{p1.CurrentName}** · Right = **{p2.CurrentName}***")
-                .WithColor(new Color(0xFF6A00))
-                .WithFooter("Flaws Fight Night — UT2004 Player Comparison")
-                .WithCurrentTimestamp();
+            var member1 = _memberService.GetMemberProfile(player1Id);
+            var member2 = _memberService.GetMemberProfile(player2Id);
 
-            embed.AddField("📊 Overall",
-                $"**Matches:** {p1.TotalMatches} vs {p2.TotalMatches}\n" +
-                $"**Record:** {p1.Wins}W/{p1.Losses}L vs {p2.Wins}W/{p2.Losses}L\n" +
-                $"**Win Rate:** {p1.WinRate:P1} vs {p2.WinRate:P1}\n" +
-                $"**K/D:** {p1.KDRatio:F2} vs {p2.KDRatio:F2}\n" +
-                $"**Total Kills:** {p1.TotalKills:N0} vs {p2.TotalKills:N0}\n" +
-                $"**Headshots:** {p1.TotalHeadshots:N0} vs {p2.TotalHeadshots:N0}\n" +
-                $"**Best Kill Streak:** {p1.BestKillStreak} vs {p2.BestKillStreak}",
-                false);
+            if (member1 == null || member1.RegisteredUT2004GUIDs.Count == 0 ||
+                member2 == null || member2.RegisteredUT2004GUIDs.Count == 0)
+                return null;
 
-            if (p1.TotalCTFMatches > 0 || p2.TotalCTFMatches > 0)
+            var profile1 = _memberService.GetUT2004PlayerProfile(member1.RegisteredUT2004GUIDs.First());
+            var profile2 = _memberService.GetUT2004PlayerProfile(member2.RegisteredUT2004GUIDs.First());
+
+            if (profile1 == null || profile2 == null)
+                return null;
+
+            var gameMode = section switch
             {
-                embed.AddField("🚩 iCTF",
-                    $"**ELO:** {p1.CaptureTheFlagElo.Rating:F1} vs {p2.CaptureTheFlagElo.Rating:F1}\n" +
-                    $"**Matches:** {p1.TotalCTFMatches} vs {p2.TotalCTFMatches}\n" +
-                    $"**Win Rate:** {p1.CTFWinRate:P1} vs {p2.CTFWinRate:P1}\n" +
-                    $"**K/D:** {p1.CTFKDRatio:F2} vs {p2.CTFKDRatio:F2}\n" +
-                    $"**Caps:** {p1.TotalFlagCaptures} vs {p2.TotalFlagCaptures}\n" +
-                    $"**Returns:** {p1.TotalFlagReturns} vs {p2.TotalFlagReturns}",
-                    false);
-            }
+                "ictf" => UT2004GameMode.iCTF,
+                "tam"  => UT2004GameMode.TAM,
+                "ibr"  => UT2004GameMode.iBR,
+                _      => UT2004GameMode.Unknown
+            };
 
-            if (p1.TotalTAMMatches > 0 || p2.TotalTAMMatches > 0)
+            double winProb1 = ComputeWinProb(profile1, profile2, gameMode);
+            return _embedFactory.ComparePlayersSectionEmbed(profile1, profile2, section, winProb1);
+        }
+
+        private double ComputeWinProb(UT2004PlayerProfile p1, UT2004PlayerProfile p2, UT2004GameMode gameMode)
+        {
+            var (mu1, sigma1) = GetModeMuSigma(p1, gameMode);
+            var (mu2, sigma2) = GetModeMuSigma(p2, gameMode);
+            return _openSkillService.GetTeamAWinProbability(
+                new List<(double Mu, double Sigma)> { (mu1, sigma1) },
+                new List<(double Mu, double Sigma)> { (mu2, sigma2) });
+        }
+
+        private static (double Mu, double Sigma) GetModeMuSigma(UT2004PlayerProfile profile, UT2004GameMode gameMode) =>
+            gameMode switch
             {
-                embed.AddField("🎯 TAM",
-                    $"**ELO:** {p1.TAMElo.Rating:F1} vs {p2.TAMElo.Rating:F1}\n" +
-                    $"**Matches:** {p1.TotalTAMMatches} vs {p2.TotalTAMMatches}\n" +
-                    $"**Win Rate:** {p1.TAMWinRate:P1} vs {p2.TAMWinRate:P1}\n" +
-                    $"**K/D:** {p1.TAMKDRatio:F2} vs {p2.TAMKDRatio:F2}\n" +
-                    $"**Avg Dmg/Match:** {p1.AverageDamagePerMatch:F0} vs {p2.AverageDamagePerMatch:F0}\n" +
-                    $"**Round Win Rate:** {p1.TAMRoundWinRate:P1} vs {p2.TAMRoundWinRate:P1}",
-                    false);
-            }
+                UT2004GameMode.iCTF => (profile.CaptureTheFlagRating.Mu, profile.CaptureTheFlagRating.Sigma),
+                UT2004GameMode.TAM  => (profile.TAMRating.Mu, profile.TAMRating.Sigma),
+                UT2004GameMode.iBR  => (profile.BombingRunRating.Mu, profile.BombingRunRating.Sigma),
+                _                   => GetCompositeMuSigma(profile)
+            };
 
-            if (p1.TotalBRMatches > 0 || p2.TotalBRMatches > 0)
-            {
-                embed.AddField("💣 iBR",
-                    $"**ELO:** {p1.BombingRunElo.Rating:F1} vs {p2.BombingRunElo.Rating:F1}\n" +
-                    $"**Matches:** {p1.TotalBRMatches} vs {p2.TotalBRMatches}\n" +
-                    $"**Win Rate:** {p1.BRWinRate:P1} vs {p2.BRWinRate:P1}\n" +
-                    $"**K/D:** {p1.BRKDRatio:F2} vs {p2.BRKDRatio:F2}\n" +
-                    $"**Ball Caps:** {p1.TotalBallCaptures} vs {p2.TotalBallCaptures}\n" +
-                    $"**Avg Caps/Match:** {p1.AverageBallCapsPerBRMatch:F2} vs {p2.AverageBallCapsPerBRMatch:F2}",
-                    false);
-            }
+        private static (double Mu, double Sigma) GetCompositeMuSigma(UT2004PlayerProfile profile)
+        {
+            int total = profile.TotalCTFMatches + profile.TotalTAMMatches + profile.TotalBRMatches;
+            if (total == 0)
+                return (25.0, 25.0 / 3.0);
 
-            return embed.Build();
+            double mu =
+                (profile.CaptureTheFlagRating.Mu * profile.TotalCTFMatches +
+                 profile.TAMRating.Mu * profile.TotalTAMMatches +
+                 profile.BombingRunRating.Mu * profile.TotalBRMatches) / total;
+
+            double sigma =
+                (profile.CaptureTheFlagRating.Sigma * profile.TotalCTFMatches +
+                 profile.TAMRating.Sigma * profile.TotalTAMMatches +
+                 profile.BombingRunRating.Sigma * profile.TotalBRMatches) / total;
+
+            return (mu, sigma);
         }
     }
 }

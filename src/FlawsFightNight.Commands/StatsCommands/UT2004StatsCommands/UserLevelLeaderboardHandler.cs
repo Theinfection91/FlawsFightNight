@@ -20,17 +20,17 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
             _ut2004StatsService = ut2004StatsService;
         }
 
-        public Task<(Embed embed, bool hasProfiles)> Handle()
+        public async Task<(Embed embed, bool hasProfiles)> Handle()
         {
             var profiles = _ut2004StatsService.GetAllPrimaryPlayerProfiles();
             if (profiles == null || profiles.Count == 0)
             {
-                return Task.FromResult<(Embed, bool)>((
+                return (
                     _embedFactory.ErrorEmbed(Name, "No UT2004 player profiles found. Stats may not have been processed yet."),
-                    false));
+                    false);
             }
 
-            return Task.FromResult<(Embed, bool)>((BuildLeaderboardEmbed(profiles, "general"), true));
+            return (BuildLeaderboardEmbed(profiles, "general"), true);
         }
 
         public Embed HandleSection(string section)

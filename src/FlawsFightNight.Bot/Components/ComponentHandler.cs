@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
 using FlawsFightNight.Services;
 using System;
 using System.Linq;
@@ -13,12 +14,18 @@ namespace FlawsFightNight.Bot.Components
         private readonly EmbedFactory _embedFactory;
         private readonly AdminConfigurationService _adminConfigService;
         private readonly MemberService _memberService;
+        private readonly ComparePlayersHandler _comparePlayersHandler;
 
-        public ComponentHandler(EmbedFactory embedFactory, AdminConfigurationService adminConfigService, MemberService memberService)
+        public ComponentHandler(
+            EmbedFactory embedFactory,
+            AdminConfigurationService adminConfigService,
+            MemberService memberService,
+            ComparePlayersHandler comparePlayersHandler)
         {
             _embedFactory = embedFactory;
             _adminConfigService = adminConfigService;
             _memberService = memberService;
+            _comparePlayersHandler = comparePlayersHandler;
         }
 
         private bool IsAuthorizedUser(ulong expectedUserId) => Context.User.Id == expectedUserId;
@@ -198,6 +205,37 @@ namespace FlawsFightNight.Bot.Components
             catch (Exception ex)
             {
                 Console.WriteLine($"[Component Error - UT2004 Profile Select] {ex}");
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+            }
+        }
+        #endregion
+
+        #region UT2004 Compare Select Menu
+        [ComponentInteraction("ut2004compare_select:*:*")]
+        public async Task HandleUT2004CompareSelectAsync(ulong player1Id, ulong player2Id, string[] selectedValues)
+        {
+            try
+            {
+                var section = selectedValues[0];
+                var embed = _comparePlayersHandler.HandleSection(player1Id, player2Id, section);
+
+                if (embed == null)
+                {
+                    await RespondAsync(embed: _embedFactory.ErrorEmbed("Compare Players", "Could not load one or both player profiles."), ephemeral: true);
+                    return;
+                }
+
+                var components = ComponentFactory.CreateUT2004CompareSelectMenu(player1Id, player2Id);
+
+                await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
+                {
+                    msg.Embed = embed;
+                    msg.Components = components.Build();
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Component Error - UT2004 Compare Select] {ex}");
                 await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }

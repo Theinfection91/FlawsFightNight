@@ -1554,12 +1554,12 @@ namespace FlawsFightNight.Services
 
         #region Suggestion Embeds
         public Embed SuggestTeamsEmbed(
-            List<(string Name, double Score, bool HasProfile)> teamA,
-            List<(string Name, double Score, bool HasProfile)> teamB,
-            double diff, int teamSize, UT2004GameMode gameMode)
+            List<(string Name, double DisplayRating, bool HasProfile)> teamA,
+            List<(string Name, double DisplayRating, bool HasProfile)> teamB,
+            double teamAWinProb, int teamSize, UT2004GameMode gameMode)
         {
-            double teamATotal = teamA.Sum(p => p.Score);
-            double teamBTotal = teamB.Sum(p => p.Score);
+            double teamATotal = teamA.Sum(p => p.DisplayRating);
+            double teamBTotal = teamB.Sum(p => p.DisplayRating);
 
             string modeDisplay = gameMode switch
             {
@@ -1575,7 +1575,9 @@ namespace FlawsFightNight.Services
 
             var embed = new EmbedBuilder()
                 .WithTitle($"⚖️ Suggested {teamSize}v{teamSize} Teams — {modeDisplay}")
-                .WithDescription($"{ratingDescription}\n**Rating Differential:** {diff:F2}")
+                .WithDescription(
+                    $"{ratingDescription}\n" +
+                    $"🔵 **Team A:** {teamAWinProb:P1} win probability  ·  🔴 **Team B:** {1 - teamAWinProb:P1} win probability")
                 .WithColor(new Color(0xFF6A00))
                 .WithFooter("Flaws Fight Night — UT2004 Team Suggester")
                 .WithCurrentTimestamp();
@@ -1585,26 +1587,163 @@ namespace FlawsFightNight.Services
 
             if (teamA.Any(p => !p.HasProfile) || teamB.Any(p => !p.HasProfile))
                 embed.AddField("⚠️ Note",
-                    "One or more players have no UT2004 profile or registered GUID and were treated as rating **0** for balancing.",
+                    "One or more players have no UT2004 profile or registered GUID and were treated as default rating (μ=25, σ=8.33) for balancing.",
                     false);
 
             return embed.Build();
         }
 
         private static string BuildSuggestTeamField(
-            List<(string Name, double Score, bool HasProfile)> team,
+            List<(string Name, double DisplayRating, bool HasProfile)> team,
             double total, int teamSize)
         {
             var sb = new StringBuilder();
-            foreach (var (name, score, hasProfile) in team.OrderByDescending(p => p.Score))
+            foreach (var (name, displayRating, hasProfile) in team.OrderByDescending(p => p.DisplayRating))
             {
-                string ratingText = hasProfile ? $"{score:F2}" : "⚠️ Unrated";
-                sb.AppendLine($"• **{name}** — {ratingText}");
+                string ratingText = hasProfile ? $"{displayRating:F2}" : "⚠️ Unrated";
+                sb.AppendLine($"• **{name}** • {ratingText}");
             }
             sb.AppendLine("─────────────────");
             sb.AppendLine($"**Total:** {total:F2}  ·  **Avg:** {total / teamSize:F2}");
             return sb.ToString().TrimEnd();
         }
+        #endregion
+
+        #region UT2004 Player Comparison Embeds
+
+        // ── Section resolver ──────────────────────────────────────────────────
+        public Embed ComparePlayersSectionEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, string section, double winProbP1) =>
+            section switch
+            {
+                "ictf" => ComparePlayersCTFEmbed(p1, p2, winProbP1),
+                "tam" => ComparePlayersTAMEmbed(p1, p2, winProbP1),
+                "ibr" => ComparePlayersBREmbed(p1, p2, winProbP1),
+                _ => ComparePlayersOverviewEmbed(p1, p2, winProbP1)
+            };
+
+        public Embed ComparePlayersOverviewEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName}")
+                .WithDescription(
+                    $"Head-to-head comparison · *Use the dropdown to explore mode-specific stats*\n\n" +
+                    $"🎯 **1v1 Win Prediction (General)**\n" +
+                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}\n" +
+                    $"*Based on composite OpenSkill rating weighted by matches per mode*")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Player Comparison · Overview")
+                .WithCurrentTimestamp();
+
+            embed.AddField("📊 Overall Stats",
+                $"**Matches:** {p1.TotalMatches} vs {p2.TotalMatches}\n" +
+                $"**Record:** {p1.Wins}W/{p1.Losses}L vs {p2.Wins}W/{p2.Losses}L\n" +
+                $"**Win Rate:** {p1.WinRate:P1} vs {p2.WinRate:P1}\n" +
+                $"**K/D:** {p1.KDRatio:F2} vs {p2.KDRatio:F2}\n" +
+                $"**Total Kills:** {p1.TotalKills:N0} vs {p2.TotalKills:N0}\n" +
+                $"**Headshots:** {p1.TotalHeadshots:N0} vs {p2.TotalHeadshots:N0}\n" +
+                $"**Best Kill Streak:** {p1.BestKillStreak} vs {p2.BestKillStreak}",
+                false);
+
+            embed.AddField("🏅 Rating Snapshot",
+                $"**🚩 iCTF —** ELO: {p1.CaptureTheFlagElo.Rating:F1} vs {p2.CaptureTheFlagElo.Rating:F1}  ·  OpenSkill (μ−3σ): {p1.CaptureTheFlagRating.Rating:F2} vs {p2.CaptureTheFlagRating.Rating:F2}\n" +
+                $"**🎯 TAM —** ELO: {p1.TAMElo.Rating:F1} vs {p2.TAMElo.Rating:F1}  ·  OpenSkill (μ−3σ): {p1.TAMRating.Rating:F2} vs {p2.TAMRating.Rating:F2}\n" +
+                $"**💣 iBR —** ELO: {p1.BombingRunElo.Rating:F1} vs {p2.BombingRunElo.Rating:F1}  ·  OpenSkill (μ−3σ): {p1.BombingRunRating.Rating:F2} vs {p2.BombingRunRating.Rating:F2}",
+                false);
+
+            return embed.Build();
+        }
+
+        public Embed ComparePlayersCTFEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName} — 🚩 iCTF")
+                .WithDescription(
+                    $"🎯 **1v1 Win Prediction (iCTF)**\n" +
+                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Player Comparison · iCTF")
+                .WithCurrentTimestamp();
+
+            embed.AddField("🚩 iCTF Record & Ratings",
+                $"**Matches:** {p1.TotalCTFMatches} vs {p2.TotalCTFMatches}\n" +
+                $"**Record:** {p1.TotalCTFWins}W/{p1.TotalCTFLosses}L vs {p2.TotalCTFWins}W/{p2.TotalCTFLosses}L\n" +
+                $"**Win Rate:** {p1.CTFWinRate:P1} vs {p2.CTFWinRate:P1}\n" +
+                $"**K/D:** {p1.CTFKDRatio:F2} vs {p2.CTFKDRatio:F2}\n" +
+                $"**ELO:** {p1.CaptureTheFlagElo.Rating:F1} vs {p2.CaptureTheFlagElo.Rating:F1}\n" +
+                $"**OpenSkill (μ−3σ):** {p1.CaptureTheFlagRating.Rating:F2} vs {p2.CaptureTheFlagRating.Rating:F2}",
+                false);
+
+            embed.AddField("🚩 iCTF Objective Stats",
+                $"**Caps:** {p1.TotalFlagCaptures} vs {p2.TotalFlagCaptures}  ·  **Avg Caps/Match:** {p1.AverageCapturesPerMatch:F2} vs {p2.AverageCapturesPerMatch:F2}\n" +
+                $"**Returns:** {p1.TotalFlagReturns} vs {p2.TotalFlagReturns}\n" +
+                $"**Grabs:** {p1.TotalFlagGrabs} vs {p2.TotalFlagGrabs}\n" +
+                $"**Cap Assists:** {p1.TotalFlagCaptureAssists} vs {p2.TotalFlagCaptureAssists}\n" +
+                $"**Denials:** {p1.TotalFlagDenials} vs {p2.TotalFlagDenials}",
+                false);
+
+            return embed.Build();
+        }
+
+        public Embed ComparePlayersTAMEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName} — 🎯 TAM")
+                .WithDescription(
+                    $"🎯 **1v1 Win Prediction (TAM)**\n" +
+                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Player Comparison · TAM")
+                .WithCurrentTimestamp();
+
+            embed.AddField("🎯 TAM Record & Ratings",
+                $"**Matches:** {p1.TotalTAMMatches} vs {p2.TotalTAMMatches}\n" +
+                $"**Record:** {p1.TotalTAMWins}W/{p1.TotalTAMLosses}L vs {p2.TotalTAMWins}W/{p2.TotalTAMLosses}L\n" +
+                $"**Win Rate:** {p1.TAMWinRate:P1} vs {p2.TAMWinRate:P1}\n" +
+                $"**K/D:** {p1.TAMKDRatio:F2} vs {p2.TAMKDRatio:F2}\n" +
+                $"**ELO:** {p1.TAMElo.Rating:F1} vs {p2.TAMElo.Rating:F1}\n" +
+                $"**OpenSkill (μ−3σ):** {p1.TAMRating.Rating:F2} vs {p2.TAMRating.Rating:F2}",
+                false);
+
+            embed.AddField("🎯 TAM Combat Stats",
+                $"**Avg Dmg/Match:** {p1.AverageDamagePerMatch:F0} vs {p2.AverageDamagePerMatch:F0}\n" +
+                $"**Damage Efficiency:** {p1.DamageEfficiency:F2} vs {p2.DamageEfficiency:F2}\n" +
+                $"**Round Win Rate:** {p1.TAMRoundWinRate:P1} vs {p2.TAMRoundWinRate:P1}\n" +
+                $"**Avg Rounds Won/Match:** {p1.AverageRoundsWonPerMatch:F1} vs {p2.AverageRoundsWonPerMatch:F1}\n" +
+                $"**Round-Ending Kills:** {p1.TotalRoundEndingKills} vs {p2.TotalRoundEndingKills}",
+                false);
+
+            return embed.Build();
+        }
+
+        public Embed ComparePlayersBREmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName} — 💣 iBR")
+                .WithDescription(
+                    $"🎯 **1v1 Win Prediction (iBR)**\n" +
+                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Player Comparison · iBR")
+                .WithCurrentTimestamp();
+
+            embed.AddField("💣 iBR Record & Ratings",
+                $"**Matches:** {p1.TotalBRMatches} vs {p2.TotalBRMatches}\n" +
+                $"**Record:** {p1.TotalBRWins}W/{p1.TotalBRLosses}L vs {p2.TotalBRWins}W/{p2.TotalBRLosses}L\n" +
+                $"**Win Rate:** {p1.BRWinRate:P1} vs {p2.BRWinRate:P1}\n" +
+                $"**K/D:** {p1.BRKDRatio:F2} vs {p2.BRKDRatio:F2}\n" +
+                $"**ELO:** {p1.BombingRunElo.Rating:F1} vs {p2.BombingRunElo.Rating:F1}\n" +
+                $"**OpenSkill (μ−3σ):** {p1.BombingRunRating.Rating:F2} vs {p2.BombingRunRating.Rating:F2}",
+                false);
+
+            embed.AddField("💣 iBR Objective Stats",
+                $"**Ball Caps:** {p1.TotalBallCaptures} vs {p2.TotalBallCaptures}  ·  **Avg Caps/Match:** {p1.AverageBallCapsPerBRMatch:F2} vs {p2.AverageBallCapsPerBRMatch:F2}\n" +
+                $"**Score Assists:** {p1.TotalBallScoreAssists} vs {p2.TotalBallScoreAssists}\n" +
+                $"**Bomb Pickups:** {p1.TotalBombPickups} vs {p2.TotalBombPickups}  ·  **Avg Pickups/Match:** {p1.AverageBombPickupsPerBRMatch:F2} vs {p2.AverageBombPickupsPerBRMatch:F2}",
+                false);
+
+            return embed.Build();
+        }
+
         #endregion
     }
 }

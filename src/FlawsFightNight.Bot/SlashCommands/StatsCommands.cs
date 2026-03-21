@@ -262,8 +262,17 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    var embed = await _comparePlayersHandler.Handle(player1, player2);
-                    await FollowupAsync(embed: embed, ephemeral: true);
+                    var (embed, hasBothProfiles) = await _comparePlayersHandler.Handle(player1, player2);
+
+                    if (hasBothProfiles)
+                    {
+                        var components = ComponentFactory.CreateUT2004CompareSelectMenu(player1.Id, player2.Id);
+                        await FollowupAsync(embed: embed, components: components.Build(), ephemeral: true);
+                    }
+                    else
+                    {
+                        await FollowupAsync(embed: embed, ephemeral: true);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -272,7 +281,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
             }
 
-            [SlashCommand("suggest_teams", "When given even number of players, suggests teams based on ratings. Handles 2v2 to 5v5.")]
+            [SlashCommand("suggest_teams", "When given even number of players, suggests balanced teams based on ratings. Handles 2v2 to 5v5.")]
             public async Task SuggestTeamsAsync(
                 [Summary("game_mode", "The game mode to base team ratings on.")]
                 [Choice("iCTF", 1)]
@@ -299,6 +308,27 @@ namespace FlawsFightNight.Bot.SlashCommands
                     var mode = gameMode == 4 ? UT2004GameMode.Unknown : (UT2004GameMode)gameMode;
                     var embed = _suggestTeamsHandler.Handle(players, mode);
                     await FollowupAsync(embed: embed.Result, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("win_probability", "Calculates win probability between two tournament teams based on their ratings.")]
+            public async Task GetWinProbabilityAsync(
+                [Summary("team_one", "The players on the first team, separated by commas.")] string teamOne,
+                [Summary("team_two", "The players on the second team, separated by commas.")] string teamTwo)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    
+                    //var embed = _comparePlayersHandler.Handle(team1List, team2List);
+                    await FollowupAsync(
+                        //embed: embed,
+                        ephemeral: true);
                 }
                 catch (Exception ex)
                 {
