@@ -574,6 +574,11 @@ namespace FlawsFightNight.Services
         {
             return LeaderboardChannelsFile?.LeaderboardChannels.FirstOrDefault(c => c.ChannelId == channelId);
         }
+
+        public List<LeaderboardChannelData> GetAllLeaderboardChannels()
+        {
+            return LeaderboardChannelsFile?.LeaderboardChannels ?? new List<LeaderboardChannelData>();
+        }
         #endregion
     }
 }

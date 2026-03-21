@@ -12,7 +12,8 @@ namespace FlawsFightNight.Core.Models.Stats
     public class LeaderboardChannelData
     {
         public ulong ChannelId { get; set; }
-        public LeaderboardChannelTypes LeaderboardChannelType { get; set; }
+        public ulong MessageId { get; set; }
+        public LeaderboardChannelTypes Type { get; set; }
 
         public LeaderboardChannelData() { }
     }

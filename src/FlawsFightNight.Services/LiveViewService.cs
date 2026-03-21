@@ -1,5 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Models.Stats;
 using FlawsFightNight.Core.Models.Tournaments;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -68,6 +70,33 @@ namespace FlawsFightNight.Services
                         await UpdateMatchesAsync(t, token);
                         await UpdateStandingsAsync(t, token);
                         await UpdateTeamsAsync(t, token);
+                    }
+
+                    var leaderboardChannels = _dataContext.GetAllLeaderboardChannels();
+                    leaderboardChannels = leaderboardChannels
+                        .Where(c => c != null)
+                        .ToList();
+
+                    foreach (var leaderboardChannel in leaderboardChannels)
+                    {
+                        switch (leaderboardChannel.Type)
+                        {
+                            case LeaderboardChannelTypes.GeneralUT2004:
+                                await UpdateUT2004GeneralLeaderboard(leaderboardChannel, token);
+                                break;
+                            case LeaderboardChannelTypes.iBR:
+                                await UpdateUT2004BRLeaderboard(leaderboardChannel, token);
+                                break;
+                            case LeaderboardChannelTypes.iCTF:
+                                await UpdateUT2004CTFLeaderboard(leaderboardChannel, token);
+                                break;
+                            case LeaderboardChannelTypes.TAM:
+                                await UpdateUT2004TAMLeaderboard(leaderboardChannel, token);
+                                break;
+                            default:
+                                Console.WriteLine($"{DateTime.Now} - [LiveViewService] Unknown leaderboard channel type: {leaderboardChannel.Type}");
+                                break;
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -155,32 +184,96 @@ namespace FlawsFightNight.Services
             });
         }
 
-        private async Task UpdateUT2004GeneralLeaderboard(
-            //DTO,
-            CancellationToken token)
+        private async Task UpdateUT2004GeneralLeaderboard(LeaderboardChannelData leaderboardChannel, CancellationToken token)
         {
+            if (leaderboardChannel == null) return;
+            if (leaderboardChannel.ChannelId == 0) return;
+            var channel = _client.GetChannel(leaderboardChannel.ChannelId) as IMessageChannel;
+            if (channel == null) return;
+            Embed embed = null; // TODO: Create embed factory method for this, maybe components too?
+            if (leaderboardChannel.MessageId != 0)
+            {
+                var existing = await channel.GetMessageAsync(leaderboardChannel.MessageId) as IUserMessage;
+                if (existing != null)
+                {
+                    await existing.ModifyAsync(m => m.Embed = embed);
+                    return;
+                }
+            }
+            var newMsg = await channel.SendMessageAsync(embed: embed);
+            leaderboardChannel.MessageId = newMsg.Id;
 
+            await _dataContext.SaveAndReloadLeaderboardChannelsFile();
+            _gitBackupService.EnqueueBackup();
         }
 
-        private async Task UpdateUT2004BRLeaderboard(
-            //DTO,
-            CancellationToken token)
+        private async Task UpdateUT2004BRLeaderboard(LeaderboardChannelData leaderboardChannel, CancellationToken token)
         {
+            if (leaderboardChannel == null) return;
+            if (leaderboardChannel.ChannelId == 0) return;
+            var channel = _client.GetChannel(leaderboardChannel.ChannelId) as IMessageChannel;
+            if (channel == null) return;
+            Embed embed = null; // TODO: Create embed factory method for BR leaderboard
+            if (leaderboardChannel.MessageId != 0)
+            {
+                var existing = await channel.GetMessageAsync(leaderboardChannel.MessageId) as IUserMessage;
+                if (existing != null)
+                {
+                    await existing.ModifyAsync(m => m.Embed = embed);
+                    return;
+                }
+            }
+            var newMsg = await channel.SendMessageAsync(embed: embed);
+            leaderboardChannel.MessageId = newMsg.Id;
 
+            await _dataContext.SaveAndReloadLeaderboardChannelsFile();
+            _gitBackupService.EnqueueBackup();
         }
 
-        private async Task UpdateUT2004CTFLeaderboard(
-            //DTO,
-            CancellationToken token)
+        private async Task UpdateUT2004CTFLeaderboard(LeaderboardChannelData leaderboardChannel, CancellationToken token)
         {
+            if (leaderboardChannel == null) return;
+            if (leaderboardChannel.ChannelId == 0) return;
+            var channel = _client.GetChannel(leaderboardChannel.ChannelId) as IMessageChannel;
+            if (channel == null) return;
+            Embed embed = null; // TODO: Create embed factory method for CTF leaderboard
+            if (leaderboardChannel.MessageId != 0)
+            {
+                var existing = await channel.GetMessageAsync(leaderboardChannel.MessageId) as IUserMessage;
+                if (existing != null)
+                {
+                    await existing.ModifyAsync(m => m.Embed = embed);
+                    return;
+                }
+            }
+            var newMsg = await channel.SendMessageAsync(embed: embed);
+            leaderboardChannel.MessageId = newMsg.Id;
 
+            await _dataContext.SaveAndReloadLeaderboardChannelsFile();
+            _gitBackupService.EnqueueBackup();
         }
 
-        private async Task UpdateUT2004TAMLeaderboard(
-            //DTO,
-            CancellationToken token)
+        private async Task UpdateUT2004TAMLeaderboard(LeaderboardChannelData leaderboardChannel, CancellationToken token)
         {
+            if (leaderboardChannel == null) return;
+            if (leaderboardChannel.ChannelId == 0) return;
+            var channel = _client.GetChannel(leaderboardChannel.ChannelId) as IMessageChannel;
+            if (channel == null) return;
+            Embed embed = null; // TODO: Create embed factory method for TAM leaderboard
+            if (leaderboardChannel.MessageId != 0)
+            {
+                var existing = await channel.GetMessageAsync(leaderboardChannel.MessageId) as IUserMessage;
+                if (existing != null)
+                {
+                    await existing.ModifyAsync(m => m.Embed = embed);
+                    return;
+                }
+            }
+            var newMsg = await channel.SendMessageAsync(embed: embed);
+            leaderboardChannel.MessageId = newMsg.Id;
 
+            await _dataContext.SaveAndReloadLeaderboardChannelsFile();
+            _gitBackupService.EnqueueBackup();
         }
     }
 }
