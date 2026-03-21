@@ -196,6 +196,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<DiscordCredentialHandler>();
                     services.AddSingleton<FTPCredentialHandler>();
                     services.AddSingleton<GitHubCredentialHandler>();
+                    services.AddSingleton<LeaderboardChannelsHandler>();
                     services.AddSingleton<PermissionsConfigHandler>();
                     services.AddSingleton<ProcessedLogNamesHandler>();
                     services.AddSingleton<StatLogIndexHandler>();
