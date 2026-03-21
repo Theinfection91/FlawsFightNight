@@ -154,5 +154,33 @@ namespace FlawsFightNight.Services
                 _gitBackupService.EnqueueBackup();
             });
         }
+
+        private async Task UpdateUT2004GeneralLeaderboard(
+            //DTO,
+            CancellationToken token)
+        {
+
+        }
+
+        private async Task UpdateUT2004BRLeaderboard(
+            //DTO,
+            CancellationToken token)
+        {
+
+        }
+
+        private async Task UpdateUT2004CTFLeaderboard(
+            //DTO,
+            CancellationToken token)
+        {
+
+        }
+
+        private async Task UpdateUT2004TAMLeaderboard(
+            //DTO,
+            CancellationToken token)
+        {
+
+        }
     }
 }
