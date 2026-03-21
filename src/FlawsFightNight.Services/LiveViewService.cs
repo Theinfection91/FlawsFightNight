@@ -20,6 +20,14 @@ namespace FlawsFightNight.Services
         private readonly DataContext _dataContext;
         private readonly UT2004StatsService _ut2004StatsService;
 
+        /// <summary>
+        /// Tracks how many consecutive update cycles a registered leaderboard channel
+        /// was not found in the Discord client's cache. After <see cref="StaleChannelMissThreshold"/>
+        /// consecutive misses the entry is treated as stale and automatically removed.
+        /// </summary>
+        private readonly Dictionary<ulong, int> _channelMissCount = new();
+        private const int StaleChannelMissThreshold = 3;
+
         public LiveViewService(
             DiscordSocketClient client,
             EmbedFactory embedFactory,
@@ -203,8 +211,28 @@ namespace FlawsFightNight.Services
         {
             if (leaderboardChannel == null) return;
             if (leaderboardChannel.ChannelId == 0) return;
+
             var channel = _client.GetChannel(leaderboardChannel.ChannelId) as IMessageChannel;
-            if (channel == null) return;
+            if (channel == null)
+            {
+                _channelMissCount.TryGetValue(leaderboardChannel.ChannelId, out var misses);
+                misses++;
+                _channelMissCount[leaderboardChannel.ChannelId] = misses;
+
+                Console.WriteLine($"{DateTime.Now} - [LiveViewService] Leaderboard channel {leaderboardChannel.ChannelId} not found in cache (miss {misses}/{StaleChannelMissThreshold}).");
+
+                if (misses >= StaleChannelMissThreshold)
+                {
+                    Console.WriteLine($"{DateTime.Now} - [LiveViewService] Leaderboard channel {leaderboardChannel.ChannelId} has been missing for {StaleChannelMissThreshold} consecutive cycles. Removing stale entry.");
+                    await _dataContext.RemoveLeaderboardChannel(leaderboardChannel.ChannelId);
+                    _channelMissCount.Remove(leaderboardChannel.ChannelId);
+                    _gitBackupService.EnqueueBackup();
+                }
+                return;
+            }
+
+            // Channel is reachable — clear any accumulated miss count
+            _channelMissCount.Remove(leaderboardChannel.ChannelId);
 
             var profiles = _ut2004StatsService.GetAllPrimaryPlayerProfiles() ?? [];
             var section = GetLeaderboardSection(leaderboardChannel.Type);
@@ -216,87 +244,6 @@ namespace FlawsFightNight.Services
                 if (existing != null)
                 {
                     // Only update the embed — Discord preserves the dropdown component automatically.
-                    await existing.ModifyAsync(m => m.Embed = embed);
-                    return;
-                }
-            }
-
-            var newMsg = await channel.SendMessageAsync(embed: embed, components: BuildLeaderboardSelectMenu());
-            leaderboardChannel.MessageId = newMsg.Id;
-
-            await _dataContext.SaveAndReloadLeaderboardChannelsFile();
-            _gitBackupService.EnqueueBackup();
-        }
-
-        private async Task UpdateUT2004BRLeaderboard(LeaderboardChannelData leaderboardChannel, CancellationToken token)
-        {
-            if (leaderboardChannel == null) return;
-            if (leaderboardChannel.ChannelId == 0) return;
-            var channel = _client.GetChannel(leaderboardChannel.ChannelId) as IMessageChannel;
-            if (channel == null) return;
-
-            var profiles = _ut2004StatsService.GetAllPrimaryPlayerProfiles() ?? [];
-            var embed = _embedFactory.UT2004BRLeaderboardEmbed(profiles);
-
-            if (leaderboardChannel.MessageId != 0)
-            {
-                var existing = await channel.GetMessageAsync(leaderboardChannel.MessageId) as IUserMessage;
-                if (existing != null)
-                {
-                    await existing.ModifyAsync(m => m.Embed = embed);
-                    return;
-                }
-            }
-
-            var newMsg = await channel.SendMessageAsync(embed: embed, components: BuildLeaderboardSelectMenu());
-            leaderboardChannel.MessageId = newMsg.Id;
-
-            await _dataContext.SaveAndReloadLeaderboardChannelsFile();
-            _gitBackupService.EnqueueBackup();
-        }
-
-        private async Task UpdateUT2004CTFLeaderboard(LeaderboardChannelData leaderboardChannel, CancellationToken token)
-        {
-            if (leaderboardChannel == null) return;
-            if (leaderboardChannel.ChannelId == 0) return;
-            var channel = _client.GetChannel(leaderboardChannel.ChannelId) as IMessageChannel;
-            if (channel == null) return;
-
-            var profiles = _ut2004StatsService.GetAllPrimaryPlayerProfiles() ?? [];
-            var embed = _embedFactory.UT2004CTFLeaderboardEmbed(profiles);
-
-            if (leaderboardChannel.MessageId != 0)
-            {
-                var existing = await channel.GetMessageAsync(leaderboardChannel.MessageId) as IUserMessage;
-                if (existing != null)
-                {
-                    await existing.ModifyAsync(m => m.Embed = embed);
-                    return;
-                }
-            }
-
-            var newMsg = await channel.SendMessageAsync(embed: embed, components: BuildLeaderboardSelectMenu());
-            leaderboardChannel.MessageId = newMsg.Id;
-
-            await _dataContext.SaveAndReloadLeaderboardChannelsFile();
-            _gitBackupService.EnqueueBackup();
-        }
-
-        private async Task UpdateUT2004TAMLeaderboard(LeaderboardChannelData leaderboardChannel, CancellationToken token)
-        {
-            if (leaderboardChannel == null) return;
-            if (leaderboardChannel.ChannelId == 0) return;
-            var channel = _client.GetChannel(leaderboardChannel.ChannelId) as IMessageChannel;
-            if (channel == null) return;
-
-            var profiles = _ut2004StatsService.GetAllPrimaryPlayerProfiles() ?? [];
-            var embed = _embedFactory.UT2004TAMLeaderboardEmbed(profiles);
-
-            if (leaderboardChannel.MessageId != 0)
-            {
-                var existing = await channel.GetMessageAsync(leaderboardChannel.MessageId) as IUserMessage;
-                if (existing != null)
-                {
                     await existing.ModifyAsync(m => m.Embed = embed);
                     return;
                 }

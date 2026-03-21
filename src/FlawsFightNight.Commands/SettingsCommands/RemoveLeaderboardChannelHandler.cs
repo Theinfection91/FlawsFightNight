@@ -23,6 +23,18 @@ namespace FlawsFightNight.Commands.SettingsCommands
                 return _embedFactory.ErrorEmbed(Name,
                     $"<#{channel.Id}> is not currently registered as a leaderboard channel.");
 
+            // Clean up the old LiveView message so the orphaned dropdown is removed
+            if (existing.MessageId != 0)
+            {
+                try
+                {
+                    var oldMsg = await channel.GetMessageAsync(existing.MessageId);
+                    if (oldMsg is IUserMessage userMsg)
+                        await userMsg.DeleteAsync();
+                }
+                catch { /* message already deleted or inaccessible */ }
+            }
+
             await _dataContext.RemoveLeaderboardChannel(channel.Id);
             return _embedFactory.RemoveLeaderboardChannelSuccess(channel);
         }

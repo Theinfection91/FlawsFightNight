@@ -68,6 +68,7 @@ namespace FlawsFightNight.Services
         private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
 
         // Leaderboard Channel Files
+        private readonly SemaphoreSlim _leaderboardLock = new(1, 1);
         public LeaderboardChannelsFile LeaderboardChannelsFile { get; private set; }
         private readonly LeaderboardChannelsHandler _leaderboardChannelsHandler;
 
@@ -520,7 +521,7 @@ namespace FlawsFightNight.Services
             await SaveStatLogIndexFile();
         }
 
-        public StatLogIndexEntry? GetStatLogIndexEntry(string statLogId)
+        public StatLogIndexEntry? GetStatLogIndexEntry(String statLogId)
         {
             return StatLogIndexFile?.Entries.FirstOrDefault(e => e.Id.Equals(statLogId, StringComparison.OrdinalIgnoreCase));
         }
@@ -554,20 +555,30 @@ namespace FlawsFightNight.Services
 
         public async Task AddLeaderboardChannel(LeaderboardChannelData channelData)
         {
-            if (LeaderboardChannelsFile == null)
-                await LoadLeaderboardChannelsFile();
+            await _leaderboardLock.WaitAsync();
+            try
+            {
+                if (LeaderboardChannelsFile == null)
+                    await LoadLeaderboardChannelsFile();
 
-            LeaderboardChannelsFile!.LeaderboardChannels.Add(channelData);
-            await SaveLeaderboardChannelsFile();
+                LeaderboardChannelsFile!.LeaderboardChannels.Add(channelData);
+                await SaveLeaderboardChannelsFile();
+            }
+            finally { _leaderboardLock.Release(); }
         }
 
         public async Task RemoveLeaderboardChannel(ulong channelId)
         {
-            if (LeaderboardChannelsFile == null)
-                await LoadLeaderboardChannelsFile();
+            await _leaderboardLock.WaitAsync();
+            try
+            {
+                if (LeaderboardChannelsFile == null)
+                    await LoadLeaderboardChannelsFile();
 
-            LeaderboardChannelsFile!.LeaderboardChannels.RemoveAll(c => c.ChannelId == channelId);
-            await SaveLeaderboardChannelsFile();
+                LeaderboardChannelsFile!.LeaderboardChannels.RemoveAll(c => c.ChannelId == channelId);
+                await SaveLeaderboardChannelsFile();
+            }
+            finally { _leaderboardLock.Release(); }
         }
 
         public LeaderboardChannelData? GetLeaderboardChannel(ulong channelId)
