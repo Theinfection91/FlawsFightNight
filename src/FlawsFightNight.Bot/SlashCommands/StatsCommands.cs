@@ -210,8 +210,17 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    var embed = await _myTournamentMatchesHandler.Handle(Context.User.Id);
-                    await FollowupAsync(embed: embed, ephemeral: true);
+                    var (embed, fileContent, fileName) = await _myTournamentMatchesHandler.Handle(Context.User.Id);
+
+                    if (fileContent != null && fileName != null)
+                    {
+                        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
+                        await FollowupWithFileAsync(ms, fileName, embed: embed, ephemeral: true);
+                    }
+                    else
+                    {
+                        await FollowupAsync(embed: embed, ephemeral: true);
+                    }
                 }
                 catch (Exception ex)
                 {
