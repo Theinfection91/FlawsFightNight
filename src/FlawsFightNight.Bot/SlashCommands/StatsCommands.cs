@@ -57,6 +57,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             private readonly AutocompleteCache _autocompleteCache;
             private readonly ComparePlayersHandler _comparePlayersHandler;
             private readonly DisplayMatchSummaryHandler _displayMatchSummary;
+            private readonly GetWinProbabilityHandler _winProbabilityHandler;
             private readonly MyPlayerProfileHandler _myPlayerProfileLogic;
             private readonly MyTournamentMatchesHandler _myTournamentMatchesHandler;
             private readonly RegisterGuidHandler _registerGuidLogic;
@@ -69,6 +70,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 AutocompleteCache autocompleteCache,
                 ComparePlayersHandler comparePlayersHandler,
                 DisplayMatchSummaryHandler displayMatchSummaryHandler,
+                GetWinProbabilityHandler winProbabilityHandler,
                 MyPlayerProfileHandler myPlayerProfileLogic,
                 MyTournamentMatchesHandler myTournamentMatchesHandler,
                 RegisterGuidHandler registerGuidLogic,
@@ -80,6 +82,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 _autocompleteCache = autocompleteCache;
                 _comparePlayersHandler = comparePlayersHandler;
                 _displayMatchSummary = displayMatchSummaryHandler;
+                _winProbabilityHandler = winProbabilityHandler;
                 _myPlayerProfileLogic = myPlayerProfileLogic;
                 _myTournamentMatchesHandler = myTournamentMatchesHandler;
                 _registerGuidLogic = registerGuidLogic;
@@ -223,28 +226,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    var (embed, fileContent, fileName) = await _requestAllMatchesHandler.Handle(Context.User.Id);
-
-                    if (fileContent != null && fileName != null)
-                    {
-                        try
-                        {
-                            var dmChannel = await Context.User.CreateDMChannelAsync();
-                            using var ms = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
-                            await dmChannel.SendFileAsync(new FileAttachment(ms, fileName), "Here are all your match IDs! 📋");
-                        }
-                        catch
-                        {
-                            embed = new EmbedBuilder()
-                                .WithTitle($"⚠️ {_requestAllMatchesHandler.Name} Error")
-                                .WithDescription("Could not send you a DM. Please make sure your DMs are open and try again.")
-                                .WithColor(Color.Red)
-                                .WithFooter("Please try again after correcting.")
-                                .WithTimestamp(DateTimeOffset.Now)
-                                .Build();
-                        }
-                    }
-
+                    var embed = await _requestAllMatchesHandler.Handle(Context.User);
                     await FollowupAsync(embed: embed, ephemeral: true);
                 }
                 catch (Exception ex)
@@ -306,8 +288,8 @@ namespace FlawsFightNight.Bot.SlashCommands
                         .Where(p => p != null)
                         .ToList();
                     var mode = gameMode == 4 ? UT2004GameMode.Unknown : (UT2004GameMode)gameMode;
-                    var embed = _suggestTeamsHandler.Handle(players, mode);
-                    await FollowupAsync(embed: embed.Result, ephemeral: true);
+                    var embed = await _suggestTeamsHandler.Handle(players, mode);
+                    await FollowupAsync(embed: embed, ephemeral: true);
                 }
                 catch (Exception ex)
                 {
@@ -316,19 +298,24 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
             }
 
-            [SlashCommand("win_probability", "Calculates win probability between two tournament teams based on their ratings.")]
+            [SlashCommand("win_probability", "Calculates win probability between two tournament teams based on their UT2004 OpenSkill ratings.")]
             public async Task GetWinProbabilityAsync(
-                [Summary("team_one", "The players on the first team, separated by commas.")] string teamOne,
-                [Summary("team_two", "The players on the second team, separated by commas.")] string teamTwo)
+                [Summary("game_mode", "The game mode to base ratings on.")]
+                [Choice("iCTF", 1)]
+                [Choice("TAM", 2)]
+                [Choice("iBR", 3)]
+                [Choice("General", 4)] int gameMode,
+                [Summary("team_one", "The first tournament team.")]
+                [Autocomplete(typeof(UT2004WinProbTeamAutocomplete))] string teamOne,
+                [Summary("team_two", "The second tournament team.")]
+                [Autocomplete(typeof(UT2004WinProbTeamAutocomplete))] string teamTwo)
             {
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    
-                    //var embed = _comparePlayersHandler.Handle(team1List, team2List);
-                    await FollowupAsync(
-                        //embed: embed,
-                        ephemeral: true);
+                    var mode = gameMode == 4 ? UT2004GameMode.Unknown : (UT2004GameMode)gameMode;
+                    var embed = await _winProbabilityHandler.Handle(teamOne, teamTwo, mode);
+                    await FollowupAsync(embed: embed, ephemeral: true);
                 }
                 catch (Exception ex)
                 {

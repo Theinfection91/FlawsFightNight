@@ -20,8 +20,8 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
 
         public async Task<(Embed Embed, string? FileContent, string? FileName)> Handle(string statLogID)
         {
-            //if (!_ut2004StatsService.DoesStatLogExist(statLogID))
-            //    return (_embedFactory.ErrorEmbed(Name, $"No stat log found with the ID `{statLogID}`. Please check the ID and try again."), null, null);
+            if (!_ut2004StatsService.DoesStatLogExist(statLogID))
+                return (_embedFactory.ErrorEmbed(Name, $"No stat log found with the ID `{statLogID}`. Please check the ID and try again."), null, null);
 
             var matchSummary = await _ut2004StatsService.GetStatLogMatchSummary(statLogID);
             if (matchSummary == null || string.IsNullOrWhiteSpace(matchSummary))

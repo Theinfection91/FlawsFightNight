@@ -44,7 +44,7 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
                 if (profile == null)
                     return (Name: GetDisplayName(user), Mu: 25.0, Sigma: 25.0 / 3.0, HasProfile: false);
 
-                var (mu, sigma) = GetModeMuSigma(profile, gameMode);
+                var (mu, sigma) = profile.GetMuSigmaComposite(gameMode);
                 return (Name: profile.CurrentName, Mu: mu, Sigma: sigma, HasProfile: true);
             }).ToList();
 
@@ -78,34 +78,6 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
             var teamB = indices.Where(i => !bestTeamAIndices!.Contains(i)).Select(i => (playerData[i].Name, DisplayRating: playerData[i].Mu - 3 * playerData[i].Sigma, playerData[i].HasProfile)).ToList();
 
             return _embedFactory.SuggestTeamsEmbed(teamA, teamB, bestTeamAWinProb, teamSize, gameMode);
-        }
-
-        private static (double Mu, double Sigma) GetModeMuSigma(UT2004PlayerProfile profile, UT2004GameMode gameMode) =>
-            gameMode switch
-            {
-                UT2004GameMode.iCTF => (profile.CaptureTheFlagRating.Mu, profile.CaptureTheFlagRating.Sigma),
-                UT2004GameMode.TAM  => (profile.TAMRating.Mu, profile.TAMRating.Sigma),
-                UT2004GameMode.iBR  => (profile.BombingRunRating.Mu, profile.BombingRunRating.Sigma),
-                _                   => GetCompositeMuSigma(profile)
-            };
-
-        private static (double Mu, double Sigma) GetCompositeMuSigma(UT2004PlayerProfile profile)
-        {
-            int total = profile.TotalCTFMatches + profile.TotalTAMMatches + profile.TotalBRMatches;
-            if (total == 0)
-                return (25.0, 25.0 / 3.0);
-
-            double mu =
-                (profile.CaptureTheFlagRating.Mu * profile.TotalCTFMatches +
-                 profile.TAMRating.Mu * profile.TotalTAMMatches +
-                 profile.BombingRunRating.Mu * profile.TotalBRMatches) / total;
-
-            double sigma =
-                (profile.CaptureTheFlagRating.Sigma * profile.TotalCTFMatches +
-                 profile.TAMRating.Sigma * profile.TotalTAMMatches +
-                 profile.BombingRunRating.Sigma * profile.TotalBRMatches) / total;
-
-            return (mu, sigma);
         }
 
         private static string GetDisplayName(IUser user) =>

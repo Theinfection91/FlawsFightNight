@@ -829,15 +829,33 @@ namespace FlawsFightNight.Services
 
         public async Task<List<string>> GetAllStatLogIdsByGuids(List<string> guids)
         {
-            var allLogs = await GetAllProcessedStatLogs();
-            var guidSet = new HashSet<string>(guids, StringComparer.OrdinalIgnoreCase);
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
 
-            return allLogs
-                .Where(log => log.Players.Any(team =>
-                    team.Any(p => !string.IsNullOrEmpty(p.Guid) && guidSet.Contains(p.Guid))))
-                .OrderByDescending(log => log.MatchDate)
-                .Select(log => $"{log.Id} ({log.GameModeName} - {log.ServerName ?? "Unknown"} - {log.MatchDate:yyyy-MM-dd HH:mm:ss})")
+            var entries = _dataContext.StatLogIndexFile!.Entries
+                .Where(e => !e.IsAdminIgnored)
+                .OrderByDescending(e => e.MatchDate)
                 .ToList();
+
+            if (entries.Count == 0) return new List<string>();
+
+            var guidSet = new HashSet<string>(guids, StringComparer.OrdinalIgnoreCase);
+            var results = new List<string>();
+
+            foreach (var entry in entries)
+            {
+                var statLog = await _dataContext.LoadStatLogByID(entry.Id);
+                if (statLog == null) continue;
+
+                bool hasGuid = statLog.Players.Any(team =>
+                    team.Any(p => !string.IsNullOrEmpty(p.Guid) && guidSet.Contains(p.Guid)));
+                if (hasGuid)
+                {
+                    results.Add($"{statLog.Id} ({statLog.GameModeName} - {statLog.ServerName ?? "Unknown"} - {statLog.MatchDate:yyyy-MM-dd HH:mm:ss})");
+                }
+            }
+
+            return results;
         }
         #endregion
     }

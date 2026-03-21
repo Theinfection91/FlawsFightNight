@@ -370,6 +370,41 @@ namespace FlawsFightNight.Core.Models.UT2004
             }
         }
 
+        /// <summary>
+        /// Returns (Mu, Sigma) for a specific game mode, or a weighted composite
+        /// across all modes when the mode is Unknown/General.
+        /// Use this for win probability, comparisons, and team balancing.
+        /// </summary>
+        public (double Mu, double Sigma) GetMuSigmaComposite(UT2004GameMode gameMode)
+        {
+            return gameMode switch
+            {
+                UT2004GameMode.iCTF => (CaptureTheFlagRating.Mu, CaptureTheFlagRating.Sigma),
+                UT2004GameMode.TAM => (TAMRating.Mu, TAMRating.Sigma),
+                UT2004GameMode.iBR => (BombingRunRating.Mu, BombingRunRating.Sigma),
+                _ => GetWeightedComposite()
+            };
+        }
+
+        private (double Mu, double Sigma) GetWeightedComposite()
+        {
+            int total = TotalCTFMatches + TotalTAMMatches + TotalBRMatches;
+            if (total == 0)
+                return (25.0, 25.0 / 3.0);
+
+            double mu =
+                (CaptureTheFlagRating.Mu * TotalCTFMatches +
+                 TAMRating.Mu * TotalTAMMatches +
+                 BombingRunRating.Mu * TotalBRMatches) / total;
+
+            double sigma =
+                (CaptureTheFlagRating.Sigma * TotalCTFMatches +
+                 TAMRating.Sigma * TotalTAMMatches +
+                 BombingRunRating.Sigma * TotalBRMatches) / total;
+
+            return (mu, sigma);
+        }
+
         public void UpdateSkillRating(UT2004GameMode gameMode, double newMu, double newSigma)
         {
             switch (gameMode)

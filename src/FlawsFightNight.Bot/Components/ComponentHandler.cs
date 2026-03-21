@@ -15,17 +15,20 @@ namespace FlawsFightNight.Bot.Components
         private readonly AdminConfigurationService _adminConfigService;
         private readonly MemberService _memberService;
         private readonly ComparePlayersHandler _comparePlayersHandler;
+        private readonly UserLevelLeaderboardHandler _leaderboardHandler;
 
         public ComponentHandler(
             EmbedFactory embedFactory,
             AdminConfigurationService adminConfigService,
             MemberService memberService,
-            ComparePlayersHandler comparePlayersHandler)
+            ComparePlayersHandler comparePlayersHandler,
+            UserLevelLeaderboardHandler leaderboardHandler)
         {
             _embedFactory = embedFactory;
             _adminConfigService = adminConfigService;
             _memberService = memberService;
             _comparePlayersHandler = comparePlayersHandler;
+            _leaderboardHandler = leaderboardHandler;
         }
 
         private bool IsAuthorizedUser(ulong expectedUserId) => Context.User.Id == expectedUserId;
@@ -205,6 +208,30 @@ namespace FlawsFightNight.Bot.Components
             catch (Exception ex)
             {
                 Console.WriteLine($"[Component Error - UT2004 Profile Select] {ex}");
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+            }
+        }
+        #endregion
+
+        #region UT2004 Leaderboard Select Menu
+        [ComponentInteraction("ut2004leaderboard_select")]
+        public async Task HandleUT2004LeaderboardSelectAsync(string[] selectedValues)
+        {
+            try
+            {
+                var section = selectedValues[0];
+                var embed = _leaderboardHandler.HandleSection(section);
+                var components = ComponentFactory.CreateUT2004LeaderboardSelectMenu();
+
+                await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
+                {
+                    msg.Embed = embed;
+                    msg.Components = components.Build();
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Component Error - UT2004 Leaderboard Select] {ex}");
                 await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }
