@@ -73,7 +73,7 @@ namespace FlawsFightNight.Services
                     client.Config.DataConnectionConnectTimeout = 15000;
                     client.Config.DataConnectionReadTimeout = 15000;
                     _ftpClients[cred] = client;
-                    client.AutoConnect();
+                    client.AutoConnect().Wait();
                 }
                 IsClientsConfigured = true;
             }
@@ -154,6 +154,16 @@ namespace FlawsFightNight.Services
                                 }
 
                                 byte[] fileBytes = await ExecuteWithDataConnectionFallback(client, () => client.DownloadBytes(item.FullName, token), token);
+
+                                // DownloadBytes returns null on a silent FTP failure (no exception thrown).
+                                // Skip and log rather than letting MemoryStream crash the entire batch.
+                                if (fileBytes == null)
+                                {
+                                    ignoredCount++;
+                                    string skipMessage = $"[FTPStatsService] Progress for {cred.ServerName}: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Download returned null for '{item.Name}', skipping. Valid: {validCount}, Ignored: {ignoredCount}";
+                                    Console.Write($"\r{skipMessage.PadRight(100)}");
+                                    continue;
+                                }
 
                                 using (var fileStream = new MemoryStream(fileBytes))
                                 {

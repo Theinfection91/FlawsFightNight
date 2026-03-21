@@ -18,7 +18,6 @@ namespace FlawsFightNight.Services
     {
         private readonly DiscordSocketClient _client;
 
-        private readonly UT2004LogParser _logParser;
         private readonly OpenSkillRatingService _ratingService;
         private readonly UTStatsDBEloRatingService _eloService;
         private readonly SeamlessRatingsMapper _ratingsMapper;
@@ -30,10 +29,9 @@ namespace FlawsFightNight.Services
         private const int MinTAMMatchesBeforePeak = 3;
         private const int MinBRMatchesBeforePeak = 3;
 
-        public UT2004StatsService(DataContext dataContext, DiscordSocketClient client, UT2004LogParser logParser, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsService", dataContext)
+        public UT2004StatsService(DataContext dataContext, DiscordSocketClient client, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsService", dataContext)
         {
             _client = client;
-            _logParser = logParser;
             _ratingService = ratingService;
             _ratingsMapper = ratingsMapper;
             _eloService = eloService;
@@ -65,7 +63,8 @@ namespace FlawsFightNight.Services
 
         public async Task<bool> ProcessLogFile(Stream fileStream, string fileName, string serverName, string serverAddress)
         {
-            var statLog = await _logParser.Parse<UT2004StatLog>(fileStream);
+            // Instantiate per-call: UT2004LogParser holds mutable parse state and must not be shared
+            var statLog = await new UT2004LogParser().Parse<UT2004StatLog>(fileStream);
             if (statLog != null)
             {
                 statLog.FileName = Path.ChangeExtension(fileName, ".json");
@@ -74,7 +73,7 @@ namespace FlawsFightNight.Services
                 statLog.Players = statLog.Players.Select(teamList =>
                     teamList.OrderByDescending(p => p.Score).ToList()
                 ).ToList();
-                statLog.Id = await GenerateStatLogId(statLog.GameMode);
+                statLog.Id = GenerateStatLogId(statLog.GameMode);
 
                 // Ensure admin ignored logs are loaded so persisted StatLog reflects current admin state
                 if (_dataContext.StatLogIndexFile == null)
@@ -107,24 +106,17 @@ namespace FlawsFightNight.Services
             _iBRStatLogIdCounter = await _dataContext.GetStatLogCount(UT2004GameMode.iBR);
         }
 
-        public async Task<string> GenerateStatLogId(UT2004GameMode gameMode)
+        public string GenerateStatLogId(UT2004GameMode gameMode)
         {
-            int count = gameMode switch
+            int newCount = gameMode switch
             {
-                UT2004GameMode.iCTF => _iCTFStatLogIdCounter,
-                UT2004GameMode.TAM => _TAMStatLogIdCounter,
-                UT2004GameMode.iBR => _iBRStatLogIdCounter,
-                _ => 0
+                UT2004GameMode.iCTF => Interlocked.Increment(ref _iCTFStatLogIdCounter),
+                UT2004GameMode.TAM  => Interlocked.Increment(ref _TAMStatLogIdCounter),
+                UT2004GameMode.iBR  => Interlocked.Increment(ref _iBRStatLogIdCounter),
+                _                   => 0
             };
 
-            switch (gameMode)
-            {
-                case UT2004GameMode.iCTF: _iCTFStatLogIdCounter++; break;
-                case UT2004GameMode.TAM: _TAMStatLogIdCounter++; break;
-                case UT2004GameMode.iBR: _iBRStatLogIdCounter++; break;
-            }
-
-            return $"{gameMode}{count + 1:000000}";
+            return $"{gameMode}{newCount:000000}";
         }
 
         public async Task MarkLogFileAsProcessed(string fileName)

@@ -190,6 +190,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _gameStartTime = 0;
             _matchStartTime = DateTime.MinValue;
             _currentGameMode = default;
+            _computedMatchDurationSeconds = 0;
             _currentRoundNumber = 0;
             _lastKillerSeqNum = null;
             _roundWinsByTeam.Clear();
