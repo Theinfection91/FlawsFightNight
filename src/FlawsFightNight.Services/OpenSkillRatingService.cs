@@ -107,5 +107,17 @@ namespace FlawsFightNight.Services
                 }
             }
         }
+
+        public double GetTeamAWinProbability(
+            IList<(double Mu, double Sigma)> teamAPlayers,
+            IList<(double Mu, double Sigma)> teamBPlayers)
+        {
+            var teams = new List<ITeam>
+            {
+                new Team { Players = teamAPlayers.Select(p => (IRating)new Rating { Mu = p.Mu, Sigma = p.Sigma }).ToList() },
+                new Team { Players = teamBPlayers.Select(p => (IRating)new Rating { Mu = p.Mu, Sigma = p.Sigma }).ToList() }
+            };
+            return _model.PredictWin(teams).First();
+        }
     }
 }

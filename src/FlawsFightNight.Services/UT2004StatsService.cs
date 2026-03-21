@@ -10,6 +10,7 @@ using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
 using Discord.WebSocket;
 using Discord;
+using Discord.Interactions;
 
 namespace FlawsFightNight.Services
 {
@@ -17,7 +18,6 @@ namespace FlawsFightNight.Services
     {
         private readonly DiscordSocketClient _client;
 
-        private readonly UT2004LogParser _logParser;
         private readonly OpenSkillRatingService _ratingService;
         private readonly UTStatsDBEloRatingService _eloService;
         private readonly SeamlessRatingsMapper _ratingsMapper;
@@ -29,10 +29,9 @@ namespace FlawsFightNight.Services
         private const int MinTAMMatchesBeforePeak = 3;
         private const int MinBRMatchesBeforePeak = 3;
 
-        public UT2004StatsService(DataContext dataContext, DiscordSocketClient client, UT2004LogParser logParser, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsService", dataContext)
+        public UT2004StatsService(DataContext dataContext, DiscordSocketClient client, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsService", dataContext)
         {
             _client = client;
-            _logParser = logParser;
             _ratingService = ratingService;
             _ratingsMapper = ratingsMapper;
             _eloService = eloService;
@@ -64,7 +63,8 @@ namespace FlawsFightNight.Services
 
         public async Task<bool> ProcessLogFile(Stream fileStream, string fileName, string serverName, string serverAddress)
         {
-            var statLog = await _logParser.Parse<UT2004StatLog>(fileStream);
+            // Instantiate per-call: UT2004LogParser holds mutable parse state and must not be shared
+            var statLog = await new UT2004LogParser().Parse<UT2004StatLog>(fileStream);
             if (statLog != null)
             {
                 statLog.FileName = Path.ChangeExtension(fileName, ".json");
@@ -73,7 +73,7 @@ namespace FlawsFightNight.Services
                 statLog.Players = statLog.Players.Select(teamList =>
                     teamList.OrderByDescending(p => p.Score).ToList()
                 ).ToList();
-                statLog.Id = await GenerateStatLogId(statLog.GameMode);
+                statLog.Id = GenerateStatLogId(statLog.GameMode);
 
                 // Ensure admin ignored logs are loaded so persisted StatLog reflects current admin state
                 if (_dataContext.StatLogIndexFile == null)
@@ -106,24 +106,17 @@ namespace FlawsFightNight.Services
             _iBRStatLogIdCounter = await _dataContext.GetStatLogCount(UT2004GameMode.iBR);
         }
 
-        public async Task<string> GenerateStatLogId(UT2004GameMode gameMode)
+        public string GenerateStatLogId(UT2004GameMode gameMode)
         {
-            int count = gameMode switch
+            int newCount = gameMode switch
             {
-                UT2004GameMode.iCTF => _iCTFStatLogIdCounter,
-                UT2004GameMode.TAM => _TAMStatLogIdCounter,
-                UT2004GameMode.iBR => _iBRStatLogIdCounter,
-                _ => 0
+                UT2004GameMode.iCTF => Interlocked.Increment(ref _iCTFStatLogIdCounter),
+                UT2004GameMode.TAM  => Interlocked.Increment(ref _TAMStatLogIdCounter),
+                UT2004GameMode.iBR  => Interlocked.Increment(ref _iBRStatLogIdCounter),
+                _                   => 0
             };
 
-            switch (gameMode)
-            {
-                case UT2004GameMode.iCTF: _iCTFStatLogIdCounter++; break;
-                case UT2004GameMode.TAM: _TAMStatLogIdCounter++; break;
-                case UT2004GameMode.iBR: _iBRStatLogIdCounter++; break;
-            }
-
-            return $"{gameMode}{count + 1:000000}";
+            return $"{gameMode}{newCount:000000}";
         }
 
         public async Task MarkLogFileAsProcessed(string fileName)
@@ -572,6 +565,13 @@ namespace FlawsFightNight.Services
             };
         }
 
+        public async Task<string> GetStatLogMatchSummary(string statLogID)
+        {
+            var log = await _dataContext.LoadStatLogByID(statLogID);
+            if (log == null) return null;
+            return log.MatchSummary!;
+        }
+
         public async Task SendStatLogDM(ulong discordId, Dictionary<string, string> statLogs)
         {
             if (statLogs == null || statLogs.Count == 0) return;
@@ -608,6 +608,22 @@ namespace FlawsFightNight.Services
                     foreach (var attachment in attachments)
                         attachment.Dispose();
                 }
+            }
+        }
+
+        public async Task SendMatchSummaryToChannel(SocketInteractionContext context, string statLogID)
+        {
+            var matchSummary = await GetStatLogMatchSummary(statLogID);
+            if (matchSummary == null) return;
+            var bytes = Encoding.UTF8.GetBytes(matchSummary);
+            var attachment = new FileAttachment(new MemoryStream(bytes), $"{statLogID}_summary.txt");
+            try
+            {
+                await context.Channel.SendFileAsync(attachment);
+            }
+            finally
+            {
+                attachment.Dispose();
             }
         }
 
@@ -761,6 +777,77 @@ namespace FlawsFightNight.Services
             if (logIndex == null) return;
             logIndex.UnTagTournamentMatch();
             await _dataContext.SaveAndReloadStatLogIndexFile();
+        }
+        #endregion
+
+        #region User Query Methods
+        public List<UT2004PlayerProfile> GetAllPrimaryPlayerProfiles()
+        {
+            return _dataContext.UT2004PlayerProfileFiles
+                .Where(f => f?.PlayerProfile != null && !_ratingsMapper.IsAlias(f.PlayerProfile.Guid))
+                .Select(f => f.PlayerProfile)
+                .ToList();
+        }
+
+        public async Task<List<string>> GetTournamentStatLogIdsByGuids(List<string> guids)
+        {
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var taggedEntries = _dataContext.StatLogIndexFile.Entries
+                .Where(e => e.IsTagged && !e.IsAdminIgnored)
+                .ToList();
+
+            if (taggedEntries.Count == 0) return new List<string>();
+
+            var guidSet = new HashSet<string>(guids, StringComparer.OrdinalIgnoreCase);
+            var results = new List<string>();
+
+            foreach (var entry in taggedEntries.OrderByDescending(e => e.MatchDate))
+            {
+                var statLog = await _dataContext.LoadStatLogByID(entry.Id);
+                if (statLog == null) continue;
+
+                bool hasGuid = statLog.Players.Any(team =>
+                    team.Any(p => !string.IsNullOrEmpty(p.Guid) && guidSet.Contains(p.Guid)));
+                if (hasGuid)
+                {
+                    results.Add($"{entry.Id} ({entry.TournamentName ?? "Unknown"} - Match: {entry.MatchId ?? "N/A"} - {entry.MatchDate:yyyy-MM-dd})");
+                }
+            }
+
+            return results;
+        }
+
+        public async Task<List<string>> GetAllStatLogIdsByGuids(List<string> guids)
+        {
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var entries = _dataContext.StatLogIndexFile!.Entries
+                .Where(e => !e.IsAdminIgnored)
+                .OrderByDescending(e => e.MatchDate)
+                .ToList();
+
+            if (entries.Count == 0) return new List<string>();
+
+            var guidSet = new HashSet<string>(guids, StringComparer.OrdinalIgnoreCase);
+            var results = new List<string>();
+
+            foreach (var entry in entries)
+            {
+                var statLog = await _dataContext.LoadStatLogByID(entry.Id);
+                if (statLog == null) continue;
+
+                bool hasGuid = statLog.Players.Any(team =>
+                    team.Any(p => !string.IsNullOrEmpty(p.Guid) && guidSet.Contains(p.Guid)));
+                if (hasGuid)
+                {
+                    results.Add($"{statLog.Id} ({statLog.GameModeName} - {statLog.ServerName ?? "Unknown"} - {statLog.MatchDate:yyyy-MM-dd HH:mm:ss})");
+                }
+            }
+
+            return results;
         }
         #endregion
     }

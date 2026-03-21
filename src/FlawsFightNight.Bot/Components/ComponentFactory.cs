@@ -32,5 +32,35 @@ namespace FlawsFightNight.Bot.Components
 
             return new ComponentBuilder().WithSelectMenu(selectMenu);
         }
+
+        public static ComponentBuilder CreateUT2004LeaderboardSelectMenu()
+        {
+            string selectId = $"ut2004leaderboard_select";
+
+            var selectMenu = new SelectMenuBuilder()
+                .WithCustomId(selectId)
+                .WithPlaceholder("📊 Select a leaderboard category...")
+                .AddOption("📊 General", "general", "Overall career stats and career bests")
+                .AddOption("🚩 iCTF", "ictf", "Capture the Flag leaderboard")
+                .AddOption("🎯 TAM", "tam", "Team Arena Master leaderboard")
+                .AddOption("💣 iBR", "ibr", "Bombing Run leaderboard");
+
+            return new ComponentBuilder().WithSelectMenu(selectMenu);
+        }
+
+        public static ComponentBuilder CreateUT2004CompareSelectMenu(ulong player1Id, ulong player2Id)
+        {
+            string selectId = $"ut2004compare_select:{player1Id}:{player2Id}";
+
+            var selectMenu = new SelectMenuBuilder()
+                .WithCustomId(selectId)
+                .WithPlaceholder("📊 Select a comparison category...")
+                .AddOption("📊 Overview", "overview", "Overall career stats and 1v1 win prediction")
+                .AddOption("🚩 iCTF", "ictf", "Capture the Flag comparison")
+                .AddOption("🎯 TAM", "tam", "Team Arena Master comparison")
+                .AddOption("💣 iBR", "ibr", "Bombing Run comparison");
+
+            return new ComponentBuilder().WithSelectMenu(selectMenu);
+        }
     }
 }

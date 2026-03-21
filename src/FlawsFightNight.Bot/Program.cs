@@ -96,13 +96,16 @@ namespace FlawsFightNight.Bot
                     GatewayIntents.MessageContent
             });
 
+            // Create InteractionService once — registered in DI and used directly
+            _interactionService = new InteractionService(_client);
+
             // Host and DI setup
             var host = Host.CreateDefaultBuilder()
                 .ConfigureServices(services =>
                 {
                     services.AddSingleton(_client);
                     services.AddSingleton<CommandService>();
-                    services.AddSingleton<InteractionService>();
+                    services.AddSingleton(_interactionService);
 
                     // Autocomplete
                     services.AddSingleton<AutocompleteCache>();
@@ -136,10 +139,17 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<UnTagLogToMatchHandler>();
 
                     // Stat Commands
+                    services.AddSingleton<ComparePlayersHandler>();
+                    services.AddSingleton<DisplayMatchSummaryHandler>();
                     services.AddSingleton<MyPlayerProfileHandler>();
+                    services.AddSingleton<MyTournamentMatchesHandler>();
                     services.AddSingleton<MyTournamentProfileHandler>();
                     services.AddSingleton<RegisterGuidHandler>();
                     services.AddSingleton<RemoveGuidHandler>();
+                    services.AddSingleton<RequestAllMatchesHandler>();
+                    services.AddSingleton<SuggestTeamsHandler>();
+                    services.AddSingleton<UserLevelLeaderboardHandler>();
+                    services.AddSingleton<GetWinProbabilityHandler>();
 
                     // Team Commands
                     services.AddSingleton<RegisterTeamHandler>();
@@ -195,21 +205,17 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<UT2004PlayerProfileHandler>();
 
                     // UT2004 Helpers
-                    services.AddSingleton<UT2004LogParser>();
                     services.AddSingleton<OpenSkillRatingService>();
                     services.AddSingleton<UTStatsDBEloRatingService>();
                     services.AddSingleton<SeamlessRatingsMapper>();
                 })
                 .Build();
 
-            // Initialize data and stats services before starting hosted services to ensure they have the data they need when they start
-            using (var scope = host.Services.CreateScope())
-            {
-                var dataContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-                var ut2004StatsService = scope.ServiceProvider.GetRequiredService<UT2004StatsService>();
-                await dataContext.InitializeAsync();
-                await ut2004StatsService.InitializeAsync();
-            }
+
+            var dataContext = host.Services.GetRequiredService<DataContext>();
+            var ut2004StatsService = host.Services.GetRequiredService<UT2004StatsService>();
+            await dataContext.InitializeAsync();
+            await ut2004StatsService.InitializeAsync();
 
             // Prep config
             _services = host.Services;
@@ -217,24 +223,25 @@ namespace FlawsFightNight.Bot
             await _adminConfigService.SetDiscordTokenProcess();
             await _adminConfigService.SetGitBackupProcess();
 
-            // Run interactive Git backup setup in background (clone/restore prompts)
+            // Run interactive Git backup setup (optional — skip gracefully if PAT not configured)
             var gitBackupService = _services.GetRequiredService<GitBackupService>();
             var adminConfigService = _services.GetRequiredService<AdminConfigurationService>();
-            while (!_gitBackupSetupComplete)
+
+            if (adminConfigService.IsGitPatTokenSet())
             {
                 await gitBackupService.RunInteractiveSetup();
-                _gitBackupSetupComplete = adminConfigService.IsGitPatTokenSet();
             }
-
-            while (!_ftpSetupComplete)
+            else
             {
-                await adminConfigService.FTPSetupProcess();
-                _ftpSetupComplete = adminConfigService.IsFTPCredentialsSet();
+                Console.WriteLine($"{DateTime.Now} - [Program] Git backup not configured. Skipping interactive setup.");
             }
+            _gitBackupSetupComplete = true;
+
+            await adminConfigService.FTPSetupProcess();
+            _ftpSetupComplete = true;
 
             // Discord services
             _commands = _services.GetRequiredService<CommandService>();
-            _interactionService = new InteractionService(_client);
 
             _commands.Log += Log;
             _client.Log += Log;
