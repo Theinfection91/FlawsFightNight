@@ -18,17 +18,20 @@ namespace FlawsFightNight.Services
         private readonly EmbedFactory _embedFactory;
         private readonly GitBackupService _gitBackupService;
         private readonly DataContext _dataContext;
+        private readonly UT2004StatsService _ut2004StatsService;
 
         public LiveViewService(
             DiscordSocketClient client,
             EmbedFactory embedFactory,
             GitBackupService gitBackupService,
-            DataContext dataContext)
+            DataContext dataContext,
+            UT2004StatsService ut2004StatsService)
         {
             _client = client;
             _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
             _dataContext = dataContext;
+            _ut2004StatsService = ut2004StatsService;
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -79,24 +82,7 @@ namespace FlawsFightNight.Services
 
                     foreach (var leaderboardChannel in leaderboardChannels)
                     {
-                        switch (leaderboardChannel.Type)
-                        {
-                            case LeaderboardChannelTypes.GeneralUT2004:
-                                await UpdateUT2004GeneralLeaderboard(leaderboardChannel, token);
-                                break;
-                            case LeaderboardChannelTypes.iBR:
-                                await UpdateUT2004BRLeaderboard(leaderboardChannel, token);
-                                break;
-                            case LeaderboardChannelTypes.iCTF:
-                                await UpdateUT2004CTFLeaderboard(leaderboardChannel, token);
-                                break;
-                            case LeaderboardChannelTypes.TAM:
-                                await UpdateUT2004TAMLeaderboard(leaderboardChannel, token);
-                                break;
-                            default:
-                                Console.WriteLine($"{DateTime.Now} - [LiveViewService] Unknown leaderboard channel type: {leaderboardChannel.Type}");
-                                break;
-                        }
+                        await UpdateUT2004Leaderboard(leaderboardChannel, token);
                     }
                 }
                 catch (Exception ex)
@@ -107,6 +93,8 @@ namespace FlawsFightNight.Services
                 await Task.Delay(TimeSpan.FromSeconds(15), token);
             }
         }
+
+        // ── Tournament LiveView helpers ───────────────────────────────────────
 
         private async Task UpdateMatchesAsync(Tournament tournament, CancellationToken token)
         {
@@ -184,23 +172,56 @@ namespace FlawsFightNight.Services
             });
         }
 
-        private async Task UpdateUT2004GeneralLeaderboard(LeaderboardChannelData leaderboardChannel, CancellationToken token)
+        // ── UT2004 Leaderboard LiveView helpers ───────────────────────────────
+
+        /// <summary>
+        /// Builds the shared category select menu attached to every leaderboard LiveView message.
+        /// Mirrors ComponentFactory.CreateUT2004LeaderboardSelectMenu() without a Bot project dependency.
+        /// </summary>
+        private static MessageComponent BuildLeaderboardSelectMenu()
+        {
+            var selectMenu = new SelectMenuBuilder()
+                .WithCustomId("ut2004leaderboard_select")
+                .WithPlaceholder("📊 Select a leaderboard category...")
+                .AddOption("📊 General", "general", "Overall career stats")
+                .AddOption("🚩 iCTF",   "ictf",    "Capture the Flag leaderboard")
+                .AddOption("🎯 TAM",    "tam",     "Team Arena Master leaderboard")
+                .AddOption("💣 iBR",    "ibr",     "Bombing Run leaderboard");
+
+            return new ComponentBuilder().WithSelectMenu(selectMenu).Build();
+        }
+
+        private static string GetLeaderboardSection(LeaderboardChannelTypes type) => type switch
+        {
+            LeaderboardChannelTypes.iCTF => "ictf",
+            LeaderboardChannelTypes.TAM  => "tam",
+            LeaderboardChannelTypes.iBR  => "ibr",
+            _                            => "general"
+        };
+
+        private async Task UpdateUT2004Leaderboard(LeaderboardChannelData leaderboardChannel, CancellationToken token)
         {
             if (leaderboardChannel == null) return;
             if (leaderboardChannel.ChannelId == 0) return;
             var channel = _client.GetChannel(leaderboardChannel.ChannelId) as IMessageChannel;
             if (channel == null) return;
-            Embed embed = null; // TODO: Create embed factory method for this, maybe components too?
+
+            var profiles = _ut2004StatsService.GetAllPrimaryPlayerProfiles() ?? [];
+            var section = GetLeaderboardSection(leaderboardChannel.Type);
+            var embed = _embedFactory.UT2004LeaderboardEmbed(profiles, section);
+
             if (leaderboardChannel.MessageId != 0)
             {
                 var existing = await channel.GetMessageAsync(leaderboardChannel.MessageId) as IUserMessage;
                 if (existing != null)
                 {
+                    // Only update the embed — Discord preserves the dropdown component automatically.
                     await existing.ModifyAsync(m => m.Embed = embed);
                     return;
                 }
             }
-            var newMsg = await channel.SendMessageAsync(embed: embed);
+
+            var newMsg = await channel.SendMessageAsync(embed: embed, components: BuildLeaderboardSelectMenu());
             leaderboardChannel.MessageId = newMsg.Id;
 
             await _dataContext.SaveAndReloadLeaderboardChannelsFile();
@@ -213,7 +234,10 @@ namespace FlawsFightNight.Services
             if (leaderboardChannel.ChannelId == 0) return;
             var channel = _client.GetChannel(leaderboardChannel.ChannelId) as IMessageChannel;
             if (channel == null) return;
-            Embed embed = null; // TODO: Create embed factory method for BR leaderboard
+
+            var profiles = _ut2004StatsService.GetAllPrimaryPlayerProfiles() ?? [];
+            var embed = _embedFactory.UT2004BRLeaderboardEmbed(profiles);
+
             if (leaderboardChannel.MessageId != 0)
             {
                 var existing = await channel.GetMessageAsync(leaderboardChannel.MessageId) as IUserMessage;
@@ -223,7 +247,8 @@ namespace FlawsFightNight.Services
                     return;
                 }
             }
-            var newMsg = await channel.SendMessageAsync(embed: embed);
+
+            var newMsg = await channel.SendMessageAsync(embed: embed, components: BuildLeaderboardSelectMenu());
             leaderboardChannel.MessageId = newMsg.Id;
 
             await _dataContext.SaveAndReloadLeaderboardChannelsFile();
@@ -236,7 +261,10 @@ namespace FlawsFightNight.Services
             if (leaderboardChannel.ChannelId == 0) return;
             var channel = _client.GetChannel(leaderboardChannel.ChannelId) as IMessageChannel;
             if (channel == null) return;
-            Embed embed = null; // TODO: Create embed factory method for CTF leaderboard
+
+            var profiles = _ut2004StatsService.GetAllPrimaryPlayerProfiles() ?? [];
+            var embed = _embedFactory.UT2004CTFLeaderboardEmbed(profiles);
+
             if (leaderboardChannel.MessageId != 0)
             {
                 var existing = await channel.GetMessageAsync(leaderboardChannel.MessageId) as IUserMessage;
@@ -246,7 +274,8 @@ namespace FlawsFightNight.Services
                     return;
                 }
             }
-            var newMsg = await channel.SendMessageAsync(embed: embed);
+
+            var newMsg = await channel.SendMessageAsync(embed: embed, components: BuildLeaderboardSelectMenu());
             leaderboardChannel.MessageId = newMsg.Id;
 
             await _dataContext.SaveAndReloadLeaderboardChannelsFile();
@@ -259,7 +288,10 @@ namespace FlawsFightNight.Services
             if (leaderboardChannel.ChannelId == 0) return;
             var channel = _client.GetChannel(leaderboardChannel.ChannelId) as IMessageChannel;
             if (channel == null) return;
-            Embed embed = null; // TODO: Create embed factory method for TAM leaderboard
+
+            var profiles = _ut2004StatsService.GetAllPrimaryPlayerProfiles() ?? [];
+            var embed = _embedFactory.UT2004TAMLeaderboardEmbed(profiles);
+
             if (leaderboardChannel.MessageId != 0)
             {
                 var existing = await channel.GetMessageAsync(leaderboardChannel.MessageId) as IUserMessage;
@@ -269,7 +301,8 @@ namespace FlawsFightNight.Services
                     return;
                 }
             }
-            var newMsg = await channel.SendMessageAsync(embed: embed);
+
+            var newMsg = await channel.SendMessageAsync(embed: embed, components: BuildLeaderboardSelectMenu());
             leaderboardChannel.MessageId = newMsg.Id;
 
             await _dataContext.SaveAndReloadLeaderboardChannelsFile();

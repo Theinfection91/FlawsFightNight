@@ -128,10 +128,12 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<RemoveGuidFromMemberHandler>();
                     services.AddSingleton<RemoveDebugAdminHandler>();
                     services.AddSingleton<RemoveFTPCredentialsHandler>();
+                    services.AddSingleton<RemoveLeaderboardChannelHandler>();
                     services.AddSingleton<RemoveMatchesChannelHandler>();
                     services.AddSingleton<RemoveStandingsChannelHandler>();
                     services.AddSingleton<RemoveTeamsChannelHandler>();
                     services.AddSingleton<StatLogsByDateHandler>();
+                    services.AddSingleton<SetLeaderboardChannelHandler>();
                     services.AddSingleton<SetMatchesChannelHandler>();
                     services.AddSingleton<SetStandingsChannelHandler>();
                     services.AddSingleton<SetTeamsChannelHandler>();
