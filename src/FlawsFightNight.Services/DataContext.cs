@@ -11,6 +11,7 @@ using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
 using FlawsFightNight.IO.Handlers;
 using FlawsFightNight.IO.Models;
+using FlawsFightNight.Core.Models.Stats;
 
 namespace FlawsFightNight.Services
 {
@@ -66,12 +67,14 @@ namespace FlawsFightNight.Services
         public List<UT2004PlayerProfileFile> UT2004PlayerProfileFiles { get; private set; }
         private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
 
-        // Tagged Tournament Matches File
-        //public TaggedTournamentMatchesFile TaggedTournamentMatchesFile { get; private set; }
-        //private readonly TaggedTournamentMatchesHandler _taggedTournamentMatchesHandler;
+        // Leaderboard Channel Files
+        private readonly SemaphoreSlim _leaderboardLock = new(1, 1);
+        public LeaderboardChannelsFile LeaderboardChannelsFile { get; private set; }
+        private readonly LeaderboardChannelsHandler _leaderboardChannelsHandler;
+
         #endregion
 
-        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, StatLogIndexHandler statLogIndexHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler)
+        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, StatLogIndexHandler statLogIndexHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler, LeaderboardChannelsHandler leaderboardChannelsHandler)
         {
             DiscordClient = client;
 
@@ -85,6 +88,7 @@ namespace FlawsFightNight.Services
             _statLogIndexHandler = statLogIndexHandler;
             _memberProfileHandler = userProfileHandler;
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
+            _leaderboardChannelsHandler = leaderboardChannelsHandler;
         }
         #endregion
 
@@ -101,6 +105,7 @@ namespace FlawsFightNight.Services
             await _statLogMatchResultsHandler.InitializePendingPathAsync();
             await _memberProfileHandler.InitializePendingPathAsync();
             await _ut2004PlayerProfileHandler.InitializePendingPathAsync();
+            await _leaderboardChannelsHandler.InitializePendingPathAsync();
 
             // After all pending paths are initialized, load the data from those paths
             await LoadDiscordCredentialFile();
@@ -112,6 +117,7 @@ namespace FlawsFightNight.Services
             await LoadAllMemberProfileFiles();
             await LoadAllUT2004PlayerProfileFiles();
             await LoadStatLogIndexFile();
+            await LoadLeaderboardChannelsFile();
         }
         #endregion
 
@@ -268,9 +274,9 @@ namespace FlawsFightNight.Services
             PathOption pathOption = statLog.GameMode switch
             {
                 UT2004GameMode.iCTF => PathOption.iCTFStatLogs,
-                UT2004GameMode.TAM  => PathOption.TAMStatLogs,
-                UT2004GameMode.iBR  => PathOption.iBRStatLogs,
-                _                   => PathOption.iCTFStatLogs
+                UT2004GameMode.TAM => PathOption.TAMStatLogs,
+                UT2004GameMode.iBR => PathOption.iBRStatLogs,
+                _ => PathOption.iCTFStatLogs
             };
 
             await _statLogMatchResultsHandler.SetFilePath(pathOption, $"{statLog.Id}.json");
@@ -498,7 +504,7 @@ namespace FlawsFightNight.Services
             await _statLogIndexHandler.SetFilePath(PathOption.Databases, "stat_log_index.json");
             await _statLogIndexHandler.Save(StatLogIndexFile);
         }
-        
+
         public async Task SaveAndReloadStatLogIndexFile()
         {
             await _statLogIndexHandler.SetFilePath(PathOption.Databases, "stat_log_index.json");
@@ -511,11 +517,11 @@ namespace FlawsFightNight.Services
             if (StatLogIndexFile == null)
                 await LoadStatLogIndexFile();
 
-            StatLogIndexFile.Entries.Add(entry);
+            StatLogIndexFile!.Entries.Add(entry);
             await SaveStatLogIndexFile();
         }
 
-        public StatLogIndexEntry? GetStatLogIndexEntry(string statLogId)
+        public StatLogIndexEntry? GetStatLogIndexEntry(String statLogId)
         {
             return StatLogIndexFile?.Entries.FirstOrDefault(e => e.Id.Equals(statLogId, StringComparison.OrdinalIgnoreCase));
         }
@@ -527,77 +533,63 @@ namespace FlawsFightNight.Services
         }
         #endregion
 
-        #region Admin Ignored Logs
-        //public async Task LoadAdminIgnoredLogsFile()
-        //{
-        //    await _adminIgnoredLogsHandler.SetFilePath(PathOption.Databases, "admin_ignored_logs.json");
-        //    AdminIgnoredLogsFile = await _adminIgnoredLogsHandler.Load();
-        //}
+        #region Leaderboard Channels
+        public async Task LoadLeaderboardChannelsFile()
+        {
+            await _leaderboardChannelsHandler.SetFilePath(PathOption.Databases, "leaderboard_channels.json");
+            LeaderboardChannelsFile = await _leaderboardChannelsHandler.Load();
+        }
 
-        //public async Task SaveAdminIgnoredLogsFile()
-        //{
-        //    await _adminIgnoredLogsHandler.SetFilePath(PathOption.Databases, "admin_ignored_logs.json");
-        //    await _adminIgnoredLogsHandler.Save(AdminIgnoredLogsFile);
-        //}
+        public async Task SaveLeaderboardChannelsFile()
+        {
+            await _leaderboardChannelsHandler.SetFilePath(PathOption.Databases, "leaderboard_channels.json");
+            await _leaderboardChannelsHandler.Save(LeaderboardChannelsFile);
+        }
 
-        //public async Task AddAdminIgnoredLogEntry(AdminIgnoredLogEntry entry)
-        //{
-        //    if (!StatLogIndexFile.Entries.Any(e => e.IsAdminIgnored.Equals(entry.StatLogId, StringComparison.OrdinalIgnoreCase)))
-        //    {
-        //        StatLogIndexFile.Entries.Add(entry);
-        //        await SaveAdminIgnoredLogsFile();
-        //    }
-        //}
+        public async Task SaveAndReloadLeaderboardChannelsFile()
+        {
+            await _leaderboardChannelsHandler.SetFilePath(PathOption.Databases, "leaderboard_channels.json");
+            await _leaderboardChannelsHandler.Save(LeaderboardChannelsFile);
+            await LoadLeaderboardChannelsFile();
+        }
 
-        //public async Task RemoveAdminIgnoredLogEntry(string statLogId)
-        //{
-        //    if (AdminIgnoredLogsFile == null)
-        //        await LoadAdminIgnoredLogsFile();
+        public async Task AddLeaderboardChannel(LeaderboardChannelData channelData)
+        {
+            await _leaderboardLock.WaitAsync();
+            try
+            {
+                if (LeaderboardChannelsFile == null)
+                    await LoadLeaderboardChannelsFile();
 
-        //    AdminIgnoredLogsFile.Entries.RemoveAll(e => e.StatLogId.Equals(statLogId, StringComparison.OrdinalIgnoreCase));
-        //    await SaveAdminIgnoredLogsFile();
-        //}
+                LeaderboardChannelsFile!.LeaderboardChannels.Add(channelData);
+                await SaveLeaderboardChannelsFile();
+            }
+            finally { _leaderboardLock.Release(); }
+        }
 
-        //public bool IsStatLogIgnored(string statLogId)
-        //{
-        //    return AdminIgnoredLogsFile?.Entries.Any(e => e.StatLogId.Equals(statLogId, StringComparison.OrdinalIgnoreCase)) ?? false;
-        //}
-        #endregion
+        public async Task RemoveLeaderboardChannel(ulong channelId)
+        {
+            await _leaderboardLock.WaitAsync();
+            try
+            {
+                if (LeaderboardChannelsFile == null)
+                    await LoadLeaderboardChannelsFile();
 
-        #region Tagged Tournament Match Entries
-        //public async Task LoadTaggedTournamentMatchesFile()
-        //{
-        //    await _taggedTournamentMatchesHandler.SetFilePath(PathOption.Databases, "tagged_tournament_matches.json");
-        //    TaggedTournamentMatchesFile = await _taggedTournamentMatchesHandler.Load();
-        //}
+                LeaderboardChannelsFile!.LeaderboardChannels.RemoveAll(c => c.ChannelId == channelId);
+                await SaveLeaderboardChannelsFile();
+            }
+            finally { _leaderboardLock.Release(); }
+        }
 
-        //public async Task SaveTaggedTournamentMatchesFile()
-        //{
-        //    await _taggedTournamentMatchesHandler.SetFilePath(PathOption.Databases, "tagged_tournament_matches.json");
-        //    await _taggedTournamentMatchesHandler.Save(TaggedTournamentMatchesFile);
-        //}
+        public LeaderboardChannelData? GetLeaderboardChannel(ulong channelId)
+        {
+            return LeaderboardChannelsFile?.LeaderboardChannels.FirstOrDefault(c => c.ChannelId == channelId);
+        }
 
-        //public async Task AddTaggedTournamentMatchEntry(TaggedTournamentMatchEntry entry)
-        //{
-        //    if (TaggedTournamentMatchesFile == null)
-        //        await LoadTaggedTournamentMatchesFile();
-
-        //    // Depending on how you structured TaggedTournamentMatchesFile, adjust the .Entries property as needed.
-        //    if (!TaggedTournamentMatchesFile.Entries.Any(e => e.StatLogId == entry.StatLogId && e.MatchId == entry.MatchId))
-        //    {
-        //        TaggedTournamentMatchesFile.Entries.Add(entry);
-        //        await SaveTaggedTournamentMatchesFile();
-        //    }
-        //}
-
-        //public async Task RemoveTaggedTournamentMatchEntry(string statLogId)
-        //{
-        //    if (TaggedTournamentMatchesFile == null)
-        //        await LoadTaggedTournamentMatchesFile();
-
-        //    TaggedTournamentMatchesFile.Entries.RemoveAll(e => e.StatLogId.Equals(statLogId, StringComparison.OrdinalIgnoreCase));
-        //    await SaveTaggedTournamentMatchesFile();
-        //}
+        public List<LeaderboardChannelData> GetAllLeaderboardChannels()
+        {
+            return LeaderboardChannelsFile?.LeaderboardChannels ?? new List<LeaderboardChannelData>();
+        }
         #endregion
     }
 }

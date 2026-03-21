@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FlawsFightNight.Commands.SettingsCommands;
 using FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands;
+using FlawsFightNight.Core.Enums;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
@@ -20,6 +21,7 @@ namespace FlawsFightNight.Bot.SlashCommands
     {
         private AddDebugAdminHandler _addDebugAdminLogic;
         private RemoveDebugAdminHandler _removeDebugAdminLogic;
+
         public SettingsCommands(AddDebugAdminHandler addDebugAdminLogic, RemoveDebugAdminHandler removeDebugAdminLogic)
         {
             _addDebugAdminLogic = addDebugAdminLogic;
@@ -61,6 +63,61 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
         }
         #endregion
+
+        [Group("leaderboard_channel", "Set or remove a channel as a UT2004 LiveView leaderboard channel")]
+        public class LeaderboardChannelCommands : InteractionModuleBase<SocketInteractionContext>
+        {
+            private readonly SetLeaderboardChannelHandler _setLeaderboardChannelHandler;
+            private readonly RemoveLeaderboardChannelHandler _removeLeaderboardChannelHandler;
+
+            public LeaderboardChannelCommands(
+                SetLeaderboardChannelHandler setLeaderboardChannelHandler,
+                RemoveLeaderboardChannelHandler removeLeaderboardChannelHandler)
+            {
+                _setLeaderboardChannelHandler = setLeaderboardChannelHandler;
+                _removeLeaderboardChannelHandler = removeLeaderboardChannelHandler;
+            }
+
+            [SlashCommand("set", "Register a channel as a UT2004 leaderboard LiveView channel.")]
+            public async Task SetLeaderboardChannelAsync(
+                [Summary("channel", "The channel to post the leaderboard in")] IMessageChannel channel,
+                [Summary("default_view", "Which category this channel defaults to on each refresh (the dropdown always lets users switch)")]
+                [Choice("📊 General", 3)]
+                [Choice("🚩 iCTF", 1)]
+                [Choice("🎯 TAM", 2)]
+                [Choice("💣 iBR", 0)] int defaultType = 3)
+            {
+                try
+                {
+                    await DeferAsync();
+                    var type = (LeaderboardChannelTypes)defaultType;
+                    var result = await _setLeaderboardChannelHandler.Handle(channel, type);
+                    await FollowupAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("remove", "Unregister a channel from the UT2004 leaderboard LiveView.")]
+            public async Task RemoveLeaderboardChannelAsync(
+                [Summary("channel", "The channel to remove from leaderboard LiveView")] IMessageChannel channel)
+            {
+                try
+                {
+                    await DeferAsync();
+                    var result = await _removeLeaderboardChannelHandler.Handle(channel);
+                    await FollowupAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+        }
 
         [Group("matches_channel_id", "Set or remove the channel ID for matches of a specified tournament")]
         public class MatchesChannelCommands : InteractionModuleBase<SocketInteractionContext>

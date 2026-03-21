@@ -1745,5 +1745,173 @@ namespace FlawsFightNight.Services
         }
 
         #endregion
+
+        #region UT2004 Leaderboard Embeds
+        public Embed UT2004LeaderboardEmbed(List<UT2004PlayerProfile> profiles, string section) =>
+            section switch
+            {
+                "ictf" => UT2004CTFLeaderboardEmbed(profiles),
+                "tam" => UT2004TAMLeaderboardEmbed(profiles),
+                "ibr" => UT2004BRLeaderboardEmbed(profiles),
+                _ => UT2004GeneralLeaderboardEmbed(profiles)
+            };
+
+        public Embed UT2004GeneralLeaderboardEmbed(List<UT2004PlayerProfile> profiles)
+        {
+            var sorted = profiles
+                .OrderByDescending(p => p.TotalMatches)
+                .Take(15)
+                .ToList();
+
+            var sb = new StringBuilder();
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                var p = sorted[i];
+                string medal = i switch { 0 => "🥇", 1 => "🥈", 2 => "🥉", _ => $"**{i + 1}.**" };
+                sb.AppendLine($"{medal} **{p.CurrentName}** — {p.TotalMatches} matches · {p.Wins}W/{p.Losses}L · K/D: {p.KDRatio:F2} · WR: {p.WinRate:P0}");
+            }
+
+            return new EmbedBuilder()
+                .WithTitle("📊 UT2004 Leaderboard — General")
+                .WithDescription(sb.Length > 0 ? sb.ToString() : "_No player profiles found._")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Leaderboard · General")
+                .WithCurrentTimestamp()
+                .Build();
+        }
+
+        public Embed UT2004CTFLeaderboardEmbed(List<UT2004PlayerProfile> profiles)
+        {
+            var sorted = profiles
+                .Where(p => p.TotalCTFMatches > 0)
+                .OrderByDescending(p => p.CaptureTheFlagElo.Rating)
+                .Take(15)
+                .ToList();
+
+            var sb = new StringBuilder();
+            if (sorted.Count == 0)
+            {
+                sb.AppendLine("_No iCTF matches played yet._");
+            }
+            else
+            {
+                for (int i = 0; i < sorted.Count; i++)
+                {
+                    var p = sorted[i];
+                    string medal = i switch { 0 => "🥇", 1 => "🥈", 2 => "🥉", _ => $"**{i + 1}.**" };
+                    sb.AppendLine($"{medal} **{p.CurrentName}** — ELO: {p.CaptureTheFlagElo.Rating:F1} · {p.TotalCTFMatches} matches · WR: {p.CTFWinRate:P0} · Caps: {p.TotalFlagCaptures}");
+                }
+            }
+
+            return new EmbedBuilder()
+                .WithTitle("🚩 UT2004 Leaderboard — iCTF")
+                .WithDescription(sb.ToString())
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Leaderboard · iCTF")
+                .WithCurrentTimestamp()
+                .Build();
+        }
+
+        public Embed UT2004TAMLeaderboardEmbed(List<UT2004PlayerProfile> profiles)
+        {
+            var sorted = profiles
+                .Where(p => p.TotalTAMMatches > 0)
+                .OrderByDescending(p => p.TAMElo.Rating)
+                .Take(15)
+                .ToList();
+
+            var sb = new StringBuilder();
+            if (sorted.Count == 0)
+            {
+                sb.AppendLine("_No TAM matches played yet._");
+            }
+            else
+            {
+                for (int i = 0; i < sorted.Count; i++)
+                {
+                    var p = sorted[i];
+                    string medal = i switch { 0 => "🥇", 1 => "🥈", 2 => "🥉", _ => $"**{i + 1}.**" };
+                    sb.AppendLine($"{medal} **{p.CurrentName}** — ELO: {p.TAMElo.Rating:F1} · {p.TotalTAMMatches} matches · WR: {p.TAMWinRate:P0} · Avg Dmg: {p.AverageDamagePerMatch:F0}");
+                }
+            }
+
+            return new EmbedBuilder()
+                .WithTitle("🎯 UT2004 Leaderboard — TAM")
+                .WithDescription(sb.ToString())
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Leaderboard · TAM")
+                .WithCurrentTimestamp()
+                .Build();
+        }
+
+        public Embed UT2004BRLeaderboardEmbed(List<UT2004PlayerProfile> profiles)
+        {
+            var sorted = profiles
+                .Where(p => p.TotalBRMatches > 0)
+                .OrderByDescending(p => p.BombingRunElo.Rating)
+                .Take(15)
+                .ToList();
+
+            var sb = new StringBuilder();
+            if (sorted.Count == 0)
+            {
+                sb.AppendLine("_No iBR matches played yet._");
+            }
+            else
+            {
+                for (int i = 0; i < sorted.Count; i++)
+                {
+                    var p = sorted[i];
+                    string medal = i switch { 0 => "🥇", 1 => "🥈", 2 => "🥉", _ => $"**{i + 1}.**" };
+                    sb.AppendLine($"{medal} **{p.CurrentName}** — ELO: {p.BombingRunElo.Rating:F1} · {p.TotalBRMatches} matches · WR: {p.BRWinRate:P0} · Ball Caps: {p.TotalBallCaptures}");
+                }
+            }
+
+            return new EmbedBuilder()
+                .WithTitle("💣 UT2004 Leaderboard — iBR")
+                .WithDescription(sb.ToString())
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Leaderboard · iBR")
+                .WithCurrentTimestamp()
+                .Build();
+        }
+
+        public Embed SetLeaderboardChannelSuccess(IMessageChannel channel, LeaderboardChannelTypes defaultType)
+        {
+            string typeDisplay = defaultType switch
+            {
+                LeaderboardChannelTypes.iCTF => "🚩 iCTF",
+                LeaderboardChannelTypes.TAM => "🎯 TAM",
+                LeaderboardChannelTypes.iBR => "💣 iBR",
+                _ => "📊 General"
+            };
+
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Leaderboard Channel Set Successfully")
+                .WithDescription(
+                    $"<#{channel.Id}> has been registered as a UT2004 leaderboard channel.\n\n" +
+                    $"The LiveView will appear within the next update cycle. " +
+                    $"The message includes a dropdown so anyone can switch between all four categories — " +
+                    $"the **{typeDisplay}** view will always be restored on each refresh.")
+                .AddField("Channel", $"<#{channel.Id}>", true)
+                .AddField("Default View", typeDisplay, true)
+                .WithColor(Color.Green)
+                .WithFooter("The UT2004 Leaderboard LiveView will now be posted in this channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveLeaderboardChannelSuccess(IMessageChannel channel)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Leaderboard Channel Removed Successfully")
+                .WithDescription($"<#{channel.Id}> has been removed as a UT2004 leaderboard channel. No more leaderboard updates will be posted there.")
+                .AddField("Channel", $"<#{channel.Id}>")
+                .WithColor(Color.Green)
+                .WithFooter("The UT2004 Leaderboard LiveView will no longer be posted in this channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+        #endregion
     }
 }
