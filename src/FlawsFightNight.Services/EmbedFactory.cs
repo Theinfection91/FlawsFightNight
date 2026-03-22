@@ -46,6 +46,16 @@ namespace FlawsFightNight.Services
             return embed.Build();
         }
 
+        public Embed SuccessEmbed(string title, string description)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"✅ {title}")
+                .WithDescription(description)
+                .WithColor(Color.Green)
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
         public Embed ErrorEmbed(string commandName, string message = "An unexpected error occurred.")
         {
             var embed = new EmbedBuilder()

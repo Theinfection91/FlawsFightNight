@@ -83,7 +83,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = await _setAdminFeedChannelHandler.Handle();
+                    var result = await _setAdminFeedChannelHandler.Handle(channel);
                     await FollowupAsync(embed: result);
                 }
                 catch (Exception ex)

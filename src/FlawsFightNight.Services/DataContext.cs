@@ -67,14 +67,14 @@ namespace FlawsFightNight.Services
         public List<UT2004PlayerProfileFile> UT2004PlayerProfileFiles { get; private set; }
         private readonly UT2004PlayerProfileHandler _ut2004PlayerProfileHandler;
 
-        // Leaderboard Channel Files
-        private readonly SemaphoreSlim _leaderboardLock = new(1, 1);
-        public LeaderboardChannelsFile LeaderboardChannelsFile { get; private set; }
-        private readonly LeaderboardChannelsHandler _leaderboardChannelsHandler;
+        // Live View Channel Files
+        private readonly SemaphoreSlim _liveViewLock = new(1, 1);
+        public LiveViewChannelsFile LiveViewChannelsFile { get; private set; }
+        private readonly LiveViewChannelsHandler _liveViewChannelsHandler;
 
         #endregion
 
-        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, StatLogIndexHandler statLogIndexHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler, LeaderboardChannelsHandler leaderboardChannelsHandler)
+        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, StatLogIndexHandler statLogIndexHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler, LiveViewChannelsHandler liveViewChannelsHandler)
         {
             DiscordClient = client;
 
@@ -88,7 +88,7 @@ namespace FlawsFightNight.Services
             _statLogIndexHandler = statLogIndexHandler;
             _memberProfileHandler = userProfileHandler;
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
-            _leaderboardChannelsHandler = leaderboardChannelsHandler;
+            _liveViewChannelsHandler = liveViewChannelsHandler;
         }
         #endregion
 
@@ -105,7 +105,7 @@ namespace FlawsFightNight.Services
             await _statLogMatchResultsHandler.InitializePendingPathAsync();
             await _memberProfileHandler.InitializePendingPathAsync();
             await _ut2004PlayerProfileHandler.InitializePendingPathAsync();
-            await _leaderboardChannelsHandler.InitializePendingPathAsync();
+            await _liveViewChannelsHandler.InitializePendingPathAsync();
 
             // After all pending paths are initialized, load the data from those paths
             await LoadDiscordCredentialFile();
@@ -117,7 +117,7 @@ namespace FlawsFightNight.Services
             await LoadAllMemberProfileFiles();
             await LoadAllUT2004PlayerProfileFiles();
             await LoadStatLogIndexFile();
-            await LoadLeaderboardChannelsFile();
+            await LoadLiveViewChannelsFile();
         }
         #endregion
 
@@ -533,62 +533,77 @@ namespace FlawsFightNight.Services
         }
         #endregion
 
-        #region Leaderboard Channels
-        public async Task LoadLeaderboardChannelsFile()
+        #region LiveView Channels
+        public async Task LoadLiveViewChannelsFile()
         {
-            await _leaderboardChannelsHandler.SetFilePath(PathOption.Databases, "leaderboard_channels.json");
-            LeaderboardChannelsFile = await _leaderboardChannelsHandler.Load();
+            await _liveViewChannelsHandler.SetFilePath(PathOption.Databases, "liveview_channels.json");
+            LiveViewChannelsFile = await _liveViewChannelsHandler.Load();
         }
 
-        public async Task SaveLeaderboardChannelsFile()
+        public async Task SaveLiveViewChannelsFile()
         {
-            await _leaderboardChannelsHandler.SetFilePath(PathOption.Databases, "leaderboard_channels.json");
-            await _leaderboardChannelsHandler.Save(LeaderboardChannelsFile);
-        }
-
-        public async Task SaveAndReloadLeaderboardChannelsFile()
-        {
-            await _leaderboardChannelsHandler.SetFilePath(PathOption.Databases, "leaderboard_channels.json");
-            await _leaderboardChannelsHandler.Save(LeaderboardChannelsFile);
-            await LoadLeaderboardChannelsFile();
+            await _liveViewChannelsHandler.SetFilePath(PathOption.Databases, "liveview_channels.json");
+            await _liveViewChannelsHandler.Save(LiveViewChannelsFile);
         }
 
         public async Task AddLeaderboardChannel(LeaderboardChannelData channelData)
         {
-            await _leaderboardLock.WaitAsync();
+            await _liveViewLock.WaitAsync();
             try
             {
-                if (LeaderboardChannelsFile == null)
-                    await LoadLeaderboardChannelsFile();
+                if (LiveViewChannelsFile == null)
+                    await LoadLiveViewChannelsFile();
 
-                LeaderboardChannelsFile!.LeaderboardChannels.Add(channelData);
-                await SaveLeaderboardChannelsFile();
+                // Alias to the new model
+                LiveViewChannelsFile!.LeaderboardChannels.Add(channelData);
+                await SaveLiveViewChannelsFile();
             }
-            finally { _leaderboardLock.Release(); }
+            finally { _liveViewLock.Release(); }
         }
 
         public async Task RemoveLeaderboardChannel(ulong channelId)
         {
-            await _leaderboardLock.WaitAsync();
+            await _liveViewLock.WaitAsync();
             try
             {
-                if (LeaderboardChannelsFile == null)
-                    await LoadLeaderboardChannelsFile();
+                if (LiveViewChannelsFile == null)
+                    await LoadLiveViewChannelsFile();
 
-                LeaderboardChannelsFile!.LeaderboardChannels.RemoveAll(c => c.ChannelId == channelId);
-                await SaveLeaderboardChannelsFile();
+                LiveViewChannelsFile!.LeaderboardChannels.RemoveAll(c => c.ChannelId == channelId);
+                await SaveLiveViewChannelsFile();
             }
-            finally { _leaderboardLock.Release(); }
+            finally { _liveViewLock.Release(); }
         }
 
         public LeaderboardChannelData? GetLeaderboardChannel(ulong channelId)
         {
-            return LeaderboardChannelsFile?.LeaderboardChannels.FirstOrDefault(c => c.ChannelId == channelId);
+            return LiveViewChannelsFile?.LeaderboardChannels.FirstOrDefault(c => c.ChannelId == channelId);
         }
 
         public List<LeaderboardChannelData> GetAllLeaderboardChannels()
         {
-            return LeaderboardChannelsFile?.LeaderboardChannels ?? new List<LeaderboardChannelData>();
+            return LiveViewChannelsFile?.LeaderboardChannels ?? new List<LeaderboardChannelData>();
+        }   
+
+        public async Task SaveAndReloadLeaderboardChannelsFile()
+        {
+            await SaveLiveViewChannelsFile();
+            await LoadLiveViewChannelsFile();
+        }
+
+        public async Task SetAdminChannelFeedAsync(ulong channelId)
+        {
+            // Make sure we have the file loaded
+            if (LiveViewChannelsFile == null)
+                await LoadLiveViewChannelsFile();
+
+            LiveViewChannelsFile!.AdminChannelFeedId = channelId;
+            await SaveLiveViewChannelsFile();
+        }
+
+        public ulong GetAdminChannelFeedId()
+        {
+            return LiveViewChannelsFile?.AdminChannelFeedId ?? 0;
         }
         #endregion
     }
