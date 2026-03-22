@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using FlawsFightNight.Commands.SettingsCommands;
 using FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands;
 using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Commands.SettingsCommands.AdminChannelFeedCommands;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
@@ -64,6 +65,53 @@ namespace FlawsFightNight.Bot.SlashCommands
         }
         #endregion
 
+        #region The Feed Channel Commands
+        [Group("admin_feed_channel", "Set or remove a channel as the UT2004 LiveView admin feed channel for updates and logging")]
+        public class AdminFeedChannelCommands : InteractionModuleBase<SocketInteractionContext>
+        {
+            private readonly SetAdminChannelFeedHandler _setAdminFeedChannelHandler;
+            private readonly RemoveAdminChannelFeedHandler _removeAdminFeedChannelHandler;
+            public AdminFeedChannelCommands(SetAdminChannelFeedHandler setAdminFeedChannelHandler, RemoveAdminChannelFeedHandler removeAdminFeedChannelHandler)
+            {
+                _setAdminFeedChannelHandler = setAdminFeedChannelHandler;
+                _removeAdminFeedChannelHandler = removeAdminFeedChannelHandler;
+            }
+            [SlashCommand("set", "Register a channel as the UT2004 LiveView admin feed channel for updates and logging.")]
+            public async Task SetAdminFeedChannelAsync(
+                [Summary("channel", "The channel to post admin updates and logs in")] IMessageChannel channel)
+            {
+                try
+                {
+                    await DeferAsync();
+                    var result = await _setAdminFeedChannelHandler.Handle();
+                    await FollowupAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("remove", "Unregister current channel from the UT2004 LiveView admin feed if set.")]
+            public async Task RemoveAdminFeedChannelAsync()
+            {
+                try
+                {
+                    await DeferAsync();
+                    var result = await _removeAdminFeedChannelHandler.Handle();
+                    await FollowupAsync(embed: result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Command Error: {ex}");
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+        }
+        #endregion
+
+        #region Leaderboard Channel Commands
         [Group("leaderboard_channel", "Set or remove a channel as a UT2004 LiveView leaderboard channel")]
         public class LeaderboardChannelCommands : InteractionModuleBase<SocketInteractionContext>
         {
@@ -118,6 +166,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
             }
         }
+        #endregion
 
         [Group("matches_channel_id", "Set or remove the channel ID for matches of a specified tournament")]
         public class MatchesChannelCommands : InteractionModuleBase<SocketInteractionContext>

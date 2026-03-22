@@ -5,6 +5,7 @@ using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Commands.MatchCommands;
 using FlawsFightNight.Commands.SettingsCommands;
+using FlawsFightNight.Commands.SettingsCommands.AdminChannelFeedCommands;
 using FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands;
 using FlawsFightNight.Commands.StatsCommands.TournamentStatsCommands;
 using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
@@ -125,6 +126,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<IgnoreLogsByIDHandler>();
                     services.AddSingleton<LastStatLogsHandler>();
                     services.AddSingleton<RegisterGuidToMemberHandler>();
+                    services.AddSingleton<RemoveAdminChannelFeedHandler>();
                     services.AddSingleton<RemoveGuidFromMemberHandler>();
                     services.AddSingleton<RemoveDebugAdminHandler>();
                     services.AddSingleton<RemoveFTPCredentialsHandler>();
@@ -133,6 +135,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<RemoveStandingsChannelHandler>();
                     services.AddSingleton<RemoveTeamsChannelHandler>();
                     services.AddSingleton<StatLogsByDateHandler>();
+                    services.AddSingleton<SetAdminChannelFeedHandler>();
                     services.AddSingleton<SetLeaderboardChannelHandler>();
                     services.AddSingleton<SetMatchesChannelHandler>();
                     services.AddSingleton<SetStandingsChannelHandler>();
