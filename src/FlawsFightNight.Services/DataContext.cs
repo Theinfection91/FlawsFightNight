@@ -215,10 +215,7 @@ namespace FlawsFightNight.Services
 
         public async Task RemoveTournament(string tournamentId)
         {
-            // Remove from in-memory list
             TournamentDataFiles.RemoveAll(t => t.Tournament.Id.Equals(tournamentId, StringComparison.OrdinalIgnoreCase));
-
-            // Remove the actual folder and contents
             await _tournamentDataHandler.DeleteFolderAndContents(tournamentId);
         }
 
@@ -237,7 +234,6 @@ namespace FlawsFightNight.Services
 
         public async Task SaveProcessedLogNamesFile()
         {
-            //await _processedLogNamesHandler.Save(ProcessedLogNamesFile);
             await _processedLogNamesHandler.SetFilePath(PathOption.Databases, "processed_log_names.json");
             await _processedLogNamesHandler.Save(ProcessedLogNamesFile);
         }
@@ -269,8 +265,6 @@ namespace FlawsFightNight.Services
 
         public async Task SaveStatLogMatchResultFile(UT2004StatLog statLog)
         {
-            // File name is now the stat log ID (e.g. "iCTF000015.json") so we can load
-            // a single file directly by ID without scanning every file in the directory.
             PathOption pathOption = statLog.GameMode switch
             {
                 UT2004GameMode.iCTF => PathOption.iCTFStatLogs,
@@ -283,10 +277,6 @@ namespace FlawsFightNight.Services
             await _statLogMatchResultsHandler.Save(new StatLogMatchResultsFile { StatLog = statLog });
         }
 
-        /// <summary>
-        /// Loads a single stat log by ID without scanning the entire directory.
-        /// Derives the mode subdirectory from the ID prefix (e.g. "iCTF", "TAM", "iBR").
-        /// </summary>
         public async Task<UT2004StatLog?> LoadStatLogByID(string statLogID)
         {
             PathOption pathOption;
@@ -467,9 +457,7 @@ namespace FlawsFightNight.Services
 
         public async Task DeleteUT2004ProfilesDatabase()
         {
-            // Clear in-memory list
             UT2004PlayerProfileFiles.Clear();
-            // Delete all profile files from disk
             await _ut2004PlayerProfileHandler.DeleteJsonFilesInFolder(PathOption.UT2004PlayerProfiles);
         }
         #endregion
@@ -554,7 +542,6 @@ namespace FlawsFightNight.Services
                 if (LiveViewChannelsFile == null)
                     await LoadLiveViewChannelsFile();
 
-                // Alias to the new model
                 LiveViewChannelsFile!.LeaderboardChannels.Add(channelData);
                 await SaveLiveViewChannelsFile();
             }
@@ -593,7 +580,6 @@ namespace FlawsFightNight.Services
 
         public async Task SetAdminChannelFeedAsync(ulong channelId)
         {
-            // Make sure we have the file loaded
             if (LiveViewChannelsFile == null)
                 await LoadLiveViewChannelsFile();
 
