@@ -14,8 +14,11 @@ using FlawsFightNight.Commands.TournamentCommands;
 using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.IO.Handlers;
 using FlawsFightNight.Services;
+using FlawsFightNight.Services.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Reflection;
 
 namespace FlawsFightNight.Bot
@@ -214,6 +217,21 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<OpenSkillRatingService>();
                     services.AddSingleton<UTStatsDBEloRatingService>();
                     services.AddSingleton<SeamlessRatingsMapper>();
+
+                    // Discord admin feed sender (single instance + hosted worker)
+                    services.AddSingleton<DiscordAdminFeedService>();
+                    services.AddHostedService(sp => sp.GetRequiredService<DiscordAdminFeedService>());
+
+                    // Logger options (adjust MinimumLevel/QueueCapacity as needed)
+                    services.AddSingleton<IOptions<DiscordAdminLoggerOptions>>(sp =>
+                        Options.Create(new DiscordAdminLoggerOptions {
+                            Enabled = true,
+                            MinimumLevel = LogLevel.Warning,
+                            QueueCapacity = 1000
+                        }));
+
+                    // Register the logger provider (constructed by DI)
+                    services.AddSingleton<ILoggerProvider, DiscordAdminLoggerProvider>();
                 })
                 .Build();
 

@@ -3,6 +3,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
 using FlawsFightNight.Services;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,19 +17,23 @@ namespace FlawsFightNight.Bot.Components
         private readonly MemberService _memberService;
         private readonly ComparePlayersHandler _comparePlayersHandler;
         private readonly UserLevelLeaderboardHandler _leaderboardHandler;
+        private readonly ILogger<ComponentHandler> _logger;
 
         public ComponentHandler(
             EmbedFactory embedFactory,
             AdminConfigurationService adminConfigService,
             MemberService memberService,
             ComparePlayersHandler comparePlayersHandler,
-            UserLevelLeaderboardHandler leaderboardHandler)
+            UserLevelLeaderboardHandler leaderboardHandler,
+            ILogger<ComponentHandler> logger)
         {
             _embedFactory = embedFactory;
             _adminConfigService = adminConfigService;
             _memberService = memberService;
             _comparePlayersHandler = comparePlayersHandler;
             _leaderboardHandler = leaderboardHandler;
+
+            _logger = logger;
         }
 
         private bool IsAuthorizedUser(ulong expectedUserId) => Context.User.Id == expectedUserId;
@@ -45,6 +50,7 @@ namespace FlawsFightNight.Bot.Components
 
             try
             {
+                _logger.LogWarning("[ComponentHandler] FTP setup process initiated by user {UserId} ({Username}).", Context.User.Id, Context.User.Username);
                 var statusEmbed = _embedFactory.GenericEmbed(
                     "🚀 FTP Setup Initiated",
                     "Running FTP setup process...\n\n**Go back to the console to continue.**\n\nIf chosen by mistake, you can cancel the process in console or by using `/settings ftp_stats_service cancel_setup`\n\nTo remove existing credentials use `/settings ftp_stats_service remove_credentials`",

@@ -7,6 +7,7 @@ using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.MatchLogs;
 using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Core.Models.UT2004;
+using FlawsFightNight.Services.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -1923,5 +1924,40 @@ namespace FlawsFightNight.Services
             return embed.Build();
         }
         #endregion
+
+        public Embed FromLogEntry(DiscordAdminLogEntry entry)
+        {
+            var color = entry.Level switch
+            {
+                Microsoft.Extensions.Logging.LogLevel.Critical => Color.DarkRed,
+                Microsoft.Extensions.Logging.LogLevel.Error => Color.Red,
+                Microsoft.Extensions.Logging.LogLevel.Warning => Color.Orange,
+                Microsoft.Extensions.Logging.LogLevel.Information => Color.Blue,
+                _ => Color.LightGrey
+            };
+
+            var embed = new EmbedBuilder()
+                .WithTitle($"[{entry.Level}] {entry.Category}")
+                .WithDescription(entry.Message)
+                .WithColor(color)
+                .WithTimestamp(entry.TimestampUtc);
+
+            if (!string.IsNullOrEmpty(entry.ExceptionMessage))
+            {
+                embed.AddField("Exception", entry.ExceptionMessage, false);
+            }
+
+            // Limits the stack trace length to stop Discord from rejecting large embeds (1024 char limit per field value)
+            if (!string.IsNullOrEmpty(entry.ExceptionStackTrace))
+            {
+                var stackTrace = entry.ExceptionStackTrace.Length > 1000
+                    ? entry.ExceptionStackTrace.Substring(0, 1000) + "..."
+                    : entry.ExceptionStackTrace;
+
+                embed.AddField("Stack Trace", $"```\n{stackTrace}\n```", false);
+            }
+
+            return embed.Build();
+        }
     }
 }
