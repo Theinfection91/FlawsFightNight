@@ -1927,37 +1927,59 @@ namespace FlawsFightNight.Services
 
         public Embed FromLogEntry(DiscordAdminLogEntry entry)
         {
-            var color = entry.Level switch
+            // Strip namespace — show only the class name
+            var shortCategory = entry.Category.Contains('.')
+                ? entry.Category[(entry.Category.LastIndexOf('.') + 1)..]
+                : entry.Category;
+
+            var (emoji, label, color) = entry.Level switch
             {
-                Microsoft.Extensions.Logging.LogLevel.Critical => Color.DarkRed,
-                Microsoft.Extensions.Logging.LogLevel.Error => Color.Red,
-                Microsoft.Extensions.Logging.LogLevel.Warning => Color.Orange,
-                Microsoft.Extensions.Logging.LogLevel.Information => Color.Blue,
-                _ => Color.LightGrey
+                Microsoft.Extensions.Logging.LogLevel.Critical => ("🚨", $"{shortCategory} Critical", new Color(0x8B0000)),
+                Microsoft.Extensions.Logging.LogLevel.Error => ("🔴", $"{shortCategory} Error", Color.Red),
+                Microsoft.Extensions.Logging.LogLevel.Warning => ("⚠️", $"{shortCategory} Warning", Color.Orange),
+                Microsoft.Extensions.Logging.LogLevel.Information => ("🔵", $"{shortCategory} Info", Color.Blue),
+                Microsoft.Extensions.Logging.LogLevel.Debug => ("🔧", $"{shortCategory} Debug", Color.LightGrey),
+                _ => ("📋", $"{shortCategory} Trace", Color.LightGrey)
             };
 
-            var embed = new EmbedBuilder()
-                .WithTitle($"[{entry.Level}] {entry.Category}")
-                .WithDescription(entry.Message)
+            var message = entry.Message.Length > 4000
+                ? entry.Message[..4000] + "…"
+                : entry.Message;
+
+            var builder = new EmbedBuilder()
+                .WithTitle($"{emoji}  {label}")
+                .WithDescription($"```\n{message}\n```")
                 .WithColor(color)
-                .WithTimestamp(entry.TimestampUtc);
+                .WithTimestamp(entry.TimestampUtc)
+                .WithFooter("Flaws Fight Night • Admin Feed");
+
+            builder.AddField("📂 Source", $"`{shortCategory}`", inline: true);
+
+            if (entry.EventId.Id != 0 || !string.IsNullOrEmpty(entry.EventId.Name))
+            {
+                var eventLabel = string.IsNullOrEmpty(entry.EventId.Name)
+                    ? $"`{entry.EventId.Id}`"
+                    : $"`{entry.EventId.Name}` ({entry.EventId.Id})";
+                builder.AddField("🔖 Event", eventLabel, inline: true);
+            }
 
             if (!string.IsNullOrEmpty(entry.ExceptionMessage))
             {
-                embed.AddField("Exception", entry.ExceptionMessage, false);
+                var exMsg = entry.ExceptionMessage.Length > 1000
+                    ? entry.ExceptionMessage[..1000] + "…"
+                    : entry.ExceptionMessage;
+                builder.AddField("💥 Exception", $"```\n{exMsg}\n```", inline: false);
             }
 
-            // Limits the stack trace length to stop Discord from rejecting large embeds (1024 char limit per field value)
             if (!string.IsNullOrEmpty(entry.ExceptionStackTrace))
             {
-                var stackTrace = entry.ExceptionStackTrace.Length > 1000
-                    ? entry.ExceptionStackTrace.Substring(0, 1000) + "..."
+                var trace = entry.ExceptionStackTrace.Length > 900
+                    ? entry.ExceptionStackTrace[..900] + "\n…"
                     : entry.ExceptionStackTrace;
-
-                embed.AddField("Stack Trace", $"```\n{stackTrace}\n```", false);
+                builder.AddField("📄 Stack Trace", $"```\n{trace}\n```", inline: false);
             }
 
-            return embed.Build();
+            return builder.Build();
         }
     }
 }
