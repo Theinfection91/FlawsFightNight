@@ -39,11 +39,7 @@ namespace FlawsFightNight.Services.Logging
                     if (channelId == 0) continue;
 
                     var ch = _discord.GetChannel(channelId) as IMessageChannel;
-                    if (ch == null)
-                    {
-                        Debug.WriteLine($"[DiscordAdminFeedService] Configured admin feed channel ID {channelId} is invalid or inaccessible.");
-                        continue;
-                    }
+                    if (ch == null) continue;
 
                     var embed = _embedFactory.FromLogEntry(entry);
                     await ch.SendMessageAsync(embed: embed);

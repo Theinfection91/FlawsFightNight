@@ -9,7 +9,7 @@ namespace FlawsFightNight.Services.Logging
         public bool Enabled { get; set; } = true;
 
         // Minimum log level to forward to Discord
-        public LogLevel MinimumLevel { get; set; } = LogLevel.Error;
+        public LogLevel MinimumLevel { get; set; } = LogLevel.Trace;
 
         // Maximum number of queued entries (bounded channel capacity)
         public int QueueCapacity { get; set; } = 1000;

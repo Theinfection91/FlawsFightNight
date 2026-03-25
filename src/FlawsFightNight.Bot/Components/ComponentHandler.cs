@@ -3,6 +3,7 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
 using FlawsFightNight.Services;
+using FlawsFightNight.Services.Logging;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
@@ -50,7 +51,7 @@ namespace FlawsFightNight.Bot.Components
 
             try
             {
-                _logger.LogWarning("FTP setup process initiated by user {UserId} ({Username}).", Context.User.Id, Context.User.Username);
+                _logger.LogInformation(AdminFeedEvents.FtpSetupStarted, "FTP setup process initiated by user {UserId} ({Username}).", Context.User.Id, Context.User.Username);
                 var statusEmbed = _embedFactory.GenericEmbed(
                     "🚀 FTP Setup Initiated",
                     "Running FTP setup process...\n\n**Go back to the console to continue.**\n\nIf chosen by mistake, you can cancel the process in console or by using `/settings ftp_stats_service cancel_setup`\n\nTo remove existing credentials use `/settings ftp_stats_service remove_credentials`",
@@ -68,17 +69,17 @@ namespace FlawsFightNight.Bot.Components
                     try
                     {
                         await _adminConfigService.FTPSetupProcess(isUserInit: true);
-                        Console.WriteLine($"{DateTime.Now} - [ComponentHandler] FTP setup completed via Discord command.");
+                        //_logger.LogInformation(AdminFeedEvents.FtpSetupCompleted, "FTP setup completed via Discord command by {UserId}.", Context.User.Id);
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"{DateTime.Now} - [ComponentHandler] FTP setup error: {ex}");
+                        _logger.LogError(AdminFeedEvents.FtpSetupFailed, ex, "FTP setup failed for user {UserId}.", Context.User.Id);
                     }
                 });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Component Error - FTP Confirm] {ex}");
+                _logger.LogError(AdminFeedEvents.FtpSetupFailed, ex, "FTP setup failed for user {UserId}.", Context.User.Id);
                 await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred while running FTP setup: {ex.Message}"), ephemeral: true);
             }
         }
@@ -103,7 +104,7 @@ namespace FlawsFightNight.Bot.Components
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Component Error - FTP Cancel] {ex}");
+                _logger.LogError(AdminFeedEvents.FtpSetupFailed, ex, "FTP setup cancellation failed for user {UserId}.", Context.User.Id);
                 await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }
@@ -133,17 +134,18 @@ namespace FlawsFightNight.Bot.Components
                     try
                     {
                         _adminConfigService.NotifyCancelFTPSetupProcess();
+                        _logger.LogInformation(AdminFeedEvents.FtpSetupCancelled, "FTP setup cancellation confirmed by user {UserId} ({Username}).", Context.User.Id, Context.User.Username);
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"{DateTime.Now} - [ComponentHandler] FTP setup cancellation error: {ex}");
+                        _logger.LogError(AdminFeedEvents.FtpSetupFailed, ex, "FTP setup cancellation error for user {UserId}.", Context.User.Id);
                     }
                     return Task.CompletedTask;
                 });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Component Error - FTP Cancel] {ex}");
+                _logger.LogError(AdminFeedEvents.FtpSetupFailed, ex, "FTP setup cancellation error for user {UserId}.", Context.User.Id);
                 await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }
@@ -168,7 +170,7 @@ namespace FlawsFightNight.Bot.Components
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Component Error - FTP Cancel] {ex}");
+                _logger.LogError(AdminFeedEvents.FtpSetupFailed, ex, "FTP setup cancellation error for user {UserId}.", Context.User.Id);
                 await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }

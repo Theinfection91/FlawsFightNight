@@ -105,6 +105,12 @@ namespace FlawsFightNight.Bot
 
             // Host and DI setup
             var host = Host.CreateDefaultBuilder()
+                .ConfigureLogging(logging =>
+                {
+                    // Allow the DiscordAdminLoggerProvider to see Information+ logs.
+                    // EventId filtering inside DiscordAdminLogger is the real gate to Discord.
+                    logging.SetMinimumLevel(LogLevel.Information);
+                })
                 .ConfigureServices(services =>
                 {
                     services.AddSingleton(_client);
@@ -222,11 +228,11 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<DiscordAdminFeedService>();
                     services.AddHostedService(sp => sp.GetRequiredService<DiscordAdminFeedService>());
 
-                    // Logger options (adjust MinimumLevel/QueueCapacity as needed)
+                    // Logger options
                     services.AddSingleton<IOptions<DiscordAdminLoggerOptions>>(sp =>
                         Options.Create(new DiscordAdminLoggerOptions {
                             Enabled = true,
-                            MinimumLevel = LogLevel.Warning,
+                            MinimumLevel = LogLevel.Information,
                             QueueCapacity = 1000
                         }));
 
