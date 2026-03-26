@@ -4,13 +4,14 @@ using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Modals;
 using FlawsFightNight.Bot.Attributes;
 using FlawsFightNight.Commands.TeamCommands;
+using FlawsFightNight.Commands.TournamentCommands;
 using FlawsFightNight.Core.Enums;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FlawsFightNight.Commands.TournamentCommands;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
@@ -18,16 +19,17 @@ namespace FlawsFightNight.Bot.SlashCommands
     public class TournamentCommands : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly AutocompleteCache _autocompleteCache;
-        private CreateTournamentHandler _createTournamentLogic;
-        private LockInRoundHandler _lockInRoundLogic;
-        private LockTeamsHandler _lockTeamsLogic;
-        private NextRoundHandler _nextRoundLogic;
-        private SetupRoundRobinTournamentHandler _setupTournamentLogic;
-        private ShowAllTournamentsHandler _showAllTournamentsLogic;
-        private UnlockRoundHandler _unlockRoundLogic;
-        private UnlockTeamsHandler _unlockTeamsLogic;
+        private readonly CreateTournamentHandler _createTournamentLogic;
+        private readonly LockInRoundHandler _lockInRoundLogic;
+        private readonly LockTeamsHandler _lockTeamsLogic;
+        private readonly NextRoundHandler _nextRoundLogic;
+        private readonly SetupRoundRobinTournamentHandler _setupTournamentLogic;
+        private readonly ShowAllTournamentsHandler _showAllTournamentsLogic;
+        private readonly UnlockRoundHandler _unlockRoundLogic;
+        private readonly UnlockTeamsHandler _unlockTeamsLogic;
+        private readonly ILogger<TournamentCommands> _logger;
 
-        public TournamentCommands(AutocompleteCache autocompleteCache, CreateTournamentHandler createTournamentLogic, LockInRoundHandler lockInRoundLogic, LockTeamsHandler lockTeamsLogic, NextRoundHandler nextRoundLogic, SetupRoundRobinTournamentHandler setupTournamentLogic, ShowAllTournamentsHandler showAllTournamentsLogic, UnlockRoundHandler unlockRoundLogic, UnlockTeamsHandler unlockTeamsLogic)
+        public TournamentCommands(AutocompleteCache autocompleteCache, CreateTournamentHandler createTournamentLogic, LockInRoundHandler lockInRoundLogic, LockTeamsHandler lockTeamsLogic, NextRoundHandler nextRoundLogic, SetupRoundRobinTournamentHandler setupTournamentLogic, ShowAllTournamentsHandler showAllTournamentsLogic, UnlockRoundHandler unlockRoundLogic, UnlockTeamsHandler unlockTeamsLogic, ILogger<TournamentCommands> logger)
         {
             _autocompleteCache = autocompleteCache;
             _createTournamentLogic = createTournamentLogic;
@@ -38,6 +40,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             _showAllTournamentsLogic = showAllTournamentsLogic;
             _unlockRoundLogic = unlockRoundLogic;
             _unlockTeamsLogic = unlockTeamsLogic;
+            _logger = logger;
         }
 
         [SlashCommand("create", "Create a new tournament")]
@@ -57,7 +60,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(CreateTournamentAsync));
                 await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -72,7 +75,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(DeleteTournamentAsync));
                 await RespondAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -80,8 +83,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("lock-teams", "Lock teams in a tournament")]
         [RequireGuildAdmin]
         public async Task LockTeamsAsync(
-            [Summary("tournament_id", "The ID of the tournament to lock teams in"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))
-            ] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to lock teams in"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
@@ -92,7 +94,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(LockTeamsAsync));
                 await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -100,8 +102,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("unlock-teams", "Unlock teams in a tournament")]
         [RequireGuildAdmin]
         public async Task UnlockTeamsAsync(
-            [Summary("tournament_id", "The ID of the tournament to unlock teams in"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))
-            ] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to unlock teams in"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
@@ -112,7 +113,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(UnlockTeamsAsync));
                 await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -127,7 +128,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(StartTournamentAsync));
                 await RespondAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -135,8 +136,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("setup_round_robin", "Setup a RR tournaments rules and habits before starting it.")]
         [RequireGuildAdmin]
         public async Task SetupTournamentAsync(
-            [Summary("tournament_id", "The ID of the tournament to setup"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))
-            ] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to setup"), Autocomplete(typeof(RoundRobinTournamentIdAutocomplete))] string tournamentId,
             [Summary("tie_breaker_ruleset", "The ruleset to use for tie breakers")] TieBreakerType tieBreakerType,
             [Summary("length", "Whether the tournament is a double or single round robin")] RoundRobinLengthType roundRobinType)
         {
@@ -146,11 +146,10 @@ namespace FlawsFightNight.Bot.SlashCommands
                 var result = await _setupTournamentLogic.SetupRoundRobinTournamentProcess(tournamentId, tieBreakerType, roundRobinType);
                 await FollowupAsync(embed: result);
                 _autocompleteCache.Update();
-
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(SetupTournamentAsync));
                 await RespondAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -165,7 +164,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(EndTournamentAsync));
                 await RespondAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -173,8 +172,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("lock-in-round", "Lock in round results after all matches played (Normal RR & Elim)")]
         [RequireGuildAdmin]
         public async Task LockInRoundAsync(
-            [Summary("tournament_id", "The ID of the tournament to round lock"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))
-            ] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to round lock"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
@@ -185,7 +183,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(LockInRoundAsync));
                 await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -193,8 +191,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("unlock-round", "Unlock the current round to make changes if needed")]
         [RequireGuildAdmin]
         public async Task UnlockRoundAsync(
-            [Summary("tournament_id", "The ID of the tournament to unlock the round"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))
-            ] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to unlock the round"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
@@ -205,7 +202,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(UnlockRoundAsync));
                 await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -213,8 +210,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         [SlashCommand("next-round", "Advance to the next round of certain tournaments if conditions are met.")]
         [RequireGuildAdmin]
         public async Task NextRoundAsync(
-            [Summary("tournament_id", "The ID of the tournament to advance the round"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))
-            ] string tournamentId)
+            [Summary("tournament_id", "The ID of the tournament to advance the round"), Autocomplete(typeof(RoundBasedTournamentIdAutocomplete))] string tournamentId)
         {
             try
             {
@@ -225,7 +221,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(NextRoundAsync));
                 await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -241,7 +237,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(ShowAllTournamentsAsync));
                 await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }

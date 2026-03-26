@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
+using System.Diagnostics;
 
 namespace FlawsFightNight.Services.Logging
 {
@@ -38,7 +39,10 @@ namespace FlawsFightNight.Services.Logging
 
             try
             {
-                _service.Enqueue(entry);
+                if (!_service.Enqueue(entry))
+                {
+                    Debug.WriteLine("[DiscordAdminLogger] Feed queue full — entry dropped.");
+                }
             }
             catch
             {

@@ -27,7 +27,7 @@ namespace FlawsFightNight.Services.Logging
             _channel = Channel.CreateBounded<DiscordAdminLogEntry>(_options.QueueCapacity);
         }
 
-        public ValueTask Enqueue(DiscordAdminLogEntry entry) => _channel.Writer.WriteAsync(entry);
+        public bool Enqueue(DiscordAdminLogEntry entry) => _channel.Writer.TryWrite(entry);
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {

@@ -225,8 +225,7 @@ namespace FlawsFightNight.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Error notifying FTP credentials change: {ex.Message}");
-
+                _logger.LogError(ex, "Error notifying FTP credentials change.");
             }
         }
 
@@ -244,12 +243,12 @@ namespace FlawsFightNight.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Error cancelling FTP setup token: {ex.Message}");
+                    _logger.LogError(ex, "Error cancelling FTP setup token.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - [AdminConfigService] Error notifying cancel FTP setup process: {ex.Message}");
+                _logger.LogError(ex, "Error notifying cancel FTP setup process.");
             }
         }
 
@@ -381,7 +380,7 @@ namespace FlawsFightNight.Services
 
                         if (serverName != null && serverName.Equals("0"))
                         {
-                            _logger.LogInformation(AdminFeedEvents.FtpSetupCancelled, $"{DateTime.Now} - [AdminConfigService] FTP setup skipped. You can manually add your FTP credentials later by editing the Credentials/ftp_credentials.json file or by using the AddFTPCredential method in this AdminConfigService class.");
+                            _logger.LogInformation(AdminFeedEvents.FtpSetupCancelled, "FTP setup skipped by user. Credentials can be added manually or via the Discord FTP Setup command.");
                             IsFTPSetupComplete = true;
                         }
                         else
@@ -464,7 +463,7 @@ namespace FlawsFightNight.Services
                                 }
                                 else
                                 {
-                                    _logger.LogInformation(AdminFeedEvents.FtpSetupCompleted, $"{DateTime.Now} - [AdminConfigService] FTP setup complete. You can always add more credentials later by running the FTP Setup Discord Command then come back to the console.");
+                                    _logger.LogInformation(AdminFeedEvents.FtpSetupCompleted, "FTP setup complete. Additional credentials can be added later via the FTP Setup Discord command.");
                                     IsFTPSetupComplete = true;
                                 }
                             }

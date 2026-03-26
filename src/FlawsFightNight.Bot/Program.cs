@@ -110,6 +110,12 @@ namespace FlawsFightNight.Bot
                     // Allow the DiscordAdminLoggerProvider to see Information+ logs.
                     // EventId filtering inside DiscordAdminLogger is the real gate to Discord.
                     logging.SetMinimumLevel(LogLevel.Information);
+                    logging.AddSimpleConsole(options =>
+                    {
+                        options.TimestampFormat = "M/d/yyyy h:mm:ss tt - ";
+                        options.SingleLine = true;
+                        options.IncludeScopes = false;
+                    });
                 })
                 .ConfigureServices(services =>
                 {

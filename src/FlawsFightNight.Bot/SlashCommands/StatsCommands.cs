@@ -1,17 +1,18 @@
-﻿using Discord.Interactions;
+﻿using Discord;
+using Discord.Interactions;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Components;
 using FlawsFightNight.Bot.Attributes;
+using FlawsFightNight.Commands.StatsCommands.TournamentStatsCommands;
+using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
 using FlawsFightNight.Core.Enums.UT2004;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FlawsFightNight.Commands.StatsCommands.TournamentStatsCommands;
-using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
-using Discord;
-using System.IO;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
@@ -19,19 +20,20 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("stats", "Commands related to tournament and UT2004 statistics.")]
     public class StatsCommands : InteractionModuleBase<SocketInteractionContext>
     {
-
         public StatsCommands()
         {
-
         }
 
         [Group("tournament", "Commands related to tournament statistics.")]
         public class TournamentStatsCommands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly MyTournamentProfileHandler _myTournamentProfileLogic;
-            public TournamentStatsCommands(MyTournamentProfileHandler myTournamentProfileLogic)
+            private readonly ILogger<TournamentStatsCommands> _logger;
+
+            public TournamentStatsCommands(MyTournamentProfileHandler myTournamentProfileLogic, ILogger<TournamentStatsCommands> logger)
             {
                 _myTournamentProfileLogic = myTournamentProfileLogic;
+                _logger = logger;
             }
 
             [SlashCommand("my_profile", "Displays your tournament profile with statistics and achievements.")]
@@ -45,7 +47,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(MyTournamentProfileAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -65,6 +67,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             private readonly RequestAllMatchesHandler _requestAllMatchesHandler;
             private readonly SuggestTeamsHandler _suggestTeamsHandler;
             private readonly UserLevelLeaderboardHandler _leaderboardHandler;
+            private readonly ILogger<UT2004StatsCommands> _logger;
 
             public UT2004StatsCommands(
                 AutocompleteCache autocompleteCache,
@@ -77,7 +80,8 @@ namespace FlawsFightNight.Bot.SlashCommands
                 RemoveGuidHandler removeGuidLogic,
                 RequestAllMatchesHandler requestAllMatchesHandler,
                 SuggestTeamsHandler suggestTeamsHandler,
-                UserLevelLeaderboardHandler leaderboardHandler)
+                UserLevelLeaderboardHandler leaderboardHandler,
+                ILogger<UT2004StatsCommands> logger)
             {
                 _autocompleteCache = autocompleteCache;
                 _comparePlayersHandler = comparePlayersHandler;
@@ -90,6 +94,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 _requestAllMatchesHandler = requestAllMatchesHandler;
                 _suggestTeamsHandler = suggestTeamsHandler;
                 _leaderboardHandler = leaderboardHandler;
+                _logger = logger;
             }
 
             [SlashCommand("register_guid", "Registers a UT2004 GUID to link your player profile with your Discord account.")]
@@ -105,7 +110,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RegisterGuidAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -123,7 +128,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveGuidAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -148,7 +153,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(MyPlayerProfileAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -173,7 +178,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(UserLevelLeaderboardAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -199,7 +204,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(DisplayMatchSummaryAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -224,7 +229,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(MyTournamentMatchesAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -240,7 +245,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RequestAllMatchesAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -267,7 +272,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(ComparePlayersAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -302,7 +307,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(SuggestTeamsAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -328,7 +333,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(GetWinProbabilityAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }

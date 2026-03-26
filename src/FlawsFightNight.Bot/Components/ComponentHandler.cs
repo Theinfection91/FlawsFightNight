@@ -69,7 +69,6 @@ namespace FlawsFightNight.Bot.Components
                     try
                     {
                         await _adminConfigService.FTPSetupProcess(isUserInit: true);
-                        //_logger.LogInformation(AdminFeedEvents.FtpSetupCompleted, "FTP setup completed via Discord command by {UserId}.", Context.User.Id);
                     }
                     catch (Exception ex)
                     {
@@ -215,7 +214,7 @@ namespace FlawsFightNight.Bot.Components
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Component Error - UT2004 Profile Select] {ex}");
+                _logger.LogError(ex, "Component error in UT2004 Profile Select.");
                 await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }
@@ -239,7 +238,7 @@ namespace FlawsFightNight.Bot.Components
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Component Error - UT2004 Leaderboard Select] {ex}");
+                _logger.LogError(ex, "Component error in UT2004 Leaderboard Select.");
                 await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }
@@ -270,7 +269,7 @@ namespace FlawsFightNight.Bot.Components
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Component Error - UT2004 Compare Select] {ex}");
+                _logger.LogError(ex, "Component error in UT2004 Compare Select.");
                 await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }

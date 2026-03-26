@@ -4,15 +4,16 @@ using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Components;
 using FlawsFightNight.Bot.Attributes;
+using FlawsFightNight.Commands.SettingsCommands;
+using FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands;
+using FlawsFightNight.Commands.SettingsCommands.AdminChannelFeedCommands;
+using FlawsFightNight.Core.Enums;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FlawsFightNight.Commands.SettingsCommands;
-using FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands;
-using FlawsFightNight.Core.Enums;
-using FlawsFightNight.Commands.SettingsCommands.AdminChannelFeedCommands;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
@@ -20,13 +21,15 @@ namespace FlawsFightNight.Bot.SlashCommands
     [RequireGuildAdmin]
     public class SettingsCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        private AddDebugAdminHandler _addDebugAdminLogic;
-        private RemoveDebugAdminHandler _removeDebugAdminLogic;
+        private readonly AddDebugAdminHandler _addDebugAdminLogic;
+        private readonly RemoveDebugAdminHandler _removeDebugAdminLogic;
+        private readonly ILogger<SettingsCommands> _logger;
 
-        public SettingsCommands(AddDebugAdminHandler addDebugAdminLogic, RemoveDebugAdminHandler removeDebugAdminLogic)
+        public SettingsCommands(AddDebugAdminHandler addDebugAdminLogic, RemoveDebugAdminHandler removeDebugAdminLogic, ILogger<SettingsCommands> logger)
         {
             _addDebugAdminLogic = addDebugAdminLogic;
             _removeDebugAdminLogic = removeDebugAdminLogic;
+            _logger = logger;
         }
 
         #region Debug Commands
@@ -42,7 +45,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(AddDebugAdminAsync));
                 await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -59,7 +62,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveDebugAdminAsync));
                 await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -71,11 +74,15 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             private readonly SetAdminChannelFeedHandler _setAdminFeedChannelHandler;
             private readonly RemoveAdminChannelFeedHandler _removeAdminFeedChannelHandler;
-            public AdminFeedChannelCommands(SetAdminChannelFeedHandler setAdminFeedChannelHandler, RemoveAdminChannelFeedHandler removeAdminFeedChannelHandler)
+            private readonly ILogger<AdminFeedChannelCommands> _logger;
+
+            public AdminFeedChannelCommands(SetAdminChannelFeedHandler setAdminFeedChannelHandler, RemoveAdminChannelFeedHandler removeAdminFeedChannelHandler, ILogger<AdminFeedChannelCommands> logger)
             {
                 _setAdminFeedChannelHandler = setAdminFeedChannelHandler;
                 _removeAdminFeedChannelHandler = removeAdminFeedChannelHandler;
+                _logger = logger;
             }
+
             [SlashCommand("set", "Register a channel as the UT2004 LiveView admin feed channel for updates and logging.")]
             public async Task SetAdminFeedChannelAsync(
                 [Summary("channel", "The channel to post admin updates and logs in")] IMessageChannel channel)
@@ -88,7 +95,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(SetAdminFeedChannelAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -104,7 +111,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveAdminFeedChannelAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -117,13 +124,16 @@ namespace FlawsFightNight.Bot.SlashCommands
         {
             private readonly SetLeaderboardChannelHandler _setLeaderboardChannelHandler;
             private readonly RemoveLeaderboardChannelHandler _removeLeaderboardChannelHandler;
+            private readonly ILogger<LeaderboardChannelCommands> _logger;
 
             public LeaderboardChannelCommands(
                 SetLeaderboardChannelHandler setLeaderboardChannelHandler,
-                RemoveLeaderboardChannelHandler removeLeaderboardChannelHandler)
+                RemoveLeaderboardChannelHandler removeLeaderboardChannelHandler,
+                ILogger<LeaderboardChannelCommands> logger)
             {
                 _setLeaderboardChannelHandler = setLeaderboardChannelHandler;
                 _removeLeaderboardChannelHandler = removeLeaderboardChannelHandler;
+                _logger = logger;
             }
 
             [SlashCommand("set", "Register a channel as a UT2004 leaderboard LiveView channel.")]
@@ -144,7 +154,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(SetLeaderboardChannelAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -161,7 +171,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveLeaderboardChannelAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -171,20 +181,22 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("matches_channel_id", "Set or remove the channel ID for matches of a specified tournament")]
         public class MatchesChannelCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private SetMatchesChannelHandler _setMatchesChannelLogic;
-            private RemoveMatchesChannelHandler _removeMatchesChannelLogic;
-            public MatchesChannelCommands(SetMatchesChannelHandler setMatchesChannelLogic, RemoveMatchesChannelHandler removeMatchesChannelLogic)
+            private readonly SetMatchesChannelHandler _setMatchesChannelLogic;
+            private readonly RemoveMatchesChannelHandler _removeMatchesChannelLogic;
+            private readonly ILogger<MatchesChannelCommands> _logger;
+
+            public MatchesChannelCommands(SetMatchesChannelHandler setMatchesChannelLogic, RemoveMatchesChannelHandler removeMatchesChannelLogic, ILogger<MatchesChannelCommands> logger)
             {
                 _setMatchesChannelLogic = setMatchesChannelLogic;
                 _removeMatchesChannelLogic = removeMatchesChannelLogic;
+                _logger = logger;
             }
 
             [SlashCommand("set", "Set the channel ID for matches of a specified tournament")]
             public async Task SetMatchesChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the matches channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
-            [Summary("channel_id", "The ID of the channel where matches will be posted")] IMessageChannel channel)
+                [Summary("tournament_id", "The ID of the tournament to set the matches channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
+                [Summary("channel_id", "The ID of the channel where matches will be posted")] IMessageChannel channel)
             {
-
                 try
                 {
                     await DeferAsync();
@@ -193,14 +205,14 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(SetMatchesChannelIdAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
 
             [SlashCommand("remove", "Remove the channel ID for matches of a specified tournament")]
             public async Task RemoveMatchesChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to stop the matches LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
+                [Summary("tournament_id", "The ID of the tournament to stop the matches LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
             {
                 try
                 {
@@ -210,7 +222,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveMatchesChannelIdAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -219,21 +231,22 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("standings_channel_id", "Set or remove the channel ID for standings of a specified tournament")]
         public class StandingsChannelCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private SetStandingsChannelHandler _setStandingsChannelLogic;
-            private RemoveStandingsChannelHandler _removeStandingsChannelLogic;
+            private readonly SetStandingsChannelHandler _setStandingsChannelLogic;
+            private readonly RemoveStandingsChannelHandler _removeStandingsChannelLogic;
+            private readonly ILogger<StandingsChannelCommands> _logger;
 
-            public StandingsChannelCommands(SetStandingsChannelHandler setStandingsChannelLogic, RemoveStandingsChannelHandler removeStandingsChannelLogic)
+            public StandingsChannelCommands(SetStandingsChannelHandler setStandingsChannelLogic, RemoveStandingsChannelHandler removeStandingsChannelLogic, ILogger<StandingsChannelCommands> logger)
             {
                 _setStandingsChannelLogic = setStandingsChannelLogic;
                 _removeStandingsChannelLogic = removeStandingsChannelLogic;
+                _logger = logger;
             }
 
             [SlashCommand("set", "Set the channel ID for standings of a specified tournament")]
             public async Task SetStandingsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the standings channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
-            [Summary("channel_id", "The ID of the channel where standings will be posted")] IMessageChannel channel)
+                [Summary("tournament_id", "The ID of the tournament to set the standings channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
+                [Summary("channel_id", "The ID of the channel where standings will be posted")] IMessageChannel channel)
             {
-
                 try
                 {
                     await DeferAsync();
@@ -242,14 +255,14 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(SetStandingsChannelIdAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
 
             [SlashCommand("remove", "Remove the channel ID for standings of a specified tournament")]
             public async Task RemoveStandingsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to stop the standings LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
+                [Summary("tournament_id", "The ID of the tournament to stop the standings LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
             {
                 try
                 {
@@ -259,7 +272,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveStandingsChannelIdAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -268,17 +281,21 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("teams_channel_id", "Set or remove the channel ID for teams of a specified tournament")]
         public class TeamsChannelCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private SetTeamsChannelHandler _setTeamsChannelLogic;
-            private RemoveTeamsChannelHandler _removeTeamsChannelLogic;
-            public TeamsChannelCommands(SetTeamsChannelHandler setTeamsChannelLogic, RemoveTeamsChannelHandler removeTeamsChannelLogic)
+            private readonly SetTeamsChannelHandler _setTeamsChannelLogic;
+            private readonly RemoveTeamsChannelHandler _removeTeamsChannelLogic;
+            private readonly ILogger<TeamsChannelCommands> _logger;
+
+            public TeamsChannelCommands(SetTeamsChannelHandler setTeamsChannelLogic, RemoveTeamsChannelHandler removeTeamsChannelLogic, ILogger<TeamsChannelCommands> logger)
             {
                 _setTeamsChannelLogic = setTeamsChannelLogic;
                 _removeTeamsChannelLogic = removeTeamsChannelLogic;
+                _logger = logger;
             }
+
             [SlashCommand("set", "Set the channel ID for teams of a specified tournament")]
             public async Task SetTeamsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to set the teams channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
-            [Summary("channel_id", "The ID of the channel where teams will be posted")] IMessageChannel channel)
+                [Summary("tournament_id", "The ID of the tournament to set the teams channel for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
+                [Summary("channel_id", "The ID of the channel where teams will be posted")] IMessageChannel channel)
             {
                 try
                 {
@@ -288,13 +305,14 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(SetTeamsChannelIdAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
+
             [SlashCommand("remove", "Remove the channel ID for teams of a specified tournament")]
             public async Task RemoveTeamsChannelIdAsync(
-            [Summary("tournament_id", "The ID of the tournament to stop the teams LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
+                [Summary("tournament_id", "The ID of the tournament to stop the teams LiveView."), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId)
             {
                 try
                 {
@@ -304,7 +322,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveTeamsChannelIdAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -314,12 +332,16 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class FTPStatsServiceCommands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
-            private RemoveFTPCredentialsHandler _removeFTPCredentialsLogic;
-            public FTPStatsServiceCommands(AutocompleteCache autocompleteCache, RemoveFTPCredentialsHandler removeFTPCredentialsLogic)
+            private readonly RemoveFTPCredentialsHandler _removeFTPCredentialsLogic;
+            private readonly ILogger<FTPStatsServiceCommands> _logger;
+
+            public FTPStatsServiceCommands(AutocompleteCache autocompleteCache, RemoveFTPCredentialsHandler removeFTPCredentialsLogic, ILogger<FTPStatsServiceCommands> logger)
             {
                 _autocompleteCache = autocompleteCache;
                 _removeFTPCredentialsLogic = removeFTPCredentialsLogic;
+                _logger = logger;
             }
+
             [SlashCommand("run_setup", "Re-run the FTP Setup Process in Console to add FTP credentials or change FTP server")]
             public async Task RunFTPSetupAsync()
             {
@@ -332,10 +354,11 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RunFTPSetupAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
+
             [SlashCommand("remove_credentials", "Remove specific FTP credentials from the database")]
             public async Task RemoveFTPCredentialsAsync(
                 [Summary("ftp_credential_id", "The FTP credential by ID to remove"), Autocomplete(typeof(FTPCredentialAutocomplete))] string ftpServerName)
@@ -349,7 +372,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveFTPCredentialsAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -365,7 +388,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(CancelFTPSetupAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -384,8 +407,20 @@ namespace FlawsFightNight.Bot.SlashCommands
             private readonly RemoveGuidFromMemberHandler _removeGuidFromMemberLogic;
             private readonly LastStatLogsHandler _lastStatLogsHandler;
             private readonly UnTagLogToMatchHandler _unTagLogToMatchHandler;
+            private readonly ILogger<UT2004Commands> _logger;
 
-            public UT2004Commands(AutocompleteCache autocompleteCache, GetLogsByIDHandler getLogsByIDHandler, IgnoreLogsByIDHandler ignoreLogsByIDHandler, AllowLogsByIDHandler allowLogsByIDHandler, StatLogsByDateHandler statLogsByDateHandler, RegisterGuidToMemberHandler registerGuidToMemberLogic, RemoveGuidFromMemberHandler removeGuidFromMemberLogic, LastStatLogsHandler lastStatLogsHandler, TagLogToMatchHandler tagLogToMatchHandler, UnTagLogToMatchHandler unTagLogToMatchHandler)
+            public UT2004Commands(
+                AutocompleteCache autocompleteCache,
+                GetLogsByIDHandler getLogsByIDHandler,
+                IgnoreLogsByIDHandler ignoreLogsByIDHandler,
+                AllowLogsByIDHandler allowLogsByIDHandler,
+                StatLogsByDateHandler statLogsByDateHandler,
+                RegisterGuidToMemberHandler registerGuidToMemberLogic,
+                RemoveGuidFromMemberHandler removeGuidFromMemberLogic,
+                LastStatLogsHandler lastStatLogsHandler,
+                TagLogToMatchHandler tagLogToMatchHandler,
+                UnTagLogToMatchHandler unTagLogToMatchHandler,
+                ILogger<UT2004Commands> logger)
             {
                 _autocompleteCache = autocompleteCache;
                 _getLogsByIDHandler = getLogsByIDHandler;
@@ -397,11 +432,13 @@ namespace FlawsFightNight.Bot.SlashCommands
                 _lastStatLogsHandler = lastStatLogsHandler;
                 _tagLogToMatchHandler = tagLogToMatchHandler;
                 _unTagLogToMatchHandler = unTagLogToMatchHandler;
+                _logger = logger;
             }
 
             [SlashCommand("register_guid", "Register a GUID to a Member's profile")]
-            public async Task RegisterGuidToMemberAsync([Summary("member", "The member to register the GUID to")] IUser member,
-                                                        [Summary("guid", "The GUID to register")] string guid)
+            public async Task RegisterGuidToMemberAsync(
+                [Summary("member", "The member to register the GUID to")] IUser member,
+                [Summary("guid", "The GUID to register")] string guid)
             {
                 try
                 {
@@ -412,14 +449,15 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RegisterGuidToMemberAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
 
             [SlashCommand("remove_guid", "Remove a GUID from a Member's profile")]
-            public async Task RemoveGuidFromMemberAsync([Summary("member", "The member to remove the GUID from")] IUser member,
-                                                        [Summary("guid", "The GUID to remove"), Autocomplete(typeof(MemberUT2004GuidAutocomplete))] string guid)
+            public async Task RemoveGuidFromMemberAsync(
+                [Summary("member", "The member to remove the GUID from")] IUser member,
+                [Summary("guid", "The GUID to remove"), Autocomplete(typeof(MemberUT2004GuidAutocomplete))] string guid)
             {
                 try
                 {
@@ -430,7 +468,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveGuidFromMemberAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -450,7 +488,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(GetLogByIdAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -475,7 +513,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(StatLogsByDateAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -500,7 +538,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(LastStatLogAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -521,23 +559,23 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(IgnoreLogsByIdAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
 
             [SlashCommand("allow_logs", "Re-allow up to 10 previously ignored logs by their ID# so they count towards stats again")]
             public async Task AllowLogsByIdAsync(
-                                                  [Summary("first_log", "The first log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string firstLog,
-                                                  [Summary("second_log", "The second log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string secondLog = null,
-                                                  [Summary("third_log", "The third log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string thirdLog = null,
-                                                  [Summary("fourth_log", "The fourth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string fourthLog = null,
-                                                  [Summary("fifth_log", "The fifth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string fifthLog = null,
-                                                  [Summary("sixth_log", "The sixth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string sixthLog = null,
-                                                  [Summary("seventh_log", "The seventh log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string seventhLog = null,
-                                                  [Summary("eighth_log", "The eighth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string eighthLog = null,
-                                                  [Summary("ninth_log", "The ninth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string ninthLog = null,
-                                                  [Summary("tenth_log", "The tenth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string tenthLog = null)
+                [Summary("first_log", "The first log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string firstLog,
+                [Summary("second_log", "The second log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string secondLog = null,
+                [Summary("third_log", "The third log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string thirdLog = null,
+                [Summary("fourth_log", "The fourth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string fourthLog = null,
+                [Summary("fifth_log", "The fifth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string fifthLog = null,
+                [Summary("sixth_log", "The sixth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string sixthLog = null,
+                [Summary("seventh_log", "The seventh log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string seventhLog = null,
+                [Summary("eighth_log", "The eighth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string eighthLog = null,
+                [Summary("ninth_log", "The ninth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string ninthLog = null,
+                [Summary("tenth_log", "The tenth log ID to ignore"), Autocomplete(typeof(AdminAllowLogsAutocomplete))] string tenthLog = null)
             {
                 try
                 {
@@ -552,16 +590,16 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(AllowLogsByIdAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
 
             [SlashCommand("tag_log", "Tag a log to a post-match in a tournament for easier reference")]
             public async Task TagLogToMatchAsync(
-                                                 [Summary("log_id", "The log ID to tag to a match")] string logId,
-                                                 [Summary("tournament_id", "The tournament ID of the match to tag the log to"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
-                                                 [Summary("match_id", "The match ID of the match to tag the log to"), Autocomplete(typeof(TagLogToMatchAutocomplete))] string matchId)
+                [Summary("log_id", "The log ID to tag to a match")] string logId,
+                [Summary("tournament_id", "The tournament ID of the match to tag the log to"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
+                [Summary("match_id", "The match ID of the match to tag the log to"), Autocomplete(typeof(TagLogToMatchAutocomplete))] string matchId)
             {
                 try
                 {
@@ -572,14 +610,14 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(TagLogToMatchAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
 
             [SlashCommand("untag_log", "Remove a log's tag from a post-match in a tournament")]
             public async Task UnTagLogToMatchAsync(
-                                                 [Summary("log_id", "The log ID to untag from a match")] string logId)
+                [Summary("log_id", "The log ID to untag from a match")] string logId)
             {
                 try
                 {
@@ -590,7 +628,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(UnTagLogToMatchAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
