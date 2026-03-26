@@ -51,7 +51,6 @@ namespace FlawsFightNight.Bot.SlashCommands
 
         [RequireGuildAdmin]
         [SlashCommand("edit", "Edit a post-match's details in RR and Elimination.")]
-        [RequireGuildAdmin]
         public async Task EditMatchAsync(
             [Summary("post_match_id", "The ID of the match to target."), Autocomplete(typeof(PostMatchIdAutocomplete))] string postMatchId,
             [Summary("winning_team_name", "The winner of the match, can be the same as before edit."), Autocomplete(typeof(WinningTeamNameAutocomplete))] string winningTeamName,

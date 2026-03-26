@@ -30,6 +30,7 @@ namespace FlawsFightNight.Bot
         private CommandService _commands;
         private InteractionService _interactionService;
         private AdminConfigurationService _adminConfigService;
+        private readonly ILogger<Program> _logger;
 
         private bool _gitBackupSetupComplete = false;
         private bool _ftpSetupComplete = false;
@@ -62,11 +63,11 @@ namespace FlawsFightNight.Bot
                 var result = await _interactionService.ExecuteCommandAsync(context, _services);
 
                 if (!result.IsSuccess)
-                    Console.WriteLine($"{DateTime.Now} - [Discord] Interaction Error: {result.ErrorReason}");
+                    _logger.LogWarning("Interaction error: {Reason}", result.ErrorReason);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Interaction Exception] {ex}");
+                _logger.LogError(ex, "Unhandled interaction exception.");
             }
         }
 

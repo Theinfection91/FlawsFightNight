@@ -474,7 +474,17 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("get_log", "Get up to 10 different logs by their ID# DMed to the user")]
-            public async Task GetLogByIdAsync(string firstLog, string secondLog = null, string thirdLog = null, string fourthLog = null, string fifthLog = null, string sixthLog = null, string seventhLog = null, string eighthLog = null, string ninthLog = null, string tenthLog = null)
+            public async Task GetLogByIdAsync(
+                [Summary("first_log", "The first log ID to retrieve")] string firstLog,
+                [Summary("second_log", "The second log ID to retrieve")] string secondLog = null,
+                [Summary("third_log", "The third log ID to retrieve")] string thirdLog = null,
+                [Summary("fourth_log", "The fourth log ID to retrieve")] string fourthLog = null,
+                [Summary("fifth_log", "The fifth log ID to retrieve")] string fifthLog = null,
+                [Summary("sixth_log", "The sixth log ID to retrieve")] string sixthLog = null,
+                [Summary("seventh_log", "The seventh log ID to retrieve")] string seventhLog = null,
+                [Summary("eighth_log", "The eighth log ID to retrieve")] string eighthLog = null,
+                [Summary("ninth_log", "The ninth log ID to retrieve")] string ninthLog = null,
+                [Summary("tenth_log", "The tenth log ID to retrieve")] string tenthLog = null)
             {
                 try
                 {
@@ -494,7 +504,11 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("logs_by_date", "Get all stat log ID#'s for a specific day")]
-            public async Task StatLogsByDateAsync(int year, int month, int day, string serverName = null)
+            public async Task StatLogsByDateAsync(
+                [Summary("year", "The year to search (2000 to current year)")] int year,
+                [Summary("month", "The month to search (1-12)")] int month,
+                [Summary("day", "The day to search")] int day,
+                [Summary("server_name", "Optional server name filter")] string serverName = null)
             {
                 try
                 {
@@ -519,7 +533,9 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("last_logs", "Get the last 1 to 25 compiled StatLog ID's")]
-            public async Task LastStatLogAsync(int amount, string serverName = null)
+            public async Task LastStatLogAsync(
+                [Summary("amount", "Number of logs to retrieve (1-25)")] int amount,
+                [Summary("server_name", "Optional server name filter")] string serverName = null)
             {
                 try
                 {
@@ -544,7 +560,17 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
 
             [SlashCommand("ignore_logs", "Ignore up to 10 specific logs by their ID# so they won't be processed for stats")]
-            public async Task IgnoreLogsByIdAsync(string firstLog, string secondLog = null, string thirdLog = null, string fourthLog = null, string fifthLog = null, string sixthLog = null, string seventhLog = null, string eighthLog = null, string ninthLog = null, string tenthLog = null)
+            public async Task IgnoreLogsByIdAsync(
+                [Summary("first_log", "The first log ID to ignore")] string firstLog,
+                [Summary("second_log", "The second log ID to ignore")] string secondLog = null,
+                [Summary("third_log", "The third log ID to ignore")] string thirdLog = null,
+                [Summary("fourth_log", "The fourth log ID to ignore")] string fourthLog = null,
+                [Summary("fifth_log", "The fifth log ID to ignore")] string fifthLog = null,
+                [Summary("sixth_log", "The sixth log ID to ignore")] string sixthLog = null,
+                [Summary("seventh_log", "The seventh log ID to ignore")] string seventhLog = null,
+                [Summary("eighth_log", "The eighth log ID to ignore")] string eighthLog = null,
+                [Summary("ninth_log", "The ninth log ID to ignore")] string ninthLog = null,
+                [Summary("tenth_log", "The tenth log ID to ignore")] string tenthLog = null)
             {
                 try
                 {
