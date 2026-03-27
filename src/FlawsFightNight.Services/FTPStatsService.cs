@@ -189,12 +189,14 @@ namespace FlawsFightNight.Services
                                     Console.Write($"\r{message.PadRight(100)}");
                                 }
                             }
-                            // Final summary on new line
+
                             Console.WriteLine();
-                            _logger.LogInformation(AdminFeedEvents.StatLogProcessed, "Processing complete for {ServerName}. Valid: {Valid}, Ignored: {Ignored}.", cred.ServerName, validCount, ignoredCount);
+                            _logger.LogInformation(AdminFeedEvents.StatLogProcessed, "New stat logs processed for server: {ServerName}.\n\nValid: {Valid}, Ignored: {Ignored}.", cred.ServerName, validCount, ignoredCount);
 
                             await _ut2004StatsService.SetupPlayerProfiles();
                             _gitBackupService.EnqueueBackup();
+
+                            
                         }
                     }
                 }
