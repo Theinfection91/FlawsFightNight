@@ -23,9 +23,10 @@ namespace FlawsFightNight.Services.Logging
         public static readonly EventId UnauthorizedAccess = new(3002, nameof(UnauthorizedAccess));
 
         // ── Stats / Data ───────────────────────────────────────────────────
-        public static readonly EventId StatLogProcessed   = new(4001, nameof(StatLogProcessed));
-        public static readonly EventId StatLogFailed      = new(4002, nameof(StatLogFailed));
-        public static readonly EventId PlayerProfilesRebuilt = new(4003, nameof(PlayerProfilesRebuilt));
+        public static readonly EventId FreshStatLogsFound = new(4001, nameof(FreshStatLogsFound));
+        public static readonly EventId StatLogProcessed   = new(4002, nameof(StatLogProcessed));
+        public static readonly EventId StatLogFailed      = new(4003, nameof(StatLogFailed));
+        public static readonly EventId PlayerProfilesRebuilt = new(4004, nameof(PlayerProfilesRebuilt));
 
         // ── Internal lookup ───────────────────────────────────────────────
         private static readonly FrozenSet<int> _feedIds = new[]
@@ -33,7 +34,7 @@ namespace FlawsFightNight.Services.Logging
             1001, 1002, 1003, 1004,
             2001,
             3001, 3002,
-            4001, 4002, 4003
+            4001, 4002, 4003, 4004
         }.ToFrozenSet();
 
         public static bool IsFeedEvent(EventId eventId) => _feedIds.Contains(eventId.Id);

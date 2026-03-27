@@ -142,7 +142,7 @@ namespace FlawsFightNight.Services
 
                         if (await ExecuteWithDataConnectionFallback(client, () => ContainsFreshLogs(client, cred.UserLogsDirectoryPath, token), token))
                         {
-                            _logger.LogInformation("Fresh logs found for {ServerName}! Processing...", cred.ServerName);
+                            _logger.LogInformation(AdminFeedEvents.FreshStatLogsFound, "Fresh logs found for server: {ServerName}\n\nProcessing...", cred.ServerName);
                             var items = await ExecuteWithDataConnectionFallback(client, () => client.GetListing(cred.UserLogsDirectoryPath, token), token);
                             var logFiles = items.Where(item => item.Name.EndsWith(".log", StringComparison.OrdinalIgnoreCase)).ToList();
                             int totalFiles = logFiles.Count;
