@@ -159,12 +159,12 @@ namespace FlawsFightNight.Services
                     "**UT2004 Admin**\n" +
                     "• `/settings ut2004 register_guid` — Register a GUID to another member's profile.\n" +
                     "• `/settings ut2004 remove_guid` — Remove a GUID from a member's profile.\n" +
-                    "• `/settings ut2004 get_logs_by_id` — Retrieve stat logs by ID.\n" +
-                    "• `/settings ut2004 ignore_logs_by_id` — Mark logs to be ignored.\n" +
-                    "• `/settings ut2004 allow_logs_by_id` — Un-ignore previously ignored logs.\n" +
-                    "• `/settings ut2004 last_stat_logs` — View the most recent stat logs.\n" +
-                    "• `/settings ut2004 stat_logs_by_date` — Query stat logs by date range.\n" +
-                    "• `/settings ut2004 tag_log` — Tag a stat log to a tournament match.\n" +
+                    "• `/settings ut2004 get_log` — Retrieve up to 10 stat logs by their ID (sent via DM).\n" +
+                    "• `/settings ut2004 ignore_logs` — Ignore up to 10 logs by ID so they won't be processed for stats.\n" +
+                    "• `/settings ut2004 allow_logs` — Re-allow previously ignored logs so they count towards stats again.\n" +
+                    "• `/settings ut2004 last_logs` — View the last 1–25 compiled stat log IDs.\n" +
+                    "• `/settings ut2004 logs_by_date` — Get all stat log IDs for a specific day.\n" +
+                    "• `/settings ut2004 tag_log` — Tag a stat log to a tournament post-match.\n" +
                     "• `/settings ut2004 untag_log` — Remove a stat log's tournament match tag.")
                 .WithColor(Color.DarkGrey)
                 .WithFooter("Flaws Fight Night — Help · Settings & Admin")
