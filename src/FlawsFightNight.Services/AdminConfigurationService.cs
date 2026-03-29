@@ -317,48 +317,40 @@ namespace FlawsFightNight.Services
 
                 // Replace the previous ReadLineCancelableAsync implementation with this polling-based, cancellation-aware reader.
                 // It uses Console.KeyAvailable + Console.ReadKey so the read can be stopped immediately when the CTS is cancelled.
-                static async Task<string?> ReadLineCancelableAsync(CancellationToken ct)
+                static async Task<string?> ReadLineCancelableAsync(CancellationToken ct, bool maskInput = false)
                 {
                     var sb = new StringBuilder();
                     try
                     {
                         while (!ct.IsCancellationRequested)
                         {
-                            // Wait until a key is available or cancellation requested
                             while (!Console.KeyAvailable)
-                            {
-                                // small delay to yield and let cancellation be observed
                                 await Task.Delay(50, ct);
-                            }
 
-                            // A key is available, read it
                             var keyInfo = Console.ReadKey(intercept: true);
 
                             if (keyInfo.Key == ConsoleKey.Enter)
                             {
-                                Console.WriteLine(); // echo newline
+                                Console.WriteLine();
                                 return sb.ToString();
                             }
                             else if (keyInfo.Key == ConsoleKey.Backspace)
                             {
                                 if (sb.Length > 0)
                                 {
-                                    // remove last char from buffer and erase from console
                                     sb.Length--;
                                     Console.Write("\b \b");
                                 }
                             }
                             else
                             {
-                                // normal character
                                 sb.Append(keyInfo.KeyChar);
-                                Console.Write(keyInfo.KeyChar); // echo
+                                Console.Write(maskInput ? '*' : keyInfo.KeyChar); // mask if requested
                             }
                         }
                     }
-                    catch (OperationCanceledException) { /* fall through */ }
+                    catch (OperationCanceledException) { }
 
-                    // If cancelled, throw so callers can handle consistently
                     throw new OperationCanceledException(ct);
                 }
 
@@ -427,6 +419,11 @@ namespace FlawsFightNight.Services
                             try
                             {
                                 password = await ReadLineCancelableAsync(token);
+                                // Overwrite the password line with spaces immediately after entry
+                                int passwordLine = Console.CursorTop - 1;
+                                Console.SetCursorPosition(0, passwordLine);
+                                Console.Write(new string(' ', Console.WindowWidth));
+                                Console.SetCursorPosition(0, passwordLine);
                             }
                             catch (OperationCanceledException)
                             {
