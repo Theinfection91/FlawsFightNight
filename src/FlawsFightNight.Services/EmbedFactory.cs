@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Services
 {
-    public class EmbedFactory
+    public partial class EmbedFactory
     {
         public EmbedFactory() { }
 

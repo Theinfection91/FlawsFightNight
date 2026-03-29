@@ -18,6 +18,25 @@ namespace FlawsFightNight.Bot.Components
                 .WithButton("❌ Cancel", customId: cancelId, style: ButtonStyle.Danger);
         }
 
+        public static ComponentBuilder CreateHelpSelectMenu()
+        {
+            string selectId = "help_select";
+
+            var selectMenu = new SelectMenuBuilder()
+                .WithCustomId(selectId)
+                .WithPlaceholder("📖 Select a help topic...")
+                .AddOption("📖 Overview", "overview", "General overview of the bot and how to get started")
+                .AddOption("🏆 Tournament Commands", "tournaments", "Create, start, end, and manage tournaments")
+                .AddOption("👥 Team Commands", "teams", "Register, delete, and manage teams")
+                .AddOption("⚔️ Match Commands", "matches", "Report wins, edit matches, and send challenges")
+                .AddOption("⚙️ Settings & Admin", "settings", "Admin settings, channels, FTP, and permissions")
+                .AddOption("📊 UT2004 Stats", "ut2004stats", "Player profiles, leaderboards, compare, and team suggestions")
+                .AddOption("📋 Tournament Types", "tournamenttypes", "DSR Ladder, Normal Ladder, Round Robin explained")
+                .AddOption("📺 LiveView System", "liveview", "Auto-updating standings, matches, and leaderboard channels");
+
+            return new ComponentBuilder().WithSelectMenu(selectMenu);
+        }
+
         public static ComponentBuilder CreateUT2004ProfileSelectMenu(ulong discordId)
         {
             string selectId = $"ut2004profile_select:{discordId}";
