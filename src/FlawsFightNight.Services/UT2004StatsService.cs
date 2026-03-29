@@ -8,15 +8,18 @@ using System.IO;
 using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
+using FlawsFightNight.Services.Logging;
 using Discord.WebSocket;
 using Discord;
 using Discord.Interactions;
+using Microsoft.Extensions.Logging;
 
 namespace FlawsFightNight.Services
 {
-    public class UT2004StatsService : BaseDataDriven
+    public class UT2004StatsService : BaseDataDriven    
     {
         private readonly DiscordSocketClient _client;
+        private readonly ILogger<UT2004StatsService> _logger;
 
         private readonly OpenSkillRatingService _ratingService;
         private readonly UTStatsDBEloRatingService _eloService;
@@ -29,12 +32,13 @@ namespace FlawsFightNight.Services
         private const int MinTAMMatchesBeforePeak = 3;
         private const int MinBRMatchesBeforePeak = 3;
 
-        public UT2004StatsService(DataContext dataContext, DiscordSocketClient client, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper) : base("UT2004StatsService", dataContext)
+        public UT2004StatsService(DataContext dataContext, DiscordSocketClient client, OpenSkillRatingService ratingService, UTStatsDBEloRatingService eloService, SeamlessRatingsMapper ratingsMapper, ILogger<UT2004StatsService> logger) : base("UT2004StatsService", dataContext)
         {
             _client = client;
             _ratingService = ratingService;
             _ratingsMapper = ratingsMapper;
             _eloService = eloService;
+            _logger = logger;
         }
 
         public async Task InitializeAsync()
@@ -178,18 +182,18 @@ namespace FlawsFightNight.Services
 
             if (_ratingsMapper.HasAliases)
             {
-                Console.WriteLine($"[SeamlessRatings] Active aliases detected — merged GUIDs will be treated as one identity.");
+                _logger.LogInformation("SeamlessRatings: active aliases detected — merged GUIDs will be treated as one identity.");
                 foreach (var profile in memberProfiles.Where(p => p.RegisteredUT2004GUIDs?.Count >= 2))
                 {
                     string primary = profile.RegisteredUT2004GUIDs[0];
-                    Console.WriteLine($"[SeamlessRatings] Player: {profile.DisplayName} | Primary GUID: {primary}");
+                    _logger.LogDebug("SeamlessRatings player: {DisplayName} | Primary GUID: {PrimaryGuid}", profile.DisplayName, primary);
                     foreach (var guid in profile.RegisteredUT2004GUIDs.Skip(1))
-                        Console.WriteLine($"[SeamlessRatings]   Alias: {guid} → {primary}");
+                        _logger.LogDebug("SeamlessRatings alias: {Guid} → {PrimaryGuid}", guid, primary);
                 }
             }
             else
             {
-                Console.WriteLine($"[SeamlessRatings] No aliases active — all GUIDs treated independently.");
+                _logger.LogInformation("SeamlessRatings: no aliases active — all GUIDs treated independently.");
             }
 
             // Ensure the admin ignored logs file is loaded before filtering
@@ -205,17 +209,17 @@ namespace FlawsFightNight.Services
 
             int ignoredCount = allMatchStats.Count - chronologicalMatches.Count;
             if (ignoredCount > 0)
-                Console.WriteLine($"[UT2004StatsService] Skipping {ignoredCount} admin-ignored stat log(s) from profile calculations.");
+                _logger.LogInformation("Skipping {IgnoredCount} admin-ignored stat log(s) from profile calculations.", ignoredCount);
 
-            Console.WriteLine($"[UT2004StatsService] Processing {chronologicalMatches.Count} matches chronologically...");
+            _logger.LogInformation("Processing {MatchCount} matches chronologically...", chronologicalMatches.Count);
 
             if (chronologicalMatches.Count == 0)
             {
-                Console.WriteLine($"[UT2004StatsService] No matches to process.");
+                _logger.LogInformation("No matches to process.");
                 return;
             }
 
-            Console.WriteLine($"[UT2004StatsService] Date range: {chronologicalMatches.First().MatchDate:yyyy-MM-dd} to {chronologicalMatches.Last().MatchDate:yyyy-MM-dd}");
+            _logger.LogInformation("Date range: {Start:yyyy-MM-dd} to {End:yyyy-MM-dd}", chronologicalMatches.First().MatchDate, chronologicalMatches.Last().MatchDate);
 
             var profiles = new Dictionary<string, UT2004PlayerProfile>();
 
@@ -242,7 +246,7 @@ namespace FlawsFightNight.Services
                         if (resolvedGuid != playerStats.Guid && !mergeLog.ContainsKey(playerStats.Guid))
                         {
                             mergeLog[playerStats.Guid] = resolvedGuid;
-                            Console.WriteLine($"[SeamlessRatings] First merge hit in replay — raw: {playerStats.Guid} → primary: {resolvedGuid} (match: {match.FileName}, date: {match.MatchDate:yyyy-MM-dd})");
+                            _logger.LogInformation("SeamlessRatings first merge: raw GUID {RawGuid} → primary {PrimaryGuid} (match: {FileName}, date: {MatchDate:yyyy-MM-dd})", playerStats.Guid, resolvedGuid, match.FileName, match.MatchDate);
                         }
 
                         // Merged profile (primary GUID)
@@ -325,29 +329,30 @@ namespace FlawsFightNight.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[UT2004StatsService] Error while generating/saving match summary for {match.FileName} on {match.MatchDate:yyyy-MM-dd}: {ex.Message}");
+                    _logger.LogError(ex, "Error generating/saving match summary for {FileName} on {MatchDate:yyyy-MM-dd}.", match.FileName, match.MatchDate);
                 }
 
                 if (processedCount % 100 == 0)
-                    Console.WriteLine($"[UT2004StatsService] Processed {processedCount}/{chronologicalMatches.Count} matches...");
+                    _logger.LogInformation("Processed {Processed}/{Total} matches...", processedCount, chronologicalMatches.Count);
             }
 
             if (mergeLog.Count > 0)
             {
-                Console.WriteLine($"\n[SeamlessRatings] ===== MERGE SUMMARY =====");
-                Console.WriteLine($"[SeamlessRatings] {mergeLog.Count} alias GUID(s) were merged during this replay.");
+                _logger.LogInformation("SeamlessRatings: {MergeCount} alias GUID(s) merged during replay.", mergeLog.Count);
                 var affectedPrimaries = mergeLog.Values.Distinct().ToList();
                 foreach (var primaryGuid in affectedPrimaries)
                 {
                     if (!profiles.TryGetValue(primaryGuid, out var merged)) continue;
-                    Console.WriteLine($"[SeamlessRatings] Merged Profile → GUID: {primaryGuid} | Name: {merged.CurrentName}");
-                    Console.WriteLine($"  Total Matches: CTF={merged.TotalCTFMatches} TAM={merged.TotalTAMMatches} BR={merged.TotalBRMatches}");
-                    Console.WriteLine($"  CTF ELO: {merged.CaptureTheFlagElo.Rating:F1} | TAM ELO: {merged.TAMElo.Rating:F1} | BR ELO: {merged.BombingRunElo.Rating:F1}");
+                    _logger.LogInformation(
+                        "SeamlessRatings merged profile — GUID: {PrimaryGuid} | Name: {Name} | CTF ELO: {CtfElo:F1} | TAM ELO: {TamElo:F1} | BR ELO: {BrElo:F1} | Matches: CTF={CtfMatches} TAM={TamMatches} BR={BrMatches}",
+                        primaryGuid, merged.CurrentName,
+                        merged.CaptureTheFlagElo.Rating, merged.TAMElo.Rating, merged.BombingRunElo.Rating,
+                        merged.TotalCTFMatches, merged.TotalTAMMatches, merged.TotalBRMatches);
                 }
-                Console.WriteLine($"[SeamlessRatings] ==========================\n");
             }
 
-            Console.WriteLine($"[UT2004StatsService] Saving {profiles.Count} player profiles...");
+            _logger.LogInformation("Saving {ProfileCount} player profiles...", profiles.Count);
+            _logger.LogInformation(AdminFeedEvents.PlayerProfilesRebuilt, "{ProfileCount} player profiles have been rebuilt in the database. {AliasCount} of those profiles are aliases merged into their primary GUID's profile for SeamlessRatings.", profiles.Count, mergeLog.Count);
 
             await GenerateAndPersistMatchSummaries();
 
@@ -357,7 +362,7 @@ namespace FlawsFightNight.Services
             // Save standalone raw profiles for aliased GUIDs
             if (rawProfiles.Count > 0)
             {
-                Console.WriteLine($"[SeamlessRatings] Saving {rawProfiles.Count} standalone raw GUID profile(s)...");
+                _logger.LogInformation("SeamlessRatings: saving {RawProfileCount} standalone raw GUID profile(s).", rawProfiles.Count);
                 foreach (var rawProfile in rawProfiles.Values)
                     await _dataContext.SaveUT2004PlayerProfileFile(rawProfile);
             }
@@ -367,7 +372,7 @@ namespace FlawsFightNight.Services
 
         public async Task RebuildPlayerProfiles()
         {
-            Console.WriteLine($"[UT2004StatsService] Rebuilding player profiles from scratch...");
+            _logger.LogInformation("Rebuilding player profiles from scratch...");
 
             _eloService.SkippedYoungPlayers = 0;
             _ratingService.SkippedImbalancedMatches = 0;
@@ -390,7 +395,7 @@ namespace FlawsFightNight.Services
             var allMatches = await GetAllProcessedStatLogs();
             if (allMatches == null || allMatches.Count == 0)
             {
-                Console.WriteLine("[UT2004StatsService] No processed stat logs found.");
+                _logger.LogWarning("No processed stat logs found.");
                 return;
             }
 
@@ -398,7 +403,7 @@ namespace FlawsFightNight.Services
             int updated = 0;
             int skipped = 0;
 
-            Console.WriteLine($"[UT2004StatsService] Generating summaries for {allMatches.Count} matches...");
+            _logger.LogInformation("Generating summaries for {MatchCount} matches...", allMatches.Count);
 
             foreach (var match in allMatches.OrderBy(m => m.MatchDate))
             {
@@ -438,15 +443,15 @@ namespace FlawsFightNight.Services
 
                     updated++;
                     if (updated % 100 == 0)
-                        Console.WriteLine($"[UT2004StatsService] Summaries updated: {updated}");
+                        _logger.LogInformation("Summaries updated: {Updated}.", updated);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[UT2004StatsService] Error saving summary for {match.FileName} ({match.MatchDate:yyyy-MM-dd}): {ex.Message}");
+                    _logger.LogError(ex, "Error saving summary for {FileName} ({MatchDate:yyyy-MM-dd}).", match.FileName, match.MatchDate);
                 }
             }
 
-            Console.WriteLine($"[UT2004StatsService] Done. Updated: {updated}, Skipped (already present): {skipped}");
+            _logger.LogInformation("Summaries complete. Updated: {Updated}, Skipped (already present): {Skipped}.", updated, skipped);
         }
 
         public async Task PrintAllPlayerRatings()
@@ -456,12 +461,13 @@ namespace FlawsFightNight.Services
             tempList = tempList.OrderByDescending(p => p.TotalMatches).ToList();
             foreach (var profile in tempList)
             {
-                Console.WriteLine($"Player: {profile.Guid}");
-                Console.WriteLine($"  CTF ELO: {profile.CaptureTheFlagElo.Rating:F1} (Change: {profile.CaptureTheFlagElo.Change:+0.0;-0.0}, Peak: {profile.CaptureTheFlagElo.Peak:F1} on {profile.CaptureTheFlagElo.PeakDate:yyyy-MM-dd})");
-                Console.WriteLine($"  TAM ELO: {profile.TAMElo.Rating:F1} (Change: {profile.TAMElo.Change:+0.0;-0.0}, Peak: {profile.TAMElo.Peak:F1} on {profile.TAMElo.PeakDate:yyyy-MM-dd})");
-                Console.WriteLine($"  BR ELO: {profile.BombingRunElo.Rating:F1} (Change: {profile.BombingRunElo.Change:+0.0;-0.0}, Peak: {profile.BombingRunElo.Peak:F1} on {profile.BombingRunElo.PeakDate:yyyy-MM-dd})");
-                Console.WriteLine($"  Total Matches - CTF: {profile.TotalCTFMatches}, TAM: {profile.TotalTAMMatches}, BR: {profile.TotalBRMatches}");
-                Console.WriteLine();
+                _logger.LogInformation(
+                    "Player {Guid}: CTF ELO {CtfElo:F1} (Δ{CtfChange:+0.0;-0.0} Peak {CtfPeak:F1} on {CtfPeakDate:yyyy-MM-dd}) | TAM ELO {TamElo:F1} (Δ{TamChange:+0.0;-0.0} Peak {TamPeak:F1} on {TamPeakDate:yyyy-MM-dd}) | BR ELO {BrElo:F1} (Δ{BrChange:+0.0;-0.0} Peak {BrPeak:F1} on {BrPeakDate:yyyy-MM-dd}) | Matches CTF={CtfMatches} TAM={TamMatches} BR={BrMatches}",
+                    profile.Guid,
+                    profile.CaptureTheFlagElo.Rating, profile.CaptureTheFlagElo.Change, profile.CaptureTheFlagElo.Peak, profile.CaptureTheFlagElo.PeakDate,
+                    profile.TAMElo.Rating, profile.TAMElo.Change, profile.TAMElo.Peak, profile.TAMElo.PeakDate,
+                    profile.BombingRunElo.Rating, profile.BombingRunElo.Change, profile.BombingRunElo.Peak, profile.BombingRunElo.PeakDate,
+                    profile.TotalCTFMatches, profile.TotalTAMMatches, profile.TotalBRMatches);
             }
         }
         #endregion
@@ -673,7 +679,7 @@ namespace FlawsFightNight.Services
                 succeeded.Add(id);
             }
 
-            Console.WriteLine($"[UT2004StatsService] IgnoreStatLogsByID — Ignored: {succeeded.Count}, Already ignored: {alreadyIgnored.Count}, Not found: {notFound.Count}");
+            _logger.LogInformation(AdminFeedEvents.AdminActionTaken, "Stat logs ignored: {Succeeded}, Already ignored: {AlreadyIgnored}, Not found: {NotFound}.", succeeded.Count, alreadyIgnored.Count, notFound.Count);
             return (succeeded, alreadyIgnored, notFound);
         }
 
@@ -727,7 +733,7 @@ namespace FlawsFightNight.Services
                 succeeded.Add(id);
             }
 
-            Console.WriteLine($"[UT2004StatsService] AllowStatLogsByID — Re-allowed: {succeeded.Count}, Already allowed: {alreadyAllowed.Count}, Not found: {notFound.Count}");
+            _logger.LogInformation(AdminFeedEvents.AdminActionTaken, "Stat logs re-allowed: {Succeeded}, Already allowed: {AlreadyAllowed}, Not found: {NotFound}.", succeeded.Count, alreadyAllowed.Count, notFound.Count);
             return (succeeded, alreadyAllowed, notFound);
         }
 

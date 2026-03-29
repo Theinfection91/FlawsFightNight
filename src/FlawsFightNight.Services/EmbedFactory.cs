@@ -7,6 +7,7 @@ using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.MatchLogs;
 using FlawsFightNight.Core.Models.Tournaments;
 using FlawsFightNight.Core.Models.UT2004;
+using FlawsFightNight.Services.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,6 +43,16 @@ namespace FlawsFightNight.Services
                 .WithDescription(message)
                 .WithColor(Color.Orange)
                 .WithFooter("Feature coming soon!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed SuccessEmbed(string title, string description)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"✅ {title}")
+                .WithDescription(description)
+                .WithColor(Color.Green)
                 .WithTimestamp(DateTimeOffset.Now);
             return embed.Build();
         }
@@ -1913,5 +1924,62 @@ namespace FlawsFightNight.Services
             return embed.Build();
         }
         #endregion
+
+        public Embed FromLogEntry(DiscordAdminLogEntry entry)
+        {
+            // Strip namespace — show only the class name
+            var shortCategory = entry.Category.Contains('.')
+                ? entry.Category[(entry.Category.LastIndexOf('.') + 1)..]
+                : entry.Category;
+
+            var (emoji, label, color) = entry.Level switch
+            {
+                Microsoft.Extensions.Logging.LogLevel.Critical => ("🚨", $"{shortCategory} Critical", new Color(0x8B0000)),
+                Microsoft.Extensions.Logging.LogLevel.Error => ("🔴", $"{shortCategory} Error", Color.Red),
+                Microsoft.Extensions.Logging.LogLevel.Warning => ("⚠️", $"{shortCategory} Warning", Color.Orange),
+                Microsoft.Extensions.Logging.LogLevel.Information => ("🔵", $"{shortCategory} Info", Color.Blue),
+                Microsoft.Extensions.Logging.LogLevel.Debug => ("🔧", $"{shortCategory} Debug", Color.LightGrey),
+                _ => ("📋", $"{shortCategory} Trace", Color.LightGrey)
+            };
+
+            var message = entry.Message.Length > 4000
+                ? entry.Message[..4000] + "…"
+                : entry.Message;
+
+            var builder = new EmbedBuilder()
+                .WithTitle($"{emoji}  {label}")
+                .WithDescription($"```\n{message}\n```")
+                .WithColor(color)
+                .WithTimestamp(entry.TimestampUtc)
+                .WithFooter("Flaws Fight Night • Admin Feed");
+
+            builder.AddField("📂 Source", $"`{shortCategory}`", inline: true);
+
+            if (entry.EventId.Id != 0 || !string.IsNullOrEmpty(entry.EventId.Name))
+            {
+                var eventLabel = string.IsNullOrEmpty(entry.EventId.Name)
+                    ? $"`{entry.EventId.Id}`"
+                    : $"`{entry.EventId.Name}` ({entry.EventId.Id})";
+                builder.AddField("🔖 Event", eventLabel, inline: true);
+            }
+
+            if (!string.IsNullOrEmpty(entry.ExceptionMessage))
+            {
+                var exMsg = entry.ExceptionMessage.Length > 1000
+                    ? entry.ExceptionMessage[..1000] + "…"
+                    : entry.ExceptionMessage;
+                builder.AddField("💥 Exception", $"```\n{exMsg}\n```", inline: false);
+            }
+
+            if (!string.IsNullOrEmpty(entry.ExceptionStackTrace))
+            {
+                var trace = entry.ExceptionStackTrace.Length > 900
+                    ? entry.ExceptionStackTrace[..900] + "\n…"
+                    : entry.ExceptionStackTrace;
+                builder.AddField("📄 Stack Trace", $"```\n{trace}\n```", inline: false);
+            }
+
+            return builder.Build();
+        }
     }
 }

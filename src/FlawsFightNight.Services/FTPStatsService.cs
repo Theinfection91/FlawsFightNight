@@ -1,9 +1,11 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using FlawsFightNight.IO.Models;
+using FlawsFightNight.Services.Logging;
 using FluentFTP;
 using FluentFTP.Exceptions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,18 +19,24 @@ namespace FlawsFightNight.Services
         private readonly AdminConfigurationService _adminConfigService;
         private readonly GitBackupService _gitBackupService;
         private readonly UT2004StatsService _ut2004StatsService;
+        private readonly ILogger<FTPStatsService> _logger;
 
         private readonly DiscordSocketClient _discordClient;
         private Dictionary<FTPCredential, AsyncFtpClient> _ftpClients = new();
         private bool IsClientsConfigured = false;
 
-        public FTPStatsService(AdminConfigurationService adminConfigService, DiscordSocketClient client, GitBackupService gitBackupService, UT2004StatsService ut2004StatsService)
+        public FTPStatsService(
+            AdminConfigurationService adminConfigService,
+            DiscordSocketClient client,
+            GitBackupService gitBackupService,
+            UT2004StatsService ut2004StatsService,
+            ILogger<FTPStatsService> logger)
         {
             _adminConfigService = adminConfigService;
             _gitBackupService = gitBackupService;
             _ut2004StatsService = ut2004StatsService;
-
             _discordClient = client;
+            _logger = logger;
 
             ConfigureFTPClients();
             _adminConfigService.FTPCredentialsChanged += OnFTPCredentialsChanged!;
@@ -38,12 +46,12 @@ namespace FlawsFightNight.Services
         {
             try
             {
-                Console.WriteLine($"{DateTime.Now} - [FTPStatsService] FTP credentials changed. Reconfiguring FTP clients...");
+                _logger.LogInformation("FTP credentials changed. Reconfiguring FTP clients...");
                 ConfigureFTPClients();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Error reconfiguring FTP clients: {ex.Message}");
+                _logger.LogError(ex, "Error reconfiguring FTP clients.");
             }
         }
 
@@ -51,7 +59,7 @@ namespace FlawsFightNight.Services
         {
             if (!_adminConfigService.IsFTPCredentialsSet())
             {
-                Console.WriteLine($"{DateTime.Now} - [FTPStatsService] FTP credentials are not set. Please rerun FTP setup and handle it in Console, not Discord.");
+                _logger.LogWarning("FTP credentials are not set. Please rerun FTP setup and handle it in Console, not Discord.");
                 return;
             }
             try
@@ -79,7 +87,7 @@ namespace FlawsFightNight.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Error configuring FTP clients: {ex.Message}");
+                _logger.LogError(ex, "Error configuring FTP clients.");
             }
         }
 
@@ -102,7 +110,7 @@ namespace FlawsFightNight.Services
             await tcs.Task;
             _discordClient.Ready -= ReadyHandler;
 
-            Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Starting service...");
+            _logger.LogInformation("Starting service...");
 
             while (!token.IsCancellationRequested)
             {
@@ -110,7 +118,7 @@ namespace FlawsFightNight.Services
                 {
                     if (!IsClientsConfigured)
                     {
-                        Console.WriteLine($"{DateTime.Now} - [FTPStatsService] FTP clients are not configured. Skipping FTP processing...");
+                        _logger.LogWarning("FTP clients are not configured. Skipping FTP processing...");
                         await Task.Delay(TimeSpan.FromSeconds(15), token);
                         continue;
                     }
@@ -121,21 +129,20 @@ namespace FlawsFightNight.Services
                         var client = kvp.Value;
                         if (!client.IsConnected)
                         {
-                            Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Reconnecting to FTP server for {cred.ServerName}...");
+                            _logger.LogInformation("Reconnecting to FTP server for {ServerName}...", cred.ServerName);
                             await client.Connect(token);
                         }
 
-                        //Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Connection status for {cred.ServerName}: {client.IsConnected}");
                         bool directoryExists = await ExecuteWithDataConnectionFallback(client, () => client.DirectoryExists(cred.UserLogsDirectoryPath, token), token);
                         if (!directoryExists)
                         {
-                            Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Warning: Directory '{cred.UserLogsDirectoryPath}' does not exist on FTP server for {cred.ServerName}. Skipping...");
+                            _logger.LogWarning("Directory '{Path}' does not exist on FTP server for {ServerName}. Skipping...", cred.UserLogsDirectoryPath, cred.ServerName);
                             continue;
                         }
 
                         if (await ExecuteWithDataConnectionFallback(client, () => ContainsFreshLogs(client, cred.UserLogsDirectoryPath, token), token))
                         {
-                            Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Fresh logs found for {cred.ServerName}! Processing...");
+                            _logger.LogInformation(AdminFeedEvents.FreshStatLogsFound, "Fresh logs found for server: {ServerName}\n\nProcessing...", cred.ServerName);
                             var items = await ExecuteWithDataConnectionFallback(client, () => client.GetListing(cred.UserLogsDirectoryPath, token), token);
                             var logFiles = items.Where(item => item.Name.EndsWith(".log", StringComparison.OrdinalIgnoreCase)).ToList();
                             int totalFiles = logFiles.Count;
@@ -181,39 +188,29 @@ namespace FlawsFightNight.Services
                                     }
                                     Console.Write($"\r{message.PadRight(100)}");
                                 }
-                                // Every 50 files, add a newline for better readability
-                                //if (processedCount % 50 == 0)
-                                //{
-                                //    Console.WriteLine(); // Move to new line
-                                //}
                             }
-                            // Final summary on new line
+
                             Console.WriteLine();
-                            Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Processing complete for {cred.ServerName}");
+                            _logger.LogInformation(AdminFeedEvents.StatLogProcessed, "New stat logs processed for server: {ServerName}.\n\nValid: {Valid}, Ignored: {Ignored}.", cred.ServerName, validCount, ignoredCount);
 
                             await _ut2004StatsService.SetupPlayerProfiles();
                             _gitBackupService.EnqueueBackup();
-                        }
-                        else
-                        {
-                            // Testing
-                            //await _ut2004StatsService.RebuildPlayerProfiles();
+
+                            
                         }
                     }
-                    // Testing
-                    //await _ut2004StatsService.RebuildPlayerProfiles();
                 }
                 catch (FtpCommandException ftpEx)
                 {
-                    Console.WriteLine($"\n{DateTime.Now} - [FTPStatsService] FTP Command Error: {ftpEx.Message} (Response: {ftpEx.Message})");
+                    _logger.LogError(AdminFeedEvents.StatLogFailed, ftpEx, "FTP Command Error: {Message}", ftpEx.Message);
                 }
                 catch (FtpException ftpEx)
                 {
-                    Console.WriteLine($"\n{DateTime.Now} - [FTPStatsService] FTP Error: {ftpEx.Message}");
+                    _logger.LogError(AdminFeedEvents.StatLogFailed, ftpEx, "FTP Error: {Message}", ftpEx.Message);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"\n{DateTime.Now} - [FTPStatsService] Error: {ex}");
+                    _logger.LogError(AdminFeedEvents.StatLogFailed, ex, "Unexpected error in FTP processing loop.");
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(15), token);
@@ -250,21 +247,16 @@ namespace FlawsFightNight.Services
                 catch (FtpCommandException ftpCmdEx) when (ftpCmdEx.Message?.Contains("425") == true || (ftpCmdEx.Message?.Contains("TLS session") == true))
                 {
                     lastEx = ftpCmdEx;
-                    //Console.WriteLine($"{DateTime.Now} - [FTPStatsService] FTP 425/TLS data error using {mode}. Will retry with fallback mode.");
                     try { await client.Disconnect(token); } catch { }
-                    // continue to next mode
                 }
                 catch (FtpException ftpEx)
                 {
-                    // Non-command FTP error; attempt reconnect with alternate mode once.
                     lastEx = ftpEx;
-                    //Console.WriteLine($"{DateTime.Now} - [FTPStatsService] FTP error using {mode}: {ftpEx.Message}. Will retry with fallback mode.");
                     try { await client.Disconnect(token); } catch { }
                 }
                 catch (Exception ex)
                 {
                     lastEx = ex;
-                    //Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Unexpected error using {mode}: {ex.Message}. Will retry with fallback mode.");
                     try { await client.Disconnect(token); } catch { }
                 }
             }
@@ -298,7 +290,7 @@ namespace FlawsFightNight.Services
 
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Stopping service and closing FTP connection...");
+            _logger.LogInformation("Stopping service and closing FTP connections...");
 
             try
             {
@@ -313,7 +305,7 @@ namespace FlawsFightNight.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now} - [FTPStatsService] Error during shutdown: {ex.Message}");
+                _logger.LogError(ex, "Error during shutdown.");
             }
 
             await base.StopAsync(cancellationToken);

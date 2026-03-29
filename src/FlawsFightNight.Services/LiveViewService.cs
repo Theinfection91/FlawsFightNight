@@ -4,6 +4,7 @@ using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models.Stats;
 using FlawsFightNight.Core.Models.Tournaments;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,7 @@ namespace FlawsFightNight.Services
         private readonly GitBackupService _gitBackupService;
         private readonly DataContext _dataContext;
         private readonly UT2004StatsService _ut2004StatsService;
+        private readonly ILogger<LiveViewService> _logger;
 
         /// <summary>
         /// Tracks how many consecutive update cycles a registered leaderboard channel
@@ -33,13 +35,15 @@ namespace FlawsFightNight.Services
             EmbedFactory embedFactory,
             GitBackupService gitBackupService,
             DataContext dataContext,
-            UT2004StatsService ut2004StatsService)
+            UT2004StatsService ut2004StatsService,
+            ILogger<LiveViewService> logger)
         {
             _client = client;
             _embedFactory = embedFactory;
             _gitBackupService = gitBackupService;
             _dataContext = dataContext;
             _ut2004StatsService = ut2004StatsService;
+            _logger = logger;
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -63,14 +67,12 @@ namespace FlawsFightNight.Services
             await tcs.Task;
             _client.Ready -= ReadyHandler;
 
-            Console.WriteLine($"{DateTime.Now} - [LiveViewService] Starting service...");
+            _logger.LogInformation("Starting LiveView service...");
 
             while (!token.IsCancellationRequested)
             {
                 try
                 {
-                    //Console.WriteLine($"{DateTime.Now} [LiveViewService] Heartbeat...");
-
                     var tournaments = _dataContext.GetTournaments();
                     tournaments = tournaments
                         .Where(t => t != null)
@@ -95,7 +97,7 @@ namespace FlawsFightNight.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"{DateTime.Now} - [LiveViewService] Exception: {ex}");
+                    _logger.LogError(ex, "LiveView service exception.");
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(15), token);
@@ -219,11 +221,11 @@ namespace FlawsFightNight.Services
                 misses++;
                 _channelMissCount[leaderboardChannel.ChannelId] = misses;
 
-                Console.WriteLine($"{DateTime.Now} - [LiveViewService] Leaderboard channel {leaderboardChannel.ChannelId} not found in cache (miss {misses}/{StaleChannelMissThreshold}).");
+                _logger.LogWarning("Leaderboard channel {ChannelId} not found in cache (miss {Misses}/{Threshold}).", leaderboardChannel.ChannelId, misses, StaleChannelMissThreshold);
 
                 if (misses >= StaleChannelMissThreshold)
                 {
-                    Console.WriteLine($"{DateTime.Now} - [LiveViewService] Leaderboard channel {leaderboardChannel.ChannelId} has been missing for {StaleChannelMissThreshold} consecutive cycles. Removing stale entry.");
+                    _logger.LogWarning("Leaderboard channel {ChannelId} missing for {Threshold} consecutive cycles. Removing stale entry.", leaderboardChannel.ChannelId, StaleChannelMissThreshold);
                     await _dataContext.RemoveLeaderboardChannel(leaderboardChannel.ChannelId);
                     _channelMissCount.Remove(leaderboardChannel.ChannelId);
                     _gitBackupService.EnqueueBackup();

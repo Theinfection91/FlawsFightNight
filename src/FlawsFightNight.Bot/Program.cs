@@ -5,6 +5,7 @@ using Discord.WebSocket;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Commands.MatchCommands;
 using FlawsFightNight.Commands.SettingsCommands;
+using FlawsFightNight.Commands.SettingsCommands.AdminChannelFeedCommands;
 using FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands;
 using FlawsFightNight.Commands.StatsCommands.TournamentStatsCommands;
 using FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands;
@@ -13,8 +14,11 @@ using FlawsFightNight.Commands.TournamentCommands;
 using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.IO.Handlers;
 using FlawsFightNight.Services;
+using FlawsFightNight.Services.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Reflection;
 
 namespace FlawsFightNight.Bot
@@ -26,6 +30,7 @@ namespace FlawsFightNight.Bot
         private CommandService _commands;
         private InteractionService _interactionService;
         private AdminConfigurationService _adminConfigService;
+        private readonly ILogger<Program> _logger;
 
         private bool _gitBackupSetupComplete = false;
         private bool _ftpSetupComplete = false;
@@ -58,11 +63,11 @@ namespace FlawsFightNight.Bot
                 var result = await _interactionService.ExecuteCommandAsync(context, _services);
 
                 if (!result.IsSuccess)
-                    Console.WriteLine($"{DateTime.Now} - [Discord] Interaction Error: {result.ErrorReason}");
+                    _logger.LogWarning("Interaction error: {Reason}", result.ErrorReason);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Interaction Exception] {ex}");
+                _logger.LogError(ex, "Unhandled interaction exception.");
             }
         }
 
@@ -101,6 +106,18 @@ namespace FlawsFightNight.Bot
 
             // Host and DI setup
             var host = Host.CreateDefaultBuilder()
+                .ConfigureLogging(logging =>
+                {
+                    // Allow the DiscordAdminLoggerProvider to see Information+ logs.
+                    // EventId filtering inside DiscordAdminLogger is the real gate to Discord.
+                    logging.SetMinimumLevel(LogLevel.Information);
+                    logging.AddSimpleConsole(options =>
+                    {
+                        options.TimestampFormat = "M/d/yyyy h:mm:ss tt - ";
+                        options.SingleLine = true;
+                        options.IncludeScopes = false;
+                    });
+                })
                 .ConfigureServices(services =>
                 {
                     services.AddSingleton(_client);
@@ -125,6 +142,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<IgnoreLogsByIDHandler>();
                     services.AddSingleton<LastStatLogsHandler>();
                     services.AddSingleton<RegisterGuidToMemberHandler>();
+                    services.AddSingleton<RemoveAdminChannelFeedHandler>();
                     services.AddSingleton<RemoveGuidFromMemberHandler>();
                     services.AddSingleton<RemoveDebugAdminHandler>();
                     services.AddSingleton<RemoveFTPCredentialsHandler>();
@@ -133,6 +151,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<RemoveStandingsChannelHandler>();
                     services.AddSingleton<RemoveTeamsChannelHandler>();
                     services.AddSingleton<StatLogsByDateHandler>();
+                    services.AddSingleton<SetAdminChannelFeedHandler>();
                     services.AddSingleton<SetLeaderboardChannelHandler>();
                     services.AddSingleton<SetMatchesChannelHandler>();
                     services.AddSingleton<SetStandingsChannelHandler>();
@@ -198,7 +217,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<DiscordCredentialHandler>();
                     services.AddSingleton<FTPCredentialHandler>();
                     services.AddSingleton<GitHubCredentialHandler>();
-                    services.AddSingleton<LeaderboardChannelsHandler>();
+                    services.AddSingleton<LiveViewChannelsHandler>();
                     services.AddSingleton<PermissionsConfigHandler>();
                     services.AddSingleton<ProcessedLogNamesHandler>();
                     services.AddSingleton<StatLogIndexHandler>();
@@ -211,6 +230,21 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<OpenSkillRatingService>();
                     services.AddSingleton<UTStatsDBEloRatingService>();
                     services.AddSingleton<SeamlessRatingsMapper>();
+
+                    // Discord admin feed sender (single instance + hosted worker)
+                    services.AddSingleton<DiscordAdminFeedService>();
+                    services.AddHostedService(sp => sp.GetRequiredService<DiscordAdminFeedService>());
+
+                    // Logger options
+                    services.AddSingleton<IOptions<DiscordAdminLoggerOptions>>(sp =>
+                        Options.Create(new DiscordAdminLoggerOptions {
+                            Enabled = true,
+                            MinimumLevel = LogLevel.Information,
+                            QueueCapacity = 1000
+                        }));
+
+                    // Register the logger provider (constructed by DI)
+                    services.AddSingleton<ILoggerProvider, DiscordAdminLoggerProvider>();
                 })
                 .Build();
 
