@@ -39,6 +39,30 @@ namespace FlawsFightNight.Bot.Components
 
         private bool IsAuthorizedUser(ulong expectedUserId) => Context.User.Id == expectedUserId;
 
+        #region Help Select Menu
+        [ComponentInteraction("help_select")]
+        public async Task HandleHelpSelectAsync(string[] selectedValues)
+        {
+            try
+            {
+                var section = selectedValues[0];
+                var embed = _embedFactory.HelpSectionEmbed(section);
+                var components = ComponentFactory.CreateHelpSelectMenu();
+
+                await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
+                {
+                    msg.Embed = embed;
+                    msg.Components = components.Build();
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Component error in Help Select.");
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+            }
+        }
+        #endregion
+
         #region FTP Setup Run
         [ComponentInteraction("runftp_confirm:*")]
         public async Task HandleRunFTPConfirmAsync(ulong invokingUserId)
