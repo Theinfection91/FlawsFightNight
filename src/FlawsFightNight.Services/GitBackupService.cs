@@ -29,6 +29,31 @@ namespace FlawsFightNight.Services
         private readonly Channel<bool> _backupChannel = Channel.CreateUnbounded<bool>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
         private readonly Task _backupWorker;
 
+        // Subdirectories and files excluded from git backup (too large / rebuilt from FTP)
+        private static readonly HashSet<string> _excludedSubdirectories = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "StatLogs",
+            "UT2004PlayerProfiles"
+        };
+
+        private static readonly HashSet<string> _excludedFileNames = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "processed_log_names.json",
+            "stat_log_index.json"
+        };
+
+        /// <summary>
+        /// Returns true if the given full path falls under an excluded subdirectory or is an excluded file.
+        /// </summary>
+        private static bool IsExcluded(string fullPath)
+        {
+            if (_excludedFileNames.Contains(Path.GetFileName(fullPath)))
+                return true;
+
+            var parts = fullPath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            return parts.Any(p => _excludedSubdirectories.Contains(p));
+        }
+
         public GitBackupService(AdminConfigurationService adminConfigService, DataContext dataContext, ILogger<GitBackupService> logger) : base("GitBackupService", dataContext)
         {
             _adminConfigService = adminConfigService;
@@ -195,6 +220,8 @@ namespace FlawsFightNight.Services
                             await CopyFilesFromBackupRepoToDatabases().ConfigureAwait(false);
                             await _dataContext.LoadTournamentDataFiles().ConfigureAwait(false);
                             await _dataContext.LoadPermissionsConfigFile().ConfigureAwait(false);
+                            await _dataContext.LoadTournamentStatTagsFile().ConfigureAwait(false);
+                            await _dataContext.LoadLiveViewChannelsFile().ConfigureAwait(false);
                             _logger.LogInformation("Data restored successfully from BackupRepo.");
                             return;
 
@@ -257,24 +284,30 @@ namespace FlawsFightNight.Services
                 // Clean up BackupRepo to mirror Databases exactly (preserves .git folder)
                 CleanupBackupRepo();
 
-                // Copy root-level JSON files
+                // Copy root-level JSON files (skip excluded file names)
                 var rootJsonFiles = Directory.GetFiles(_databasesFolderPath, "*.json", SearchOption.TopDirectoryOnly);
                 foreach (var jsonFile in rootJsonFiles)
                 {
                     if (_shutdownToken.Token.IsCancellationRequested)
                         return;
 
+                    if (IsExcluded(jsonFile))
+                        continue;
+
                     string fileName = Path.GetFileName(jsonFile);
                     string destFilePath = Path.Combine(_repoPath, fileName);
                     await CopyFileWithSharing(jsonFile, destFilePath, _shutdownToken.Token).ConfigureAwait(false);
                 }
 
-                // Copy subdirectory structure and files
+                // Copy subdirectory structure and files (skip excluded subdirs and files)
                 var databaseSubdirectories = Directory.GetDirectories(_databasesFolderPath, "*", SearchOption.AllDirectories);
                 foreach (var subdirectory in databaseSubdirectories)
                 {
                     if (_shutdownToken.Token.IsCancellationRequested)
                         return;
+
+                    if (IsExcluded(subdirectory))
+                        continue;
 
                     string relativePath = Path.GetRelativePath(_databasesFolderPath, subdirectory);
                     string destinationPath = Path.Combine(_repoPath, relativePath);
@@ -285,6 +318,9 @@ namespace FlawsFightNight.Services
                     {
                         if (_shutdownToken.Token.IsCancellationRequested)
                             return;
+
+                        if (IsExcluded(jsonFile))
+                            continue;
 
                         string fileName = Path.GetFileName(jsonFile);
                         string destFilePath = Path.Combine(destinationPath, fileName);
@@ -300,7 +336,7 @@ namespace FlawsFightNight.Services
 
         /// <summary>
         /// Removes all files and folders from BackupRepo that don't exist in Databases.
-        /// Preserves the .git folder.
+        /// Preserves the .git folder and excluded paths.
         /// </summary>
         private void CleanupBackupRepo()
         {
@@ -316,8 +352,11 @@ namespace FlawsFightNight.Services
                     if (_shutdownToken.Token.IsCancellationRequested)
                         return;
 
-                    // Skip .git folder
+                    // Skip .git folder and excluded paths
                     if (repoFile.Contains(Path.DirectorySeparatorChar + ".git" + Path.DirectorySeparatorChar))
+                        continue;
+
+                    if (IsExcluded(repoFile))
                         continue;
 
                     string relativePath = Path.GetRelativePath(_repoPath, repoFile);
@@ -350,7 +389,7 @@ namespace FlawsFightNight.Services
                     }
                 }
 
-                // Delete empty directories in BackupRepo (except .git)
+                // Delete empty directories in BackupRepo (except .git and excluded)
                 var repoDirectories = Directory.GetDirectories(_repoPath, "*", SearchOption.AllDirectories)
                     .OrderByDescending(d => d.Length); // Process deepest first
 
@@ -359,8 +398,11 @@ namespace FlawsFightNight.Services
                     if (_shutdownToken.Token.IsCancellationRequested)
                         return;
 
-                    // Skip .git folder
+                    // Skip .git folder and excluded paths
                     if (repoDir.Contains(Path.DirectorySeparatorChar + ".git"))
+                        continue;
+
+                    if (IsExcluded(repoDir))
                         continue;
 
                     string relativePath = Path.GetRelativePath(_repoPath, repoDir);
@@ -401,8 +443,11 @@ namespace FlawsFightNight.Services
                     if (_shutdownToken.Token.IsCancellationRequested)
                         return;
 
-                    // Skip .git folder files
+                    // Skip .git folder files and excluded paths
                     if (jsonFile.Contains(Path.Combine(_repoPath, ".git")))
+                        continue;
+
+                    if (IsExcluded(jsonFile))
                         continue;
 
                     string relativePath = Path.GetRelativePath(_repoPath, jsonFile);

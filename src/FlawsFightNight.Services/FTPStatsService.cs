@@ -194,9 +194,6 @@ namespace FlawsFightNight.Services
                             _logger.LogInformation(AdminFeedEvents.StatLogProcessed, "New stat logs processed for server: {ServerName}.\n\nValid: {Valid}, Ignored: {Ignored}.", cred.ServerName, validCount, ignoredCount);
 
                             await _ut2004StatsService.SetupPlayerProfiles();
-                            _gitBackupService.EnqueueBackup();
-
-                            
                         }
                     }
                 }

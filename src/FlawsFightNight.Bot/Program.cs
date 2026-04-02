@@ -223,6 +223,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<StatLogIndexHandler>();
                     services.AddSingleton<StatLogMatchResultHandler>();
                     services.AddSingleton<TournamentDataHandler>();
+                    services.AddSingleton<TournamentStatTagsHandler>();
                     services.AddSingleton<MemberProfileHandler>();
                     services.AddSingleton<UT2004PlayerProfileHandler>();
 
