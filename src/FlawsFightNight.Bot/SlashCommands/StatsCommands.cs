@@ -104,7 +104,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    var embed = await _registerGuidLogic.RegisterGuidProcess(Context, guid);
+                    var embed = await _registerGuidLogic.RegisterGuidProcess(Context, guid.Trim().ToLower());
                     await FollowupAsync(embed: embed, ephemeral: true);
                     _autocompleteCache.Update();
                 }
@@ -117,7 +117,7 @@ namespace FlawsFightNight.Bot.SlashCommands
 
             [SlashCommand("remove_guid", "Removes a UT2004 GUID from your account.")]
             public async Task RemoveGuidAsync(
-                [Summary("guid", "The UT2004 GUID to remove.")] string guid)
+                [Summary("guid", "The UT2004 GUID to remove."), Autocomplete(typeof(MemberUT2004GuidAutocomplete))] string guid)
             {
                 try
                 {

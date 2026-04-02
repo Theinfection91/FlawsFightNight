@@ -29,6 +29,11 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
         }
         public async Task<Embed> RegisterGuidProcess(SocketInteractionContext context, string guid)
         {
+            if (!_ut2004StatsService.IsValidGuid(guid))
+            {
+                return _embedFactory.ErrorEmbed(Name, $"The GUID `{guid}` is not in a valid format. Please provide a valid GUID. Example: c392f9fe569e068a6523d5d78c6b57e7");
+            }
+
             if (_memberService.IsUT2004GUIDRegistered(guid))
             {
                 return _embedFactory.ErrorEmbed(Name, $"The GUID `{guid}` is already registered to another account. Please check the GUID and try again.");
@@ -46,14 +51,6 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
                 return _embedFactory.ErrorEmbed(Name, $"You have already registered a GUID to your account. Users may only register one GUID. If you need to register additional GUIDs for SeamlessRatings, please contact an administrator.");
             }
             memberProfile.RegisterUT2004GUID(guid);
-            
-
-            //var utProfile = _memberService.GetUT2004PlayerProfile(guid);
-            //if (utProfile == null) 
-            //{
-            //    return _embedFactory.ErrorEmbed(Name, $"An error occurred while retrieving the UT2004 profile for GUID `{guid}`. Please ensure the GUID is correct and try again.");
-            //}
-
             await _memberService.SaveAndReloadMemberProfiles();
             _gitBackupService.EnqueueBackup();
 
