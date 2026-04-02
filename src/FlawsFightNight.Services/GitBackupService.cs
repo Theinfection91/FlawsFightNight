@@ -220,6 +220,8 @@ namespace FlawsFightNight.Services
                             await CopyFilesFromBackupRepoToDatabases().ConfigureAwait(false);
                             await _dataContext.LoadTournamentDataFiles().ConfigureAwait(false);
                             await _dataContext.LoadPermissionsConfigFile().ConfigureAwait(false);
+                            await _dataContext.LoadTournamentStatTagsFile().ConfigureAwait(false);
+                            await _dataContext.LoadLiveViewChannelsFile().ConfigureAwait(false);
                             _logger.LogInformation("Data restored successfully from BackupRepo.");
                             return;
 

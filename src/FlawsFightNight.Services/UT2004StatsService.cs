@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FlawsFightNight.Services
 {
-    public class UT2004StatsService : BaseDataDriven    
+    public class UT2004StatsService : BaseDataDriven
     {
         private readonly DiscordSocketClient _client;
         private readonly ILogger<UT2004StatsService> _logger;
@@ -86,20 +86,44 @@ namespace FlawsFightNight.Services
                 ).ToList();
                 statLog.Id = GenerateStatLogId(statLog.GameMode);
 
-                // Ensure admin ignored logs are loaded so persisted StatLog reflects current admin state
                 if (_dataContext.StatLogIndexFile == null)
                     await _dataContext.LoadStatLogIndexFile();
 
-                // Reflect admin-allowed/ignored state on the StatLog before saving
-                statLog.IsAllowedByAdmin = !IsStatLogIgnored(statLog.Id);
+                // Use the tags file (backed-up, stable) as the source of truth for admin state.
+                // IsStatLogIgnored checks the index by ID — that ID is brand new and not in the
+                // index yet, so it would always return false. The tags file keys by FileName instead.
+                var savedTag = _dataContext.GetTournamentStatTag(statLog.FileName);
+                statLog.IsAllowedByAdmin = savedTag?.IsAdminIgnored != true;
 
                 await _dataContext.SaveStatLogMatchResultFile(statLog);
-                await _dataContext.AddStatLogIndexEntry(new StatLogIndexEntry
+
+                var entry = new StatLogIndexEntry
                 {
                     Id = statLog.Id,
                     MatchDate = statLog.MatchDate,
                     ServerName = statLog.ServerName
-                });
+                };
+
+                // Reconcile backed-up admin state onto the freshly created index entry
+                if (savedTag != null)
+                {
+                    if (!string.IsNullOrEmpty(savedTag.TournamentId))
+                        entry.TagTournamentMatch(savedTag.TournamentId, savedTag.MatchId, savedTag.TournamentName);
+
+                    if (savedTag.IsAdminIgnored)
+                    {
+                        entry.IsAdminIgnored = true;
+                        entry.AdminDiscordID = savedTag.AdminDiscordID;
+                        entry.AdminName = savedTag.AdminName;
+                        entry.IgnoredAt = savedTag.IgnoredAt ?? DateTime.UtcNow;
+                    }
+
+                    // Refresh the ID snapshot in the tags file now that a new ID has been assigned
+                    savedTag.StatLogId = statLog.Id;
+                    await _dataContext.UpsertTournamentStatTag(savedTag);
+                }
+
+                await _dataContext.AddStatLogIndexEntry(entry);
                 await MarkLogFileAsProcessed(fileName);
                 return true;
             }
@@ -122,9 +146,9 @@ namespace FlawsFightNight.Services
             int newCount = gameMode switch
             {
                 UT2004GameMode.iCTF => Interlocked.Increment(ref _iCTFStatLogIdCounter),
-                UT2004GameMode.TAM  => Interlocked.Increment(ref _TAMStatLogIdCounter),
-                UT2004GameMode.iBR  => Interlocked.Increment(ref _iBRStatLogIdCounter),
-                _                   => 0
+                UT2004GameMode.TAM => Interlocked.Increment(ref _TAMStatLogIdCounter),
+                UT2004GameMode.iBR => Interlocked.Increment(ref _iBRStatLogIdCounter),
+                _ => 0
             };
 
             return $"{gameMode}{newCount:000000}";
@@ -491,6 +515,12 @@ namespace FlawsFightNight.Services
             return _dataContext.StatLogIndexFile.Entries.Where(e => e.IsAdminIgnored).Select(e => e.Id).ToList();
         }
 
+        public List<StatLogIndexEntry> GetAdminIgnoredLogEntries()
+        {
+            if (_dataContext.StatLogIndexFile == null) return new List<StatLogIndexEntry>();
+            return _dataContext.StatLogIndexFile.Entries.Where(e => e.IsAdminIgnored).ToList();
+        }
+
         public bool DoesStatLogExist(string statLogID)
         {
             var entries = _dataContext.StatLogIndexFile?.Entries;
@@ -676,11 +706,25 @@ namespace FlawsFightNight.Services
                 await _dataContext.SaveAndReloadStatLogIndexFile();
 
                 // Persist IsAllowedByAdmin on the actual stat log file so future loads reflect admin intent
+                // Also upsert into tournament_stat_tags.json so the ignore survives a backup restore
                 var statLog = await _dataContext.LoadStatLogByID(id);
                 if (statLog != null)
                 {
                     statLog.IsAllowedByAdmin = false;
                     await _dataContext.SaveStatLogMatchResultFile(statLog);
+
+                    var tag = _dataContext.GetTournamentStatTag(statLog.FileName) ?? new TournamentStatTag
+                    {
+                        StatLogFileName = statLog.FileName,
+                        MatchDate = logIndex.MatchDate,
+                        ServerName = logIndex.ServerName
+                    };
+                    tag.StatLogId = id;
+                    tag.IsAdminIgnored = true;
+                    tag.AdminDiscordID = adminDiscordId;
+                    tag.AdminName = adminName;
+                    tag.IgnoredAt = DateTime.UtcNow;
+                    await _dataContext.UpsertTournamentStatTag(tag);
                 }
 
                 succeeded.Add(id);
@@ -729,10 +773,27 @@ namespace FlawsFightNight.Services
 
                 await _dataContext.SaveAndReloadStatLogIndexFile();
 
-                // Persist IsAllowedByAdmin on the actual stat log file so future loads reflect admin intent
+                // Persist to tournament_stat_tags.json
                 var statLog = await _dataContext.LoadStatLogByID(id);
                 if (statLog != null)
                 {
+                    var tag = _dataContext.GetTournamentStatTag(statLog.FileName);
+                    if (tag != null)
+                    {
+                        if (!string.IsNullOrEmpty(tag.TournamentId))
+                        {
+                            tag.IsAdminIgnored = false;
+                            tag.AdminDiscordID = 0;
+                            tag.AdminName = null;
+                            tag.IgnoredAt = null;
+                            await _dataContext.UpsertTournamentStatTag(tag);
+                        }
+                        else
+                        {
+                            await _dataContext.RemoveTournamentStatTag(statLog.FileName);
+                        }
+                    }
+
                     statLog.IsAllowedByAdmin = true;
                     await _dataContext.SaveStatLogMatchResultFile(statLog);
                 }
@@ -780,16 +841,58 @@ namespace FlawsFightNight.Services
             if (logIndex == null) return;
 
             logIndex.TagTournamentMatch(tournamentID, matchID, tournamentName);
-
             await _dataContext.SaveAndReloadStatLogIndexFile();
+
+            // Persist to tournament_stat_tags.json so the tag survives a backup restore
+            var statLog = await _dataContext.LoadStatLogByID(statLogID);
+            if (statLog != null)
+            {
+                var tag = _dataContext.GetTournamentStatTag(statLog.FileName) ?? new TournamentStatTag
+                {
+                    StatLogFileName = statLog.FileName,
+                    MatchDate = logIndex.MatchDate,
+                    ServerName = logIndex.ServerName
+                };
+                tag.StatLogId = statLogID;
+                tag.TournamentId = tournamentID;
+                tag.MatchId = matchID;
+                tag.TournamentName = tournamentName;
+                tag.TaggedAt = DateTime.UtcNow;
+                await _dataContext.UpsertTournamentStatTag(tag);
+            }
         }
 
         public async Task UnTagTournamentMatchFromStatLog(string statLogID)
         {
             var logIndex = _dataContext.GetStatLogIndexEntry(statLogID);
             if (logIndex == null) return;
+
             logIndex.UnTagTournamentMatch();
             await _dataContext.SaveAndReloadStatLogIndexFile();
+
+            // Update or remove from tournament_stat_tags.json
+            var statLog = await _dataContext.LoadStatLogByID(statLogID);
+            if (statLog != null)
+            {
+                var tag = _dataContext.GetTournamentStatTag(statLog.FileName);
+                if (tag != null)
+                {
+                    if (tag.IsAdminIgnored)
+                    {
+                        // Still has ignore state — only clear tournament fields
+                        tag.TournamentId = string.Empty;
+                        tag.MatchId = string.Empty;
+                        tag.TournamentName = null;
+                        tag.TaggedAt = default;
+                        await _dataContext.UpsertTournamentStatTag(tag);
+                    }
+                    else
+                    {
+                        // No remaining admin state — remove the entry entirely
+                        await _dataContext.RemoveTournamentStatTag(statLog.FileName);
+                    }
+                }
+            }
         }
         #endregion
 
