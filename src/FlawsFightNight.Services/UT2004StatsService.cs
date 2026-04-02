@@ -46,6 +46,13 @@ namespace FlawsFightNight.Services
             await GetStatLogCounts();
         }
 
+        public bool IsValidGuid(string guid)
+        {
+            // UT2004 GUIDs are typically 32-character hexadecimal strings
+            var uuidGuidPattern = @"^[0-9a-fA-F]{8}[0-9a-fA-F]{4}[0-9a-fA-F]{4}[0-9a-fA-F]{4}[0-9a-fA-F]{12}$";
+            return System.Text.RegularExpressions.Regex.IsMatch(guid, uuidGuidPattern);
+        }
+
         #region Stat Log Processing
         public async Task<bool> IsLogFileProcessed(string fileName)
         {

@@ -25,10 +25,9 @@ namespace FlawsFightNight.Bot.Autocomplete
         {
             ulong memberId = 0;
             var memberOption = autocompleteInteraction.Data.Options.FirstOrDefault(o => o.Name == "member");
-            if (memberOption?.Value is ulong uid)
-                memberId = uid;
-            else if (memberOption?.Value is string s && ulong.TryParse(s, out var parsed))
-                memberId = parsed;
+            if (memberOption?.Value is ulong uid) memberId = uid;
+            else if (memberOption?.Value is string s && ulong.TryParse(s, out var parsed)) memberId = parsed;
+            else memberId = context.User.Id;
 
             var input = autocompleteInteraction.Data.Current?.Value?.ToString()?.Trim() ?? string.Empty;
 
