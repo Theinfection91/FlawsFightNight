@@ -21,16 +21,18 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
         }
         public async Task<Embed> UnTagLogFromMatchProcess(string statLogId)
         {
-            if (!_ut2004StatsService.DoesStatLogExist(statLogId))
+            var canonicalId = _ut2004StatsService.TryResolveStatLogId(statLogId) ?? statLogId;
+
+            if (!_ut2004StatsService.DoesStatLogExist(canonicalId))
                 return _embedFactory.ErrorEmbed(Name, $"The provided stat log ID `{statLogId}` does not exist in the index.");
 
-            if (!_ut2004StatsService.IsStatLogTaggedToTournamentMatch(statLogId))
+            if (!_ut2004StatsService.IsStatLogTaggedToTournamentMatch(canonicalId))
                 return _embedFactory.ErrorEmbed(Name, $"The provided stat log ID `{statLogId}` is not currently tagged to any tournament match.");
 
-            await _ut2004StatsService.UnTagTournamentMatchFromStatLog(statLogId);
+            await _ut2004StatsService.UnTagTournamentMatchFromStatLog(canonicalId);
             _gitBackupService.EnqueueBackup();
 
-            return _embedFactory.GenericEmbed(Name + " Success", $"The stat log `{statLogId}` has been successfully untagged from its tournament match.", Color.DarkBlue);
+            return _embedFactory.GenericEmbed(Name + " Success", $"The stat log `{canonicalId}` has been successfully untagged from its tournament match.", Color.DarkBlue);
         }
     }
 }

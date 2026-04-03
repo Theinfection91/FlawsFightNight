@@ -527,6 +527,16 @@ namespace FlawsFightNight.Services
             return entries != null && entries.Any(e => e.Id.Equals(statLogID, StringComparison.OrdinalIgnoreCase));
         }
 
+        /// <summary>
+        /// Returns the canonical (stored) stat log ID for the given input, ignoring case.
+        /// Returns null if no matching entry exists.
+        /// </summary>
+        public string? TryResolveStatLogId(string input)
+        {
+            var entries = _dataContext.StatLogIndexFile?.Entries;
+            return entries?.FirstOrDefault(e => e.Id.Equals(input, StringComparison.OrdinalIgnoreCase))?.Id;
+        }
+
         public async Task<string> GetStatLogIDsOnDate(DateTime date, string serverName = null)
         {
             if (_dataContext.StatLogIndexFile == null)

@@ -25,7 +25,12 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
         public async Task<Embed> IgnoreLogsByIDProcess(SocketInteractionContext context, List<string> statLogIDs)
         {
             string adminName = context.User.GlobalName ?? context.User.Username;
-            var (succeeded, alreadyIgnored, notFound) = await _ut2004StatsService.IgnoreStatLogsByID(statLogIDs, context.User.Id, adminName);
+
+            var normalizedIDs = statLogIDs
+                .Select(id => _ut2004StatsService.TryResolveStatLogId(id) ?? id)
+                .ToList();
+
+            var (succeeded, alreadyIgnored, notFound) = await _ut2004StatsService.IgnoreStatLogsByID(normalizedIDs, context.User.Id, adminName);
 
             if (succeeded.Count == 0 && alreadyIgnored.Count == 0 && notFound.Count > 0)
                 return _embedFactory.ErrorEmbed(Name, $"None of the provided IDs were found in the stat log index.\n\n❌ **Not Found:**\n{string.Join("\n", notFound.Select(id => $"• `{id}`"))}");

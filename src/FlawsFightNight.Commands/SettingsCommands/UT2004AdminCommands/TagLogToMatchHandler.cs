@@ -26,7 +26,9 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
 
         public async Task<Embed> TagLogToMatchProcess(string statLogId, string tournamentId, string matchId)
         {
-            if (!_ut2004StatsService.DoesStatLogExist(statLogId))
+            var canonicalId = _ut2004StatsService.TryResolveStatLogId(statLogId) ?? statLogId;
+
+            if (!_ut2004StatsService.DoesStatLogExist(canonicalId))
                 return _embedFactory.ErrorEmbed(Name, $"The provided stat log ID `{statLogId}` does not exist in the index.");
 
             if (!_tournamentService.IsTournamentIdInDatabase(tournamentId))
@@ -39,21 +41,20 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
 
             string previousTagInfo = string.Empty;
 
-            // If this tournament match is already tagged to a different stat log, untag it first
             if (_ut2004StatsService.IsTournamentMatchTagged(tournamentId, matchId))
             {
                 var existingEntry = _ut2004StatsService.GetStatLogIndexEntryByTournamentMatch(tournamentId, matchId);
-                if (existingEntry != null && !existingEntry.Id.Equals(statLogId, StringComparison.OrdinalIgnoreCase))
+                if (existingEntry != null && !existingEntry.Id.Equals(canonicalId, StringComparison.OrdinalIgnoreCase))
                 {
                     previousTagInfo = $" Stat log `{existingEntry.Id}` was previously tagged to this match and has been untagged.";
                     await _ut2004StatsService.UnTagTournamentMatchFromStatLog(existingEntry.Id);
                 }
             }
 
-            await _ut2004StatsService.TagTournamentMatchToStatLog(statLogId, tournament.Name, tournamentId, matchId);
+            await _ut2004StatsService.TagTournamentMatchToStatLog(canonicalId, tournament.Name, tournamentId, matchId);
             _gitBackupService.EnqueueBackup();
 
-            return _embedFactory.GenericEmbed(Name + " Success", $"The stat log `{statLogId}` has been successfully tagged to match `{matchId}` in tournament `{tournamentId}`.{previousTagInfo}", Color.DarkBlue);
+            return _embedFactory.GenericEmbed(Name + " Success", $"The stat log `{canonicalId}` has been successfully tagged to match `{matchId}` in tournament `{tournamentId}`.{previousTagInfo}", Color.DarkBlue);
         }
     }
 }

@@ -25,16 +25,18 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
                     return $"Invalid log ID: '{logID}'. Please provide non-empty log IDs.";
             }
 
+            var resolvedIDs = new List<string>();
             foreach (var logID in logIDs)
             {
-                var exists = _ut2004StatsService.DoesStatLogExist(logID);
-                if (!exists)
+                var canonical = _ut2004StatsService.TryResolveStatLogId(logID);
+                if (canonical == null)
                     return $"No stat log found for ID: '{logID}'. Please check the ID and try again.";
+                resolvedIDs.Add(canonical);
             }
 
             var allLogs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (string logID in logIDs)
+            foreach (string logID in resolvedIDs)
             {
                 var result = await _ut2004StatsService.GetStatLogByID(logID);
                 if (result != null)
