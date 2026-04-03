@@ -26,6 +26,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private int _computedMatchDurationSeconds = 0;
         private double _lastEventTimestamp = 0.0;
 
+        private string _currentMapId = string.Empty;
+        private string _currentMapName = string.Empty;
+        private string _currentMapCreator = string.Empty;
+
         // TAM-specific tracking
         private int _currentRoundNumber = 0;
         private int? _lastKillerSeqNum = null;         // Track who got the last kill before round end
@@ -198,6 +202,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _lastEventTimestamp = 0.0;
             _killMatch.Clear();
             _timeline.Clear();
+            _currentMapId = string.Empty;
+            _currentMapName = string.Empty;
+            _currentMapCreator = string.Empty;
         }
 
         private void ParseNewGame(string[] parts)
@@ -207,6 +214,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             // [Time] NG [DateTime] [Unknown] [MapID] [MapName] [Creator] [GameMode] [Params]
             if (parts.Length >= 8 && !string.IsNullOrEmpty(parts[7]))
             {
+                _currentMapId = parts[4];
+                _currentMapName = parts[5];
+                _currentMapCreator = parts[6];
                 string gameMode = parts[7];
                 if (gameMode.Contains("CTF", StringComparison.OrdinalIgnoreCase))
                 {
@@ -1295,7 +1305,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             statLog.KillMatch = _killMatch;
             statLog.Timeline = _timeline;
-            statLog.TeamScores = new Dictionary<int, int>(_teamScores); // <-- Add this line
+            statLog.TeamScores = new Dictionary<int, int>(_teamScores);
 
             if (_simpleDebugLogging)
             {
@@ -1313,6 +1323,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             statLog.MatchDate = _matchStartTime != DateTime.MinValue ? _matchStartTime : DateTime.UtcNow;
             statLog.GameMode = _currentGameMode;
             statLog.MatchDurationSeconds = _computedMatchDurationSeconds;
+
+            statLog.MapId = _currentMapId;
+            statLog.MapName = _currentMapName;
+            statLog.MapCreator = _currentMapCreator;
 
             return statLog;
         }

@@ -69,6 +69,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             sb.AppendLine($"  Server    : {log.ServerName ?? "N/A"} ({log.IPAddress ?? "N/A"})");
             sb.AppendLine($"  Match Date: {log.MatchDate:yyyy-MM-dd HH:mm:ss} UTC");
             sb.AppendLine($"  Game Mode : {log.GameModeName}");
+            sb.AppendLine($"  Map ID    : {log.MapId ?? "N/A"}");
+            sb.AppendLine($"  Map Name  : {log.MapName ?? "N/A"}");
+            sb.AppendLine($"  Map Creator: {log.MapCreator ?? "N/A"}");
             sb.AppendLine($"  File      : {log.FileName ?? "N/A"}");
             sb.AppendLine($"  Summary   : {log.MatchSummary ?? "N/A"}");
             sb.AppendLine();

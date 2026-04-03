@@ -14,6 +14,9 @@ namespace FlawsFightNight.Core.Models.UT2004
         public DateTime MatchDate { get; set; }
         public UT2004GameMode GameMode { get; set; }
         public string GameModeName => GetCorrectGameModeName();
+        public string MapId { get; set; } 
+        public string MapName { get; set; }
+        public string MapCreator { get; set; }
         public List<List<UTPlayerMatchStats>> Players { get; set; } = new();
         public Dictionary<string, Dictionary<string, int>> KillMatch { get; set; } = new();
         public List<MatchEvent> Timeline { get; set; } = new();
