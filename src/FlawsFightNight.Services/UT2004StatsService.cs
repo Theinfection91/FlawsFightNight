@@ -927,24 +927,6 @@ namespace FlawsFightNight.Services
                 .FirstOrDefault(p => p.Guid.Equals(guid, StringComparison.OrdinalIgnoreCase));
         }
 
-        public async Task SendTextFileDM(ulong discordId, string fileName, string content)
-        {
-            var user = await _client.GetUserAsync(discordId) as SocketUser;
-            if (user == null) return;
-
-            var dmChannel = await user.CreateDMChannelAsync();
-            var bytes = Encoding.UTF8.GetBytes(content);
-            var attachment = new FileAttachment(new MemoryStream(bytes), fileName);
-            try
-            {
-                await dmChannel.SendFileAsync(attachment);
-            }
-            finally
-            {
-                attachment.Dispose();
-            }
-        }
-
         public async Task<List<string>> GetTournamentStatLogIdsByGuids(List<string> guids)
         {
             if (_dataContext.StatLogIndexFile == null)
@@ -1004,6 +986,229 @@ namespace FlawsFightNight.Services
             }
 
             return results;
+        }
+        #endregion
+
+        public async Task SendTextFileDM(ulong discordId, string fileName, string content)
+        {
+            var user = await _client.GetUserAsync(discordId) as SocketUser;
+            if (user == null) return;
+
+            var dmChannel = await user.CreateDMChannelAsync();
+            var bytes = Encoding.UTF8.GetBytes(content);
+            var attachment = new FileAttachment(new MemoryStream(bytes), fileName);
+            try
+            {
+                await dmChannel.SendFileAsync(attachment);
+            }
+            finally
+            {
+                attachment.Dispose();
+            }
+        }
+
+        #region Elo Tracing
+        private record EloTraceEntry(
+            DateTime MatchDate,
+            string StatLogId,
+            string ServerName,
+            string PlayerName,
+            int Score,
+            int Kills,
+            int Deaths,
+            bool IsWinner,
+            int ObjStat,
+            double EloBefore,
+            double EloAfter,
+            double Change);
+
+        /// <summary>
+        /// Replays all <paramref name="gameMode"/> matches chronologically and returns a
+        /// formatted per-match ELO trace for the given GUID.
+        /// Alias GUIDs are resolved to their primary before the replay.
+        /// Opponent ratings are accurate because every human player is carried through the
+        /// replay — only the isolated profiles dictionary is mutated, not the live database.
+        /// </summary>
+        public async Task<string> GetPlayerEloTrace(string guid, UT2004GameMode gameMode)
+        {
+            var resolvedGuid = _ratingsMapper.Resolve(guid);
+
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var allMatchStats = await GetAllProcessedStatLogs();
+
+            var chronologicalMatches = allMatchStats
+                .Where(m => !IsStatLogIgnored(m.Id) && m.IsAllowedByAdmin && m.GameMode == gameMode)
+                .OrderBy(m => m.MatchDate)
+                .ToList();
+
+            if (chronologicalMatches.Count == 0)
+                return $"No {gameMode} matches found in the database.";
+
+            // Isolated replay — never touches live database profiles
+            var profiles = new Dictionary<string, UT2004PlayerProfile>(StringComparer.OrdinalIgnoreCase);
+            var traceEntries = new List<EloTraceEntry>();
+
+            foreach (var match in chronologicalMatches)
+            {
+                // Seed profiles for every human player in this match
+                foreach (var team in match.Players)
+                {
+                    foreach (var p in team.Where(p => !p.IsBot && !string.IsNullOrEmpty(p.Guid)))
+                    {
+                        var rg = _ratingsMapper.Resolve(p.Guid!);
+                        if (!profiles.ContainsKey(rg))
+                            profiles[rg] = new UT2004PlayerProfile(rg);
+                    }
+                }
+
+                // Find target player's stats in this match before mutating anything
+                UTPlayerMatchStats? targetStats = null;
+                foreach (var team in match.Players)
+                {
+                    targetStats = team.FirstOrDefault(p =>
+                        !p.IsBot &&
+                        !string.IsNullOrEmpty(p.Guid) &&
+                        _ratingsMapper.Resolve(p.Guid!).Equals(resolvedGuid, StringComparison.OrdinalIgnoreCase));
+                    if (targetStats != null) break;
+                }
+
+                // Snapshot ELO before this match
+                double eloBefore = 0.0;
+                if (targetStats != null && profiles.TryGetValue(resolvedGuid, out var tpSnap))
+                {
+                    eloBefore = gameMode switch
+                    {
+                        UT2004GameMode.iCTF => tpSnap.CaptureTheFlagElo.Rating,
+                        UT2004GameMode.TAM => tpSnap.TAMElo.Rating,
+                        UT2004GameMode.iBR => tpSnap.BombingRunElo.Rating,
+                        _ => 0.0
+                    };
+                }
+
+                // Stats must be updated before ELO so MinRankMatches gating mirrors SetupPlayerProfiles
+                foreach (var team in match.Players)
+                {
+                    foreach (var p in team.Where(p => !p.IsBot && !string.IsNullOrEmpty(p.Guid)))
+                    {
+                        var rg = _ratingsMapper.Resolve(p.Guid!);
+                        profiles[rg].UpdateStatsFromMatch(p, match.GameMode, match.MatchDate);
+                    }
+                }
+
+                _eloService.UpdateRatingsForMatch(match, profiles);
+
+                if (targetStats != null && profiles.TryGetValue(resolvedGuid, out var tpAfter))
+                {
+                    double eloAfter = gameMode switch
+                    {
+                        UT2004GameMode.iCTF => tpAfter.CaptureTheFlagElo.Rating,
+                        UT2004GameMode.TAM => tpAfter.TAMElo.Rating,
+                        UT2004GameMode.iBR => tpAfter.BombingRunElo.Rating,
+                        _ => 0.0
+                    };
+
+                    int objStat = gameMode switch
+                    {
+                        UT2004GameMode.iCTF => targetStats.FlagCaptures,
+                        UT2004GameMode.iBR => targetStats.BallCaptures,
+                        UT2004GameMode.TAM => targetStats.TotalDamageDealt,
+                        _ => 0
+                    };
+
+                    traceEntries.Add(new EloTraceEntry(
+                        MatchDate: match.MatchDate,
+                        StatLogId: match.Id,
+                        ServerName: match.ServerName ?? "Unknown",
+                        PlayerName: targetStats.LastKnownName ?? resolvedGuid,
+                        Score: targetStats.Score,
+                        Kills: targetStats.Kills,
+                        Deaths: targetStats.Deaths,
+                        IsWinner: targetStats.IsWinner,
+                        ObjStat: objStat,
+                        EloBefore: eloBefore,
+                        EloAfter: eloAfter,
+                        Change: eloAfter - eloBefore
+                    ));
+                }
+            }
+
+            if (traceEntries.Count == 0)
+                return $"No {gameMode} matches found for GUID {resolvedGuid}.";
+
+            profiles.TryGetValue(resolvedGuid, out var finalProfile);
+
+            double currentElo = finalProfile != null ? gameMode switch
+            {
+                UT2004GameMode.iCTF => finalProfile.CaptureTheFlagElo.Rating,
+                UT2004GameMode.TAM => finalProfile.TAMElo.Rating,
+                UT2004GameMode.iBR => finalProfile.BombingRunElo.Rating,
+                _ => 0.0
+            } : 0.0;
+
+            double peakElo = finalProfile != null ? gameMode switch
+            {
+                UT2004GameMode.iCTF => finalProfile.CaptureTheFlagElo.Peak,
+                UT2004GameMode.TAM => finalProfile.TAMElo.Peak,
+                UT2004GameMode.iBR => finalProfile.BombingRunElo.Peak,
+                _ => 0.0
+            } : 0.0;
+
+            DateTime? peakDate = finalProfile != null ? gameMode switch
+            {
+                UT2004GameMode.iCTF => finalProfile.CaptureTheFlagElo.PeakDate,
+                UT2004GameMode.TAM => finalProfile.TAMElo.PeakDate,
+                UT2004GameMode.iBR => finalProfile.BombingRunElo.PeakDate,
+                _ => null
+            } : null;
+
+            string displayName = traceEntries[^1].PlayerName;
+            int wins = traceEntries.Count(e => e.IsWinner);
+            int losses = traceEntries.Count - wins;
+            double startElo = traceEntries[0].EloBefore;
+            double netChange = currentElo - startElo;
+
+            string objLabel = gameMode switch
+            {
+                UT2004GameMode.iCTF => "FC",
+                UT2004GameMode.iBR => "BC",
+                UT2004GameMode.TAM => "DMG",
+                _ => "Obj"
+            };
+
+            const string sep = "--------------------------------------------------------------------------------------------------------------------------------------";
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"=== ELO Trace — {displayName} | {gameMode} ===");
+            sb.AppendLine($"GUID      : {resolvedGuid}");
+            if (!resolvedGuid.Equals(guid, StringComparison.OrdinalIgnoreCase))
+                sb.AppendLine($"Alias GUID: {guid}");
+            sb.AppendLine($"Matches   : {traceEntries.Count} ({wins}W / {losses}L)");
+            sb.AppendLine($"ELO Now   : {currentElo:F1}   |   Peak: {peakElo:F1}{(peakDate.HasValue ? $" ({peakDate.Value:yyyy-MM-dd})" : "")}");
+            sb.AppendLine($"Net Delta : {netChange:+0.0;-0.0}   (start: {startElo:F1}  →  end: {currentElo:F1})");
+            sb.AppendLine();
+            sb.AppendLine($"{"#",-5} {"Date",-12} {"Stat Log ID",-14} {"Server",-24} {"Name",-20} {"R",-3} {"Score",-7} {"K/D",-9} {objLabel,-8} {"Before",-10} {"Δ",-10} After");
+            sb.AppendLine(sep);
+
+            int matchNum = 0;
+            foreach (var e in traceEntries)
+            {
+                matchNum++;
+                string server = e.ServerName.Length > 22 ? e.ServerName[..22] : e.ServerName;
+                string name = e.PlayerName.Length > 18 ? e.PlayerName[..18] : e.PlayerName;
+                string kd = $"{e.Kills}/{e.Deaths}";
+                string obj = $"{objLabel}:{e.ObjStat}";
+                string change = e.Change >= 0.0 ? $"+{e.Change:F1}" : $"{e.Change:F1}";
+                string note = Math.Abs(e.Change) < 0.001 ? " [no change]" : string.Empty;
+
+                sb.AppendLine($"{matchNum,-5} {e.MatchDate:yyyy-MM-dd}  {e.StatLogId,-14} {server,-24} {name,-20} {(e.IsWinner ? "W" : "L"),-3} {e.Score,-7} {kd,-9} {obj,-8} {e.EloBefore,-10:F1} {change,-10} {e.EloAfter:F1}{note}");
+            }
+
+            sb.AppendLine(sep);
+            sb.AppendLine($"{"TOTAL",-5} {"",-12} {"",-14} {"",-24} {"",-20} {$"{wins}W/{losses}L",-3} {"",-7} {"",-9} {"",-8} {startElo,-10:F1} {$"{netChange:+0.0;-0.0}",-10} {currentElo:F1}");
+
+            return sb.ToString();
         }
         #endregion
     }
