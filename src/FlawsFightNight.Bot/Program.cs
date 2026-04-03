@@ -164,6 +164,7 @@ namespace FlawsFightNight.Bot
                     // Stat Commands
                     services.AddSingleton<ComparePlayersHandler>();
                     services.AddSingleton<DisplayMatchSummaryHandler>();
+                    services.AddSingleton<EloTraceUserHandler>();
                     services.AddSingleton<MyPlayerProfileHandler>();
                     services.AddSingleton<MyTournamentMatchesHandler>();
                     services.AddSingleton<MyTournamentProfileHandler>();
