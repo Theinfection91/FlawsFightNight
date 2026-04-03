@@ -407,6 +407,8 @@ namespace FlawsFightNight.Bot.SlashCommands
             private readonly RemoveGuidFromMemberHandler _removeGuidFromMemberLogic;
             private readonly LastStatLogsHandler _lastStatLogsHandler;
             private readonly UnTagLogToMatchHandler _unTagLogToMatchHandler;
+            private readonly GetAllGUIDsHandler _getAllGUIDsHandler;
+            private readonly GetPlayerProfileByGuidHandler _getPlayerProfileByGuidHandler;
             private readonly ILogger<UT2004Commands> _logger;
 
             public UT2004Commands(
@@ -420,6 +422,8 @@ namespace FlawsFightNight.Bot.SlashCommands
                 LastStatLogsHandler lastStatLogsHandler,
                 TagLogToMatchHandler tagLogToMatchHandler,
                 UnTagLogToMatchHandler unTagLogToMatchHandler,
+                GetAllGUIDsHandler getAllGUIDsHandler,
+                GetPlayerProfileByGuidHandler getPlayerProfileByGuidHandler,
                 ILogger<UT2004Commands> logger)
             {
                 _autocompleteCache = autocompleteCache;
@@ -432,6 +436,8 @@ namespace FlawsFightNight.Bot.SlashCommands
                 _lastStatLogsHandler = lastStatLogsHandler;
                 _tagLogToMatchHandler = tagLogToMatchHandler;
                 _unTagLogToMatchHandler = unTagLogToMatchHandler;
+                _getAllGUIDsHandler = getAllGUIDsHandler;
+                _getPlayerProfileByGuidHandler = getPlayerProfileByGuidHandler;
                 _logger = logger;
             }
 
@@ -469,6 +475,39 @@ namespace FlawsFightNight.Bot.SlashCommands
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveGuidFromMemberAsync));
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("get_all_guids", "Get a DM with a text file listing every UT2004 GUID and last known name")]
+            public async Task GetAllGUIDsAsync()
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var result = await _getAllGUIDsHandler.GetAllGUIDsProcess(Context);
+                    await FollowupAsync(result, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(GetAllGUIDsAsync));
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("get_player_profile", "Display a UT2004 player profile by GUID")]
+            public async Task GetPlayerProfileByGuidAsync(
+                [Summary("guid", "The UT2004 GUID to look up")] string guid)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var result = _getPlayerProfileByGuidHandler.GetPlayerProfileByGuidProcess(guid);
+                    await FollowupAsync(embed: result, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(GetPlayerProfileByGuidAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
