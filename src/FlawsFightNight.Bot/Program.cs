@@ -135,10 +135,12 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<ReportWinHandler>();
                     services.AddSingleton<SendChallengeHandler>();
 
-                    // Settings Commands
+                    // Settings Commandsww
                     services.AddSingleton<AddDebugAdminHandler>();
                     services.AddSingleton<AllowLogsByIDHandler>();
+                    services.AddSingleton<GetAllGUIDsHandler>();
                     services.AddSingleton<GetLogsByIDHandler>();
+                    services.AddSingleton<GetPlayerProfileByGuidHandler>();
                     services.AddSingleton<IgnoreLogsByIDHandler>();
                     services.AddSingleton<LastStatLogsHandler>();
                     services.AddSingleton<RegisterGuidToMemberHandler>();

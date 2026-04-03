@@ -911,6 +911,40 @@ namespace FlawsFightNight.Services
                 .ToList();
         }
 
+        public List<UT2004PlayerProfile> GetAllPlayerProfiles()
+        {
+            return _dataContext.UT2004PlayerProfileFiles
+                .Where(f => f?.PlayerProfile != null)
+                .Select(f => f.PlayerProfile)
+                .ToList();
+        }
+
+        public UT2004PlayerProfile? GetPlayerProfileByGuid(string guid)
+        {
+            return _dataContext.UT2004PlayerProfileFiles
+                .Where(f => f?.PlayerProfile != null)
+                .Select(f => f.PlayerProfile)
+                .FirstOrDefault(p => p.Guid.Equals(guid, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public async Task SendTextFileDM(ulong discordId, string fileName, string content)
+        {
+            var user = await _client.GetUserAsync(discordId) as SocketUser;
+            if (user == null) return;
+
+            var dmChannel = await user.CreateDMChannelAsync();
+            var bytes = Encoding.UTF8.GetBytes(content);
+            var attachment = new FileAttachment(new MemoryStream(bytes), fileName);
+            try
+            {
+                await dmChannel.SendFileAsync(attachment);
+            }
+            finally
+            {
+                attachment.Dispose();
+            }
+        }
+
         public async Task<List<string>> GetTournamentStatLogIdsByGuids(List<string> guids)
         {
             if (_dataContext.StatLogIndexFile == null)
