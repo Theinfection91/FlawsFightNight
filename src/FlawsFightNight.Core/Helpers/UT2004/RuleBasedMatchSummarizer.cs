@@ -49,7 +49,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 Timeline = match.Timeline ?? new List<MatchEvent>(),
                 Profiles = profiles,
                 EloChanges = eloChanges,
-                MapName = match.FileName?.Replace(".json", "") ?? "Unknown",
+                MapName = match.MapName,
                 Name = ResolveName,
                 NameByGuid = ResolveGuid
             };
@@ -315,7 +315,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             sb.AppendLine($"# {match.GameModeName} Match Summary — {ctx.MapName}");
             sb.AppendLine();
-            sb.AppendLine($"A {ctx.PaceWord}, {ctx.IntensityWord} {match.GameModeName} match on **{ctx.MapName}** lasting **{duration}** with **{ctx.PlayerCount} players**.");
+            sb.AppendLine($"A {ctx.PaceWord}, {ctx.IntensityWord} {match.GameModeName} match on **({ctx.Match.MapId ?? "N/A"} | {ctx.MapName ?? "Unknown"} by {ctx.Match.MapCreator ?? "Unknown"})** lasting **{duration}** with **{ctx.PlayerCount} players**.");
 
             // Winner announcement
             var winner = ctx.Teams.FirstOrDefault(t => t.IsWinner);
@@ -374,38 +374,26 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             bool isTAM = ctx.Match.GameMode == UT2004GameMode.TAM;
             bool hasAccuracy = ctx.Players.Any(p => p.WeaponStatistics.Count > 0);
 
-            if (isTAM)
-            {
-                sb.AppendLine("| Player | Team | Score | K | D | K/D | Dmg Dealt | RndEnders | Acc% | Streak | Multi | Act% |");
-                sb.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|---|");
-            }
-            else
-            {
-                sb.AppendLine("| Player | Team | Score | K | D | K/D | Caps | Ret/Den | Acc% | Streak | Multi | Act% |");
-                sb.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|---|");
-            }
-
             foreach (var p in ctx.Players.OrderByDescending(p => p.Score))
             {
                 string name = ctx.Name(p);
                 string team = TeamLabel(p.Team);
                 string kd = p.GetKillDeathRatio().ToString("F2");
-                string streak = p.BestKillStreak >= 5 ? SpreeTitle(p.BestKillStreak) : "-";
-                string multi = p.BestMultiKill >= 2 ? MultiTitle(p.BestMultiKill) : "-";
-                string acc = hasAccuracy && p.GetOverallAccuracy() > 0 ? $"{p.GetOverallAccuracy():F1}" : "-";
-                
-                double actPctFull = Math.Clamp((p.TotalTimeSeconds / ctx.BaselineMatchTimeSeconds) * 100.0, 0, 100);
-                string actFormat = p.TotalTimeSeconds > 0 ? $"{actPctFull:F0}%" : "-";
+                string acc = hasAccuracy && p.GetOverallAccuracy() > 0 ? $" · Acc {p.GetOverallAccuracy():F1}%" : "";
+                double actPct = Math.Clamp((p.TotalTimeSeconds / ctx.BaselineMatchTimeSeconds) * 100.0, 0, 100);
+                string act = p.TotalTimeSeconds > 0 ? $"{actPct:F0}%" : "-";
+                string extras = "";
+                if (p.BestKillStreak >= 5) extras += $" · Str {p.BestKillStreak}k";
+                if (p.BestMultiKill >= 2) extras += $" · Mlt x{p.BestMultiKill}";
 
                 if (isTAM)
                 {
-                    sb.AppendLine($"| {name} | {team} | {p.Score} | {p.Kills} | {p.Deaths} | {kd} | {p.TotalDamageDealt} | {p.RoundEndingKills} | {acc} | {streak} | {multi} | {actFormat} |");
+                    sb.AppendLine($"**{name}** ({team}) · {p.Score}pts · {p.Kills}K/{p.Deaths}D ({kd}) · {p.TotalDamageDealt:N0} dmg · {p.RoundEndingKills} REK{acc}{extras} · Act {act}");
                 }
                 else
                 {
                     int caps = p.FlagCaptures + p.BallCaptures;
-                    string retDen = $"{p.FlagReturns}/{p.FlagDenials}";
-                    sb.AppendLine($"| {name} | {team} | {p.Score} | {p.Kills} | {p.Deaths} | {kd} | {caps} | {retDen} | {acc} | {streak} | {multi} | {actFormat} |");
+                    sb.AppendLine($"**{name}** ({team}) · {p.Score}pts · {p.Kills}K/{p.Deaths}D ({kd}) · {caps} cap · {p.FlagReturns}/{p.FlagDenials} ret/den{acc}{extras} · Act {act}");
                 }
             }
             sb.AppendLine();
@@ -447,19 +435,19 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 var first = capEvents.First();
                 string firstActor = first.ActorName ?? ctx.NameByGuid(first.ActorGuid);
 
-                string firstAction = first.EventType == "BombThrown" ? "throws the first goal (3pts)" 
-                    : first.EventType == "BombCapture" ? "secures the first run-in cap (7pts)" 
+                string firstAction = first.EventType == "BombThrown" ? "throws the first goal (3pts)"
+                    : first.EventType == "BombCapture" ? "secures the first run-in cap (7pts)"
                     : "secures the first capture";
-                    
+
                 moments.Add((first.GameTimeSeconds, "🚩", $"**{firstActor}** {firstAction} at {FmtTime(first.GameTimeSeconds)}", 7));
 
                 if (capEvents.Count > 1)
                 {
                     var last = capEvents.Last();
                     string lastActor = last.ActorName ?? ctx.NameByGuid(last.ActorGuid);
-                    
-                    string lastAction = last.EventType == "BombThrown" ? "throws the decisive final goal" 
-                        : last.EventType == "BombCapture" ? "runs in the decisive final ball" 
+
+                    string lastAction = last.EventType == "BombThrown" ? "throws the decisive final goal"
+                        : last.EventType == "BombCapture" ? "runs in the decisive final ball"
                         : "delivers the decisive final capture";
 
                     // Force to top priority so it is never pushed off the list
@@ -585,7 +573,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             var survivor = ctx.Players.Where(p => p.TotalTimeSeconds > ctx.BaselineMatchTimeSeconds * 0.5 && p.Deaths > 0)
                                       .OrderByDescending(p => p.TotalTimeSeconds / (double)p.Deaths)
                                       .FirstOrDefault();
-            
+
             if (survivor != null)
             {
                 double avgDeathTime = survivor.TotalTimeSeconds / (double)survivor.Deaths;
@@ -706,7 +694,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 int rev = 0;
                 if (killMatrix.TryGetValue(topFarm.VictimGuid, out var rvf))
                     rvf.TryGetValue(topFarm.KillerGuid, out rev);
-                
+
                 if (rev < topFarm.Kills / 3)
                     sb.AppendLine($"> 💀 **Nemesis Alert:** **{killer}** had **{victim}'s** number all match — {topFarm.Kills} kills to {rev}");
             }
@@ -715,28 +703,21 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
         private static void WriteWeaponDominance(StringBuilder sb, SummaryContext ctx)
         {
-            // Aggregate weapon accuracy/damage data
             var dmgAgg = new Dictionary<string, (int Damage, int Shots, int Hits)>(StringComparer.OrdinalIgnoreCase);
             foreach (var p in ctx.Players)
-            {
                 foreach (var (name, stats) in p.WeaponStatistics)
                 {
-                    if (!dmgAgg.TryGetValue(name, out var cur))
-                        cur = (0, 0, 0);
+                    if (!dmgAgg.TryGetValue(name, out var cur)) cur = (0, 0, 0);
                     dmgAgg[name] = (cur.Damage + stats.DamageDealt, cur.Shots + stats.ShotsFired, cur.Hits + stats.Hits);
                 }
-            }
 
-            // Aggregate weapon kill counts
             var killAgg = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             foreach (var p in ctx.Players)
-            {
                 foreach (var (name, kills) in p.WeaponKills)
                 {
                     killAgg.TryGetValue(name, out int cur);
                     killAgg[name] = cur + kills;
                 }
-            }
 
             if (dmgAgg.Count == 0 && killAgg.Count == 0) return;
 
@@ -744,31 +725,21 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             if (dmgAgg.Count > 0)
             {
-                sb.AppendLine("| Weapon | Total Damage | Accuracy | Top User |");
-                sb.AppendLine("|---|---|---|---|");
                 foreach (var (weapon, stats) in dmgAgg.OrderByDescending(w => w.Value.Damage).Take(5))
                 {
                     double acc = stats.Shots > 0 ? (double)stats.Hits / stats.Shots * 100 : 0;
-                    var topUser = ctx.Players
-                        .Where(p => p.WeaponStatistics.ContainsKey(weapon))
-                        .OrderByDescending(p => p.WeaponStatistics[weapon].DamageDealt)
-                        .FirstOrDefault();
-                    string topName = topUser != null ? ctx.Name(topUser) : "-";
-                    sb.AppendLine($"| {CleanWeaponName(weapon)} | {stats.Damage:N0} | {acc:F1}% | {topName} |");
+                    var top = ctx.Players.Where(p => p.WeaponStatistics.ContainsKey(weapon))
+                                 .OrderByDescending(p => p.WeaponStatistics[weapon].DamageDealt).FirstOrDefault();
+                    sb.AppendLine($"**{CleanWeaponName(weapon)}** · {stats.Damage:N0} dmg · {acc:F1}% acc · Top: {(top != null ? ctx.Name(top) : "-")}");
                 }
             }
             else
             {
-                sb.AppendLine("| Weapon | Total Kills | Top User |");
-                sb.AppendLine("|---|---|---|");
                 foreach (var (weapon, kills) in killAgg.OrderByDescending(w => w.Value).Take(5))
                 {
-                    var topUser = ctx.Players
-                        .Where(p => p.WeaponKills.ContainsKey(weapon))
-                        .OrderByDescending(p => p.WeaponKills[weapon])
-                        .FirstOrDefault();
-                    string topName = topUser != null ? ctx.Name(topUser) : "-";
-                    sb.AppendLine($"| {CleanWeaponName(weapon)} | {kills} | {topName} |");
+                    var top = ctx.Players.Where(p => p.WeaponKills.ContainsKey(weapon))
+                                 .OrderByDescending(p => p.WeaponKills[weapon]).FirstOrDefault();
+                    sb.AppendLine($"**{CleanWeaponName(weapon)}** · {kills} kills · Top: {(top != null ? ctx.Name(top) : "-")}");
                 }
             }
             sb.AppendLine();
@@ -805,11 +776,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             sb.AppendLine($"* **Defensive Actions**: {totalReturns} returns, {totalDenials} denials");
             sb.AppendLine($"* **Support Play**: {totalProtects} protective frags, {totalCritFrags} critical frags");
 
-            // Per-team efficiency comparison
             sb.AppendLine();
             sb.AppendLine("**Team Objective Breakdown:**");
-            sb.AppendLine("| Team | Caps | Grabs | Conversion | Returns | Denials | Protects |");
-            sb.AppendLine("|---|---|---|---|---|---|---|");
             foreach (var t in ctx.Teams)
             {
                 int tGrabs = t.Players.Sum(p => p.FlagGrabs);
@@ -818,10 +786,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 int tRet = t.Players.Sum(p => p.FlagReturns);
                 int tDen = t.Players.Sum(p => p.FlagDenials);
                 int tProt = t.Players.Sum(p => p.TeamProtectFrags);
-                sb.AppendLine($"| {t.Label} | {tCaps} | {tGrabs} | {tConv:F0}% | {tRet} | {tDen} | {tProt} |");
+                sb.AppendLine($"**{t.Label}** · {tCaps} caps / {tGrabs} grabs ({tConv:F0}%) · {tRet} ret · {tDen} den · {tProt} prot");
             }
 
-            // Cap timeline
             var capTimeline = ctx.Timeline.Where(e => e.EventType == "FlagCapture").ToList();
             if (capTimeline.Count > 0)
             {
@@ -831,7 +798,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 foreach (var e in capTimeline)
                 {
                     string actor = e.ActorName ?? ctx.NameByGuid(e.ActorGuid);
-                    // Determine which team scored based on actor
                     var scorer = ctx.Players.FirstOrDefault(p => p.Guid == e.ActorGuid);
                     if (scorer != null && scorer.Team == 0) runningRed++;
                     else if (scorer != null && scorer.Team == 1) runningBlue++;
@@ -856,7 +822,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (totalFF > 0)
                 sb.AppendLine($"* **Friendly Fire**: {totalFF:N0} collateral damage");
 
-            // Team comparison
             sb.AppendLine();
             sb.AppendLine("**Team Damage Comparison:**");
             foreach (var t in ctx.Teams)
@@ -866,15 +831,11 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 sb.AppendLine($"* **{t.Label}**: {tDmg:N0} dealt — {tRoundsWon} rounds won");
             }
 
-            // Damage efficiency leaderboard
             sb.AppendLine();
             sb.AppendLine("**Damage Breakdown:**");
-            sb.AppendLine("| Player | Dealt | Dmg/Round | Round Enders | FF |");
-            sb.AppendLine("|---|---|---|---|---|");
             foreach (var p in ctx.Players.OrderByDescending(p => p.TotalDamageDealt))
-            {
-                sb.AppendLine($"| {ctx.Name(p)} | {p.TotalDamageDealt:N0} | {p.GetDamagePerRound():F0} | {p.RoundEndingKills} | {p.FriendlyFireDamage} |");
-            }
+                sb.AppendLine($"**{ctx.Name(p)}** · {p.TotalDamageDealt:N0} dealt · {p.GetDamagePerRound():F0}/rnd · {p.RoundEndingKills} REK · {p.FriendlyFireDamage} FF");
+
             sb.AppendLine();
         }
 
@@ -935,21 +896,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         {
             if (ctx.KillEvents.Count < 6 || ctx.DurationMinutes < 1) return;
 
-            // Build GUID → team lookup
             var guidToTeam = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             foreach (var p in ctx.Players)
-            {
-                if (p.Guid != null)
-                    guidToTeam[p.Guid] = p.Team;
-            }
+                if (p.Guid != null) guidToTeam[p.Guid] = p.Team;
 
             double totalSeconds = ctx.DurationMinutes * 60;
             int windowCount = Math.Clamp((int)(ctx.DurationMinutes / 3), 2, 6);
             double windowSize = totalSeconds / windowCount;
 
             sb.AppendLine("## Momentum Flow");
-            sb.AppendLine("| Period | Red Kills | Blue Kills | Advantage |");
-            sb.AppendLine("|---|---|---|---|");
 
             int runningRed = 0, runningBlue = 0;
             int redStreakMax = 0, blueStreakMax = 0;
@@ -958,43 +913,38 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             {
                 double start = w * windowSize;
                 double end = (w + 1) * windowSize;
-
                 int redK = 0, blueK = 0;
+
                 foreach (var k in ctx.KillEvents.Where(e => e.GameTimeSeconds >= start && e.GameTimeSeconds < end))
-                {
                     if (k.ActorGuid != null && guidToTeam.TryGetValue(k.ActorGuid, out int team))
                     {
                         if (team == 0) redK++;
                         else if (team == 1) blueK++;
                     }
-                }
 
                 runningRed += redK;
                 runningBlue += blueK;
-
                 int diff = redK - blueK;
                 if (diff > 0) redStreakMax = Math.Max(redStreakMax, diff);
                 if (diff < 0) blueStreakMax = Math.Max(blueStreakMax, -diff);
 
                 string advantage = diff switch
                 {
-                    > 3 => $"🔴 Red +{diff} 🔥",
-                    > 0 => $"🔴 Red +{diff}",
-                    0 => "⚔️ Even",
-                    > -4 => $"🔵 Blue +{-diff}",
-                    _ => $"🔵 Blue +{-diff} 🔥"
+                    > 3 => $"**Red +{diff}** !!",
+                    > 0 => $"Red +{diff}",
+                    0 => "Even",
+                    > -4 => $"Blue +{-diff}",
+                    _ => $"**Blue +{-diff}** !!"
                 };
 
-                sb.AppendLine($"| {FmtTime(start)}-{FmtTime(end)} | {redK} | {blueK} | {advantage} |");
+                sb.AppendLine($"`{FmtTime(start)}-{FmtTime(end)}` · Red {redK} / Blue {blueK} · {advantage}");
             }
 
-            // Summary line
             string overallWinner = runningRed > runningBlue ? "Red Team"
                 : runningBlue > runningRed ? "Blue Team"
                 : "neither team";
             sb.AppendLine($"> Kill advantage: **{overallWinner}** ({runningRed}-{runningBlue})");
 
-            // Detect momentum swings
             if (redStreakMax >= 5 || blueStreakMax >= 5)
             {
                 string dominant = redStreakMax >= blueStreakMax ? "Red" : "Blue";
@@ -1008,7 +958,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         {
             sb.AppendLine("## Combat Role Classification");
 
-            double avgKills  = ctx.Players.Average(p => (double)p.Kills);
+            double avgKills = ctx.Players.Average(p => (double)p.Kills);
             double avgDeaths = ctx.Players.Average(p => (double)p.Deaths);
 
             foreach (var p in ctx.Players.OrderByDescending(p => p.Score))
@@ -1020,7 +970,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 {
                     UT2004GameMode.TAM => ClassifyTAMRole(p, ctx, avgKills, avgDeaths),
                     UT2004GameMode.iBR => ClassifyIBRRole(p, ctx, avgKills, avgDeaths),
-                    _                  => ClassifyICTFRole(p, ctx, avgKills, avgDeaths)
+                    _ => ClassifyICTFRole(p, ctx, avgKills, avgDeaths)
                 };
 
                 sb.AppendLine($"* {icon} **{name}** ({team}): **{role}** — {reason}");
@@ -1035,8 +985,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (actPct < 25) return ("Late Joiner / AFK", "💤", $"low match presence ({actPct:F0}% active)");
 
             double kd = p.GetKillDeathRatio();
-            bool   highEngagement = (p.Kills + p.Deaths) > (avgKills + avgDeaths) * 1.2;
-            int    maxREK         = ctx.Players.Max(x => x.RoundEndingKills);
+            bool highEngagement = (p.Kills + p.Deaths) > (avgKills + avgDeaths) * 1.2;
+            int maxREK = ctx.Players.Max(x => x.RoundEndingKills);
 
             if (p.Kills == 0 && p.Deaths == 0)
                 return ("Spectator", "👻", "no recorded combat actions");
@@ -1069,10 +1019,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (actPct < 25) return ("Late Joiner / AFK", "💤", $"low match presence ({actPct:F0}% active)");
 
             double kd = p.GetKillDeathRatio();
-            bool   highEngagement = (p.Kills + p.Deaths) > (avgKills + avgDeaths) * 1.2;
-            int    maxCaps        = ctx.Players.Max(x => x.BallCaptures);
-            int    maxCritFrags   = ctx.Players.Max(x => x.CriticalFrags);
-            int    maxPickups     = ctx.Players.Max(x => x.BombPickups);
+            bool highEngagement = (p.Kills + p.Deaths) > (avgKills + avgDeaths) * 1.2;
+            int maxCaps = ctx.Players.Max(x => x.BallCaptures);
+            int maxCritFrags = ctx.Players.Max(x => x.CriticalFrags);
+            int maxPickups = ctx.Players.Max(x => x.BombPickups);
 
             if (p.Kills == 0 && p.Deaths == 0)
                 return ("Spectator", "👻", "no recorded actions");
@@ -1126,12 +1076,12 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (actPct < 25) return ("Late Joiner / AFK", "💤", $"low match presence ({actPct:F0}% active)");
 
             double kd = p.GetKillDeathRatio();
-            bool   highEngagement = (p.Kills + p.Deaths) > (avgKills + avgDeaths) * 1.2;
-            int    maxCaps        = ctx.Players.Max(x => x.FlagCaptures);
-            int    maxDefActions  = ctx.Players.Max(x => x.FlagReturns + x.FlagDenials);
-            int    defActions     = p.FlagReturns + p.FlagDenials;
-            int    supportActions = p.TeamProtectFrags + p.FlagCaptureAssists;
-            int    objActions     = p.FlagCaptures + p.FlagReturns + p.FlagDenials + p.FlagCaptureAssists;
+            bool highEngagement = (p.Kills + p.Deaths) > (avgKills + avgDeaths) * 1.2;
+            int maxCaps = ctx.Players.Max(x => x.FlagCaptures);
+            int maxDefActions = ctx.Players.Max(x => x.FlagReturns + x.FlagDenials);
+            int defActions = p.FlagReturns + p.FlagDenials;
+            int supportActions = p.TeamProtectFrags + p.FlagCaptureAssists;
+            int objActions = p.FlagCaptures + p.FlagReturns + p.FlagDenials + p.FlagCaptureAssists;
 
             if (p.Kills == 0 && p.Deaths == 0)
                 return ("Spectator", "👻", "no recorded actions");
@@ -1305,8 +1255,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (ctx.EloChanges == null || ctx.EloChanges.Count == 0) return;
 
             sb.AppendLine("## ELO Standings (Post-Match)");
-            sb.AppendLine("| # | Player | ELO | Change | Peak | W/L |");
-            sb.AppendLine("|---|---|---|---|---|---|");
 
             var ranked = ctx.Players
                 .Where(p => p.Guid != null && ctx.Profiles.ContainsKey(p.Guid))
@@ -1351,10 +1299,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             foreach (var r in ranked)
             {
                 string changeStr = r.Change >= 0 ? $"+{r.Change:F2}" : $"{r.Change:F2}";
-                string changeIcon = r.Change > 0 ? "📈" : r.Change < 0 ? "📉" : "➡️";
-                string peakFlag = r.Peak > 0 && Math.Abs(r.Elo - r.Peak) < 0.01 ? " 🏆" : "";
+                string changeDir = r.Change > 0 ? "^" : r.Change < 0 ? "v" : "=";
+                string peakFlag = r.Peak > 0 && Math.Abs(r.Elo - r.Peak) < 0.01 ? " *(PB)*" : "";
                 int losses = r.Matches - r.Wins;
-                sb.AppendLine($"| {rank++} | {ctx.Name(r.Player)} | {r.Elo:F0} | {changeIcon} {changeStr} | {r.Peak:F0}{peakFlag} | {r.Wins}W-{losses}L |");
+                sb.AppendLine($"{rank++}. **{ctx.Name(r.Player)}** · ELO {r.Elo:F0} ({changeDir} {changeStr}) · Peak {r.Peak:F0}{peakFlag} · {r.Wins}W/{losses}L");
             }
             sb.AppendLine();
         }
