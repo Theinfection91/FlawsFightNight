@@ -44,6 +44,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         // Timeline of in-game events
         private List<MatchEvent> _timeline = new();
 
+        // Ignore reason returns
+        public string? LastIgnoreReason { get; private set; }
+
         private double GameTime(double timestamp) => Math.Round(timestamp - _gameStartTime, 2);
 
         public async Task<T?> Parse<T>(Stream fileStream)
@@ -205,6 +208,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _currentMapId = string.Empty;
             _currentMapName = string.Empty;
             _currentMapCreator = string.Empty;
+            LastIgnoreReason = null;
         }
 
         private void ParseNewGame(string[] parts)
@@ -1150,10 +1154,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
         }
 
-        private bool ValidateMatchEligibility()
+        private string? ValidateMatchEligibility()
         {
-            // Before validating, if parser reached EOF without EG we still need to flush active time
-            // using the last seen event timestamp.
             if (_lastEventTimestamp > 0)
             {
                 foreach (var player in _activePlayersByGuid.Values)
@@ -1168,7 +1170,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 }
             }
 
-            // Use GUID dictionary to get unique players (handles reconnects)
             var uniquePlayers = _activePlayersByGuid.Values.ToList();
             var humanPlayers = uniquePlayers.Where(p => !p.IsBot).ToList();
             var botPlayers = uniquePlayers.Where(p => p.IsBot).ToList();
@@ -1178,7 +1179,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             {
                 if (_simpleDebugLogging || _expandedDebugLogging)
                     Console.WriteLine($"\nMatch INVALID: Contains {botPlayers.Count} bot(s). Bots: {string.Join(", ", botPlayers.Select(b => b.LastKnownName))}");
-                return false;
+                return "Rule 1: Contains bots";
             }
 
             // Rule 2: Must have at least 2 human players
@@ -1186,7 +1187,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             {
                 if (_simpleDebugLogging || _expandedDebugLogging)
                     Console.WriteLine($"\nMatch INVALID: Only {humanPlayers.Count} human player(s). Need at least 2 players for valid stats.");
-                return false;
+                return "Rule 2: Too few human players";
             }
 
             // Rule 3: Players must be on different teams (at least 2 teams)
@@ -1198,21 +1199,26 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     Console.WriteLine($"\nMatch INVALID: All {humanPlayers.Count} players are on Team {teamIds.FirstOrDefault()}. " +
                         $"Players: {string.Join(", ", humanPlayers.Select(p => p.LastKnownName))}");
                 }
-                return false;
+                return "Rule 3: All players on same team";
             }
 
-            // Rule 4: Each team must have 5 kills total EACH
+            // Rule 4: Team kill minimum (mode-aware)
+            // TAM is round-based — a 1v1 loser can end with as few as 1 kill legitimately.
+            // iCTF and iBR keep the 5-kill threshold as a scrimmage filter.
+            int killMinimum = _currentGameMode == UT2004GameMode.TAM ? 1 : 5;
             foreach (var teamId in teamIds)
             {
                 int teamKills = humanPlayers.Where(p => p.Team == teamId).Sum(p => p.Kills);
-                if (teamKills < 5)
+                if (teamKills < killMinimum)
                 {
                     if (_simpleDebugLogging || _expandedDebugLogging)
                     {
-                        Console.WriteLine($"\nMatch INVALID: Team {teamId} has only {teamKills} total kills. " +
+                        Console.WriteLine($"\nMatch INVALID: Team {teamId} has only {teamKills} total kills (min {killMinimum} for {_currentGameMode}). " +
                             $"Players on Team {teamId}: {string.Join(", ", humanPlayers.Where(p => p.Team == teamId).Select(p => p.LastKnownName))}");
                     }
-                    return false;
+                    return _currentGameMode == UT2004GameMode.TAM
+                        ? "Rule 4: TAM - teams had zero kills"
+                        : "Rule 4: Team kill minimum (5) not met";
                 }
             }
 
@@ -1220,49 +1226,56 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             // Prefer SG (game start) -> last event span when available; otherwise fall back to max individual play time.
             int matchDurationSeconds = 0;
             if (_gameStarted && _gameStartTime > 0 && _lastEventTimestamp > _gameStartTime)
-            {
                 matchDurationSeconds = (int)Math.Round(_lastEventTimestamp - _gameStartTime);
-            }
             else
-            {
                 matchDurationSeconds = humanPlayers.Any() ? humanPlayers.Max(p => p.TotalTimeSeconds) : 0;
-            }
 
             // Store computed duration for later use (BuildStatLog will copy into the stat object)
             _computedMatchDurationSeconds = Math.Max(0, matchDurationSeconds);
 
-            // Rule 5: Mode-specific objective minimums.
+            // Rule 5: Mode-specific objective minimums
             if (_currentGameMode == UT2004GameMode.iCTF)
             {
                 if (humanPlayers.Sum(p => p.FlagCaptures) < 1)
                 {
                     if (_simpleDebugLogging || _expandedDebugLogging)
                         Console.WriteLine($"\nMatch INVALID: iCTF match with no flag captures.");
-                    return false;
+                    return "Rule 5: iCTF - no flag captures";
                 }
-                if (_computedMatchDurationSeconds < 300) return false;
+                if (_computedMatchDurationSeconds < 300)
+                {
+                    if (_simpleDebugLogging || _expandedDebugLogging)
+                        Console.WriteLine($"\nMatch INVALID: iCTF duration too short ({_computedMatchDurationSeconds}s, min 300s).");
+                    return "Rule 5: iCTF - duration too short";
+                }
             }
             else if (_currentGameMode == UT2004GameMode.iBR)
             {
-                // In BR, they must have either ran the ball in OR tossed it in
                 if (humanPlayers.Sum(p => p.BallCaptures + p.BallThrownFinals) < 1)
                 {
                     if (_simpleDebugLogging || _expandedDebugLogging)
                         Console.WriteLine($"\nMatch INVALID: iBR match with no score goals.");
-                    return false;
+                    return "Rule 5: iBR - no score goals";
                 }
-                if (_computedMatchDurationSeconds < 300) return false;
+                if (_computedMatchDurationSeconds < 300)
+                {
+                    if (_simpleDebugLogging || _expandedDebugLogging)
+                        Console.WriteLine($"\nMatch INVALID: iBR duration too short ({_computedMatchDurationSeconds}s, min 300s).");
+                    return "Rule 5: iBR - duration too short";
+                }
             }
 
             if (_simpleDebugLogging || _expandedDebugLogging)
                 Console.WriteLine($"\nMatch VALID: {humanPlayers.Count} human players across {teamIds.Count} teams, 0 bots; Duration: {_computedMatchDurationSeconds}s");
 
-            return true;
+            return null;
         }
 
         private UT2004StatLog BuildStatLog()
         {
-            if (!ValidateMatchEligibility())
+            string? ignoreReason = ValidateMatchEligibility();
+            LastIgnoreReason = ignoreReason;
+            if (ignoreReason != null)
                 return null;
 
             if (_winningTeam.HasValue)

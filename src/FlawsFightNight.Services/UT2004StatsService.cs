@@ -72,10 +72,11 @@ namespace FlawsFightNight.Services
             return false;
         }
 
-        public async Task<bool> ProcessLogFile(Stream fileStream, string fileName, string serverName, string serverAddress)
+        public async Task<(bool wasValid, string? ignoreReason)> ProcessLogFile(Stream fileStream, string fileName, string serverName, string serverAddress)
         {
             // Instantiate per-call: UT2004LogParser holds mutable parse state and must not be shared
-            var statLog = await new UT2004LogParser().Parse<UT2004StatLog>(fileStream);
+            var parser = new UT2004LogParser();
+            var statLog = await parser.Parse<UT2004StatLog>(fileStream);
             if (statLog != null)
             {
                 statLog.FileName = Path.ChangeExtension(fileName, ".json");
@@ -89,9 +90,6 @@ namespace FlawsFightNight.Services
                 if (_dataContext.StatLogIndexFile == null)
                     await _dataContext.LoadStatLogIndexFile();
 
-                // Use the tags file (backed-up, stable) as the source of truth for admin state.
-                // IsStatLogIgnored checks the index by ID — that ID is brand new and not in the
-                // index yet, so it would always return false. The tags file keys by FileName instead.
                 var savedTag = _dataContext.GetTournamentStatTag(statLog.FileName);
                 statLog.IsAllowedByAdmin = savedTag?.IsAdminIgnored != true;
 
@@ -104,7 +102,6 @@ namespace FlawsFightNight.Services
                     ServerName = statLog.ServerName
                 };
 
-                // Reconcile backed-up admin state onto the freshly created index entry
                 if (savedTag != null)
                 {
                     if (!string.IsNullOrEmpty(savedTag.TournamentId))
@@ -118,19 +115,18 @@ namespace FlawsFightNight.Services
                         entry.IgnoredAt = savedTag.IgnoredAt ?? DateTime.UtcNow;
                     }
 
-                    // Refresh the ID snapshot in the tags file now that a new ID has been assigned
                     savedTag.StatLogId = statLog.Id;
                     await _dataContext.UpsertTournamentStatTag(savedTag);
                 }
 
                 await _dataContext.AddStatLogIndexEntry(entry);
                 await MarkLogFileAsProcessed(fileName);
-                return true;
+                return (true, null);
             }
             else
             {
                 await MarkLogFileAsIgnored(fileName);
-                return false;
+                return (false, parser.LastIgnoreReason);
             }
         }
 

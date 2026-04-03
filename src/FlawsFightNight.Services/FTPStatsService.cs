@@ -149,6 +149,8 @@ namespace FlawsFightNight.Services
                             int processedCount = 0;
                             int validCount = 0;
                             int ignoredCount = 0;
+                            var ignoredReasons = new Dictionary<string, int>(StringComparer.Ordinal);
+
                             foreach (var item in logFiles)
                             {
                                 if (token.IsCancellationRequested) break;
@@ -162,11 +164,12 @@ namespace FlawsFightNight.Services
 
                                 byte[] fileBytes = await ExecuteWithDataConnectionFallback(client, () => client.DownloadBytes(item.FullName, token), token);
 
-                                // DownloadBytes returns null on a silent FTP failure (no exception thrown).
-                                // Skip and log rather than letting MemoryStream crash the entire batch.
                                 if (fileBytes == null)
                                 {
                                     ignoredCount++;
+                                    const string nullDownloadReason = "Download returned null";
+                                    ignoredReasons.TryGetValue(nullDownloadReason, out int nullCnt);
+                                    ignoredReasons[nullDownloadReason] = nullCnt + 1;
                                     string skipMessage = $"[FTPStatsService] Progress for {cred.ServerName}: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Download returned null for '{item.Name}', skipping. Valid: {validCount}, Ignored: {ignoredCount}";
                                     Console.Write($"\r{skipMessage.PadRight(100)}");
                                     continue;
@@ -174,7 +177,7 @@ namespace FlawsFightNight.Services
 
                                 using (var fileStream = new MemoryStream(fileBytes))
                                 {
-                                    bool wasValid = await _ut2004StatsService.ProcessLogFile(fileStream, item.Name, cred.ServerName, cred.IPAddress);
+                                    var (wasValid, ignoreReason) = await _ut2004StatsService.ProcessLogFile(fileStream, item.Name, cred.ServerName, cred.IPAddress);
                                     string message;
                                     if (wasValid)
                                     {
@@ -184,6 +187,9 @@ namespace FlawsFightNight.Services
                                     else
                                     {
                                         ignoredCount++;
+                                        string key = ignoreReason ?? "Unknown";
+                                        ignoredReasons.TryGetValue(key, out int cnt);
+                                        ignoredReasons[key] = cnt + 1;
                                         message = $"[FTPStatsService] Progress for {cred.ServerName}: {processedCount}/{totalFiles} ({processedCount * 100 / totalFiles}%) - Valid: {validCount}, Ignored: {ignoredCount}";
                                     }
                                     Console.Write($"\r{message.PadRight(100)}");
@@ -191,7 +197,17 @@ namespace FlawsFightNight.Services
                             }
 
                             Console.WriteLine();
-                            _logger.LogInformation(AdminFeedEvents.StatLogProcessed, "New stat logs processed for server: {ServerName}.\n\nValid: {Valid}, Ignored: {Ignored}.", cred.ServerName, validCount, ignoredCount);
+
+                            string reasonSummary = ignoredReasons.Count > 0
+                                ? "\n\nIgnore Reasons:\n" + string.Join("\n", ignoredReasons
+                                    .OrderBy(kvp => kvp.Key)
+                                    .ThenByDescending(kvp => kvp.Value)
+                                    .Select(kvp => $"  • {kvp.Key}: {kvp.Value}"))
+                                : string.Empty;
+
+                            _logger.LogInformation(AdminFeedEvents.StatLogProcessed,
+                                "New stat logs processed for server: {ServerName}.\n\nValid: {Valid}, Ignored: {Ignored}.{ReasonSummary}",
+                                cred.ServerName, validCount, ignoredCount, reasonSummary);
 
                             if (validCount > 0) await _ut2004StatsService.SetupPlayerProfiles();
                         }
