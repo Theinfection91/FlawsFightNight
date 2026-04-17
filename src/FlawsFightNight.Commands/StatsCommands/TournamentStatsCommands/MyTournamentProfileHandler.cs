@@ -24,7 +24,7 @@ namespace FlawsFightNight.Commands.StatsCommands.TournamentStatsCommands
         {
             var memberProfile = _memberService.GetMemberProfile(context.User.Id);
 
-            return _embedFactory.GenericEmbed("Test", memberProfile?.GetAllStats()!, Color.DarkGreen);
+            return _embedFactory.GenericEmbed(Name, memberProfile?.GetAllStats()!, Color.DarkGreen);
         }
     }
 }
