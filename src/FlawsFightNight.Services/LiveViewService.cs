@@ -185,10 +185,11 @@ namespace FlawsFightNight.Services
         // ── UT2004 Leaderboard LiveView helpers ───────────────────────────────
 
         /// <summary>
-        /// Builds the shared category select menu attached to every leaderboard LiveView message.
+        /// Builds the shared category select menu + "Request Full List (DM)" button
+        /// attached to every leaderboard LiveView message.
         /// Mirrors ComponentFactory.CreateUT2004LeaderboardSelectMenu() without a Bot project dependency.
         /// </summary>
-        private static MessageComponent BuildLeaderboardSelectMenu()
+        private static MessageComponent BuildLeaderboardSelectMenu(string section = "general")
         {
             var selectMenu = new SelectMenuBuilder()
                 .WithCustomId("ut2004leaderboard_select")
@@ -198,7 +199,18 @@ namespace FlawsFightNight.Services
                 .AddOption("🎯 TAM",    "tam",     "Team Arena Master leaderboard")
                 .AddOption("💣 iBR",    "ibr",     "Bombing Run leaderboard");
 
-            return new ComponentBuilder().WithSelectMenu(selectMenu).Build();
+            string gameModeLabel = section switch
+            {
+                "ictf" => "iCTF",
+                "tam" => "TAM",
+                "ibr" => "iBR",
+                _ => "General"
+            };
+
+            return new ComponentBuilder()
+                .WithSelectMenu(selectMenu)
+                .WithButton($"📋 Request Full {gameModeLabel} Leaderboard", customId: $"ut2004leaderboard_all:{section}", style: ButtonStyle.Secondary)
+                .Build();
         }
 
         private static string GetLeaderboardSection(LeaderboardChannelTypes type) => type switch
@@ -251,7 +263,7 @@ namespace FlawsFightNight.Services
                 }
             }
 
-            var newMsg = await channel.SendMessageAsync(embed: embed, components: BuildLeaderboardSelectMenu());
+            var newMsg = await channel.SendMessageAsync(embed: embed, components: BuildLeaderboardSelectMenu(section));
             leaderboardChannel.MessageId = newMsg.Id;
 
             await _dataContext.SaveAndReloadLeaderboardChannelsFile();

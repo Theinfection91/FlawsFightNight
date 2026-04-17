@@ -171,7 +171,7 @@ namespace FlawsFightNight.Bot.SlashCommands
 
                     if (hasProfiles)
                     {
-                        var components = ComponentFactory.CreateUT2004LeaderboardSelectMenu();
+                        var components = ComponentFactory.CreateUT2004LeaderboardSelectMenu("general");
                         await FollowupAsync(embed: embed, components: components.Build(), ephemeral: true);
                     }
                     else
