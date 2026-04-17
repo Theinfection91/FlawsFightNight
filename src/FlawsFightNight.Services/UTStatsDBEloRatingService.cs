@@ -107,6 +107,21 @@ namespace FlawsFightNight.Services
 
             if (!team0.Any() || !team1.Any()) return;
 
+            // Reset Change for every participant so stale values from prior matches are never surfaced
+            // for players who are skipped (low activity, no pairwise contact, etc.) this match.
+            foreach (var p in team0.Concat(team1))
+            {
+                if (string.IsNullOrEmpty(p.Guid) || !profiles.TryGetValue(Res(p.Guid), out var prof)) continue;
+                var elo = match.GameMode switch
+                {
+                    UT2004GameMode.iCTF => prof.CaptureTheFlagElo,
+                    UT2004GameMode.iBR  => prof.BombingRunElo,
+                    UT2004GameMode.TAM  => prof.TAMElo,
+                    _                   => null
+                };
+                if (elo != null) elo.Change = 0.0;
+            }
+
             // Debug
             //PrintDebug(match, match.Players.SelectMany(team => team).ToList());
 
@@ -128,6 +143,10 @@ namespace FlawsFightNight.Services
                     foreach (var q in team1)
                     {
                         if (string.IsNullOrEmpty(q.Guid) || !profiles.ContainsKey(Res(q.Guid))) continue;
+
+                        // Per-player time gate — each player must individually meet the minimum
+                        if (p.TotalTimeSeconds < MinPlayerTimeForScaling || q.TotalTimeSeconds < MinPlayerTimeForScaling)
+                            continue;
 
                         // Basic young/short playtime gating mirroring PHP checks
                         if ((p.TotalTimeSeconds + q.TotalTimeSeconds) <= 20) // both must have > 10 each in original, use combined conservative check
