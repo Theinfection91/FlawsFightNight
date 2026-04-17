@@ -53,7 +53,7 @@ namespace FlawsFightNight.Services
                 .WithDescription(
                     "All tournament management commands live under `/tournament`. Most require **admin** permissions.\n\n" +
                     "**Creating & Deleting**\n" +
-                    "• `/tournament create` — Create a new tournament. Specify name, type, and team size.\n" +
+                    "• `/tournament create` — Create a new tournament. Specify name, type, team size, and an optional description.\n" +
                     "• `/tournament delete` — Opens a modal to confirm deletion by tournament ID.\n\n" +
                     "**Team Locking (Round Robin)**\n" +
                     "• `/tournament lock-teams` — Lock the roster so no teams can be added/removed.\n" +
@@ -111,9 +111,9 @@ namespace FlawsFightNight.Services
                 .WithDescription(
                     "All match commands live under `/match`.\n\n" +
                     "**Reporting Results**\n" +
-                    "• `/match report-win` — Report the winner of a match. Uses autocomplete for match ID and winning team name. Works for all tournament types.\n\n" +
+                    "• `/match report-win` — Report the winner of a match. Provide the match ID (autocomplete), winning team name, winning team score, and losing team score. Works for all tournament types.\n\n" +
                     "**Editing (Admin)**\n" +
-                    "• `/match edit` — Edit a completed match's result (Round Robin & Elimination). Change the winner, scores, etc.\n\n" +
+                    "• `/match edit` — Edit a completed match's result (Round Robin & Elimination). Change the winner, winning team score, and losing team score.\n\n" +
                     "**Challenges (Ladder Tournaments)**\n" +
                     "• `/match challenge send` — Send a challenge from one team to another.\n" +
                     "  · *Normal Ladder:* Can only challenge up to 2 ranks above.\n" +
@@ -162,10 +162,13 @@ namespace FlawsFightNight.Services
                     "• `/settings ut2004 get_log` — Retrieve up to 10 stat logs by their ID (sent via DM).\n" +
                     "• `/settings ut2004 ignore_logs` — Ignore up to 10 logs by ID so they won't be processed for stats.\n" +
                     "• `/settings ut2004 allow_logs` — Re-allow previously ignored logs so they count towards stats again.\n" +
-                    "• `/settings ut2004 last_logs` — View the last 1–25 compiled stat log IDs.\n" +
-                    "• `/settings ut2004 logs_by_date` — Get all stat log IDs for a specific day.\n" +
+                    "• `/settings ut2004 last_logs` — View the last 1–25 compiled stat log IDs. Optional server name filter.\n" +
+                    "• `/settings ut2004 logs_by_date` — Get all stat log IDs for a specific day. Optional server name filter.\n" +
                     "• `/settings ut2004 tag_log` — Tag a stat log to a tournament post-match.\n" +
-                    "• `/settings ut2004 untag_log` — Remove a stat log's tournament match tag.")
+                    "• `/settings ut2004 untag_log` — Remove a stat log's tournament match tag.\n" +
+                    "• `/settings ut2004 admin_elo_trace` — Perform an ELO trace on a given GUID for a specific game mode.\n" +
+                    "• `/settings ut2004 get_all_guids` — Get a DM with a text file listing every UT2004 GUID and last known name.\n" +
+                    "• `/settings ut2004 get_player_profile` — Display a UT2004 player profile by GUID.")
                 .WithColor(Color.DarkGrey)
                 .WithFooter("Flaws Fight Night — Help · Settings & Admin")
                 .WithCurrentTimestamp()
@@ -191,6 +194,8 @@ namespace FlawsFightNight.Services
                     "• `/stats ut2004 suggest_teams` — Given 4–10 players and a game mode, suggests balanced teams based on OpenSkill ratings (μ−3σ).\n\n" +
                     "**Win Probability**\n" +
                     "• `/stats ut2004 win_probability` — Calculates win probability between two tournament teams based on UT2004 OpenSkill ratings.\n\n" +
+                    "**ELO Trace**\n" +
+                    "• `/stats ut2004 elo_trace` — Get a text file of your ELO trace over time for a specific game mode (iCTF, TAM, or iBR).\n\n" +
                     "**Match Data**\n" +
                     "• `/stats ut2004 match_summary` — View a stat log's full match summary by ID.\n" +
                     "• `/stats ut2004 my_tournament_matches` — List all your tournament-tagged match log IDs.\n" +
