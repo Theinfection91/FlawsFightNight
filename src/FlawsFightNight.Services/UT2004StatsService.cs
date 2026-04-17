@@ -349,7 +349,7 @@ namespace FlawsFightNight.Services
                         }
                     }
 
-                    var summarizer = new RuleBasedMatchSummarizer();
+                    var summarizer = new RuleBasedMatchSummarizer(_ratingsMapper);
                     summarizer.Summarize(match, profiles, eloChanges);
 
                     await _dataContext.SaveStatLogMatchResultFile(match);
@@ -426,7 +426,7 @@ namespace FlawsFightNight.Services
                 return;
             }
 
-            var summarizer = new RuleBasedMatchSummarizer();
+            var summarizer = new RuleBasedMatchSummarizer(_ratingsMapper);
             int updated = 0;
             int skipped = 0;
 

@@ -10,6 +10,13 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 {
     public class RuleBasedMatchSummarizer : IMatchSummarizer
     {
+        private readonly SeamlessRatingsMapper? _ratingsMapper;
+
+        public RuleBasedMatchSummarizer(SeamlessRatingsMapper? ratingsMapper = null)
+        {
+            _ratingsMapper = ratingsMapper;
+        }
+
         public string Summarize(UT2004StatLog match, Dictionary<string, UT2004PlayerProfile> profiles, Dictionary<string, double>? eloChanges = null)
         {
             if (match == null) return string.Empty;
@@ -23,12 +30,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 return empty;
             }
 
+            // Resolves an in-match GUID to the primary GUID used as the key in the profiles dictionary
+            string ResolveProfileGuid(string? guid)
+                => guid == null ? string.Empty : (_ratingsMapper?.Resolve(guid) ?? guid);
+
             // Build name resolvers
             string ResolveName(UTPlayerMatchStats p)
             {
                 if (!string.IsNullOrWhiteSpace(p.LastKnownName))
                     return p.LastKnownName;
-                if (p.Guid != null && profiles.TryGetValue(p.Guid, out var prof) && !string.IsNullOrWhiteSpace(prof.CurrentName))
+                if (p.Guid != null && profiles.TryGetValue(ResolveProfileGuid(p.Guid), out var prof) && !string.IsNullOrWhiteSpace(prof.CurrentName))
                     return prof.CurrentName;
                 return "Unknown";
             }
@@ -36,7 +47,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             string ResolveGuid(string? guid)
             {
                 if (guid == null) return "Unknown";
-                if (profiles.TryGetValue(guid, out var prof) && !string.IsNullOrWhiteSpace(prof.CurrentName))
+                if (profiles.TryGetValue(ResolveProfileGuid(guid), out var prof) && !string.IsNullOrWhiteSpace(prof.CurrentName))
                     return prof.CurrentName;
                 var found = players.FirstOrDefault(p => p.Guid == guid);
                 return found != null ? ResolveName(found) : "Unknown";
@@ -51,7 +62,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 EloChanges = eloChanges,
                 MapName = match.MapName,
                 Name = ResolveName,
-                NameByGuid = ResolveGuid
+                NameByGuid = ResolveGuid,
+                ResolveProfileGuid = ResolveProfileGuid
             };
 
             ComputeAnalytics(ctx);
@@ -101,6 +113,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             public string MapName { get; set; } = "";
             public Func<UTPlayerMatchStats, string> Name { get; set; } = _ => "Unknown";
             public Func<string?, string> NameByGuid { get; set; } = _ => "Unknown";
+            public Func<string?, string> ResolveProfileGuid { get; set; } = g => g ?? string.Empty;
 
             // Computed – match level
             public List<TeamInfo> Teams { get; set; } = new();
@@ -204,8 +217,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             if (winner != null && loser != null)
             {
-                // We no longer need to calculate 'useObjectiveScore' here at all. 
-                // We just rely directly on the game server's points.
                 int winVal = winner.ActualTeamScore;
                 int loseVal = loser.ActualTeamScore;
                 ctx.ScoreDiff = Math.Abs(winVal - loseVal);
@@ -288,6 +299,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 : "hard-fought";
 
             // Narrative phrase
+            double hypePerMinLocal = (ctx.SpreeEvents.Count + ctx.MultiKillEvents.Count) / Math.Max(ctx.DurationMinutes, 1);
             if (ctx.IsDraw)
                 ctx.NarrativePhrase = "an evenly matched stalemate where neither team could pull ahead";
             else if (ctx.IsCloseGame && ctx.SpreeEvents.Count >= 4)
@@ -298,7 +310,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 ctx.NarrativePhrase = "a high-octane demolition from start to finish";
             else if (ctx.IsBlowout)
                 ctx.NarrativePhrase = "a one-sided affair with the winners in control throughout";
-            else if (hypePerMin > 1.0)
+            else if (hypePerMinLocal > 1.0)
                 ctx.NarrativePhrase = "an action-packed slugfest full of highlight-reel plays";
             else
                 ctx.NarrativePhrase = "a persistent and hard-fought contest with both teams trading blows";
@@ -322,7 +334,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             var loser = ctx.Teams.FirstOrDefault(t => !t.IsWinner);
             if (winner != null && loser != null)
             {
-                // Directly format using ActualTeamScore
                 string scoreStr = $"{winner.ActualTeamScore}-{loser.ActualTeamScore}";
                 sb.AppendLine($"**{winner.Label}** secured the victory **{scoreStr}** in {ctx.NarrativePhrase}.");
             }
@@ -424,7 +435,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             foreach (var e in ctx.MultiKillEvents.Where(e => e.Detail is "Ultra Kill" or "Monster Kill" or "Ludicrous Kill" or "Holy Shit"))
             {
                 string actor = e.ActorName ?? ctx.NameByGuid(e.ActorGuid);
-                int pri = e.Detail is "Ludicrous Kill" or "Holy Shit" ? 9 : 8; // Prioritize the highest multi-kills
+                int pri = e.Detail is "Ludicrous Kill" or "Holy Shit" ? 9 : 8;
                 moments.Add((e.GameTimeSeconds, "💥", $"**{actor}** lands a **{e.Detail}** at {FmtTime(e.GameTimeSeconds)}", pri));
             }
 
@@ -450,7 +461,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                         : last.EventType == "BombCapture" ? "runs in the decisive final ball"
                         : "delivers the decisive final capture";
 
-                    // Force to top priority so it is never pushed off the list
                     moments.Add((last.GameTimeSeconds, "🏆", $"**{lastActor}** {lastAction} at {FmtTime(last.GameTimeSeconds)}", 10));
                 }
             }
@@ -468,7 +478,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 }
             }
 
-            // Clutch flag returns that saved a cap (return events near cap-attempt events)
+            // Clutch flag returns that saved a cap
             var returnEvents = ctx.Timeline.Where(e => e.EventType == "FlagReturn").ToList();
             foreach (var ret in returnEvents)
             {
@@ -489,7 +499,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (moments.Count == 0) return;
 
             sb.AppendLine("## Key Moments");
-            // Sort by priority descending, then chronologically, take top 8
             foreach (var m in moments.OrderByDescending(m => m.Priority).ThenBy(m => m.Time).Take(8))
             {
                 sb.AppendLine($"* {m.Icon} {m.Text}");
@@ -518,7 +527,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 awards.Add(("🗡️ Kill Leader", ctx.Name(ctx.TopKiller), t, $"{ctx.TopKiller.Kills} kills{extra}"));
             }
 
-            // Efficiency King (best K/D, different from kill leader, min kills)
+            // Efficiency King
             if (ctx.TopKD != null && ctx.TopKD != ctx.TopKiller && ctx.TopKD != ctx.MatchMVP)
             {
                 string t = TeamLabel(ctx.TopKD.Team);
@@ -558,22 +567,19 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 awards.Add(("🔬 Sharpshooter", ctx.Name(ctx.TopAccuracy), t, $"{ctx.TopAccuracy.GetOverallAccuracy():F1}% accuracy ({shots} shots)"));
             }
 
-            // The Workhorse (highest activity time)
+            // The Workhorse
             var workhorse = ctx.Players.OrderByDescending(p => p.TotalTimeSeconds).FirstOrDefault();
             if (workhorse != null && ctx.BaselineMatchTimeSeconds > 60)
             {
                 double actPct = (workhorse.TotalTimeSeconds / ctx.BaselineMatchTimeSeconds) * 100.0;
-                if (actPct >= 90) // Substantial engagement required
-                {
+                if (actPct >= 90)
                     awards.Add(("🐎 The Workhorse", ctx.Name(workhorse), TeamLabel(workhorse.Team), $"Highest match uptime ({actPct:F0}% active combat time)"));
-                }
             }
 
-            // Average Lifespan calculation / The Survivor
+            // The Survivor
             var survivor = ctx.Players.Where(p => p.TotalTimeSeconds > ctx.BaselineMatchTimeSeconds * 0.5 && p.Deaths > 0)
                                       .OrderByDescending(p => p.TotalTimeSeconds / (double)p.Deaths)
                                       .FirstOrDefault();
-
             if (survivor != null)
             {
                 double avgDeathTime = survivor.TotalTimeSeconds / (double)survivor.Deaths;
@@ -587,7 +593,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 awards.Add(("💪 Damage King", ctx.Name(ctx.TopDamage), t, $"{ctx.TopDamage.TotalDamageDealt:N0} damage dealt"));
             }
 
-            // Iron Wall (iCTF: top returns + denials)
+            // Iron Wall (iCTF)
             if (ctx.Match.GameMode == UT2004GameMode.iCTF)
             {
                 var wall = ctx.Players.OrderByDescending(p => p.FlagReturns + p.FlagDenials).FirstOrDefault();
@@ -605,14 +611,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 awards.Add(("🩸 First Blood", actor, "", $"at {FmtTime(ctx.FirstBlood.GameTimeSeconds)}"));
             }
 
-            // Career-high check: did anyone set a new personal record?
+            // Career-high check — resolve alias GUID to primary before profile lookup
             foreach (var p in ctx.Players)
             {
-                if (p.Guid == null || !ctx.Profiles.TryGetValue(p.Guid, out var prof)) continue;
+                string primaryGuid = ctx.ResolveProfileGuid(p.Guid);
+                if (string.IsNullOrEmpty(primaryGuid) || !ctx.Profiles.TryGetValue(primaryGuid, out var prof)) continue;
                 if (p.Kills > 0 && p.Kills >= prof.MostKillsInMatch && prof.TotalMatches > 1)
                 {
                     awards.Add(("📈 Career Game", ctx.Name(p), TeamLabel(p.Team), $"matched or set a new personal best of {p.Kills} kills"));
-                    break; // Only highlight one to not flood awards
+                    break;
                 }
             }
 
@@ -630,7 +637,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             var killMatrix = ctx.Match.KillMatch;
 
-            // Collect all directed kill pairs with threshold
             var pairs = new List<(string KillerGuid, string VictimGuid, int Kills)>();
             foreach (var (killerGuid, victims) in killMatrix)
             {
@@ -642,7 +648,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
             if (pairs.Count == 0) return;
 
-            // Build mutual rivalry entries (de-duplicate A→B and B→A)
             var processed = new HashSet<string>();
             var rivalries = new List<(string Guid1, string Guid2, int Kills1, int Kills2)>();
 
@@ -685,7 +690,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 }
             }
 
-            // Call out the biggest single-direction farm / Nemesis
             var topFarm = pairs.OrderByDescending(d => d.Kills).First();
             if (topFarm.Kills >= 5)
             {
@@ -853,7 +857,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             sb.AppendLine($"* **Scoring**: {totalBallCaps} run-in caps, {totalThrown} thrown goals ({totalAssists} assisted)");
             sb.AppendLine($"* **Ball Movement**: {totalPickups} pickups, {totalDrops} drops, {totalTaken} taken/stolen");
 
-            // Per-team
             sb.AppendLine();
             foreach (var t in ctx.Teams)
             {
@@ -864,7 +867,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 sb.AppendLine($"* **{t.Label}**: {tCaps} run-ins, {tThrown} throws, {tAssists} assists, {tPicks} pickups");
             }
 
-            // Scoring Timeline — relies on parsed timeline events (BombCapture / BombThrown)
             var scoreTimeline = ctx.Timeline
                 .Where(e => e.EventType is "BombCapture" or "BombThrown")
                 .OrderBy(e => e.GameTimeSeconds)
@@ -1027,42 +1029,33 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (p.Kills == 0 && p.Deaths == 0)
                 return ("Spectator", "👻", "no recorded actions");
 
-            // Primary scorer — caps the ball
             if (p.BallCaptures >= 1 && (maxCaps == 0 || p.BallCaptures >= maxCaps * 0.5))
             {
                 string capDetail = p.BallThrownFinals > 0 ? $"{p.BallCaptures} run-in caps, {p.BombPickups} pickups, {p.BallThrownFinals} thrown goals" : $"{p.BallCaptures} run-in caps, {p.BombPickups} pickups";
                 return ("Ball Runner", "🏃", capDetail);
             }
 
-            // Throws the ball in for goals (finisher without capping directly)
             if (p.BallThrownFinals >= 2)
                 return ("Clutch Scorer", "🎯", $"{p.BallThrownFinals} thrown goals, {p.BallScoreAssists} assists");
 
-            // Dominant fragger — high K/D and kill volume
             if (kd >= 1.6 && p.Kills >= avgKills)
                 return ("Elite Fragger", "⚔️", $"{kd:F2} K/D, {p.Kills} kills");
 
-            // Carries the ball frequently AND pulls their weight in kills
             if (maxPickups > 0 && p.BombPickups >= Math.Max(maxPickups * 0.35, 4) && p.Kills >= avgKills * 0.6)
                 return ("Ball Escort", "🛡️", $"{p.BombPickups} pickups, {p.Kills} cover kills");
 
-            // Kills near the ball — positionally dominant around objectives
             if (maxCritFrags > 0 && p.CriticalFrags >= Math.Max(maxCritFrags * 0.55, 3))
                 return ("Tactical Enforcer", "⚡", $"{p.CriticalFrags} critical frags near the ball");
 
-            // High combat presence with positive K/D
             if (highEngagement && kd >= 1.0)
                 return ("Frontline Enforcer", "💥", $"{p.Kills + p.Deaths} engagements ({kd:F2} K/D)");
 
-            // High combat engagement but struggling
             if (highEngagement)
                 return ("Frontline Fighter", "⚔️", $"{p.Kills}K/{p.Deaths}D");
 
-            // Runs the ball frequently without capping — creates space, draws pressure
             if (maxPickups > 0 && p.BombPickups >= Math.Max(maxPickups * 0.25, 4))
                 return ("Ball Carrier", "🏃", $"{p.BombPickups} ball pickups");
 
-            // Genuine team support 
             if (p.TeamProtectFrags + p.BallScoreAssists >= 3 && (p.TeamProtectFrags > 0 || p.BallScoreAssists > 0))
                 return ("Support", "🤝", $"{p.TeamProtectFrags} protections, {p.BallScoreAssists} assists");
 
@@ -1142,7 +1135,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _ => $"Team {team}"
         };
 
-        /// <summary>Maps a kill-streak count to the UT2004 spree title.</summary>
         private static string SpreeTitle(int streak) => streak switch
         {
             >= 30 => "Wicked Sick",
@@ -1154,7 +1146,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _ => $"{streak}-streak"
         };
 
-        /// <summary>Maps a multi-kill level to the UT2004 multi-kill title.</summary>
         private static string MultiTitle(int level) => level switch
         {
             >= 7 => "Wicked Sick",
@@ -1167,7 +1158,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _ => $"x{level}"
         };
 
-        /// <summary>Strips common weapon class prefixes for cleaner display.</summary>
         private static string CleanWeaponName(string raw)
         {
             if (raw.StartsWith("NewNet_", StringComparison.OrdinalIgnoreCase))
@@ -1181,7 +1171,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         {
             sb.AppendLine("## Performance Tiers");
 
-            // Composite performance score
             var scored = ctx.Players.Select(p =>
             {
                 double combat = p.GetKillDeathRatio() * 20 + p.Kills * 2 + p.Headshots * 3;
@@ -1224,9 +1213,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 string pName = ctx.Name(entry.Player);
                 string team = TeamLabel(entry.Player.Team);
 
-                // Compare to career average
+                // Compare to career average — resolve alias GUID to primary before profile lookup
                 string vsCareer = "";
-                if (entry.Player.Guid != null && ctx.Profiles.TryGetValue(entry.Player.Guid, out var prof) && prof.TotalMatches > 1)
+                string primaryGuid = ctx.ResolveProfileGuid(entry.Player.Guid);
+                if (!string.IsNullOrEmpty(primaryGuid) && ctx.Profiles.TryGetValue(primaryGuid, out var prof) && prof.TotalMatches > 1)
                 {
                     double careerAvgKills = ctx.Match.GameMode switch
                     {
@@ -1257,10 +1247,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             sb.AppendLine("## ELO Standings (Post-Match)");
 
             var ranked = ctx.Players
-                .Where(p => p.Guid != null && ctx.Profiles.ContainsKey(p.Guid))
+                .Where(p =>
+                {
+                    string primaryGuid = ctx.ResolveProfileGuid(p.Guid);
+                    return !string.IsNullOrEmpty(primaryGuid) && ctx.Profiles.ContainsKey(primaryGuid);
+                })
                 .Select(p =>
                 {
-                    var prof = ctx.Profiles[p.Guid!];
+                    string primaryGuid = ctx.ResolveProfileGuid(p.Guid);
+                    var prof = ctx.Profiles[primaryGuid];
                     double elo = ctx.Match.GameMode switch
                     {
                         UT2004GameMode.iCTF => prof.CaptureTheFlagElo.Rating,
@@ -1289,7 +1284,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                         UT2004GameMode.iBR => prof.TotalBRMatches,
                         _ => prof.TotalMatches
                     };
-                    double change = ctx.EloChanges!.TryGetValue(p.Guid!, out var c) ? c : 0.0;
+                    // Check both alias and primary GUID in eloChanges — primary is the authoritative key
+                    double change = ctx.EloChanges!.TryGetValue(primaryGuid, out var c) ? c
+                        : ctx.EloChanges.TryGetValue(p.Guid ?? string.Empty, out var c2) ? c2
+                        : 0.0;
                     return new { Player = p, Elo = elo, Change = change, Peak = peak, Wins = modeWins, Matches = modeMatches };
                 })
                 .OrderByDescending(x => x.Elo)
