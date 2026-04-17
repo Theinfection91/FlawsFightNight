@@ -497,6 +497,13 @@ namespace FlawsFightNight.Services
                     profile.TotalCTFMatches, profile.TotalTAMMatches, profile.TotalBRMatches);
             }
         }
+
+        public bool IsGuidInDatabase(string guid)
+        {
+            if (string.IsNullOrEmpty(guid)) return false;
+            if (_dataContext.UT2004PlayerProfileFiles == null) return false;
+            return _dataContext.UT2004PlayerProfileFiles.Any(f => f?.PlayerProfile != null && f.PlayerProfile.Guid.Equals(guid, StringComparison.OrdinalIgnoreCase));
+        }
         #endregion
 
         #region Admin StatLog Controls

@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlawsFightNight.Core.Enums.UT2004;
 
 namespace FlawsFightNight.Bot.SlashCommands
 {
@@ -398,6 +399,7 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class UT2004Commands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
+            private readonly EloTraceAdminHandler _eloTraceAdminHandler;
             private readonly GetLogsByIDHandler _getLogsByIDHandler;
             private readonly IgnoreLogsByIDHandler _ignoreLogsByIDHandler;
             private readonly AllowLogsByIDHandler _allowLogsByIDHandler;
@@ -413,6 +415,7 @@ namespace FlawsFightNight.Bot.SlashCommands
 
             public UT2004Commands(
                 AutocompleteCache autocompleteCache,
+                EloTraceAdminHandler eloTraceAdminHandler,
                 GetLogsByIDHandler getLogsByIDHandler,
                 IgnoreLogsByIDHandler ignoreLogsByIDHandler,
                 AllowLogsByIDHandler allowLogsByIDHandler,
@@ -427,6 +430,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 ILogger<UT2004Commands> logger)
             {
                 _autocompleteCache = autocompleteCache;
+                _eloTraceAdminHandler = eloTraceAdminHandler;
                 _getLogsByIDHandler = getLogsByIDHandler;
                 _ignoreLogsByIDHandler = ignoreLogsByIDHandler;
                 _allowLogsByIDHandler = allowLogsByIDHandler;
@@ -475,6 +479,29 @@ namespace FlawsFightNight.Bot.SlashCommands
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveGuidFromMemberAsync));
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("admin_elo_trace", "Perform an ELO trace on a given guid")]
+            public async Task AdminEloTraceAsync(
+                [Summary("guid", "The UT2004 GUID to perform the ELO trace on")] string guid,
+                [Summary("game_mode", "The game mode to filter the ELO trace by (optional)")]
+                [Choice("📊 General", 3)]
+                [Choice("🚩 iCTF", 1)]
+                [Choice("🎯 TAM", 2)]
+                [Choice("💣 iBR", 0)] int gameMode)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var mode = gameMode > 3 ? UT2004GameMode.Unknown : (UT2004GameMode)gameMode;
+                    var result = await _eloTraceAdminHandler.Handle(Context.User.Id, guid, mode);
+                    await FollowupAsync(embed: result, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(AdminEloTraceAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
