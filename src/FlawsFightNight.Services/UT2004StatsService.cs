@@ -928,10 +928,12 @@ namespace FlawsFightNight.Services
 
         public UT2004PlayerProfile? GetPlayerProfileByGuid(string guid)
         {
+            string resolvedGuid = _ratingsMapper.Resolve(guid);
+
             return _dataContext.UT2004PlayerProfileFiles
                 .Where(f => f?.PlayerProfile != null)
                 .Select(f => f.PlayerProfile)
-                .FirstOrDefault(p => p.Guid.Equals(guid, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(p => p.Guid.Equals(resolvedGuid, StringComparison.OrdinalIgnoreCase));
         }
 
         public async Task<List<string>> GetTournamentStatLogIdsByGuids(List<string> guids)
