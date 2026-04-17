@@ -1575,9 +1575,9 @@ namespace FlawsFightNight.Services
             string modeDisplay = gameMode switch
             {
                 UT2004GameMode.iCTF => "🚩 iCTF",
-                UT2004GameMode.TAM  => "🎯 TAM",
-                UT2004GameMode.iBR  => "💣 iBR",
-                _                   => "🎮 General"
+                UT2004GameMode.TAM => "🎯 TAM",
+                UT2004GameMode.iBR => "💣 iBR",
+                _ => "🎮 General"
             };
 
             string ratingDescription = gameMode == UT2004GameMode.Unknown
@@ -1623,16 +1623,27 @@ namespace FlawsFightNight.Services
         #region UT2004 Player Comparison Embeds
 
         // ── Section resolver ──────────────────────────────────────────────────
-        public Embed ComparePlayersSectionEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, string section, double winProbP1) =>
+        public Embed ComparePlayersSectionEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, string section, double winProbP1, bool p1Seamless = false, bool p2Seamless = false) =>
             section switch
             {
-                "ictf" => ComparePlayersCTFEmbed(p1, p2, winProbP1),
-                "tam" => ComparePlayersTAMEmbed(p1, p2, winProbP1),
-                "ibr" => ComparePlayersBREmbed(p1, p2, winProbP1),
-                _ => ComparePlayersOverviewEmbed(p1, p2, winProbP1)
+                "ictf" => ComparePlayersCTFEmbed(p1, p2, winProbP1, p1Seamless, p2Seamless),
+                "tam" => ComparePlayersTAMEmbed(p1, p2, winProbP1, p1Seamless, p2Seamless),
+                "ibr" => ComparePlayersBREmbed(p1, p2, winProbP1, p1Seamless, p2Seamless),
+                _ => ComparePlayersOverviewEmbed(p1, p2, winProbP1, p1Seamless, p2Seamless)
             };
 
-        public Embed ComparePlayersOverviewEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1)
+        private static string BuildSeamlessNote(UT2004PlayerProfile p1, UT2004PlayerProfile p2, bool p1Seamless, bool p2Seamless)
+        {
+            if (!p1Seamless && !p2Seamless) return string.Empty;
+
+            var parts = new List<string>();
+            if (p1Seamless) parts.Add($"**{p1.CurrentName}**");
+            if (p2Seamless) parts.Add($"**{p2.CurrentName}**");
+
+            return $"\n🔗 *SeamlessRatings active for {string.Join(" & ", parts)} — stats merged across multiple GUIDs*";
+        }
+
+        public Embed ComparePlayersOverviewEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1, bool p1Seamless = false, bool p2Seamless = false)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName}")
@@ -1640,7 +1651,8 @@ namespace FlawsFightNight.Services
                     $"Head-to-head comparison · *Use the dropdown to explore mode-specific stats*\n\n" +
                     $"🎯 **1v1 Win Prediction (General)**\n" +
                     $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}\n" +
-                    $"*Based on composite OpenSkill rating weighted by matches per mode*")
+                    $"*Based on composite OpenSkill rating weighted by matches per mode*" +
+                    BuildSeamlessNote(p1, p2, p1Seamless, p2Seamless))
                 .WithColor(new Color(0xFF6A00))
                 .WithFooter("Flaws Fight Night — UT2004 Player Comparison · Overview")
                 .WithCurrentTimestamp();
@@ -1664,13 +1676,14 @@ namespace FlawsFightNight.Services
             return embed.Build();
         }
 
-        public Embed ComparePlayersCTFEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1)
+        public Embed ComparePlayersCTFEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1, bool p1Seamless = false, bool p2Seamless = false)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName} — 🚩 iCTF")
                 .WithDescription(
                     $"🎯 **1v1 Win Prediction (iCTF)**\n" +
-                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}")
+                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}" +
+                    BuildSeamlessNote(p1, p2, p1Seamless, p2Seamless))
                 .WithColor(new Color(0xFF6A00))
                 .WithFooter("Flaws Fight Night — UT2004 Player Comparison · iCTF")
                 .WithCurrentTimestamp();
@@ -1695,13 +1708,14 @@ namespace FlawsFightNight.Services
             return embed.Build();
         }
 
-        public Embed ComparePlayersTAMEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1)
+        public Embed ComparePlayersTAMEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1, bool p1Seamless = false, bool p2Seamless = false)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName} — 🎯 TAM")
                 .WithDescription(
                     $"🎯 **1v1 Win Prediction (TAM)**\n" +
-                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}")
+                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}" +
+                    BuildSeamlessNote(p1, p2, p1Seamless, p2Seamless))
                 .WithColor(new Color(0xFF6A00))
                 .WithFooter("Flaws Fight Night — UT2004 Player Comparison · TAM")
                 .WithCurrentTimestamp();
@@ -1726,13 +1740,14 @@ namespace FlawsFightNight.Services
             return embed.Build();
         }
 
-        public Embed ComparePlayersBREmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1)
+        public Embed ComparePlayersBREmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1, bool p1Seamless = false, bool p2Seamless = false)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName} — 💣 iBR")
                 .WithDescription(
                     $"🎯 **1v1 Win Prediction (iBR)**\n" +
-                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}")
+                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}" +
+                    BuildSeamlessNote(p1, p2, p1Seamless, p2Seamless))
                 .WithColor(new Color(0xFF6A00))
                 .WithFooter("Flaws Fight Night — UT2004 Player Comparison · iBR")
                 .WithCurrentTimestamp();
