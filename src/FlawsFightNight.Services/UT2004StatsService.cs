@@ -44,6 +44,14 @@ namespace FlawsFightNight.Services
         public async Task InitializeAsync()
         {
             await GetStatLogCounts();
+
+            // Prime the SeamlessRatings alias map at startup so all query paths
+            // (ELO trace, compare, profile lookup) have aliases resolved immediately
+            // without requiring a full profile rebuild first.
+            var memberProfiles = _dataContext.MemberProfileFiles
+                .Select(f => f.MemberProfile)
+                .ToList();
+            _ratingsMapper.BuildAliasMap(memberProfiles);
         }
 
         public bool IsValidGuid(string guid)
@@ -1191,8 +1199,8 @@ namespace FlawsFightNight.Services
             var sb = new StringBuilder();
             sb.AppendLine($"=== ELO Trace — {displayName} | {gameMode} ===");
             sb.AppendLine($"GUID      : {resolvedGuid}");
-            if (!resolvedGuid.Equals(guid, StringComparison.OrdinalIgnoreCase))
-                sb.AppendLine($"Alias GUID: {guid}");
+            foreach (var aliasGuid in _ratingsMapper.GetAliasesForPrimary(resolvedGuid))
+                sb.AppendLine($"Alias GUID: {aliasGuid}");
             sb.AppendLine($"Matches   : {traceEntries.Count} ({wins}W / {losses}L)");
             sb.AppendLine($"ELO Now   : {currentElo:F1}   |   Peak: {peakElo:F1}{(peakDate.HasValue ? $" ({peakDate.Value:yyyy-MM-dd})" : "")}");
             sb.AppendLine($"Net Delta : {netChange:+0.0;-0.0}   (start: {startElo:F1}  →  end: {currentElo:F1})");

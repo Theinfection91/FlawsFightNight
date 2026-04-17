@@ -37,6 +37,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         }
 
         /// <summary>
+        /// Returns all non-primary (alias) GUIDs that resolve to the given primary GUID.
+        /// Returns empty if the GUID has no aliases or is not a primary.
+        /// </summary>
+        public IEnumerable<string> GetAliasesForPrimary(string primaryGuid)
+            => _guidToPrimary
+                .Where(kv => kv.Value.Equals(primaryGuid, StringComparison.OrdinalIgnoreCase)
+                          && !kv.Key.Equals(primaryGuid, StringComparison.OrdinalIgnoreCase))
+                .Select(kv => kv.Key);
+
+        /// <summary>
         /// Returns all non-primary (alias) GUIDs — the ones that resolve to something else.
         /// </summary>
         public IEnumerable<string> GetAliasGuids()
