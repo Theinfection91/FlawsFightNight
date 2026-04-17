@@ -52,9 +52,14 @@ namespace FlawsFightNight.Bot.Components
             return new ComponentBuilder().WithSelectMenu(selectMenu);
         }
 
-        public static ComponentBuilder CreateUT2004LeaderboardSelectMenu()
+        /// <summary>
+        /// Creates the UT2004 leaderboard select menu with a "Request Full List" button.
+        /// The button encodes the currently active <paramref name="section"/> so the handler
+        /// knows which full leaderboard to DM.
+        /// </summary>
+        public static ComponentBuilder CreateUT2004LeaderboardSelectMenu(string section = "general")
         {
-            string selectId = $"ut2004leaderboard_select";
+            string selectId = "ut2004leaderboard_select";
 
             var selectMenu = new SelectMenuBuilder()
                 .WithCustomId(selectId)
@@ -64,7 +69,17 @@ namespace FlawsFightNight.Bot.Components
                 .AddOption("🎯 TAM", "tam", "Team Arena Master leaderboard")
                 .AddOption("💣 iBR", "ibr", "Bombing Run leaderboard");
 
-            return new ComponentBuilder().WithSelectMenu(selectMenu);
+            string gameModeLabel = section switch
+            {
+                "ictf" => "iCTF",
+                "tam" => "TAM",
+                "ibr" => "iBR",
+                _ => "General"
+            };
+
+            return new ComponentBuilder()
+                .WithSelectMenu(selectMenu)
+                .WithButton($"📋 Request Full {gameModeLabel} Leaderboard", customId: $"ut2004leaderboard_all:{section}", style: ButtonStyle.Secondary);
         }
 
         public static ComponentBuilder CreateUT2004CompareSelectMenu(ulong player1Id, ulong player2Id)
