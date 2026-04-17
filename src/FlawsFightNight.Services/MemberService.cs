@@ -259,6 +259,20 @@ namespace FlawsFightNight.Services
             return false;
         }
 
+        public bool IsUT2004GUIDRegistered(string guid, out MemberProfile memberProfile)
+        {
+            foreach (var memberProfileData in _dataContext.MemberProfileFiles)
+            {
+                if (memberProfileData.MemberProfile.RegisteredUT2004GUIDs.Contains(guid, StringComparer.OrdinalIgnoreCase))
+                {
+                    memberProfile = memberProfileData.MemberProfile;
+                    return true;
+                }
+            }
+            memberProfile = null!;
+            return false;
+        }
+
         public bool DoesUT2004PlayerProfileExist(string playerGuid)
         {
             foreach (var file in _dataContext.UT2004PlayerProfileFiles)

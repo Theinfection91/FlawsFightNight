@@ -1,10 +1,7 @@
 ﻿using Discord;
 using FlawsFightNight.Core.Enums.UT2004;
 using FlawsFightNight.Services;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
@@ -26,19 +23,21 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
         {
             var memberProfile = _memberService.GetMemberProfile(discordId);
             if (memberProfile == null)
-            {
-                // Shouldn't happen, but just in case
                 return _embedFactory.ErrorEmbed(Name, "Profile not found. Contact admin.");
-            }
-            if (memberProfile.RegisteredUT2004GUIDs.Count == 0)
-            {
-                return _embedFactory.ErrorEmbed(Name, "No UT2004 GUIDs registered. Please register a GUID to use this command.");
-            }
 
-            var guid = memberProfile.RegisteredUT2004GUIDs.First(); // Primary GUID is always the first one in the list out of possible two
+            if (memberProfile.RegisteredUT2004GUIDs.Count == 0)
+                return _embedFactory.ErrorEmbed(Name, "No UT2004 GUIDs registered. Please register a GUID to use this command.");
+
+            var guid = memberProfile.RegisteredUT2004GUIDs.First();
             var eloTrace = await _ut2004StatsService.GetPlayerEloTrace(guid, uT2004GameMode);
             await _ut2004StatsService.SendTextFileDM(discordId, $"EloTrace_{uT2004GameMode}_{guid}.txt", eloTrace);
-            return _embedFactory.GenericEmbed(Name + " Success", "Elo trace has been sent to your DMs.", Color.DarkBlue);
+
+            bool isSeamless = memberProfile.RegisteredUT2004GUIDs.Count >= 2;
+            string description = isSeamless
+                ? $"Elo trace has been sent to your DMs.\n🔗 *SeamlessRatings active — stats merged across {memberProfile.RegisteredUT2004GUIDs.Count} GUIDs.*"
+                : "Elo trace has been sent to your DMs.";
+
+            return _embedFactory.GenericEmbed(Name + " Success", description, Color.DarkBlue);
         }
     }
 }
