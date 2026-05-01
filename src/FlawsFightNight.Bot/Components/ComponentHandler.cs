@@ -246,6 +246,37 @@ namespace FlawsFightNight.Bot.Components
         }
         #endregion
 
+        #region UT2004 Player Profile by GUID Select Menu
+        [ComponentInteraction("ut2004profile_guid_select:*")]
+        public async Task HandleUT2004ProfileGuidSelectAsync(string guid, string[] selectedValues)
+        {
+            try
+            {
+                var utProfile = _memberService.GetUT2004PlayerProfile(guid);
+                if (utProfile == null)
+                {
+                    await RespondAsync(embed: _embedFactory.ErrorEmbed("UT2004 Profile", $"No stats found for GUID `{guid}`."), ephemeral: true);
+                    return;
+                }
+
+                var selectedSection = selectedValues[0];
+                var embed = _embedFactory.UT2004ProfileSectionEmbed(utProfile, selectedSection);
+                var components = ComponentFactory.CreateUT2004ProfileSelectMenuByGuid(guid);
+
+                await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
+                {
+                    msg.Embed = embed;
+                    msg.Components = components.Build();
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Component error in UT2004 Profile GUID Select.");
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+            }
+        }
+        #endregion
+
         #region UT2004 Leaderboard Select Menu
         [ComponentInteraction("ut2004leaderboard_select")]
         public async Task HandleUT2004LeaderboardSelectAsync(string[] selectedValues)

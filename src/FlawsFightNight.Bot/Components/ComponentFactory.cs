@@ -52,6 +52,21 @@ namespace FlawsFightNight.Bot.Components
             return new ComponentBuilder().WithSelectMenu(selectMenu);
         }
 
+        public static ComponentBuilder CreateUT2004ProfileSelectMenuByGuid(string guid)
+        {
+            string selectId = $"ut2004profile_guid_select:{guid}";
+
+            var selectMenu = new SelectMenuBuilder()
+                .WithCustomId(selectId)
+                .WithPlaceholder("📊 Select a stats category...")
+                .AddOption("📊 General", "general", "Overall career stats and career bests")
+                .AddOption("🚩 iCTF", "ictf", "Capture the Flag statistics")
+                .AddOption("🎯 TAM", "tam", "Team Arena Master statistics")
+                .AddOption("💣 iBR", "ibr", "Bombing Run statistics");
+
+            return new ComponentBuilder().WithSelectMenu(selectMenu);
+        }
+
         /// <summary>
         /// Creates the UT2004 leaderboard select menu with a "Request Full List" button.
         /// The button encodes the currently active <paramref name="section"/> so the handler
