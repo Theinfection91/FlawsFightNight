@@ -530,7 +530,8 @@ namespace FlawsFightNight.Bot.SlashCommands
                 {
                     await DeferAsync(ephemeral: true);
                     var result = _getPlayerProfileByGuidHandler.GetPlayerProfileByGuidProcess(guid);
-                    await FollowupAsync(embed: result, ephemeral: true);
+                    var components = ComponentFactory.CreateUT2004ProfileSelectMenuByGuid(guid);
+                    await FollowupAsync(embed: result, components: components.Build(), ephemeral: true);
                 }
                 catch (Exception ex)
                 {
