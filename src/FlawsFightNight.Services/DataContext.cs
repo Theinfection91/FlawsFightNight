@@ -55,9 +55,9 @@ namespace FlawsFightNight.Services
         public StatLogIndexFile StatLogIndexFile { get; private set; }
         private readonly StatLogIndexHandler _statLogIndexHandler;
 
-        // Admin Ignored Logs File
-        //public AdminIgnoredLogsFile AdminIgnoredLogsFile { get; private set; }
-        //private readonly AdminIgnoredLogsHandler _adminIgnoredLogsHandler;
+        // Tournament Stat Tags File (backed-up admin-curated state: match tags + ignored logs)
+        public TournamentStatTagsFile TournamentStatTagsFile { get; private set; }
+        private readonly TournamentStatTagsHandler _tournamentStatTagsHandler;
 
         // User Profile Files
         public List<MemberProfileFile> MemberProfileFiles { get; private set; } = new();
@@ -74,7 +74,7 @@ namespace FlawsFightNight.Services
 
         #endregion
 
-        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, StatLogIndexHandler statLogIndexHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler, LiveViewChannelsHandler liveViewChannelsHandler)
+        public DataContext(DiscordSocketClient client, DiscordCredentialHandler discordCredentialHandler, GitHubCredentialHandler gitHubCredentialHandler, FTPCredentialHandler ftpCredentialHandler, PermissionsConfigHandler permissionsConfigHandler, TournamentDataHandler tournamentDataHandler, ProcessedLogNamesHandler processedLogNamesHandler, StatLogMatchResultHandler statLogMatchResultHandler, StatLogIndexHandler statLogIndexHandler, TournamentStatTagsHandler tournamentStatTagsHandler, MemberProfileHandler userProfileHandler, UT2004PlayerProfileHandler ut2004PlayerProfileHandler, LiveViewChannelsHandler liveViewChannelsHandler)
         {
             DiscordClient = client;
 
@@ -86,6 +86,7 @@ namespace FlawsFightNight.Services
             _processedLogNamesHandler = processedLogNamesHandler;
             _statLogMatchResultsHandler = statLogMatchResultHandler;
             _statLogIndexHandler = statLogIndexHandler;
+            _tournamentStatTagsHandler = tournamentStatTagsHandler;
             _memberProfileHandler = userProfileHandler;
             _ut2004PlayerProfileHandler = ut2004PlayerProfileHandler;
             _liveViewChannelsHandler = liveViewChannelsHandler;
@@ -106,6 +107,7 @@ namespace FlawsFightNight.Services
             await _memberProfileHandler.InitializePendingPathAsync();
             await _ut2004PlayerProfileHandler.InitializePendingPathAsync();
             await _liveViewChannelsHandler.InitializePendingPathAsync();
+            await _tournamentStatTagsHandler.InitializePendingPathAsync();
 
             // After all pending paths are initialized, load the data from those paths
             await LoadDiscordCredentialFile();
@@ -118,6 +120,7 @@ namespace FlawsFightNight.Services
             await LoadAllUT2004PlayerProfileFiles();
             await LoadStatLogIndexFile();
             await LoadLiveViewChannelsFile();
+            await LoadTournamentStatTagsFile();
         }
         #endregion
 
@@ -521,6 +524,52 @@ namespace FlawsFightNight.Services
         }
         #endregion
 
+        #region Tournament Stat Tags
+        public async Task LoadTournamentStatTagsFile()
+        {
+            await _tournamentStatTagsHandler.SetFilePath(PathOption.Databases, "tournament_stat_tags.json");
+            TournamentStatTagsFile = await _tournamentStatTagsHandler.Load();
+        }
+
+        public async Task SaveTournamentStatTagsFile()
+        {
+            await _tournamentStatTagsHandler.SetFilePath(PathOption.Databases, "tournament_stat_tags.json");
+            await _tournamentStatTagsHandler.Save(TournamentStatTagsFile);
+        }
+
+        public async Task SaveAndReloadTournamentStatTagsFile()
+        {
+            await _tournamentStatTagsHandler.SetFilePath(PathOption.Databases, "tournament_stat_tags.json");
+            await _tournamentStatTagsHandler.Save(TournamentStatTagsFile);
+            await LoadTournamentStatTagsFile();
+        }
+
+        public async Task UpsertTournamentStatTag(TournamentStatTag tag)
+        {
+            if (TournamentStatTagsFile == null)
+                await LoadTournamentStatTagsFile();
+
+            TournamentStatTagsFile!.Tags.RemoveAll(t => t.StatLogFileName.Equals(tag.StatLogFileName, StringComparison.OrdinalIgnoreCase));
+            TournamentStatTagsFile.Tags.Add(tag);
+            await SaveTournamentStatTagsFile();
+        }
+
+        public async Task RemoveTournamentStatTag(string statLogFileName)
+        {
+            if (TournamentStatTagsFile == null)
+                await LoadTournamentStatTagsFile();
+
+            TournamentStatTagsFile!.Tags.RemoveAll(t => t.StatLogFileName.Equals(statLogFileName, StringComparison.OrdinalIgnoreCase));
+            await SaveTournamentStatTagsFile();
+        }
+
+        public TournamentStatTag? GetTournamentStatTag(string statLogFileName)
+        {
+            return TournamentStatTagsFile?.Tags
+                .FirstOrDefault(t => t.StatLogFileName.Equals(statLogFileName, StringComparison.OrdinalIgnoreCase));
+        }
+        #endregion
+
         #region LiveView Channels
         public async Task LoadLiveViewChannelsFile()
         {
@@ -570,7 +619,7 @@ namespace FlawsFightNight.Services
         public List<LeaderboardChannelData> GetAllLeaderboardChannels()
         {
             return LiveViewChannelsFile?.LeaderboardChannels ?? new List<LeaderboardChannelData>();
-        }   
+        }
 
         public async Task SaveAndReloadLeaderboardChannelsFile()
         {

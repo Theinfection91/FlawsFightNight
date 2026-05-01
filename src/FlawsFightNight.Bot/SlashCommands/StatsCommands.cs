@@ -59,6 +59,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             private readonly AutocompleteCache _autocompleteCache;
             private readonly ComparePlayersHandler _comparePlayersHandler;
             private readonly DisplayMatchSummaryHandler _displayMatchSummary;
+            private readonly EloTraceUserHandler _eloTraceUserHandler;
             private readonly GetWinProbabilityHandler _winProbabilityHandler;
             private readonly MyPlayerProfileHandler _myPlayerProfileLogic;
             private readonly MyTournamentMatchesHandler _myTournamentMatchesHandler;
@@ -73,6 +74,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 AutocompleteCache autocompleteCache,
                 ComparePlayersHandler comparePlayersHandler,
                 DisplayMatchSummaryHandler displayMatchSummaryHandler,
+                EloTraceUserHandler eloTraceUserHandler,
                 GetWinProbabilityHandler winProbabilityHandler,
                 MyPlayerProfileHandler myPlayerProfileLogic,
                 MyTournamentMatchesHandler myTournamentMatchesHandler,
@@ -86,6 +88,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 _autocompleteCache = autocompleteCache;
                 _comparePlayersHandler = comparePlayersHandler;
                 _displayMatchSummary = displayMatchSummaryHandler;
+                _eloTraceUserHandler = eloTraceUserHandler;
                 _winProbabilityHandler = winProbabilityHandler;
                 _myPlayerProfileLogic = myPlayerProfileLogic;
                 _myTournamentMatchesHandler = myTournamentMatchesHandler;
@@ -104,7 +107,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    var embed = await _registerGuidLogic.RegisterGuidProcess(Context, guid);
+                    var embed = await _registerGuidLogic.RegisterGuidProcess(Context, guid.Trim().ToLower());
                     await FollowupAsync(embed: embed, ephemeral: true);
                     _autocompleteCache.Update();
                 }
@@ -117,7 +120,7 @@ namespace FlawsFightNight.Bot.SlashCommands
 
             [SlashCommand("remove_guid", "Removes a UT2004 GUID from your account.")]
             public async Task RemoveGuidAsync(
-                [Summary("guid", "The UT2004 GUID to remove.")] string guid)
+                [Summary("guid", "The UT2004 GUID to remove."), Autocomplete(typeof(MemberUT2004GuidAutocomplete))] string guid)
             {
                 try
                 {
@@ -168,7 +171,7 @@ namespace FlawsFightNight.Bot.SlashCommands
 
                     if (hasProfiles)
                     {
-                        var components = ComponentFactory.CreateUT2004LeaderboardSelectMenu();
+                        var components = ComponentFactory.CreateUT2004LeaderboardSelectMenu("general");
                         await FollowupAsync(embed: embed, components: components.Build(), ephemeral: true);
                     }
                     else
@@ -334,6 +337,27 @@ namespace FlawsFightNight.Bot.SlashCommands
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Command error in {Command}.", nameof(GetWinProbabilityAsync));
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("elo_trace", "Get a text file of a player's Elo trace over time for a specific game mode.")]
+            public async Task GetEloTraceAsync(
+                [Summary("game_mode", "The game mode to base Elo trace on.")]
+                [Choice("iCTF", 1)]
+                [Choice("TAM", 2)]
+                [Choice("iBR", 3)] int gameMode)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var mode = gameMode > 3 ? UT2004GameMode.Unknown : (UT2004GameMode)gameMode;
+                    var embed = await _eloTraceUserHandler.Handle(Context.User.Id, mode);
+                    await FollowupAsync(embed: embed, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(GetEloTraceAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }

@@ -6,7 +6,9 @@ using FlawsFightNight.Services;
 using FlawsFightNight.Services.Logging;
 using Microsoft.Extensions.Logging;
 using System;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace FlawsFightNight.Bot.Components
@@ -244,6 +246,37 @@ namespace FlawsFightNight.Bot.Components
         }
         #endregion
 
+        #region UT2004 Player Profile by GUID Select Menu
+        [ComponentInteraction("ut2004profile_guid_select:*")]
+        public async Task HandleUT2004ProfileGuidSelectAsync(string guid, string[] selectedValues)
+        {
+            try
+            {
+                var utProfile = _memberService.GetUT2004PlayerProfile(guid);
+                if (utProfile == null)
+                {
+                    await RespondAsync(embed: _embedFactory.ErrorEmbed("UT2004 Profile", $"No stats found for GUID `{guid}`."), ephemeral: true);
+                    return;
+                }
+
+                var selectedSection = selectedValues[0];
+                var embed = _embedFactory.UT2004ProfileSectionEmbed(utProfile, selectedSection);
+                var components = ComponentFactory.CreateUT2004ProfileSelectMenuByGuid(guid);
+
+                await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
+                {
+                    msg.Embed = embed;
+                    msg.Components = components.Build();
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Component error in UT2004 Profile GUID Select.");
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+            }
+        }
+        #endregion
+
         #region UT2004 Leaderboard Select Menu
         [ComponentInteraction("ut2004leaderboard_select")]
         public async Task HandleUT2004LeaderboardSelectAsync(string[] selectedValues)
@@ -252,7 +285,7 @@ namespace FlawsFightNight.Bot.Components
             {
                 var section = selectedValues[0];
                 var embed = _leaderboardHandler.HandleSection(section);
-                var components = ComponentFactory.CreateUT2004LeaderboardSelectMenu();
+                var components = ComponentFactory.CreateUT2004LeaderboardSelectMenu(section);
 
                 await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
                 {
@@ -264,6 +297,36 @@ namespace FlawsFightNight.Bot.Components
             {
                 _logger.LogError(ex, "Component error in UT2004 Leaderboard Select.");
                 await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+            }
+        }
+
+        [ComponentInteraction("ut2004leaderboard_all:*")]
+        public async Task HandleUT2004LeaderboardAllAsync(string section)
+        {
+            try
+            {
+                await DeferAsync(ephemeral: true);
+
+                var (text, fileName) = _leaderboardHandler.HandleAllSectionAsText(section);
+
+                try
+                {
+                    var dmChannel = await Context.User.CreateDMChannelAsync();
+                    using var ms = new MemoryStream(Encoding.UTF8.GetBytes(text));
+                    await dmChannel.SendFileAsync(new FileAttachment(ms, fileName), "📋 Here's the full UT2004 leaderboard you requested!");
+                }
+                catch
+                {
+                    await FollowupAsync(embed: _embedFactory.ErrorEmbed("Full Leaderboard", "Could not send you a DM. Please make sure your DMs are open and try again."), ephemeral: true);
+                    return;
+                }
+
+                await FollowupAsync(embed: _embedFactory.SuccessEmbed("Full Leaderboard", "The full leaderboard has been sent to your DMs! 📬"), ephemeral: true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Component error in UT2004 Leaderboard All.");
+                await FollowupAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }
         #endregion

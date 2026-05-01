@@ -135,10 +135,13 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<ReportWinHandler>();
                     services.AddSingleton<SendChallengeHandler>();
 
-                    // Settings Commands
+                    // Settings Commandsww
                     services.AddSingleton<AddDebugAdminHandler>();
                     services.AddSingleton<AllowLogsByIDHandler>();
+                    services.AddSingleton<EloTraceAdminHandler>();
+                    services.AddSingleton<GetAllGUIDsHandler>();
                     services.AddSingleton<GetLogsByIDHandler>();
+                    services.AddSingleton<GetPlayerProfileByGuidHandler>();
                     services.AddSingleton<IgnoreLogsByIDHandler>();
                     services.AddSingleton<LastStatLogsHandler>();
                     services.AddSingleton<RegisterGuidToMemberHandler>();
@@ -162,6 +165,7 @@ namespace FlawsFightNight.Bot
                     // Stat Commands
                     services.AddSingleton<ComparePlayersHandler>();
                     services.AddSingleton<DisplayMatchSummaryHandler>();
+                    services.AddSingleton<EloTraceUserHandler>();
                     services.AddSingleton<MyPlayerProfileHandler>();
                     services.AddSingleton<MyTournamentMatchesHandler>();
                     services.AddSingleton<MyTournamentProfileHandler>();
@@ -223,6 +227,7 @@ namespace FlawsFightNight.Bot
                     services.AddSingleton<StatLogIndexHandler>();
                     services.AddSingleton<StatLogMatchResultHandler>();
                     services.AddSingleton<TournamentDataHandler>();
+                    services.AddSingleton<TournamentStatTagsHandler>();
                     services.AddSingleton<MemberProfileHandler>();
                     services.AddSingleton<UT2004PlayerProfileHandler>();
 

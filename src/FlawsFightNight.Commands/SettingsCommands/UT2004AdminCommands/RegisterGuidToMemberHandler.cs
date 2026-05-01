@@ -26,6 +26,16 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
 
         public async Task<Embed?> RegisterGuidToMemberProcess(IUser member, string guid)
         {
+            if (!_ut2004StatsService.IsValidGuid(guid))
+            {
+                return _embedFactory.ErrorEmbed(Name, $"The GUID `{guid}` is not in a valid format. Please provide a valid GUID. Example: c392f9fe569e068a6523d5d78c6b57e7");
+            }
+
+            if (_memberService.IsUT2004GUIDRegistered(guid, out var existingMemberProfile))
+            {
+                return _embedFactory.ErrorEmbed(Name, $"The GUID `{guid}` is already registered to {(existingMemberProfile != null ? (existingMemberProfile.DisplayName ?? "Unknown") : "Unknown")}(#{(existingMemberProfile != null ? existingMemberProfile.DiscordId.ToString() : "Unknown")}). Please check the GUID and try again.");
+            }
+
             if (!_memberService.DoesMemberProfileExist(member.Id))
             {
                 var newProfile = _memberService.CreateMemberProfile(member.Id, member.Username);

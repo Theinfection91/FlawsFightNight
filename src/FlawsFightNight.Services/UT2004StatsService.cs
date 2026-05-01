@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FlawsFightNight.Services
 {
-    public class UT2004StatsService : BaseDataDriven    
+    public class UT2004StatsService : BaseDataDriven
     {
         private readonly DiscordSocketClient _client;
         private readonly ILogger<UT2004StatsService> _logger;
@@ -44,6 +44,21 @@ namespace FlawsFightNight.Services
         public async Task InitializeAsync()
         {
             await GetStatLogCounts();
+
+            // Prime the SeamlessRatings alias map at startup so all query paths
+            // (ELO trace, compare, profile lookup) have aliases resolved immediately
+            // without requiring a full profile rebuild first.
+            var memberProfiles = _dataContext.MemberProfileFiles
+                .Select(f => f.MemberProfile)
+                .ToList();
+            _ratingsMapper.BuildAliasMap(memberProfiles);
+        }
+
+        public bool IsValidGuid(string guid)
+        {
+            // UT2004 GUIDs are typically 32-character hexadecimal strings
+            var uuidGuidPattern = @"^[0-9a-fA-F]{8}[0-9a-fA-F]{4}[0-9a-fA-F]{4}[0-9a-fA-F]{4}[0-9a-fA-F]{12}$";
+            return System.Text.RegularExpressions.Regex.IsMatch(guid, uuidGuidPattern);
         }
 
         #region Stat Log Processing
@@ -65,10 +80,11 @@ namespace FlawsFightNight.Services
             return false;
         }
 
-        public async Task<bool> ProcessLogFile(Stream fileStream, string fileName, string serverName, string serverAddress)
+        public async Task<(bool wasValid, string? ignoreReason)> ProcessLogFile(Stream fileStream, string fileName, string serverName, string serverAddress)
         {
             // Instantiate per-call: UT2004LogParser holds mutable parse state and must not be shared
-            var statLog = await new UT2004LogParser().Parse<UT2004StatLog>(fileStream);
+            var parser = new UT2004LogParser();
+            var statLog = await parser.Parse<UT2004StatLog>(fileStream);
             if (statLog != null)
             {
                 statLog.FileName = Path.ChangeExtension(fileName, ".json");
@@ -79,27 +95,46 @@ namespace FlawsFightNight.Services
                 ).ToList();
                 statLog.Id = GenerateStatLogId(statLog.GameMode);
 
-                // Ensure admin ignored logs are loaded so persisted StatLog reflects current admin state
                 if (_dataContext.StatLogIndexFile == null)
                     await _dataContext.LoadStatLogIndexFile();
 
-                // Reflect admin-allowed/ignored state on the StatLog before saving
-                statLog.IsAllowedByAdmin = !IsStatLogIgnored(statLog.Id);
+                var savedTag = _dataContext.GetTournamentStatTag(statLog.FileName);
+                statLog.IsAllowedByAdmin = savedTag?.IsAdminIgnored != true;
 
                 await _dataContext.SaveStatLogMatchResultFile(statLog);
-                await _dataContext.AddStatLogIndexEntry(new StatLogIndexEntry
+
+                var entry = new StatLogIndexEntry
                 {
                     Id = statLog.Id,
                     MatchDate = statLog.MatchDate,
                     ServerName = statLog.ServerName
-                });
+                };
+
+                if (savedTag != null)
+                {
+                    if (!string.IsNullOrEmpty(savedTag.TournamentId))
+                        entry.TagTournamentMatch(savedTag.TournamentId, savedTag.MatchId, savedTag.TournamentName);
+
+                    if (savedTag.IsAdminIgnored)
+                    {
+                        entry.IsAdminIgnored = true;
+                        entry.AdminDiscordID = savedTag.AdminDiscordID;
+                        entry.AdminName = savedTag.AdminName;
+                        entry.IgnoredAt = savedTag.IgnoredAt ?? DateTime.UtcNow;
+                    }
+
+                    savedTag.StatLogId = statLog.Id;
+                    await _dataContext.UpsertTournamentStatTag(savedTag);
+                }
+
+                await _dataContext.AddStatLogIndexEntry(entry);
                 await MarkLogFileAsProcessed(fileName);
-                return true;
+                return (true, null);
             }
             else
             {
                 await MarkLogFileAsIgnored(fileName);
-                return false;
+                return (false, parser.LastIgnoreReason);
             }
         }
 
@@ -115,9 +150,9 @@ namespace FlawsFightNight.Services
             int newCount = gameMode switch
             {
                 UT2004GameMode.iCTF => Interlocked.Increment(ref _iCTFStatLogIdCounter),
-                UT2004GameMode.TAM  => Interlocked.Increment(ref _TAMStatLogIdCounter),
-                UT2004GameMode.iBR  => Interlocked.Increment(ref _iBRStatLogIdCounter),
-                _                   => 0
+                UT2004GameMode.TAM => Interlocked.Increment(ref _TAMStatLogIdCounter),
+                UT2004GameMode.iBR => Interlocked.Increment(ref _iBRStatLogIdCounter),
+                _ => 0
             };
 
             return $"{gameMode}{newCount:000000}";
@@ -322,7 +357,7 @@ namespace FlawsFightNight.Services
                         }
                     }
 
-                    var summarizer = new RuleBasedMatchSummarizer();
+                    var summarizer = new RuleBasedMatchSummarizer(_ratingsMapper);
                     summarizer.Summarize(match, profiles, eloChanges);
 
                     await _dataContext.SaveStatLogMatchResultFile(match);
@@ -399,7 +434,7 @@ namespace FlawsFightNight.Services
                 return;
             }
 
-            var summarizer = new RuleBasedMatchSummarizer();
+            var summarizer = new RuleBasedMatchSummarizer(_ratingsMapper);
             int updated = 0;
             int skipped = 0;
 
@@ -470,6 +505,13 @@ namespace FlawsFightNight.Services
                     profile.TotalCTFMatches, profile.TotalTAMMatches, profile.TotalBRMatches);
             }
         }
+
+        public bool IsGuidInDatabase(string guid)
+        {
+            if (string.IsNullOrEmpty(guid)) return false;
+            if (_dataContext.UT2004PlayerProfileFiles == null) return false;
+            return _dataContext.UT2004PlayerProfileFiles.Any(f => f?.PlayerProfile != null && f.PlayerProfile.Guid.Equals(guid, StringComparison.OrdinalIgnoreCase));
+        }
         #endregion
 
         #region Admin StatLog Controls
@@ -484,10 +526,26 @@ namespace FlawsFightNight.Services
             return _dataContext.StatLogIndexFile.Entries.Where(e => e.IsAdminIgnored).Select(e => e.Id).ToList();
         }
 
+        public List<StatLogIndexEntry> GetAdminIgnoredLogEntries()
+        {
+            if (_dataContext.StatLogIndexFile == null) return new List<StatLogIndexEntry>();
+            return _dataContext.StatLogIndexFile.Entries.Where(e => e.IsAdminIgnored).ToList();
+        }
+
         public bool DoesStatLogExist(string statLogID)
         {
             var entries = _dataContext.StatLogIndexFile?.Entries;
             return entries != null && entries.Any(e => e.Id.Equals(statLogID, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Returns the canonical (stored) stat log ID for the given input, ignoring case.
+        /// Returns null if no matching entry exists.
+        /// </summary>
+        public string? TryResolveStatLogId(string input)
+        {
+            var entries = _dataContext.StatLogIndexFile?.Entries;
+            return entries?.FirstOrDefault(e => e.Id.Equals(input, StringComparison.OrdinalIgnoreCase))?.Id;
         }
 
         public async Task<string> GetStatLogIDsOnDate(DateTime date, string serverName = null)
@@ -669,11 +727,25 @@ namespace FlawsFightNight.Services
                 await _dataContext.SaveAndReloadStatLogIndexFile();
 
                 // Persist IsAllowedByAdmin on the actual stat log file so future loads reflect admin intent
+                // Also upsert into tournament_stat_tags.json so the ignore survives a backup restore
                 var statLog = await _dataContext.LoadStatLogByID(id);
                 if (statLog != null)
                 {
                     statLog.IsAllowedByAdmin = false;
                     await _dataContext.SaveStatLogMatchResultFile(statLog);
+
+                    var tag = _dataContext.GetTournamentStatTag(statLog.FileName) ?? new TournamentStatTag
+                    {
+                        StatLogFileName = statLog.FileName,
+                        MatchDate = logIndex.MatchDate,
+                        ServerName = logIndex.ServerName
+                    };
+                    tag.StatLogId = id;
+                    tag.IsAdminIgnored = true;
+                    tag.AdminDiscordID = adminDiscordId;
+                    tag.AdminName = adminName;
+                    tag.IgnoredAt = DateTime.UtcNow;
+                    await _dataContext.UpsertTournamentStatTag(tag);
                 }
 
                 succeeded.Add(id);
@@ -722,10 +794,27 @@ namespace FlawsFightNight.Services
 
                 await _dataContext.SaveAndReloadStatLogIndexFile();
 
-                // Persist IsAllowedByAdmin on the actual stat log file so future loads reflect admin intent
+                // Persist to tournament_stat_tags.json
                 var statLog = await _dataContext.LoadStatLogByID(id);
                 if (statLog != null)
                 {
+                    var tag = _dataContext.GetTournamentStatTag(statLog.FileName);
+                    if (tag != null)
+                    {
+                        if (!string.IsNullOrEmpty(tag.TournamentId))
+                        {
+                            tag.IsAdminIgnored = false;
+                            tag.AdminDiscordID = 0;
+                            tag.AdminName = null;
+                            tag.IgnoredAt = null;
+                            await _dataContext.UpsertTournamentStatTag(tag);
+                        }
+                        else
+                        {
+                            await _dataContext.RemoveTournamentStatTag(statLog.FileName);
+                        }
+                    }
+
                     statLog.IsAllowedByAdmin = true;
                     await _dataContext.SaveStatLogMatchResultFile(statLog);
                 }
@@ -773,16 +862,58 @@ namespace FlawsFightNight.Services
             if (logIndex == null) return;
 
             logIndex.TagTournamentMatch(tournamentID, matchID, tournamentName);
-
             await _dataContext.SaveAndReloadStatLogIndexFile();
+
+            // Persist to tournament_stat_tags.json so the tag survives a backup restore
+            var statLog = await _dataContext.LoadStatLogByID(statLogID);
+            if (statLog != null)
+            {
+                var tag = _dataContext.GetTournamentStatTag(statLog.FileName) ?? new TournamentStatTag
+                {
+                    StatLogFileName = statLog.FileName,
+                    MatchDate = logIndex.MatchDate,
+                    ServerName = logIndex.ServerName
+                };
+                tag.StatLogId = statLogID;
+                tag.TournamentId = tournamentID;
+                tag.MatchId = matchID;
+                tag.TournamentName = tournamentName;
+                tag.TaggedAt = DateTime.UtcNow;
+                await _dataContext.UpsertTournamentStatTag(tag);
+            }
         }
 
         public async Task UnTagTournamentMatchFromStatLog(string statLogID)
         {
             var logIndex = _dataContext.GetStatLogIndexEntry(statLogID);
             if (logIndex == null) return;
+
             logIndex.UnTagTournamentMatch();
             await _dataContext.SaveAndReloadStatLogIndexFile();
+
+            // Update or remove from tournament_stat_tags.json
+            var statLog = await _dataContext.LoadStatLogByID(statLogID);
+            if (statLog != null)
+            {
+                var tag = _dataContext.GetTournamentStatTag(statLog.FileName);
+                if (tag != null)
+                {
+                    if (tag.IsAdminIgnored)
+                    {
+                        // Still has ignore state — only clear tournament fields
+                        tag.TournamentId = string.Empty;
+                        tag.MatchId = string.Empty;
+                        tag.TournamentName = null;
+                        tag.TaggedAt = default;
+                        await _dataContext.UpsertTournamentStatTag(tag);
+                    }
+                    else
+                    {
+                        // No remaining admin state — remove the entry entirely
+                        await _dataContext.RemoveTournamentStatTag(statLog.FileName);
+                    }
+                }
+            }
         }
         #endregion
 
@@ -793,6 +924,24 @@ namespace FlawsFightNight.Services
                 .Where(f => f?.PlayerProfile != null && !_ratingsMapper.IsAlias(f.PlayerProfile.Guid))
                 .Select(f => f.PlayerProfile)
                 .ToList();
+        }
+
+        public List<UT2004PlayerProfile> GetAllPlayerProfiles()
+        {
+            return _dataContext.UT2004PlayerProfileFiles
+                .Where(f => f?.PlayerProfile != null)
+                .Select(f => f.PlayerProfile)
+                .ToList();
+        }
+
+        public UT2004PlayerProfile? GetPlayerProfileByGuid(string guid)
+        {
+            string resolvedGuid = _ratingsMapper.Resolve(guid);
+
+            return _dataContext.UT2004PlayerProfileFiles
+                .Where(f => f?.PlayerProfile != null)
+                .Select(f => f.PlayerProfile)
+                .FirstOrDefault(p => p.Guid.Equals(resolvedGuid, StringComparison.OrdinalIgnoreCase));
         }
 
         public async Task<List<string>> GetTournamentStatLogIdsByGuids(List<string> guids)
@@ -854,6 +1003,229 @@ namespace FlawsFightNight.Services
             }
 
             return results;
+        }
+        #endregion
+
+        public async Task SendTextFileDM(ulong discordId, string fileName, string content)
+        {
+            var user = await _client.GetUserAsync(discordId) as SocketUser;
+            if (user == null) return;
+
+            var dmChannel = await user.CreateDMChannelAsync();
+            var bytes = Encoding.UTF8.GetBytes(content);
+            var attachment = new FileAttachment(new MemoryStream(bytes), fileName);
+            try
+            {
+                await dmChannel.SendFileAsync(attachment);
+            }
+            finally
+            {
+                attachment.Dispose();
+            }
+        }
+
+        #region Elo Tracing
+        private record EloTraceEntry(
+            DateTime MatchDate,
+            string StatLogId,
+            string ServerName,
+            string PlayerName,
+            int Score,
+            int Kills,
+            int Deaths,
+            bool IsWinner,
+            int ObjStat,
+            double EloBefore,
+            double EloAfter,
+            double Change);
+
+        /// <summary>
+        /// Replays all <paramref name="gameMode"/> matches chronologically and returns a
+        /// formatted per-match ELO trace for the given GUID.
+        /// Alias GUIDs are resolved to their primary before the replay.
+        /// Opponent ratings are accurate because every human player is carried through the
+        /// replay — only the isolated profiles dictionary is mutated, not the live database.
+        /// </summary>
+        public async Task<string> GetPlayerEloTrace(string guid, UT2004GameMode gameMode)
+        {
+            var resolvedGuid = _ratingsMapper.Resolve(guid);
+
+            if (_dataContext.StatLogIndexFile == null)
+                await _dataContext.LoadStatLogIndexFile();
+
+            var allMatchStats = await GetAllProcessedStatLogs();
+
+            var chronologicalMatches = allMatchStats
+                .Where(m => !IsStatLogIgnored(m.Id) && m.IsAllowedByAdmin && m.GameMode == gameMode)
+                .OrderBy(m => m.MatchDate)
+                .ToList();
+
+            if (chronologicalMatches.Count == 0)
+                return $"No {gameMode} matches found in the database.";
+
+            // Isolated replay — never touches live database profiles
+            var profiles = new Dictionary<string, UT2004PlayerProfile>(StringComparer.OrdinalIgnoreCase);
+            var traceEntries = new List<EloTraceEntry>();
+
+            foreach (var match in chronologicalMatches)
+            {
+                // Seed profiles for every human player in this match
+                foreach (var team in match.Players)
+                {
+                    foreach (var p in team.Where(p => !p.IsBot && !string.IsNullOrEmpty(p.Guid)))
+                    {
+                        var rg = _ratingsMapper.Resolve(p.Guid!);
+                        if (!profiles.ContainsKey(rg))
+                            profiles[rg] = new UT2004PlayerProfile(rg);
+                    }
+                }
+
+                // Find target player's stats in this match before mutating anything
+                UTPlayerMatchStats? targetStats = null;
+                foreach (var team in match.Players)
+                {
+                    targetStats = team.FirstOrDefault(p =>
+                        !p.IsBot &&
+                        !string.IsNullOrEmpty(p.Guid) &&
+                        _ratingsMapper.Resolve(p.Guid!).Equals(resolvedGuid, StringComparison.OrdinalIgnoreCase));
+                    if (targetStats != null) break;
+                }
+
+                // Snapshot ELO before this match
+                double eloBefore = 0.0;
+                if (targetStats != null && profiles.TryGetValue(resolvedGuid, out var tpSnap))
+                {
+                    eloBefore = gameMode switch
+                    {
+                        UT2004GameMode.iCTF => tpSnap.CaptureTheFlagElo.Rating,
+                        UT2004GameMode.TAM => tpSnap.TAMElo.Rating,
+                        UT2004GameMode.iBR => tpSnap.BombingRunElo.Rating,
+                        _ => 0.0
+                    };
+                }
+
+                // Stats must be updated before ELO so MinRankMatches gating mirrors SetupPlayerProfiles
+                foreach (var team in match.Players)
+                {
+                    foreach (var p in team.Where(p => !p.IsBot && !string.IsNullOrEmpty(p.Guid)))
+                    {
+                        var rg = _ratingsMapper.Resolve(p.Guid!);
+                        profiles[rg].UpdateStatsFromMatch(p, match.GameMode, match.MatchDate);
+                    }
+                }
+
+                _eloService.UpdateRatingsForMatch(match, profiles);
+
+                if (targetStats != null && profiles.TryGetValue(resolvedGuid, out var tpAfter))
+                {
+                    double eloAfter = gameMode switch
+                    {
+                        UT2004GameMode.iCTF => tpAfter.CaptureTheFlagElo.Rating,
+                        UT2004GameMode.TAM => tpAfter.TAMElo.Rating,
+                        UT2004GameMode.iBR => tpAfter.BombingRunElo.Rating,
+                        _ => 0.0
+                    };
+
+                    int objStat = gameMode switch
+                    {
+                        UT2004GameMode.iCTF => targetStats.FlagCaptures,
+                        UT2004GameMode.iBR => targetStats.BallCaptures,
+                        UT2004GameMode.TAM => targetStats.TotalDamageDealt,
+                        _ => 0
+                    };
+
+                    traceEntries.Add(new EloTraceEntry(
+                        MatchDate: match.MatchDate,
+                        StatLogId: match.Id,
+                        ServerName: match.ServerName ?? "Unknown",
+                        PlayerName: targetStats.LastKnownName ?? resolvedGuid,
+                        Score: targetStats.Score,
+                        Kills: targetStats.Kills,
+                        Deaths: targetStats.Deaths,
+                        IsWinner: targetStats.IsWinner,
+                        ObjStat: objStat,
+                        EloBefore: eloBefore,
+                        EloAfter: eloAfter,
+                        Change: eloAfter - eloBefore
+                    ));
+                }
+            }
+
+            if (traceEntries.Count == 0)
+                return $"No {gameMode} matches found for GUID {resolvedGuid}.";
+
+            profiles.TryGetValue(resolvedGuid, out var finalProfile);
+
+            double currentElo = finalProfile != null ? gameMode switch
+            {
+                UT2004GameMode.iCTF => finalProfile.CaptureTheFlagElo.Rating,
+                UT2004GameMode.TAM => finalProfile.TAMElo.Rating,
+                UT2004GameMode.iBR => finalProfile.BombingRunElo.Rating,
+                _ => 0.0
+            } : 0.0;
+
+            double peakElo = finalProfile != null ? gameMode switch
+            {
+                UT2004GameMode.iCTF => finalProfile.CaptureTheFlagElo.Peak,
+                UT2004GameMode.TAM => finalProfile.TAMElo.Peak,
+                UT2004GameMode.iBR => finalProfile.BombingRunElo.Peak,
+                _ => 0.0
+            } : 0.0;
+
+            DateTime? peakDate = finalProfile != null ? gameMode switch
+            {
+                UT2004GameMode.iCTF => finalProfile.CaptureTheFlagElo.PeakDate,
+                UT2004GameMode.TAM => finalProfile.TAMElo.PeakDate,
+                UT2004GameMode.iBR => finalProfile.BombingRunElo.PeakDate,
+                _ => null
+            } : null;
+
+            string displayName = traceEntries[^1].PlayerName;
+            int wins = traceEntries.Count(e => e.IsWinner);
+            int losses = traceEntries.Count - wins;
+            double startElo = traceEntries[0].EloBefore;
+            double netChange = currentElo - startElo;
+
+            string objLabel = gameMode switch
+            {
+                UT2004GameMode.iCTF => "FC",
+                UT2004GameMode.iBR => "BC",
+                UT2004GameMode.TAM => "DMG",
+                _ => "Obj"
+            };
+
+            const string sep = "--------------------------------------------------------------------------------------------------------------------------------------";
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"=== ELO Trace — {displayName} | {gameMode} ===");
+            sb.AppendLine($"GUID      : {resolvedGuid}");
+            foreach (var aliasGuid in _ratingsMapper.GetAliasesForPrimary(resolvedGuid))
+                sb.AppendLine($"Alias GUID: {aliasGuid}");
+            sb.AppendLine($"Matches   : {traceEntries.Count} ({wins}W / {losses}L)");
+            sb.AppendLine($"ELO Now   : {currentElo:F1}   |   Peak: {peakElo:F1}{(peakDate.HasValue ? $" ({peakDate.Value:yyyy-MM-dd})" : "")}");
+            sb.AppendLine($"Net Delta : {netChange:+0.0;-0.0}   (start: {startElo:F1}  →  end: {currentElo:F1})");
+            sb.AppendLine();
+            sb.AppendLine($"{"#",-5} {"Date",-12} {"Stat Log ID",-14} {"Server",-24} {"Name",-20} {"R",-3} {"Score",-7} {"K/D",-9} {objLabel,-8} {"Before",-10} {"Δ",-10} After");
+            sb.AppendLine(sep);
+
+            int matchNum = 0;
+            foreach (var e in traceEntries)
+            {
+                matchNum++;
+                string server = e.ServerName.Length > 22 ? e.ServerName[..22] : e.ServerName;
+                string name = e.PlayerName.Length > 18 ? e.PlayerName[..18] : e.PlayerName;
+                string kd = $"{e.Kills}/{e.Deaths}";
+                string obj = $"{objLabel}:{e.ObjStat}";
+                string change = e.Change >= 0.0 ? $"+{e.Change:F1}" : $"{e.Change:F1}";
+                string note = Math.Abs(e.Change) < 0.001 ? " [no change]" : string.Empty;
+
+                sb.AppendLine($"{matchNum,-5} {e.MatchDate:yyyy-MM-dd}  {e.StatLogId,-14} {server,-24} {name,-20} {(e.IsWinner ? "W" : "L"),-3} {e.Score,-7} {kd,-9} {obj,-8} {e.EloBefore,-10:F1} {change,-10} {e.EloAfter:F1}{note}");
+            }
+
+            sb.AppendLine(sep);
+            sb.AppendLine($"{"TOTAL",-5} {"",-12} {"",-14} {"",-24} {"",-20} {$"{wins}W/{losses}L",-3} {"",-7} {"",-9} {"",-8} {startElo,-10:F1} {$"{netChange:+0.0;-0.0}",-10} {currentElo:F1}");
+
+            return sb.ToString();
         }
         #endregion
     }

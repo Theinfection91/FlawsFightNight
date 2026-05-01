@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
+using FlawsFightNight.Core.Models.UT2004;
 using FlawsFightNight.IO.Models;
 using FlawsFightNight.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +39,7 @@ namespace FlawsFightNight.Bot.Autocomplete
         private List<FTPCredential> _ftpCredentials = new();
         private List<MemberProfile> _memberProfiles = new();
         private List<string> _adminIgnoredLogs = new();
+        private List<StatLogIndexEntry> _adminIgnoredLogEntries = new();
 
 
         public AutocompleteCache(AdminConfigurationService adminConfigService, MatchService matchService, TeamService teamService, TournamentService tournamentService, MemberService memberService, UT2004StatsService ut2004StatsService)
@@ -68,7 +70,7 @@ namespace FlawsFightNight.Bot.Autocomplete
             _allTeams = _teamService.GetAllTeams();
             _ftpCredentials = _adminConfigService.GetFTPCredentials()!;
             _memberProfiles = _memberService.GetAllMemberProfiles();
-            _adminIgnoredLogs = _ut2004StatsService.GetAdminIgnoredLogs()!;
+            _adminIgnoredLogEntries = _ut2004StatsService.GetAdminIgnoredLogEntries();
         }
 
         public List<AutocompleteResult> GetMatchIdsMatchingInput(string input)
@@ -436,20 +438,20 @@ namespace FlawsFightNight.Bot.Autocomplete
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(input))
-                {
-                    return _adminIgnoredLogs
-                        .OrderBy(log => log)
-                        .Select(log => new AutocompleteResult(log, log))
-                        .ToList();
-                }
-                // Filter ignored logs based on the input (case-insensitive)
-                var matchingLogs = _adminIgnoredLogs
-                    .Where(log => log.Contains(input, StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(log => log)
-                    .Select(log => new AutocompleteResult(log, log))
+                var entries = _ut2004StatsService.GetAdminIgnoredLogEntries();
+
+                IEnumerable<StatLogIndexEntry> filtered = string.IsNullOrWhiteSpace(input)
+                    ? entries
+                    : entries.Where(e =>
+                        e.Id.Contains(input, StringComparison.OrdinalIgnoreCase) ||
+                        (e.ServerName != null && e.ServerName.Contains(input, StringComparison.OrdinalIgnoreCase)));
+
+                return filtered
+                    .OrderBy(e => e.MatchDate)
+                    .Select(e => new AutocompleteResult(
+                        $"{e.Id} — {e.ServerName ?? "Unknown"} | {e.MatchDate:yyyy-MM-dd HH:mm}",
+                        e.Id))
                     .ToList();
-                return matchingLogs;
             }
             catch (Exception ex)
             {
