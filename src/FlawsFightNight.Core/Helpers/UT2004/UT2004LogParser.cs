@@ -187,6 +187,31 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             return sb.ToString();
         }
 
+        private static string FixMojibake(string input)
+        {
+            // If the string contains no Latin-1 bytes above 0x7F that decode as UTF-8, return as-is.
+            try
+            {
+                byte[] latin1Bytes = Encoding.Latin1.GetBytes(input);
+                // Attempt to decode the raw bytes as UTF-8 - if it roundtrips cleanly, it was UTF-8
+                string utf8Attempt = Encoding.UTF8.GetString(latin1Bytes);
+                // Only use the UTF-8 result if it differs and has fewer replacement chars
+                if (utf8Attempt != input && !utf8Attempt.Contains('\uFFFD'))
+                    return utf8Attempt;
+            }
+            catch { }
+            return input;
+        }
+
+        private static bool IsValidPlayerName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
+            if (name.All(char.IsDigit))
+                return false;
+            return true;
+        }
+
         private void ClearMatchState()
         {
             _activePlayersBySeqNum.Clear();
@@ -317,6 +342,13 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             if (_activePlayersBySeqNum.TryGetValue(seqNum, out var player))
             {
+                string rawName = parts.Length >= 5 ? parts[4] : string.Empty;
+                string fixedName = FixMojibake(rawName);
+
+                if (IsValidPlayerName(fixedName))
+                    player.LastKnownName = fixedName;
+
+
                 // Check if this player already exists by GUID (reconnect scenario)
                 if (_activePlayersByGuid.TryGetValue(playerGuid, out var existingPlayer))
                 {
@@ -475,10 +507,14 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     {
                         if (_activePlayersBySeqNum.TryGetValue(seqNc, out var player))
                         {
-                            string oldName = player.LastKnownName;
-                            player.LastKnownName = parts[4];
-                            if (_expandedDebugLogging)
-                                Console.WriteLine($"Player (SeqNum: {seqNc}) changed name: {oldName} → {player.LastKnownName}");
+                            string newName = FixMojibake(parts[4]);
+                            if (IsValidPlayerName(newName))
+                            {
+                                string oldName = player.LastKnownName;
+                                player.LastKnownName = newName;
+                                if (_expandedDebugLogging)
+                                    Console.WriteLine($"Player (SeqNum: {seqNc}) changed name: {oldName} → {player.LastKnownName}");
+                            }
                         }
                     }
                     break;
