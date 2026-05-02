@@ -118,7 +118,7 @@ namespace FlawsFightNight.Services
                 {
                     if (!IsClientsConfigured)
                     {
-                        _logger.LogWarning("FTP clients are not configured. Skipping FTP processing...");
+                        //_logger.LogWarning("FTP clients are not configured. Skipping FTP processing...");
                         await Task.Delay(TimeSpan.FromSeconds(15), token);
                         continue;
                     }
