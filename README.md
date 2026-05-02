@@ -10,12 +10,12 @@
 - **Player Profile Tracking**: Register your UT2004 GUID to link your player profile with your Discord account
 - **Multi-Mode Leaderboards**: Real-time player rankings across **iCTF**, **TAM**, **iBR**, and **General** game modes
 - **FTP Server Integration**: Automatic stat syncing from UT2004 game servers for live player metrics
-- **Elo Rating System**: OpenSkill-based rating calculations per game mode with historical trace data
+- **Elo Rating System**: Elo-based rating calculations per game mode with historical trace data (Inspired by UTStatsDB Elo System)
 
 ### ⚡ Advanced Player Analytics
 - **Player Comparison**: Side-by-side comparison of two players' UT2004 statistics
-- **Win Probability Calculator**: Predict match outcomes between tournament teams based on OpenSkill ratings
-- **Team Suggestion Engine**: Balanced team recommendations for 2v2 up to 5v5 based on player ratings
+- **Win Probability Calculator**: Predict match outcomes between tournament teams powered by OpenSkill
+- **Team Suggestion Engine**: Balanced team recommendations for 2v2 up to 5v5 powered by OpenSkill
 - **Match Summary Reports**: Detailed breakdowns of individual UT2004 matches with stat logs
 - **Tournament Match History**: Track all UT2004 matches linked to tournament play with automatic tagging
 
