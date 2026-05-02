@@ -1,0 +1,44 @@
+﻿using FlawsFightNight.Core.Attributes;
+using FlawsFightNight.Core.Enums.UT2004;
+using FlawsFightNight.Core.Models.Stats;
+using System;
+using System.Collections.Generic;
+
+namespace FlawsFightNight.Core.Models.UT2004
+{
+    [SafeForSerialization]
+    public class UT2004StatLog : StatLog
+    {
+        public string Id { get; set; }
+        public string? FileName { get; set; }
+        public DateTime MatchDate { get; set; }
+        public UT2004GameMode GameMode { get; set; }
+        public string GameModeName => GetCorrectGameModeName();
+        public string MapId { get; set; } 
+        public string MapName { get; set; }
+        public string MapCreator { get; set; }
+        public List<List<UTPlayerMatchStats>> Players { get; set; } = new();
+        public Dictionary<string, Dictionary<string, int>> KillMatch { get; set; } = new();
+        public List<MatchEvent> Timeline { get; set; } = new();
+        public Dictionary<int, int> TeamScores { get; set; } = new();
+        public string? MatchSummary { get; set; }
+        public int MatchDurationSeconds { get; set; }
+
+        public UT2004StatLog() { }
+
+        public string GetCorrectGameModeName()
+        {
+            switch (GameMode)
+            {
+                case UT2004GameMode.iCTF:
+                    return "iCTF";
+                case UT2004GameMode.TAM:
+                    return "TAM";
+                case UT2004GameMode.iBR:
+                    return "iBR";
+                default:
+                    return "Unknown";
+            }
+        }
+    }
+}

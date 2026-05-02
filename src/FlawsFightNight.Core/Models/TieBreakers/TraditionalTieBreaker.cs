@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Interfaces;
+﻿using FlawsFightNight.Core.Attributes;
+using FlawsFightNight.Core.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.TieBreakers
 {
+    [SafeForSerialization]
     public class TraditionalTieBreaker : ITieBreakerRule
     {
         public string Name => "Traditional";

@@ -2,8 +2,9 @@
 using Discord.Interactions;
 using FlawsFightNight.Bot.Autocomplete;
 using FlawsFightNight.Bot.Modals;
-using FlawsFightNight.Bot.PreconditionAttributes;
-using FlawsFightNight.CommandsLogic.TeamCommands;
+using FlawsFightNight.Bot.Attributes;
+using FlawsFightNight.Commands.TeamCommands;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,23 +16,24 @@ namespace FlawsFightNight.Bot.SlashCommands
     [Group("team", "Commands related to teams like creating, removal, etc.")]
     public class TeamCommands : InteractionModuleBase<SocketInteractionContext>
     {
-        private AutocompleteCache _autocompleteCache;
-        private RegisterTeamLogic _registerTeamLogic;
-        private SetTeamRankLogic _setTeamRankLogic;
+        private readonly AutocompleteCache _autocompleteCache;
+        private readonly RegisterTeamHandler _registerTeamLogic;
+        private readonly SetTeamRankHandler _setTeamRankLogic;
+        private readonly ILogger<TeamCommands> _logger;
 
-        public TeamCommands(AutocompleteCache autocompleteCache, RegisterTeamLogic registerTeamLogic, SetTeamRankLogic setTeamRankLogic)
+        public TeamCommands(AutocompleteCache autocompleteCache, RegisterTeamHandler registerTeamLogic, SetTeamRankHandler setTeamRankLogic, ILogger<TeamCommands> logger)
         {
             _autocompleteCache = autocompleteCache;
             _registerTeamLogic = registerTeamLogic;
             _setTeamRankLogic = setTeamRankLogic;
+            _logger = logger;
         }
 
         [SlashCommand("register", "Register a new team for a chosen Tournament")]
         [RequireGuildAdmin]
         public async Task RegisterTeamAsync(
             [Summary("name", "The name of the team")] string name,
-            [Summary("tournament_id", "The ID of the tournament to register for"), Autocomplete(typeof(TournamentIdAutocomplete))
-            ] string tournamentId,
+            [Summary("tournament_id", "The ID of the tournament to register for"), Autocomplete(typeof(TournamentIdAutocomplete))] string tournamentId,
             [Summary("member1", "A member to add to the team.")] IUser member1,
             [Summary("member2", "A member to add to the team.")] IUser? member2 = null,
             [Summary("member3", "A member to add to the team.")] IUser? member3 = null,
@@ -82,14 +84,14 @@ namespace FlawsFightNight.Bot.SlashCommands
                 if (member19 != null) members.Add(member19);
                 if (member20 != null) members.Add(member20);
 
-                var result = _registerTeamLogic.RegisterTeamProcess(name, tournamentId, members);
+                var result = await _registerTeamLogic.RegisterTeamProcess(name, tournamentId, members);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
 
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(RegisterTeamAsync));
                 await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -104,7 +106,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(DeleteTeamAsync));
                 await RespondAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -118,13 +120,13 @@ namespace FlawsFightNight.Bot.SlashCommands
             try
             {
                 await DeferAsync();
-                var result = _setTeamRankLogic.SetTeamRankProcess(teamName, rank);
+                var result = await _setTeamRankLogic.SetTeamRankProcess(teamName, rank);
                 await FollowupAsync(embed: result);
-                _autocompleteCache.UpdateCache();
+                _autocompleteCache.Update();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Command Error: {ex}");
+                _logger.LogError(ex, "Command error in {Command}.", nameof(SetTeamRankAsync));
                 await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
             }
         }
@@ -132,34 +134,81 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("add", "Commands related to addings things to a team.")]
         public class TeamAddCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private AutocompleteCache _autocompleteCache;
-            private AddTeamLossLogic _addTeamLossLogic;
-            private AddTeamWinLogic _addTeamWinLogic;
-            private AddTeamMemberLogic _addTeamMemberLogic;
-            public TeamAddCommands(AutocompleteCache autocompleteCache, AddTeamLossLogic addTeamLossLogic, AddTeamWinLogic addTeamWinLogic, AddTeamMemberLogic addTeamMemberLogic)
+            private readonly AutocompleteCache _autocompleteCache;
+            private readonly AddTeamLossHandler _addTeamLossLogic;
+            private readonly AddTeamWinHandler _addTeamWinLogic;
+            private readonly AddTeamMemberHandler _addTeamMemberLogic;
+            private readonly ILogger<TeamAddCommands> _logger;
+
+            public TeamAddCommands(AutocompleteCache autocompleteCache, AddTeamLossHandler addTeamLossLogic, AddTeamWinHandler addTeamWinLogic, AddTeamMemberHandler addTeamMemberLogic, ILogger<TeamAddCommands> logger)
             {
                 _autocompleteCache = autocompleteCache;
                 _addTeamLossLogic = addTeamLossLogic;
                 _addTeamWinLogic = addTeamWinLogic;
                 _addTeamMemberLogic = addTeamMemberLogic;
+                _logger = logger;
             }
 
             [SlashCommand("member", "Add a member to an existing team.")]
             [RequireGuildAdmin]
             public async Task AddMemberAsync(
-                [Summary("team_name", "The name of the team to add a member to.")] string teamName,
-                [Summary("member", "The member to add to the team.")] IUser member)
+                [Summary("team_name", "The name of the team to add a member to."), Autocomplete(typeof(MemberAddRemoveAutocomplete))] string teamName,
+                [Summary("member1", "A member to add to the team.")] IUser member1,
+                [Summary("member2", "A member to add to the team.")] IUser? member2 = null,
+                [Summary("member3", "A member to add to the team.")] IUser? member3 = null,
+                [Summary("member4", "A member to add to the team.")] IUser? member4 = null,
+                [Summary("member5", "A member to add to the team.")] IUser? member5 = null,
+                [Summary("member6", "A member to add to the team.")] IUser? member6 = null,
+                [Summary("member7", "A member to add to the team.")] IUser? member7 = null,
+                [Summary("member8", "A member to add to the team.")] IUser? member8 = null,
+                [Summary("member9", "A member to add to the team.")] IUser? member9 = null,
+                [Summary("member10", "A member to add to the team.")] IUser? member10 = null,
+                [Summary("member11", "A member to add to the team.")] IUser? member11 = null,
+                [Summary("member12", "A member to add to the team.")] IUser? member12 = null,
+                [Summary("member13", "A member to add to the team.")] IUser? member13 = null,
+                [Summary("member14", "A member to add to the team.")] IUser? member14 = null,
+                [Summary("member15", "A member to add to the team.")] IUser? member15 = null,
+                [Summary("member16", "A member to add to the team.")] IUser? member16 = null,
+                [Summary("member17", "A member to add to the team.")] IUser? member17 = null,
+                [Summary("member18", "A member to add to the team.")] IUser? member18 = null,
+                [Summary("member19", "A member to add to the team.")] IUser? member19 = null,
+                [Summary("member20", "A member to add to the team.")] IUser? member20 = null)
             {
                 try
                 {
                     await DeferAsync();
-                    //var result = ;
-                    //await RespondAsync(embed: result);
-                    await FollowupAsync("Not yet implemented.");
+
+                    // Initialize the list of members
+                    var members = new List<IUser>() { member1 };
+
+                    // Add members to the list if they are not null
+                    if (member2 != null) members.Add(member2);
+                    if (member3 != null) members.Add(member3);
+                    if (member4 != null) members.Add(member4);
+                    if (member5 != null) members.Add(member5);
+                    if (member6 != null) members.Add(member6);
+                    if (member7 != null) members.Add(member7);
+                    if (member8 != null) members.Add(member8);
+                    if (member9 != null) members.Add(member9);
+                    if (member10 != null) members.Add(member10);
+                    if (member11 != null) members.Add(member11);
+                    if (member12 != null) members.Add(member12);
+                    if (member13 != null) members.Add(member13);
+                    if (member14 != null) members.Add(member14);
+                    if (member15 != null) members.Add(member15);
+                    if (member16 != null) members.Add(member16);
+                    if (member17 != null) members.Add(member17);
+                    if (member18 != null) members.Add(member18);
+                    if (member19 != null) members.Add(member19);
+                    if (member20 != null) members.Add(member20);
+
+                    var result = await _addTeamMemberLogic.AddTeamMemberProcess(teamName, members);
+                    await FollowupAsync(embed: result);
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(AddMemberAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -173,13 +222,13 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _addTeamWinLogic.AddTeamWinProcess(teamName, number_of_wins);
+                    var result = await _addTeamWinLogic.AddTeamWinProcess(teamName, number_of_wins);
                     await FollowupAsync(embed: result);
-                    _autocompleteCache.UpdateCache();
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(AddWinAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -193,13 +242,13 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _addTeamLossLogic.AddLossProcess(teamName, number_of_losses);
+                    var result = await _addTeamLossLogic.AddLossProcess(teamName, number_of_losses);
                     await FollowupAsync(embed: result);
-                    _autocompleteCache.UpdateCache();
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(AddLossAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -208,34 +257,81 @@ namespace FlawsFightNight.Bot.SlashCommands
         [Group("remove", "Commands related to removing things to a team.")]
         public class TeamRemoveCommands : InteractionModuleBase<SocketInteractionContext>
         {
-            private AutocompleteCache _autocompleteCache;
-            private RemoveTeamLossLogic _removeTeamLossLogic;
-            private RemoveTeamWinLogic _removeTeamWinLogic;
-            private RemoveTeamMemberLogic _removeTeamMemberLogic;
-            public TeamRemoveCommands(AutocompleteCache autocompleteCache, RemoveTeamLossLogic removeTeamLossLogic, RemoveTeamWinLogic removeTeamWinLogic, RemoveTeamMemberLogic removeTeamMemberLogic)
+            private readonly AutocompleteCache _autocompleteCache;
+            private readonly RemoveTeamLossHandler _removeTeamLossLogic;
+            private readonly RemoveTeamWinHandler _removeTeamWinLogic;
+            private readonly RemoveTeamMemberHandler _removeTeamMemberLogic;
+            private readonly ILogger<TeamRemoveCommands> _logger;
+
+            public TeamRemoveCommands(AutocompleteCache autocompleteCache, RemoveTeamLossHandler removeTeamLossLogic, RemoveTeamWinHandler removeTeamWinLogic, RemoveTeamMemberHandler removeTeamMemberLogic, ILogger<TeamRemoveCommands> logger)
             {
                 _autocompleteCache = autocompleteCache;
                 _removeTeamLossLogic = removeTeamLossLogic;
                 _removeTeamWinLogic = removeTeamWinLogic;
                 _removeTeamMemberLogic = removeTeamMemberLogic;
+                _logger = logger;
             }
 
             [SlashCommand("member", "Add a member to an existing team.")]
             [RequireGuildAdmin]
             public async Task RemoveMemberAsync(
-                [Summary("team_name", "The name of the team to add a member to.")] string teamName,
-                [Summary("member", "The member to add to the team.")] IUser member)
+                [Summary("team_name", "The name of the team to remove a member from."), Autocomplete(typeof(MemberAddRemoveAutocomplete))] string teamName,
+                [Summary("member1", "A member to remove from the team.")] IUser member1,
+                [Summary("member2", "A member to remove from the team.")] IUser? member2 = null,
+                [Summary("member3", "A member to remove from the team.")] IUser? member3 = null,
+                [Summary("member4", "A member to remove from the team.")] IUser? member4 = null,
+                [Summary("member5", "A member to remove from the team.")] IUser? member5 = null,
+                [Summary("member6", "A member to remove from the team.")] IUser? member6 = null,
+                [Summary("member7", "A member to remove from the team.")] IUser? member7 = null,
+                [Summary("member8", "A member to remove from the team.")] IUser? member8 = null,
+                [Summary("member9", "A member to remove from the team.")] IUser? member9 = null,
+                [Summary("member10", "A member to remove from the team.")] IUser? member10 = null,
+                [Summary("member11", "A member to remove from the team.")] IUser? member11 = null,
+                [Summary("member12", "A member to remove from the team.")] IUser? member12 = null,
+                [Summary("member13", "A member to remove from the team.")] IUser? member13 = null,
+                [Summary("member14", "A member to remove from the team.")] IUser? member14 = null,
+                [Summary("member15", "A member to remove from the team.")] IUser? member15 = null,
+                [Summary("member16", "A member to remove from the team.")] IUser? member16 = null,
+                [Summary("member17", "A member to remove from the team.")] IUser? member17 = null,
+                [Summary("member18", "A member to remove from the team.")] IUser? member18 = null,
+                [Summary("member19", "A member to remove from the team.")] IUser? member19 = null,
+                [Summary("member20", "A member to remove from the team.")] IUser? member20 = null)
             {
                 try
                 {
                     await DeferAsync();
-                    //var result = ;
-                    //await RespondAsync(embed: result);
-                    await FollowupAsync("Not yet implemented.");
+
+                    // Initialize the list of members
+                    var members = new List<IUser>() { member1 };
+
+                    // Add members to the list if they are not null
+                    if (member2 != null) members.Add(member2);
+                    if (member3 != null) members.Add(member3);
+                    if (member4 != null) members.Add(member4);
+                    if (member5 != null) members.Add(member5);
+                    if (member6 != null) members.Add(member6);
+                    if (member7 != null) members.Add(member7);
+                    if (member8 != null) members.Add(member8);
+                    if (member9 != null) members.Add(member9);
+                    if (member10 != null) members.Add(member10);
+                    if (member11 != null) members.Add(member11);
+                    if (member12 != null) members.Add(member12);
+                    if (member13 != null) members.Add(member13);
+                    if (member14 != null) members.Add(member14);
+                    if (member15 != null) members.Add(member15);
+                    if (member16 != null) members.Add(member16);
+                    if (member17 != null) members.Add(member17);
+                    if (member18 != null) members.Add(member18);
+                    if (member19 != null) members.Add(member19);
+                    if (member20 != null) members.Add(member20);
+
+                    var result = await _removeTeamMemberLogic.RemoveTeamMemberProcess(teamName, members);
+                    await FollowupAsync(embed: result);
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveMemberAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -249,13 +345,13 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _removeTeamWinLogic.RemoveWinProcess(teamName, number_of_wins);
+                    var result = await _removeTeamWinLogic.RemoveWinProcess(teamName, number_of_wins);
                     await FollowupAsync(embed: result);
-                    _autocompleteCache.UpdateCache();
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveWinAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -269,13 +365,13 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync();
-                    var result = _removeTeamLossLogic.RemoveLossProcess(teamName, number_of_losses);
+                    var result = await _removeTeamLossLogic.RemoveLossProcess(teamName, number_of_losses);
                     await FollowupAsync(embed: result);
-                    _autocompleteCache.UpdateCache();
+                    _autocompleteCache.Update();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Command Error: {ex}");
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RemoveLossAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }

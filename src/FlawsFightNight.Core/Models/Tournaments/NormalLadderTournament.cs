@@ -1,4 +1,5 @@
-﻿using FlawsFightNight.Core.Enums;
+﻿using FlawsFightNight.Core.Attributes;
+using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Helpers;
 using FlawsFightNight.Core.Interfaces;
 using FlawsFightNight.Core.Models.MatchLogs;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace FlawsFightNight.Core.Models.Tournaments
 {
+    [SafeForSerialization]
     public class NormalLadderTournament : Tournament, INormalLadderRankSystem
     {
         public override TournamentType Type { get; protected set; } = TournamentType.NormalLadder;

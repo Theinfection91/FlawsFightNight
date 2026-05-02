@@ -3,7 +3,9 @@ using Discord.WebSocket;
 using FlawsFightNight.Core.Enums;
 using FlawsFightNight.Core.Models;
 using FlawsFightNight.Core.Models.Tournaments;
-using FlawsFightNight.Managers;
+using FlawsFightNight.Core.Models.UT2004;
+using FlawsFightNight.IO.Models;
+using FlawsFightNight.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -15,10 +17,12 @@ namespace FlawsFightNight.Bot.Autocomplete
 {
     public class AutocompleteCache
     {
-        // Add Managers as needed here
-        private MatchManager _matchManager;
-        private TeamManager _teamManager;
-        private TournamentManager _tournamentManager;
+        private readonly AdminConfigurationService _adminConfigService;
+        private readonly MatchService _matchService;
+        private readonly TeamService _teamService;
+        private readonly TournamentService _tournamentService;
+        private readonly MemberService _memberService;
+        private readonly UT2004StatsService _ut2004StatsService;
 
         // Autocomplete Data
         private List<Match> _allMatches = new();
@@ -31,37 +35,46 @@ namespace FlawsFightNight.Bot.Autocomplete
         private List<Team> _ladderTeams = new();
         private List<Team> _roundBasedTeams = new();
         private List<Team> _roundRobinTeams = new();
+        private List<Team> _allTeams = new();
+        private List<FTPCredential> _ftpCredentials = new();
+        private List<MemberProfile> _memberProfiles = new();
+        private List<string> _adminIgnoredLogs = new();
+        private List<StatLogIndexEntry> _adminIgnoredLogEntries = new();
 
 
-        public AutocompleteCache(MatchManager matchManager, TeamManager teamManager, TournamentManager tournamentManager)
+        public AutocompleteCache(AdminConfigurationService adminConfigService, MatchService matchService, TeamService teamService, TournamentService tournamentService, MemberService memberService, UT2004StatsService ut2004StatsService)
         {
-            // Initialize Managers here
-            _matchManager = matchManager;
-            _teamManager = teamManager;
-            _tournamentManager = tournamentManager;
-
+            _adminConfigService = adminConfigService;
+            _matchService = matchService;
+            _teamService = teamService;
+            _tournamentService = tournamentService;
+            _memberService = memberService;
+            _ut2004StatsService = ut2004StatsService;
             // Initialize Autocomplete Data
-            UpdateCache();
+            Update();
         }
 
-        public void UpdateCache()
+        public void Update()
         {
-            // Refresh autocomplete data from managers
-            _allMatches = _matchManager.GetAllActiveMatches();
-            _allPostMatches = _matchManager.GetAllPostMatches();
-            _roundRobinPostMatches = _matchManager.GetAllRoundRobinPostMatches();
-            _allTournaments = _tournamentManager.GetAllTournaments();
-            _ladderTournaments = _tournamentManager.GetAllLadderTournaments();
-            _roundRobinTournaments = _tournamentManager.GetAllRoundRobinTournaments();
-            //_eliminationTournaments = _tournamentManager.GetAllEliminationTournaments();
-            _ladderTeams = _teamManager.GetAllLadderTeams();
-            _roundRobinTeams = _teamManager.GetAllRoundRobinTeams();
-            _roundBasedTeams = _teamManager.GetAllRoundBasedTeams();
+            // Refresh autocomplete data from services
+            _allMatches = _matchService.GetAllActiveMatches();
+            _allPostMatches = _matchService.GetAllPostMatches();
+            _roundRobinPostMatches = _matchService.GetAllRoundRobinPostMatches();
+            _allTournaments = _tournamentService.GetAllTournaments();
+            _ladderTournaments = _tournamentService.GetAllLadderTournaments();
+            _roundRobinTournaments = _tournamentService.GetAllRoundRobinTournaments();
+            //_eliminationTournaments = _tournamentService.GetAllEliminationTournaments();
+            _ladderTeams = _teamService.GetAllLadderTeams();
+            _roundRobinTeams = _teamService.GetAllRoundRobinTeams();
+            _roundBasedTeams = _teamService.GetAllRoundBasedTeams();
+            _allTeams = _teamService.GetAllTeams();
+            _ftpCredentials = _adminConfigService.GetFTPCredentials()!;
+            _memberProfiles = _memberService.GetAllMemberProfiles();
+            _adminIgnoredLogEntries = _ut2004StatsService.GetAdminIgnoredLogEntries();
         }
 
         public List<AutocompleteResult> GetMatchIdsMatchingInput(string input)
         {
-            // If the input is empty or only whitespace, return all matches sorted by tournament name and then match ID
             if (string.IsNullOrWhiteSpace(input))
             {
                 return _allMatches
@@ -70,18 +83,17 @@ namespace FlawsFightNight.Bot.Autocomplete
                     .Select(match =>
                     {
                         var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches().Any(m => m.Id == match.Id));
-                        string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
-                        return new AutocompleteResult($"#{match.Id} | {match.TeamA} vs {match.TeamB} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedType()})", match.Id);
+                        string tournamentName = tournament?.Name ?? "Unknown Tournament";
+                        return new AutocompleteResult($"#{match.Id} | {match.TeamA} vs {match.TeamB} - {tournamentName} ({tournament?.TeamSizeFormat} {tournament?.GetFormattedType()})", match.Id);
                     })
                     .ToList();
             }
 
-            // Filter matches based on the input (case-insensitive)
             var matchingMatches = _allMatches
                 .Where(match =>
                 {
                     var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches().Any(m => m.Id == match.Id));
-                    string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
+                    string tournamentName = tournament?.Name ?? "Unknown Tournament";
                     return match.Id.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            match.TeamA.Contains(input, StringComparison.OrdinalIgnoreCase) ||
                            match.TeamB.Contains(input, StringComparison.OrdinalIgnoreCase) ||
@@ -92,8 +104,8 @@ namespace FlawsFightNight.Bot.Autocomplete
                 .Select(match =>
                 {
                     var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches().Any(m => m.Id == match.Id));
-                    string tournamentName = tournament != null ? tournament.Name : "Unknown Tournament";
-                    return new AutocompleteResult($"#{match.Id} | {match.TeamA} vs {match.TeamB} - {tournamentName} ({tournament.TeamSizeFormat} {tournament.GetFormattedType()})", match.Id);
+                    string tournamentName = tournament?.Name ?? "Unknown Tournament";
+                    return new AutocompleteResult($"#{match.Id} | {match.TeamA} vs {match.TeamB} - {tournamentName} ({tournament?.TeamSizeFormat} {tournament?.GetFormattedType()})", match.Id);
                 })
                 .ToList();
 
@@ -157,25 +169,22 @@ namespace FlawsFightNight.Bot.Autocomplete
         {
             var match = _allMatches.FirstOrDefault(m => m.Id == matchId);
             if (match == null)
-            {
                 return new List<AutocompleteResult>();
-            }
-            // Grab teams - concat all team sources
+
             var teamA = _ladderTeams.Concat(_roundBasedTeams).Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == match.TeamA);
             var teamB = _ladderTeams.Concat(_roundBasedTeams).Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == match.TeamB);
 
-            // Grab tournament
             var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllActiveMatches().Any(m => m.Id == match.Id));
+            string tournamentLabel = tournament != null
+                ? $"{tournament.Name} {tournament.TeamSizeFormat} {tournament.GetFormattedType()}"
+                : "Unknown Tournament";
 
             var results = new List<AutocompleteResult>();
             if (teamA != null)
-            {
-                results.Add(new AutocompleteResult($"{teamA.Name} - ({tournament.Name} {tournament.TeamSizeFormat} {tournament.GetFormattedType()})", teamA.Name));
-            }
+                results.Add(new AutocompleteResult($"{teamA.Name} - ({tournamentLabel})", teamA.Name));
             if (teamB != null)
-            {
-                results.Add(new AutocompleteResult($"{teamB.Name} - ({tournament.Name} {tournament.TeamSizeFormat} {tournament.GetFormattedType()})", teamB.Name));
-            }
+                results.Add(new AutocompleteResult($"{teamB.Name} - ({tournamentLabel})", teamB.Name));
+
             return results;
         }
 
@@ -183,25 +192,22 @@ namespace FlawsFightNight.Bot.Autocomplete
         {
             var postMatch = _allPostMatches.FirstOrDefault(pm => pm.Id == postMatchId);
             if (postMatch == null)
-            {
                 return new List<AutocompleteResult>();
-            }
-            // Grab teams - concat all team sources
+
             var originalWinner = _ladderTeams.Concat(_roundBasedTeams).Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == postMatch.Winner);
             var originalLoser = _ladderTeams.Concat(_roundBasedTeams).Concat(_roundRobinTeams).FirstOrDefault(t => t.Name == postMatch.Loser);
 
-            // Grab tournament
             var tournament = _allTournaments.FirstOrDefault(t => t.MatchLog.GetAllPostMatches().Any(pm => pm.Id == postMatch.Id));
+            string tournamentLabel = tournament != null
+                ? $"{tournament.Name} {tournament.TeamSizeFormat} {tournament.GetFormattedType()}"
+                : "Unknown Tournament";
 
             var results = new List<AutocompleteResult>();
             if (originalWinner != null)
-            {
-                results.Add(new AutocompleteResult($"{originalWinner.Name} - ({tournament.Name} {tournament.TeamSizeFormat} {tournament.GetFormattedType()})", originalWinner.Name));
-            }
+                results.Add(new AutocompleteResult($"{originalWinner.Name} - ({tournamentLabel})", originalWinner.Name));
             if (originalLoser != null)
-            {
-                results.Add(new AutocompleteResult($"{originalLoser.Name} - ({tournament.Name} {tournament.TeamSizeFormat} {tournament.GetFormattedType()})", originalLoser.Name));
-            }
+                results.Add(new AutocompleteResult($"{originalLoser.Name} - ({tournamentLabel})", originalLoser.Name));
+
             return results;
         }
 
@@ -209,11 +215,11 @@ namespace FlawsFightNight.Bot.Autocomplete
         {
             // Get all teams from all tournaments
             // If the input is empty or only whitespace, return all teams sorted alphabetically
-            // Must use the cache data and not call the manager directly
+            // Must use the cache data and not call the services directly
             if (string.IsNullOrWhiteSpace(input))
             {
                 return _ladderTeams
-                    //.OrderBy(team => _tournamentManager.GetTournamentFromTeamName(team.Name).Name)
+                    //.OrderBy(team => _tournamentService.GetTournamentFromTeamName(team.Name).Name)
                     .OrderBy(team => _ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.Name)
                     .ThenBy(team => team.Rank)
                     .Select(team => new AutocompleteResult($"#{team.Rank} | {team.Name} - {_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.Name} ({_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.TeamSizeFormat} {_ladderTournaments.Where(t => t.Teams.Contains(team)).FirstOrDefault()?.GetFormattedType()})", team.Name))
@@ -340,6 +346,161 @@ namespace FlawsFightNight.Bot.Autocomplete
                 .Select(tournament => new AutocompleteResult($"{tournament.Name} - ({tournament.TeamSizeFormat} {tournament.GetFormattedType()})", tournament.Id))
                 .ToList();
             return matchingTournaments;
+        }
+
+        public List<AutocompleteResult> GetFTPCredentialsMatchingInput(string input)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    return _ftpCredentials
+                        .OrderBy(cred => cred.ServerName)
+                        .Select(cred => new AutocompleteResult($"{cred.ServerName} ({cred.IPAddress}:{cred.Port})", cred.ServerName))
+                        .ToList();
+                }
+                // Filter FTP credentials based on the input (case-insensitive)
+                var matchingCredentials = _ftpCredentials
+                    .Where(cred => cred.ServerName.Contains(input, StringComparison.OrdinalIgnoreCase) || cred.Username.Contains(input, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(cred => cred.ServerName)
+                    .Select(cred => new AutocompleteResult($"{cred.ServerName} ({cred.IPAddress}:{cred.Port})", cred.ServerName))
+                    .ToList();
+                return matchingCredentials;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating FTP credential suggestions: {ex.Message}");
+                return new List<AutocompleteResult>();
+            }
+        }
+
+        public List<AutocompleteResult> GetAllTeams(string input)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    return _allTeams
+                        .OrderBy(team => team.Name)
+                        .Select(team => new AutocompleteResult(team.Name, team.Name))
+                        .ToList();
+                }
+                // Filter all teams based on the input (case-insensitive)
+                var matchingTeams = _allTeams
+                    .Where(team => team.Name.Contains(input, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(team => team.Name)
+                    .Select(team => new AutocompleteResult(team.Name, team.Name))
+                    .ToList();
+                return matchingTeams;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating teams for add/remove member suggestions: {ex.Message}");
+                return new List<AutocompleteResult>();
+            }
+        }
+
+        public List<AutocompleteResult> GetMemberUT2004Guids(ulong discordId)
+        {
+            try
+            {
+                if (discordId == 0)
+                {
+                    return new List<AutocompleteResult>();
+                }
+
+                // Prefer the cached member profiles; fall back to service lookup if missing
+                var profile = _memberProfiles.FirstOrDefault(p => p.DiscordId == discordId)
+                              ?? _memberService.GetMemberProfile(discordId);
+
+                if (profile == null || profile.RegisteredUT2004GUIDs == null || profile.RegisteredUT2004GUIDs.Count == 0)
+                    return new List<AutocompleteResult>();
+
+                // Show GUIDs with a small hint for the primary (index 0 = oldest/primary)
+                var results = profile.RegisteredUT2004GUIDs
+                    .Select((g, idx) =>
+                    {
+                        var label = idx == 0 ? $"{g} (primary)" : g;
+                        return new AutocompleteResult(label, g);
+                    })
+                    .ToList();
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating UT2004 GUID suggestions: {ex.Message}");
+                return new List<AutocompleteResult>();
+            }
+        }
+
+        public List<AutocompleteResult> GetAllAdminIgnoredLogs(string input)
+        {
+            try
+            {
+                var entries = _ut2004StatsService.GetAdminIgnoredLogEntries();
+
+                IEnumerable<StatLogIndexEntry> filtered = string.IsNullOrWhiteSpace(input)
+                    ? entries
+                    : entries.Where(e =>
+                        e.Id.Contains(input, StringComparison.OrdinalIgnoreCase) ||
+                        (e.ServerName != null && e.ServerName.Contains(input, StringComparison.OrdinalIgnoreCase)));
+
+                return filtered
+                    .OrderBy(e => e.MatchDate)
+                    .Select(e => new AutocompleteResult(
+                        $"{e.Id} — {e.ServerName ?? "Unknown"} | {e.MatchDate:yyyy-MM-dd HH:mm}",
+                        e.Id))
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating admin ignored logs suggestions: {ex.Message}");
+                return new List<AutocompleteResult>();
+            }
+        }
+
+        public List<AutocompleteResult> GetMatchesForTagging(string tournamentId, string input)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(tournamentId))
+                {
+                    // If no tournament is selected yet, return none or you could optionally list all. 
+                    // Returning an instructive empty result or a message instructing to pick a tournament is good UX.
+                    return new List<AutocompleteResult>();
+                }
+
+                var tournament = _allTournaments.FirstOrDefault(t => t.Id == tournamentId);
+                if (tournament == null) 
+                    return new List<AutocompleteResult>();
+
+                var postMatches = tournament.MatchLog.GetAllPostMatches();
+
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    return postMatches
+                        .OrderBy(postMatch => postMatch.Id)
+                        .Select(postMatch => new AutocompleteResult($"#{postMatch.Id} | {postMatch.Winner} vs {postMatch.Loser}", postMatch.Id))
+                        .Take(25)
+                        .ToList();
+                }
+
+                // Filter post-matches based on the input (case-insensitive)
+                return postMatches
+                    .Where(postMatch => postMatch.Id.Contains(input, StringComparison.OrdinalIgnoreCase) ||
+                                        postMatch.Winner.Contains(input, StringComparison.OrdinalIgnoreCase) ||
+                                        postMatch.Loser.Contains(input, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(postMatch => postMatch.Id)
+                    .Select(postMatch => new AutocompleteResult($"#{postMatch.Id} | {postMatch.Winner} vs {postMatch.Loser}", postMatch.Id))
+                    .Take(25)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating matches for tagging suggestions: {ex.Message}");
+                return new List<AutocompleteResult>();
+            }
         }
     }
 }

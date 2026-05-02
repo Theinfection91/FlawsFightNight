@@ -12,5 +12,6 @@
     </None>
     <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
+    <None Include="src\FlawsFightNight.Core.Helpers.UT2004\UT2004LogParser.cs" />
   </ItemGroup>
 </Project>

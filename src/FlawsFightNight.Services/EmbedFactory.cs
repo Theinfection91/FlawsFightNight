@@ -1,0 +1,2000 @@
+﻿using Discord;
+using Discord.Interactions;
+using FlawsFightNight.Core.Enums;
+using FlawsFightNight.Core.Enums.UT2004;
+using FlawsFightNight.Core.Interfaces;
+using FlawsFightNight.Core.Models;
+using FlawsFightNight.Core.Models.MatchLogs;
+using FlawsFightNight.Core.Models.Tournaments;
+using FlawsFightNight.Core.Models.UT2004;
+using FlawsFightNight.Services.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+
+namespace FlawsFightNight.Services
+{
+    public partial class EmbedFactory
+    {
+        public EmbedFactory() { }
+
+        public Embed GenericEmbed(string title, string description, Color color, string footer = "Flaws Fight Night", bool includeTimestamp = true)
+        {
+            var embedBuilder = new EmbedBuilder()
+                .WithTitle(title)
+                .WithDescription(description)
+                .WithColor(color)
+                .WithFooter(footer);
+            if (includeTimestamp)
+            {
+                embedBuilder.WithTimestamp(DateTimeOffset.Now);
+            }
+            return embedBuilder.Build();
+        }
+
+        public Embed ToDoEmbed(string message = "This feature is not yet implemented.")
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🚧 Work In Progress")
+                .WithDescription(message)
+                .WithColor(Color.Orange)
+                .WithFooter("Feature coming soon!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed SuccessEmbed(string title, string description)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"✅ {title}")
+                .WithDescription(description)
+                .WithColor(Color.Green)
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed ErrorEmbed(string commandName, string message = "An unexpected error occurred.")
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚠️ {commandName} Error")
+                .WithDescription(message)
+                .WithColor(Color.Red)
+                .WithFooter("Please try again after correcting.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        #region Debug Admin Embeds
+        public Embed DebugAdminAddSuccess(ulong userId)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Debug Admin Added Successfully")
+                .WithDescription($"The user with ID **{userId}** has been successfully added as a Debug Admin.")
+                .WithColor(Color.Green)
+                .WithFooter("The user now has special permissions.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed DebugAdminRemoveSuccess(ulong userId)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Debug Admin Removed Successfully")
+                .WithDescription($"The user with ID **{userId}** has been successfully removed from the Debug Admin list.")
+                .WithColor(Color.Green)
+                .WithFooter("The user no longer has special permissions.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+        #endregion
+
+        #region LiveView Embeds
+        public Embed MatchesLiveViewResolver(Tournament tournament)
+        {
+            if (tournament is DSRLadderTournament dsrLadderTournament)
+            {
+                return DSRLadderMatchesLiveView(dsrLadderTournament);
+            }
+            if (tournament is NormalLadderTournament ladderTournament)
+            {
+                return NormalLadderMatchesLiveView(ladderTournament);
+            }
+            if (tournament is NormalRoundRobinTournament normalRoundRobinTournament)
+            {
+                return RoundRobinNormalMatchesLiveView(normalRoundRobinTournament);
+            }
+            if (tournament is OpenRoundRobinTournament openRoundRobinTournament)
+            {
+                return RoundRobinOpenMatchesLiveView(openRoundRobinTournament);
+            }
+            else
+            {
+                // Unknown tournament type handler - should never hit this
+                return ToDoEmbed();
+            }
+        }
+
+        private Embed DSRLadderMatchesLiveView(DSRLadderTournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} DSR Ladder Tournament Challenge Matches")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Total Teams: {tournament.Teams.Count}**\n")
+                .WithColor(Color.Orange)
+                .WithCurrentTimestamp();
+            // --- Pending Challenges ---
+            if (tournament.MatchLog.GetAllActiveMatches().Count > 0)
+            {
+                var challenges = tournament.MatchLog.GetAllActiveMatches()
+                    .Select(m => $"⚔️ *Match ID#: {m.Id}* | " +
+                                  $"(#{m.Challenge.ChallengerRank} - Rating: {m.Challenge.ChallengerRating}) **{m.Challenge.Challenger}** " +
+                                  $"has challenged (#{m.Challenge.ChallengedRank} - Rating: {m.Challenge.ChallengedRating}) **{m.Challenge.Challenged}**")
+                    .ToList();
+                AddMatchesInPages(embed, "⚔️ Pending Challenges", challenges);
+            }
+            else
+            {
+                embed.AddField("⚔️ Pending Challenges", "No pending challenges at the moment.", false);
+            }
+            // --- Previous Matches ---
+            if (tournament.MatchLog.GetAllPostMatches().Count > 0)
+            {
+                var matches = tournament.MatchLog.GetAllPostMatches()
+                    .Select(pm => $"✅ *Match ID#: {pm.Id}* | " +
+                                  $"**{pm.Winner}** defeated **{pm.Loser}** " +
+                                  $"by **{pm.WinnerScore}** to **{pm.LoserScore}** " +
+                                  $"\n{pm.GetRatingChangeText()}")
+                    .ToList();
+                AddMatchesInPages(embed, "📜 Previous Matches (Oldest to Newest)", matches);
+            }
+            else
+            {
+                embed.AddField("📜 Previous Matches", "No matches completed yet.", false);
+            }
+            return embed.Build();
+        }
+
+        private Embed NormalLadderMatchesLiveView(NormalLadderTournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Ladder Tournament Challenge Matches")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Total Teams: {tournament.Teams.Count}**\n")
+                .WithColor(Color.Orange)
+                .WithCurrentTimestamp();
+            // --- Pending Challenges ---
+            if (tournament.MatchLog.GetAllActiveMatches().Count > 0)
+            {
+                var challenges = tournament.MatchLog.GetAllActiveMatches()
+                    .Select(m => $"⚔️ *Match ID#: {m.Id}* | " +
+                                  $"(#{m.Challenge.ChallengerRank}) **{m.Challenge.Challenger}** " +
+                                  $"has challenged (#{m.Challenge.ChallengedRank}) **{m.Challenge.Challenged}**")
+                    .ToList();
+                AddMatchesInPages(embed, "⚔️ Pending Challenges", challenges);
+            }
+            else
+            {
+                embed.AddField("⚔️ Pending Challenges", "No pending challenges at the moment.", false);
+            }
+            // --- Previous Matches ---
+            if (tournament.MatchLog.GetAllPostMatches().Count > 0)
+            {
+                var matches = tournament.MatchLog.GetAllPostMatches()
+                    .Select(pm => $"✅ *Match ID#: {pm.Id}* | " +
+                                  $"**{pm.Winner}** defeated **{pm.Loser}** " +
+                                  $"by **{pm.WinnerScore}** to **{pm.LoserScore}** " +
+                                  $"\n{pm.GetRankTransitionText()}\n")
+                    .ToList();
+                AddMatchesInPages(embed, "📜 Previous Matches (Oldest to Newest)", matches);
+            }
+            else
+            {
+                embed.AddField("📜 Previous Matches", "No matches completed yet.", false);
+            }
+            return embed.Build();
+        }
+
+        private Embed RoundRobinOpenMatchesLiveView(OpenRoundRobinTournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Open Round Robin Tournament Matches")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Matches Remaining: {tournament.MatchLog.GetAllActiveMatches().Count}**\n")
+                .WithColor(Color.Orange)
+                .WithCurrentTimestamp();
+
+            // --- Matches To Play ---
+            if (tournament.MatchLog.GetAllActiveMatches().Count > 0)
+            {
+                var normalMatches = tournament.MatchLog.GetAllActiveMatches()
+                    .Where(m => !m.IsByeMatch)
+                    .Select(m => $"🔹 *Match ID#: {m.Id}* | **{m.TeamA}** vs **{m.TeamB}**");
+
+                var byeMatches = tournament.MatchLog.GetAllActiveMatches()
+                    .Where(m => m.IsByeMatch)
+                    .Select(m => $"💤 *Match ID#: {m.Id}* | *{m.GetCorrectByeNameForByeMatch()} Bye Match*");
+
+                var orderedMatches = normalMatches.Concat(byeMatches).ToList();
+
+                AddMatchesInPages(embed, "⚔️ Matches To Play", orderedMatches);
+            }
+            else
+            {
+                embed.AddField("⚔️ Matches To Play", "No matches left to play ✅", false);
+            }
+
+            // --- Previous Matches ---
+            if (tournament.MatchLog.GetAllPostMatches().Count > 0)
+            {
+                var matches = tournament.MatchLog.GetAllPostMatches()
+                    .Select(pm => pm.WasByeMatch
+                        ? $"💤 *{pm.Winner} Bye Match*"
+                        : $"✅ *Match ID#: {pm.Id}* | " +
+                          $"**{pm.Winner}** defeated **{pm.Loser}** " +
+                          $"by **{pm.WinnerScore}** to **{pm.LoserScore}**")
+                    .ToList();
+
+                AddMatchesInPages(embed, "📜 Previous Matches", matches);
+            }
+            else
+            {
+                embed.AddField("📜 Previous Matches", "No matches completed yet.", false);
+            }
+
+            return embed.Build();
+        }
+
+        /// <summary>
+        /// Splits a list of match strings into pages of 15 per embed field.
+        /// </summary>
+        private void AddMatchesInPages(EmbedBuilder embed, string fieldName, List<string> matches)
+        {
+            const int maxFieldLength = 1024;
+            var currentChunk = new StringBuilder();
+            int pageIndex = 0;
+
+            foreach (var match in matches)
+            {
+                if (currentChunk.Length + match.Length + 1 > maxFieldLength)
+                {
+                    // Add previous chunk
+                    embed.AddField(pageIndex == 0 ? fieldName : $"{fieldName} (cont.)", currentChunk.ToString(), false);
+                    pageIndex++;
+                    currentChunk.Clear();
+                }
+
+                if (currentChunk.Length > 0) currentChunk.Append("\n");
+                currentChunk.Append(match);
+            }
+
+            if (currentChunk.Length > 0)
+                embed.AddField(pageIndex == 0 ? fieldName : $"{fieldName} (cont.)", currentChunk.ToString(), false);
+        }
+
+
+        private Embed RoundRobinNormalMatchesLiveView(NormalRoundRobinTournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {tournament.Name} - {tournament.TeamSizeFormat} Normal Round Robin Tournament Matches")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Round {tournament.CurrentRound}/{tournament.TotalRounds ?? 0}**\n")
+                .WithColor(Color.Orange)
+                .WithCurrentTimestamp();
+
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && !tournament.CanEnd(out var errorReason))
+            {
+                embed.AddField("🔒 Locked", "Round is locked and ready to advance.", true);
+            }
+            if (tournament.IsRoundComplete && tournament.IsRoundLockedIn && tournament.CanEnd(out errorReason))
+            {
+                embed.AddField("🔒 Locked - Ready to end tournament 🏅", "Round is locked and the tournament is ready to end have the results locked in.", true);
+            }
+            if (tournament.IsRoundComplete && !tournament.IsRoundLockedIn)
+            {
+                embed.AddField("🔓 Unlocked", "Round is finished but unlocked. Lock to finalize results then advance.\n\nBye matches will be automatically reported on a successful use of the `/tournament next-round` command.", true);
+            }
+
+            // --- Matches To Play ---
+            if ((tournament.MatchLog as NormalRoundRobinMatchLog).MatchesToPlayByRound.TryGetValue(tournament.CurrentRound, out var matchesToPlay)
+                && matchesToPlay.Count > 0)
+            {
+                var sb = new StringBuilder();
+
+                // Normal matches first
+                foreach (var match in matchesToPlay.Where(m => !m.IsByeMatch))
+                {
+                    sb.AppendLine($"🔹 *Match ID#: {match.Id}* | **{match.TeamA}** vs **{match.TeamB}**");
+                }
+
+                // Bye matches after
+                foreach (var match in matchesToPlay.Where(m => m.IsByeMatch))
+                {
+                    sb.AppendLine($"💤 *{match.GetCorrectByeNameForByeMatch()} Bye Match*");
+                }
+
+                embed.AddField($"⚔️ Matches To Play (Round {tournament.CurrentRound})", sb.ToString(), false);
+            }
+            else
+            {
+                embed.AddField("⚔️ Matches To Play", "No matches left to play this round ✅", false);
+            }
+
+
+            // --- Past Matches (grouped by round) ---
+            if ((tournament.MatchLog as NormalRoundRobinMatchLog).PostMatchesByRound.Count > 0)
+            {
+                foreach (var round in (tournament.MatchLog as NormalRoundRobinMatchLog).PostMatchesByRound.OrderBy(kvp => kvp.Key))
+                {
+                    var sb = new StringBuilder();
+                    foreach (var postMatch in round.Value.OrderBy(pm => pm.CompletedOn))
+                    {
+                        if (postMatch.WasByeMatch)
+                            sb.AppendLine($"💤 *{postMatch.Winner} Bye Match*");
+                        else
+                            sb.AppendLine($"✅ *Match ID#: {postMatch.Id}* | " + $"**{postMatch.Winner}** defeated **{postMatch.Loser}** " + $"by **{postMatch.WinnerScore}** to **{postMatch.LoserScore}**");
+                    }
+
+                    embed.AddField($"📜 Previous Matches - Round {round.Key}", sb.ToString(), false);
+                }
+            }
+            else
+            {
+                embed.AddField("📜 Previous Matches", "No matches completed yet.", false);
+            }
+
+            return embed.Build();
+        }
+
+        public Embed StandingsLiveViewResolver(Tournament tournament)
+        {
+            if (tournament is DSRLadderTournament)
+            {
+                return DSRStandingsLiveView(tournament);
+            }
+            if (tournament is NormalLadderTournament)
+            {
+                return LadderStandingsLiveView(tournament);
+            }
+            if (tournament is NormalRoundRobinTournament or OpenRoundRobinTournament)
+            {
+                return RoundRobinStandingsLiveView(tournament);
+            }
+            else
+            {
+                // Unknown tournament type handler - should never hit this
+                return ToDoEmbed();
+            }
+        }
+
+        public Embed DSRStandingsLiveView(Tournament tournament)
+        {
+            DSRLadderTournament? dsrTournament = tournament as DSRLadderTournament;
+            var embed = new EmbedBuilder()
+                .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} DSR Ladder Tournament Standings")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Total Teams: {tournament.Teams.Count}**\n")
+                .WithColor(Color.Gold)
+                .WithCurrentTimestamp();
+            if (tournament.Teams.Count == 0)
+            {
+                embed.Description += "\n_No teams registered._";
+                return embed.Build();
+            }
+            foreach (var team in tournament.Teams.OrderBy(e => e.Rank))
+            {
+                var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndAgainst(team.Name);
+                embed.Description +=
+                    $"\n#{team.Rank} **{team.Name}**\n" +
+                    $"🏆 Rating: {team.Rating} - {dsrTournament.GetRankTitle(team.Rating)}\n" +
+                    $"✅ Wins: {team.Wins} | " +
+                    $"❌ Losses: {team.Losses} | " +
+                    $"{team.GetCorrectStreakEmoji()} W/L Streak: {team.GetFormattedStreakString()}\n" +
+                    //$"⭐ Points For: {pointsFor} | " +
+                    //$"🛡️ Points Against: {pointsAgainst}\n" +
+                    $"⚔️ Challenge Status: {team.GetFormattedChallengeStatus()}\n";
+            }
+            return embed.Build();
+        }
+
+        public Embed LadderStandingsLiveView(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} Ladder Tournament Standings")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Total Teams: {tournament.Teams.Count}**\n")
+                .WithColor(Color.Gold)
+                .WithCurrentTimestamp();
+            if (tournament.Teams.Count == 0)
+            {
+                embed.Description += "\n_No teams registered._";
+                return embed.Build();
+            }
+            foreach (var team in tournament.Teams.OrderBy(e => e.Rank))
+            {
+                //var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndPointsAgainstForTeam(team.Name);
+                embed.Description +=
+                    $"\n#{team.Rank} **{team.Name}**\n" +
+                    $"✅ Wins: {team.Wins} | " +
+                    $"❌ Losses: {team.Losses} | " +
+                    $"{team.GetCorrectStreakEmoji()} W/L Streak: {team.GetFormattedStreakString()}\n" +
+                    //$"⭐ Points For: {pointsFor} | " +
+                    //$"🛡️ Points Against: {pointsAgainst}\n" +
+                    $"Challenge Status: {team.GetFormattedChallengeStatus()}\n";
+            }
+            return embed.Build();
+        }
+
+        public Embed RoundRobinStandingsLiveView(Tournament tournament)
+        {
+            string displayRoundInfo = string.Empty;
+            if (tournament is IRoundBased roundBasedTournament)
+            {
+                displayRoundInfo = $"**Round {roundBasedTournament.CurrentRound}/{roundBasedTournament.TotalRounds ?? 0}**\n";
+            }
+            var embed = new EmbedBuilder()
+                .WithTitle($"📊 {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Tournament Standings")
+                .WithDescription($"*ID#: {tournament.Id}*\n{displayRoundInfo}")
+                .WithColor(Color.Gold)
+                .WithCurrentTimestamp();
+
+            if (tournament.Teams.Count == 0)
+            {
+                embed.Description += "\n_No teams registered._";
+                return embed.Build();
+            }
+
+            foreach (var team in tournament.Teams.OrderBy(e => e.Rank))
+            {
+                var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndAgainst(team.Name);
+
+                embed.Description +=
+                    $"\n#{team.Rank} **{team.Name}**\n" +
+                    $"✅ Wins: {team.Wins} | " +
+                    $"❌ Losses: {team.Losses} | " +
+                    $"{team.GetCorrectStreakEmoji()} W/L Streak: {team.GetFormattedStreakString()}\n" +
+                    $"⭐ Points For: {pointsFor} | " +
+                    $"🛡️ Points Against: {pointsAgainst}\n";
+            }
+
+            return embed.Build();
+        }
+
+        public Embed TeamsLiveView(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"👥 {tournament.Name} - {tournament.TeamSizeFormat} Tournament Teams")
+                .WithDescription($"*ID#: {tournament.Id}*\n**Total Teams: {tournament.Teams.Count}**\n")
+                .WithColor(Color.Blue)
+                .WithCurrentTimestamp();
+            if (tournament.Teams.Count == 0)
+            {
+                embed.Description += "\n_No teams have been registered yet._";
+                return embed.Build();
+            }
+
+            foreach (var team in tournament.Teams)
+            {
+                if (team != null)
+                {
+                    embed.Description +=
+                        $"\n**{team.Name}** (#{team.Rank})\n" +
+                        $"👤 Members: {string.Join(", ", team.Members.Select(m => m.DisplayName))}\n";
+                    // If Ladder Tournament, display challenge status
+                    if (tournament.Type == TournamentType.NormalLadder || tournament.Type == TournamentType.DSRLadder)
+                    {
+                        embed.Description += $"Challenge Status: {team.GetFormattedChallengeStatus()}\n";
+                    }
+                }
+            }
+            return embed.Build();
+        }
+
+        #endregion
+
+        #region Match Embeds
+
+        public Embed RoundRobinEditMatchSuccess(Tournament tournament, PostMatch match)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✏️ Match Edited Successfully")
+                .WithDescription($"The match between '**{match.Winner}**' and '**{match.Loser}**' has been successfully edited in **{tournament.Name}**.")
+                .AddField("Winning Team (Score)", $"{match.Winner} ({match.WinnerScore})")
+                .AddField("Losing Team (Score)", $"{match.Loser} ({match.LoserScore})")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("Match edited successfully.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed ReportWinSuccess(Tournament tournament, Match match, Team winningTeam, int winningTeamScore, Team losingTeam, int losingTeamScore, bool isGuildAdminReporting, int winningTeamRatingChange = 0, int losingTeamRatingChange = 0)
+        {
+            List<string> dsrMatchAchievements = new();
+            if (tournament is DSRLadderTournament dsrTournament)
+            {
+                dsrMatchAchievements = dsrTournament.GetMatchAchievements(winningTeam, losingTeam, winningTeamScore, losingTeamScore, winningTeamRatingChange, losingTeamRatingChange);
+            }
+
+            StringBuilder sb = new();
+            foreach (var achievement in dsrMatchAchievements)
+            {
+                sb.AppendLine(achievement);
+            }
+
+            string reporterText = isGuildAdminReporting
+                ? "An **admin** reported this match result."
+                : "The match result was reported normally.";
+
+            string achievementsText = sb.Length > 0 ? $"**🎉 Highlights**\n{sb}\n" : "";
+
+            var embed = new EmbedBuilder()
+                .WithTitle("🏆 Match Result Reported")
+                .WithDescription(
+                    $"{achievementsText}The match '**{match.TeamA} vs {match.TeamB}**' has been recorded in **{tournament.Name}**.\n\n{reporterText}"
+                )
+                .AddField("Winning Team (Score)", $"{winningTeam.Name} ({winningTeamScore})", true)
+                .AddField("Losing Team (Score)", $"{losingTeam.Name} ({losingTeamScore})", true)
+                .AddField("Tournament ID", tournament.Id, false)
+                .AddField("Match ID", match.Id, false)
+                .WithColor(Color.Green)
+                .WithFooter("Match result reported successfully.")
+                .WithTimestamp(DateTimeOffset.Now);
+
+            // Add DSR rating info if applicable
+            if (tournament is DSRLadderTournament)
+            {
+                string winnerChange = winningTeamRatingChange >= 0 ? $"+{winningTeamRatingChange}" : $"{winningTeamRatingChange}";
+                string loserChange = losingTeamRatingChange >= 0 ? $"+{losingTeamRatingChange}" : $"{losingTeamRatingChange}";
+
+                embed.AddField("⭐ Rating Changes",
+                    $"**{winningTeam.Name}:** {winningTeam.Rating - winningTeamRatingChange} → {winningTeam.Rating} ({winnerChange})\n" +
+                    $"**{losingTeam.Name}:** {losingTeam.Rating - losingTeamRatingChange} → {losingTeam.Rating} ({loserChange})",
+                    false);
+            }
+
+            return embed.Build();
+        }
+
+        #endregion
+
+        #region Challenge Embeds
+        public Embed SendChallengeSuccess(Tournament tournament, Match match, bool isGuildAdminReporting)
+        {
+            string reporterText = isGuildAdminReporting
+                ? "An **admin** sent this challenge."
+                : "This challenge was sent normally.";
+
+            var embed = new EmbedBuilder()
+                .WithTitle("🏅 Challenge Sent Successfully")
+                .WithDescription($"The challenge from (#{match.Challenge.ChallengerRank})**{match.Challenge.Challenger}** to (#{match.Challenge.ChallengedRank})**{match.Challenge.Challenged}** has been successfully sent in the tournament **{tournament.Name}**!\n\n{reporterText}")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match ID", match.Id)
+                .AddField("Challenger Team", match.Challenge.Challenger)
+                .AddField("Challenger Rank", $"#{match.Challenge.ChallengerRank}", true)
+                .AddField("Challenged Team", match.Challenge.Challenged)
+                .AddField("Challenged Rank", $"#{match.Challenge.ChallengedRank}", true)
+                .WithColor(Color.Green)
+                .WithFooter("Good luck to both teams!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed CancelChallengeSuccess(Tournament tournament, Match match, bool isGuildAdminReporting)
+        {
+            string reporterText = isGuildAdminReporting
+                ? "An **admin** canceled this challenge."
+                : "This challenge was canceled normally.";
+            var embed = new EmbedBuilder()
+                .WithTitle("🗑️ Challenge Canceled Successfully")
+                .WithDescription($"The challenge from (#{match.Challenge.ChallengerRank})**{match.Challenge.Challenger}** to (#{match.Challenge.ChallengedRank})**{match.Challenge.Challenged}** has been successfully canceled in the tournament **{tournament.Name}**.\n\n{reporterText}")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Challenger Team", match.Challenge.Challenger)
+                .AddField("Challenged Team", match.Challenge.Challenged)
+                .WithColor(Color.Green)
+                .WithFooter("The challenge has been canceled.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+        #endregion
+
+        #region Set LiveView Embeds
+        public Embed SetMatchesChannelSuccess(IMessageChannel channel, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Matches Channel Set Successfully")
+                .WithDescription($"The matches/challenges channel for the tournament **{tournament.Name}** has been successfully set to {channel.Name} (ID#: {channel.Id}).")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Matches/Challenges LiveView will now be posted in this channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveMatchesChannelSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Matches Channel Removed Successfully")
+                .WithDescription($"The matches/challenges channel for the tournament **{tournament.Name}** has been successfully removed. No channel is currently set.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Matches/Challenges LiveView will no longer be posted in a channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed SetStandingsChannelSuccess(IMessageChannel channel, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Standings Channel Set Successfully")
+                .WithDescription($"The standings channel for the tournament **{tournament.Name}** has been successfully set to {channel.Name} (ID#: {channel.Id}).")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Standings LiveView will now be posted in this channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveStandingsChannelSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Standings Channel Removed Successfully")
+                .WithDescription($"The standings channel for the tournament **{tournament.Name}** has been successfully removed. No channel is currently set.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Standings LiveView will no longer be posted in a channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed SetTeamsChannelSuccess(IMessageChannel channel, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Teams Channel Set Successfully")
+                .WithDescription($"The teams channel for the tournament **{tournament.Name}** has been successfully set to {channel.Name} (ID#: {channel.Id}).")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Teams LiveView will now be posted in this channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveTeamsChannelSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Teams Channel Removed Successfully")
+                .WithDescription($"The teams channel for the tournament **{tournament.Name}** has been successfully removed. No channel is currently set.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("The Teams LiveView will no longer be posted in a channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+        #endregion
+
+        #region Direct Message Notification Embeds
+        public Embed NormalRoundRobinMatchScheduleNotification(NormalRoundRobinTournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"📅 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Schedule")
+                .WithColor(Color.Gold)
+                .AddField("👥 Team", teamName, true)
+                .AddField("🏷️ Tournament ID", tournament.Id, true)
+                .AddField("🎯 Total Rounds", tournament.TotalRounds?.ToString() ?? "N/A", true);
+
+            var sb = new StringBuilder();
+            sb.AppendLine("**Your Match Schedule:**");
+            sb.AppendLine("────────────────────────");
+
+            foreach (var match in matches.OrderBy(m => m.RoundNumber))
+            {
+                if (match.IsByeMatch)
+                {
+                    sb.AppendLine($"`Round {match.RoundNumber}` - *Bye Match* 💤");
+                }
+                else
+                {
+                    sb.AppendLine($"`Round {match.RoundNumber}` - **{match.TeamA}** vs. **{match.TeamB}**");
+                }
+            }
+
+            embed.WithDescription(sb.ToString())
+                .WithFooter($"Scheduled for: {userName}")
+                .WithTimestamp(DateTimeOffset.Now);
+
+            return embed.Build();
+        }
+
+        public Embed OpenRoundRobinMatchScheduleNotification(Tournament tournament, List<Match> matches, string userName, ulong discordId, string teamName)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"📅 {tournament.Name} - {tournament.TeamSizeFormat} Round Robin Schedule")
+                .WithColor(Color.Gold)
+                .AddField("👥 Team", teamName, true)
+                .AddField("🏷️ Tournament ID", tournament.Id, true);
+
+            var sb = new StringBuilder();
+            sb.AppendLine("**Your Match Schedule:**");
+            sb.AppendLine("────────────────────────");
+
+            foreach (var match in matches.OrderBy(m => m.RoundNumber))
+            {
+                if (match.IsByeMatch)
+                {
+                    sb.AppendLine($"*Bye Match* 💤");
+                }
+                else
+                {
+                    sb.AppendLine($"**{match.TeamA}** vs. **{match.TeamB}**");
+                }
+            }
+
+            embed.WithDescription(sb.ToString())
+                .WithFooter($"Scheduled for: {userName}")
+                .WithTimestamp(DateTimeOffset.Now);
+
+            return embed.Build();
+        }
+
+        public Embed SendLadderChallengeMatchNotificationResolver(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        {
+            if (tournament is NormalLadderTournament)
+            {
+                return NormalLadderSendChallengeMatchNotification(tournament, challengerTeam, challengedTeam, isChallenger);
+            }
+            if (tournament is DSRLadderTournament)
+            {
+                return DSRLadderSendChallengeMatchNotification(tournament, challengerTeam, challengedTeam, isChallenger);
+            }
+            else
+            {
+                // Unknown tournament type handler - should never hit this
+                return ToDoEmbed();
+            }
+        }
+
+        public Embed CancelLadderChallengeMatchNotificationResolver(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        {
+            if (tournament is NormalLadderTournament)
+            {
+                return NormalLadderCancelChallengeMatchNotification(tournament, challengerTeam, challengedTeam, isChallenger);
+            }
+            if (tournament is DSRLadderTournament)
+            {
+                return DSRLadderCancelChallengeMatchNotification(tournament, challengerTeam, challengedTeam, isChallenger);
+            }
+            else
+            {
+                // Unknown tournament type handler - should never hit this
+                return ToDoEmbed();
+            }
+        }
+
+        private Embed NormalLadderSendChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        {
+            switch (isChallenger)
+            {
+                case true:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🏅 {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Notification")
+                            .WithColor(Color.Gold)
+                            .WithDescription($"Your team (#{challengerTeam.Rank})**{challengerTeam.Name}** has successfully sent a challenge to (#{challengedTeam.Rank})**{challengedTeam.Name}**!\n\nGood luck!")
+                            .AddField("👥 Your Team", challengerTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenged Team", challengedTeam.Name, true)
+                            .WithFooter("Challenge Sent")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+                case false:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🏅 {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Notification")
+                            .WithColor(Color.Gold)
+                            .WithDescription($"Your team (#{challengedTeam.Rank})**{challengedTeam.Name}** has received a challenge from (#{challengerTeam.Rank})**{challengerTeam.Name}**!\n\nGood luck!")
+                            .AddField("👥 Your Team", challengedTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenger Team", challengerTeam.Name, true)
+                            .WithFooter("Challenge Received")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+            }
+        }
+
+        private Embed NormalLadderCancelChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        {
+            switch (isChallenger)
+            {
+                case true:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🗑️ {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Canceled")
+                            .WithColor(Color.Orange)
+                            .WithDescription($"Your team (#{challengerTeam.Rank})**{challengerTeam.Name}** has canceled the challenge to (#{challengedTeam.Rank})**{challengedTeam.Name}**.")
+                            .AddField("👥 Your Team", challengerTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenged Team", challengedTeam.Name, true)
+                            .WithFooter("Challenge Canceled")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+                case false:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🗑️ {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Canceled")
+                            .WithColor(Color.Orange)
+                            .WithDescription($"The challenge from (#{challengerTeam.Rank})**{challengerTeam.Name}** to your team (#{challengedTeam.Rank})**{challengedTeam.Name}** has been canceled.")
+                            .AddField("👥 Your Team", challengedTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenger Team", challengerTeam.Name, true)
+                            .WithFooter("Challenge Canceled")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+            }
+        }
+
+        private Embed DSRLadderSendChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        {
+            switch (isChallenger)
+            {
+                case true:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🏅 {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Notification")
+                            .WithColor(Color.Gold)
+                            .WithDescription($"Your team [#{challengerTeam.Rank} - Rating: {challengerTeam.Rating}]**{challengerTeam.Name}** has successfully sent a challenge to [#{challengedTeam.Rank} - Rating: {challengedTeam.Rating}]**{challengedTeam.Name}**!\n\nGood luck!")
+                            .AddField("👥 Your Team", challengerTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenged Team", challengedTeam.Name, true)
+                            .WithFooter("Challenge Sent")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+                case false:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🏅 {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Notification")
+                            .WithColor(Color.Gold)
+                            .WithDescription($"Your team [#{challengedTeam.Rank} - Rating: {challengedTeam.Rating}]**{challengedTeam.Name}** has received a challenge from [#{challengerTeam.Rank} - Rating: {challengerTeam.Rating}]**{challengerTeam.Name}**!\n\nGood luck!")
+                            .AddField("👥 Your Team", challengedTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenger Team", challengerTeam.Name, true)
+                            .WithFooter("Challenge Received")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+            }
+        }
+
+        private Embed DSRLadderCancelChallengeMatchNotification(Tournament tournament, Team challengerTeam, Team challengedTeam, bool isChallenger)
+        {
+            switch (isChallenger)
+            {
+                case true:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🗑️ {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Canceled")
+                            .WithColor(Color.Orange)
+                            .WithDescription($"Your team [#{challengerTeam.Rank} - Rating: {challengerTeam.Rating}]**{challengerTeam.Name}** has canceled the challenge to [#{challengedTeam.Rank} - Rating: {challengedTeam.Rating}]**{challengedTeam.Name}**.")
+                            .AddField("👥 Your Team", challengerTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenged Team", challengedTeam.Name, true)
+                            .WithFooter("Challenge Canceled")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+                case false:
+                    {
+                        var embed = new EmbedBuilder()
+                            .WithTitle($"🗑️ {tournament.Name} - {tournament.TeamSizeFormat} {tournament.GetFormattedType()} Challenge Canceled")
+                            .WithColor(Color.Orange)
+                            .WithDescription($"The challenge from [#{challengerTeam.Rank} - Rating: {challengerTeam.Rating}]**{challengerTeam.Name}** to your team [#{challengedTeam.Rank} - Rating: {challengedTeam.Rating}]**{challengedTeam.Name}** has been canceled.")
+                            .AddField("👥 Your Team", challengedTeam.Name, true)
+                            .AddField("🏷️ Tournament ID", tournament.Id, true)
+                            .AddField("🏆 Challenger Team", challengerTeam.Name, true)
+                            .WithFooter("Challenge Canceled")
+                            .WithTimestamp(DateTimeOffset.Now);
+                        return embed.Build();
+                    }
+            }
+        }
+        #endregion
+
+        #region Team Embeds
+        public Embed TeamRegistrationSuccess(Team team, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🎉 Team Registered Successfully")
+                .WithDescription($"The team **{team.Name}** has been successfully registered in the **{tournament.GetFormattedType()}** tournament **{tournament.Name}**!")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Tournament Type", tournament.GetFormattedType())
+                .AddField("Members", string.Join(", ", team.Members.Select(m => m.DisplayName)))
+                .WithColor(Color.Green)
+                .WithFooter("Good luck to your team!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed TeamDeleteSuccess(Team team, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🗑️ Team Deleted Successfully")
+                .WithDescription($"The team **{team.Name}** has been successfully deleted from the tournament **{tournament.Name}**.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Members", string.Join(", ", team.Members.Select(m => m.DisplayName)))
+                .WithColor(Color.Green)
+                .WithFooter("The team has been deleted.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed AddTeamLossSuccess(Team team, Tournament tournament, int numberOfLosses)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("❌ Team Loss Recorded Successfully")
+                .WithDescription($"The team **{team.Name}** has been assigned **{numberOfLosses}** loss(es) in the tournament **{tournament.Name}**.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Total Losses", team.Losses)
+                .WithColor(Color.Green)
+                .WithFooter("The team's losses have been updated.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed AddTeamWinSuccess(Team team, Tournament tournament, int numberOfWins)
+        {
+            var embed = new EmbedBuilder()
+                 .WithTitle("✅ Team Win Recorded Successfully")
+                 .WithDescription($"The team **{team.Name}** has been assigned **{numberOfWins}** win(s) in the tournament **{tournament.Name}**.")
+                 .AddField("Tournament ID", tournament.Id)
+                 .AddField("Total Wins", team.Wins)
+                 .WithColor(Color.Green)
+                 .WithFooter("The team's wins have been updated.")
+                 .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveTeamWinSuccess(Team team, Tournament tournament, int numberOfWins)
+        {
+            var embed = new EmbedBuilder()
+                 .WithTitle("✅ Team Win(s) Removed Successfully")
+                 .WithDescription($"The team **{team.Name}** has had **{numberOfWins}** win(s) removed in the tournament **{tournament.Name}**.")
+                 .AddField("Tournament ID", tournament.Id)
+                 .AddField("Total Wins", team.Wins)
+                 .WithColor(Color.Green)
+                 .WithFooter("The team's wins have been updated.")
+                 .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveTeamLossSuccess(Team team, Tournament tournament, int numberOfLosses)
+        {
+            var embed = new EmbedBuilder()
+                 .WithTitle("✅ Team Loss(es) Removed Successfully")
+                 .WithDescription($"The team **{team.Name}** has had **{numberOfLosses}** loss(es) removed in the tournament **{tournament.Name}**.")
+                 .AddField("Tournament ID", tournament.Id)
+                 .AddField("Total Losses", team.Losses)
+                 .WithColor(Color.Green)
+                 .WithFooter("The team's losses have been updated.")
+                 .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed SetTeamRankSuccess(Team team, Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🏅 Team Rank Updated Successfully")
+                .WithDescription($"The team **{team.Name}** has been assigned a new rank of **#{team.Rank}** in the tournament **{tournament.Name}**. All other ranks have been adjusted accordingly.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("New Rank", $"#{team.Rank}")
+                .WithColor(Color.Green)
+                .WithFooter("The team's rank has been updated.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+        #endregion
+
+        #region Tournament Embeds
+        public Embed CreateTournamentSuccessResolver(Tournament tournament)
+        {
+            switch (tournament.Type)
+            {
+                case TournamentType.DSRLadder:
+                    return DSRLadderCreateTournamentSuccess((DSRLadderTournament)tournament);
+                case TournamentType.NormalLadder:
+                    return NormalLadderCreateTournamentSuccess((NormalLadderTournament)tournament);
+                case TournamentType.NormalRoundRobin:
+                    return NormalRoundRobinCreateTournamentSuccess((NormalRoundRobinTournament)tournament);
+                case TournamentType.OpenRoundRobin:
+                    return OpenRoundRobinCreateTournamentSuccess((OpenRoundRobinTournament)tournament);
+                default:
+                    // Unknown tournament type handler - should never hit this
+                    return ToDoEmbed();
+            }
+        }
+
+        public Embed DeleteTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🗑️ Tournament Deleted Successfully")
+                .WithDescription($"The tournament **{tournament.Name}** has been successfully deleted.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Type", tournament.Type.ToString())
+                .WithColor(Color.Green)
+                .WithFooter("The tournament has been deleted.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        private Embed NormalRoundRobinCreateTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🎉 Normal Round Robin Tournament Created")
+                .WithDescription($"A Normal Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nWith this Round Robin being *'Normal'* that means there will be the classic round structure of having every team play their match before the round can be advanced, calculating total rounds played based on total teams playing and also if teams play each other once or twice.\nDefault **Tie Breaker Rules** are *'Traditional'* meaning it looks at each of the following steps and if its a tie it checks the next: head to head matches, then point differential between tied teams, then total points scored vs tied teams, then total points overall, then least points against. If all is tied it comes down to a random 'coinflip' to determine the winner.\n\nDefault **Length** is **'Double Round Robin'** meaning every team plays twice.\n\nTo change the tie breaker rules or length, use **/tournament setup_round_robin** anytime before starting the tournament. If you intended for an open round robin then delete this tournament and create a new one as the appropriate type.\n\n**After the tournament starts you may not change any of these settings.\nApply setting changes now to be safe.**")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .WithColor(Color.Green)
+                .WithFooter("Let's get some teams registered to this tournament now.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        private Embed OpenRoundRobinCreateTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🎉 Open Round Robin Tournament Created")
+                .WithDescription($"An Open Round Robin tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nWith this Round Robin being *'Open'* that means there are no rounds or bye matches, and teams can report any of their matches at any time. This allows more flexibility in scheduling matches, allowing teams to play their two required matches back to back if need be.\n\nDefault **Tie Breaker Rules** are *'Traditional'* meaning it looks at each of the following steps and if its a tie it checks the next: head to head matches, then point differential between tied teams, then total points scored vs tied teams, then total points overall, then least points against. If all is tied it comes down to a random 'coinflip' to determine the winner.\n\nDefault **Length** is **'Double Round Robin'** meaning every team plays twice.\n\nTo change the tie breaker rules or length, use **/tournament setup_round_robin** anytime before starting the tournament. If you intended for a normal round robin then delete this tournament and create a new one as the appropriate type.\n\n**After the tournament starts you may not change any of these settings.\nApply setting changes now to be safe.**")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .WithColor(Color.Green)
+                .WithFooter("Let's get some teams registered to this tournament now.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        private Embed DSRLadderCreateTournamentSuccess(DSRLadderTournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🎉 DSR Ladder Tournament Created")
+                .WithDescription($"A DSR Ladder tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nDSR Ladders are *'Challenged Based'* and teams may challenge any other team that is in the tournament, as long as that team is not already involved in a challenge. Any rank can challenge any other rank, up or down. Instead of taking someone's position on win like a normal ladder tournament, DSR Ladders are rating based and are inspired by other elo-based systems. A team may only have one challenge sent out or be on the receiving end of a challenge, meaning if a team has been challenged they cannot be challenged again or send out their own challenge until the intial one is resolved.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .WithColor(Color.Green)
+                .WithFooter("Let's get some teams registered to this tournament now.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        private Embed NormalLadderCreateTournamentSuccess(NormalLadderTournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🎉 Normal Ladder Tournament Created")
+                .WithDescription($"A Normal Ladder tournament named **{tournament.Name}** has been successfully created!\n\nRemember the Tournament ID at the bottom for future commands.\n\nLadders are *'Challenged Based'*, meaning teams send out challenges but can only challenge teams ranked 2 spots above them, and may not challenge below their current rank. A team may only have one challenge sent out or be on the receiving end of a challenge meaning if a team has been challenged they cannot be challenged again or send out their own challenge until the intial one is resolved. If a challenging team wins, they take the spot of their opponent and the opponent drops down one rank. If a challenger loses, no rank change occurs.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .WithColor(Color.Green)
+                .WithFooter("Let's get some teams registered to this tournament now.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RoundRobinSetupTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("⚙️ Tournament Setup Success")
+                .WithDescription($"The Round Robin tournament **{tournament.Name}** has been successfully updated.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Tie Breaker Rules", (tournament as ITieBreakerRankSystem)?.TieBreakerRule.Name)
+                .AddField("Round Robin Type", (bool)((tournament as IRoundRobinLength)?.IsDoubleRoundRobin) ? RoundRobinLengthType.Double : RoundRobinLengthType.Single)
+                .WithColor(Color.Green)
+                .WithFooter("You can change the settings again anytime before starting.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed StartTournamentSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🏆 Tournament Started")
+                .WithDescription($"The {tournament.GetFormattedType()} Tournament **{tournament.Name}** has been successfully started!")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Match Format", tournament.TeamSizeFormat)
+                .AddField("Total Teams", tournament.Teams.Count)
+                .WithColor(Color.Green)
+                .WithFooter("Good luck to all teams!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed DSRLadderEndTournamentSuccess(Tournament tournament)
+        {
+            // Grab top 3 teams
+            Team? firstPlace = tournament.Teams.Count > 0 ? tournament.Teams.OrderBy(t => t.Rank).First() : null;
+            Team? secondPlace = tournament.Teams.Count > 1 ? tournament.Teams.OrderBy(t => t.Rank).Skip(1).First() : null;
+            Team? thirdPlace = tournament.Teams.Count > 2 ? tournament.Teams.OrderBy(t => t.Rank).Skip(2).First() : null;
+
+            // Grab member names for each team
+            string firstPlaceMembers = firstPlace.GetMembersAsString();
+            string secondPlaceMembers = secondPlace.GetMembersAsString();
+            string thirdPlaceMembers = thirdPlace.GetMembersAsString();
+
+            var embedBuilder = new EmbedBuilder()
+                .WithTitle("🏁 Ladder Ended")
+                .WithColor(Color.Gold)
+                .WithDescription($"The tournament **{tournament.Name}** ({tournament.TeamSizeFormat} {tournament.Type}) has officially ended.");
+
+            if (firstPlace != null)
+            {
+                embedBuilder.AddField("🏆 1st Place - Winner", $"{firstPlace.Name} | Rating {firstPlace.Rating}\n" +
+                                                                   $"**Wins**: {firstPlace.Wins} | **Losses**: {firstPlace.Losses}\n" +
+                                                                   $"**Members**: {firstPlaceMembers}", inline: false);
+            }
+
+            if (secondPlace != null)
+            {
+                embedBuilder.AddField("🥈 2nd Place", $"{secondPlace.Name} | Rating {secondPlace.Rating}\n" +
+                                                     $"**Wins**: {secondPlace.Wins} | **Losses**: {secondPlace.Losses}\n" +
+                                                     $"**Members**: {secondPlaceMembers}", inline: false);
+            }
+
+            if (thirdPlace != null)
+            {
+                embedBuilder.AddField("🥉 3rd Place", $"{thirdPlace.Name} | Rating {thirdPlace.Rating}\n" +
+                                                     $"**Wins**: {thirdPlace.Wins} | **Losses**: {thirdPlace.Losses}\n" +
+                                                     $"**Members**: {thirdPlaceMembers}", inline: false);
+            }
+
+            var remainingTeams = tournament.Teams.Except(new[] { firstPlace, secondPlace, thirdPlace }).OrderBy(t => t.Rank).ToList();
+            if (remainingTeams.Any())
+            {
+                var remainingTeamsInfo = new StringBuilder();
+                foreach (var team in remainingTeams)
+                {
+                    string members = team.GetMembersAsString();
+                    remainingTeamsInfo.AppendLine($"{team.Rank}. {team.Name} | Rating {team.Rating} | **Wins**: {team.Wins} | **Losses**: {team.Losses} | **Members**: {members}");
+                }
+                embedBuilder.AddField("🔹 Other Teams", remainingTeamsInfo.ToString(), inline: false);
+            }
+
+            // Footer and timestamp
+            embedBuilder.WithFooter("Thank you for participating!")
+                        .WithTimestamp(DateTimeOffset.Now);
+            return embedBuilder.Build();
+        }
+
+        public Embed NormalLadderEndTournamentSuccess(Tournament tournament)
+        {
+            // Grab top 3 teams
+            Team? firstPlace = tournament.Teams.Count > 0 ? tournament.Teams.OrderBy(t => t.Rank).First() : null;
+            Team? secondPlace = tournament.Teams.Count > 1 ? tournament.Teams.OrderBy(t => t.Rank).Skip(1).First() : null;
+            Team? thirdPlace = tournament.Teams.Count > 2 ? tournament.Teams.OrderBy(t => t.Rank).Skip(2).First() : null;
+
+            // Grab member names for each team
+            string firstPlaceMembers = firstPlace.GetMembersAsString();
+            string secondPlaceMembers = secondPlace.GetMembersAsString();
+            string thirdPlaceMembers = thirdPlace.GetMembersAsString();
+
+            var embedBuilder = new EmbedBuilder()
+                .WithTitle("🏁 Ladder Ended")
+                .WithColor(Color.Gold)
+                .WithDescription($"The tournament **{tournament.Name}** ({tournament.TeamSizeFormat} {tournament.Type}) has officially ended.");
+
+            if (firstPlace != null)
+            {
+                embedBuilder.AddField("🏆 1st Place - Winner", $"{firstPlace.Name}\n" +
+                                                                   $"**Wins**: {firstPlace.Wins} | **Losses**: {firstPlace.Losses}\n" +
+                                                                   $"**Members**: {firstPlaceMembers}", inline: false);
+            }
+
+            if (secondPlace != null)
+            {
+                embedBuilder.AddField("🥈 2nd Place", $"{secondPlace.Name}\n" +
+                                                     $"**Wins**: {secondPlace.Wins} | **Losses**: {secondPlace.Losses}\n" +
+                                                     $"**Members**: {secondPlaceMembers}", inline: false);
+            }
+
+            if (thirdPlace != null)
+            {
+                embedBuilder.AddField("🥉 3rd Place", $"{thirdPlace.Name}\n" +
+                                                     $"**Wins**: {thirdPlace.Wins} | **Losses**: {thirdPlace.Losses}\n" +
+                                                     $"**Members**: {thirdPlaceMembers}", inline: false);
+            }
+
+            var remainingTeams = tournament.Teams.Except(new[] { firstPlace, secondPlace, thirdPlace }).OrderBy(t => t.Rank).ToList();
+            if (remainingTeams.Any())
+            {
+                var remainingTeamsInfo = new StringBuilder();
+                foreach (var team in remainingTeams)
+                {
+                    string members = team.GetMembersAsString();
+                    remainingTeamsInfo.AppendLine($"{team.Rank}. {team.Name} - **Wins**: {team.Wins} | **Losses**: {team.Losses} | **Members**: {members}");
+                }
+                embedBuilder.AddField("🔹 Other Teams", remainingTeamsInfo.ToString(), inline: false);
+            }
+
+            // Footer and timestamp
+            embedBuilder.WithFooter("Thank you for participating!")
+                        .WithTimestamp(DateTimeOffset.Now);
+            return embedBuilder.Build();
+        }
+
+        public Embed RoundRobinEndTournamentSuccess(Tournament tournament, bool isTieBreakerNeeded = false, string tieBreakerInfo = null)
+        {
+            // Grab top 3 teams
+            Team? firstPlace = tournament.Teams.Count > 0 ? tournament.Teams.OrderBy(t => t.Rank).First() : null;
+            Team? secondPlace = tournament.Teams.Count > 1 ? tournament.Teams.OrderBy(t => t.Rank).Skip(1).First() : null;
+            Team? thirdPlace = tournament.Teams.Count > 2 ? tournament.Teams.OrderBy(t => t.Rank).Skip(2).First() : null;
+
+            // Grab member names
+            string firstPlaceMembers = firstPlace?.GetMembersAsString() ?? "";
+            string secondPlaceMembers = secondPlace?.GetMembersAsString() ?? "";
+            string thirdPlaceMembers = thirdPlace?.GetMembersAsString() ?? "";
+
+            var description = $"The tournament **{tournament.Name}** ({tournament.TeamSizeFormat} {tournament.GetFormattedType()}) has officially ended.";
+
+            if (isTieBreakerNeeded)
+            {
+                if (!string.IsNullOrWhiteSpace(tieBreakerInfo) && tieBreakerInfo.Length < 1000)
+                {
+                    // Safe to display directly in embed
+                    description += $"\n\n**⚠️ Tie-Breaker Details:**\n{tieBreakerInfo}";
+                }
+                else
+                {
+                    // Too long — mention that it’s attached
+                    description += "\n\n**⚠️ Tie-Breaker details are too long to display and have been attached as a file below.**";
+                }
+            }
+
+            var embedBuilder = new EmbedBuilder()
+                .WithTitle("🏁 Ladder Ended")
+                .WithColor(Color.Gold)
+                .WithDescription(description);
+
+            if (firstPlace != null)
+            {
+                embedBuilder.AddField("🏆 1st Place - Winner", $"{firstPlace.Name}\n" +
+                    $"**Wins**: {firstPlace.Wins} | **Losses**: {firstPlace.Losses}\n" +
+                    $"**Points For**: {tournament.MatchLog.GetPointsForAndAgainst(firstPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndAgainst(firstPlace.Name).Item2}\n" +
+                    $"**Members**: {firstPlaceMembers}", inline: false);
+            }
+
+            if (secondPlace != null)
+            {
+                embedBuilder.AddField("🥈 2nd Place", $"{secondPlace.Name}\n" +
+                    $"**Wins**: {secondPlace.Wins} | **Losses**: {secondPlace.Losses}\n" +
+                    $"**Points For**: {tournament.MatchLog.GetPointsForAndAgainst(secondPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndAgainst(secondPlace.Name).Item2}\n" +
+                    $"**Members**: {secondPlaceMembers}", inline: false);
+            }
+
+            if (thirdPlace != null)
+            {
+                embedBuilder.AddField("🥉 3rd Place", $"{thirdPlace.Name}\n" +
+                    $"**Wins**: {thirdPlace.Wins} | **Losses**: {thirdPlace.Losses}\n" +
+                    $"**Points For**: {tournament.MatchLog.GetPointsForAndAgainst(thirdPlace.Name).Item1} | **Points Against**: {tournament.MatchLog.GetPointsForAndAgainst(thirdPlace.Name).Item2}\n" +
+                    $"**Members**: {thirdPlaceMembers}", inline: false);
+            }
+
+            var remainingTeams = tournament.Teams
+                .Except(new[] { firstPlace, secondPlace, thirdPlace })
+                .OrderBy(t => t.Rank)
+                .ToList();
+
+            if (remainingTeams.Any())
+            {
+                var remainingTeamsInfo = new StringBuilder();
+                foreach (var team in remainingTeams)
+                {
+                    var (pointsFor, pointsAgainst) = tournament.MatchLog.GetPointsForAndAgainst(team.Name);
+                    string members = team.GetMembersAsString();
+                    remainingTeamsInfo.AppendLine($"{team.Rank}. {team.Name} - **Wins**: {team.Wins} | **Losses**: {team.Losses} | **Points For**: {pointsFor} | **Points Against**: {pointsAgainst} | **Members**: {members}");
+                }
+                embedBuilder.AddField("🔹 Other Teams", remainingTeamsInfo.ToString(), inline: false);
+            }
+
+            embedBuilder.WithFooter("Thank you for participating!")
+                        .WithTimestamp(DateTimeOffset.Now);
+
+            return embedBuilder.Build();
+        }
+
+        public Embed LockTeamsSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🔒 Teams Locked")
+                .WithDescription($"The teams in the {tournament.TeamSizeFormat} tournament **{tournament.Name}** have been successfully locked. No more teams may be added or removed while locked. Unlock to make any changes, this is your last chance before starting.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Teams", string.Join(", ", tournament.Teams.Select(m => m.Name)))
+                .WithColor(Color.Green)
+                .WithFooter("Teams are now locked for the tournament.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed UnlockTeamsSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🔓 Teams Unlocked")
+                .WithDescription($"The teams in the {tournament.TeamSizeFormat} tournament **{tournament.Name}** have been successfully unlocked. More teams may now be registered and removal of teams is allowed again.")
+                .AddField("Tournament ID", tournament.Id)
+                .AddField("Teams", string.Join(", ", tournament.Teams.Select(m => m.Name)))
+                .WithColor(Color.Green)
+                .WithFooter("Teams are now unlocked for the tournament.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed LockInRoundSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🔒 Round Locked In")
+                .WithDescription($"The round for the tournament **{tournament.Name}** has been successfully **locked** in.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("Teams can now advance to the next round. Changes can no longer be made unless you unlock the round first.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed UnlockRoundSuccess(Tournament tournament)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("🔓 Round Unlocked")
+                .WithDescription($"The round for the tournament **{tournament.Name}** has been successfully **unlocked**.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("Teams can now make changes before locking in the round again.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed NextRoundSuccess(Tournament tournament, int currentRound)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("➡️ Next Round Started")
+                .WithDescription($"The tournament **{tournament.Name}** has successfully advanced to the next round: **Round {currentRound}**.")
+                .AddField("Tournament ID", tournament.Id)
+                .WithColor(Color.Green)
+                .WithFooter("Good luck to all teams in the next round!")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed ShowAllTournamentsSuccess(List<Tournament> tournaments)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("📋 All Tournaments")
+                .WithColor(Color.Blue)
+                .WithCurrentTimestamp();
+
+            if (tournaments == null || tournaments.Count == 0)
+            {
+                embed.WithDescription("_No tournaments found._");
+                return embed.Build();
+            }
+
+            foreach (var tournament in tournaments.OrderByDescending(t => t.CreatedOn))
+            {
+                var teamLocking = tournament as ITeamLocking;
+                var roundBased = tournament as IRoundBased;
+
+                string status = tournament.IsRunning ? "🟢 Running" : "🔴 Not Running";
+                string teamsLockedStatus = teamLocking != null ? (teamLocking.IsTeamsLocked ? "🔒 Locked" : "🔓 Unlocked") : "N/A";
+                string roundInfo = roundBased != null
+                    ? (roundBased.TotalRounds.HasValue ? $"{roundBased.CurrentRound}/{roundBased.TotalRounds.Value}" : $"{roundBased.CurrentRound}/N/A")
+                    : "N/A";
+
+                int teamCount = tournament.Teams?.Count ?? 0;
+
+                string description = string.Join("\n", new[]
+                {
+                    $"**Type:** {tournament.Type}",
+                    $"**Status:** {status}",
+                    $"**Teams:** {teamCount} ({teamsLockedStatus})",
+                    $"**Round:** {roundInfo}",
+                    $"**Created On:** {tournament.CreatedOn:yyyy-MM-dd}",
+                    !string.IsNullOrWhiteSpace(tournament.Description) ? $"**Description:** {tournament.Description}" : null
+                }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+                embed.AddField($"{tournament.Name} (ID#: {tournament.Id})", description, false);
+            }
+
+            return embed.Build();
+        }
+        #endregion
+
+        #region UT2004 Embeds
+        // ── Section resolver ────────────────────────────────────────
+        public Embed UT2004ProfileSectionEmbed(UT2004PlayerProfile profile, string section) =>
+            section switch
+            {
+                "ictf" => UT2004ProfileCTFEmbed(profile),
+                "tam" => UT2004ProfileTAMEmbed(profile),
+                "ibr" => UT2004ProfileBREmbed(profile),
+                _ => UT2004ProfileGeneralEmbed(profile)
+            };
+
+        public Embed UT2004ProfileGeneralEmbed(UT2004PlayerProfile profile)
+        {
+            string previousNames = profile.PreviousNames.Count > 0
+                ? string.Join(", ", profile.PreviousNames)
+                : "_None_";
+
+            string firstSeen = profile.FirstSeen == DateTime.MinValue ? "_Unknown_" : profile.FirstSeen.ToString("yyyy-MM-dd");
+            string lastPlayed = profile.LastPlayed == DateTime.MinValue ? "_Never_" : profile.LastPlayed.ToString("yyyy-MM-dd");
+
+            var embed = new EmbedBuilder()
+                .WithTitle($"🎮 {profile.CurrentName} — UT2004 Profile")
+                .WithDescription(
+                    $"**GUID:** `{profile.Guid}`\n" +
+                    $"📅 **First Seen:** {firstSeen}   **Last Played:** {lastPlayed}\n" +
+                    $"📛 **Previous Names:** {previousNames}")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Stats · General")
+                .WithCurrentTimestamp();
+
+            embed.AddField("📊 Overall Career",
+                $"**Matches:** {profile.TotalMatches}  ·  **Wins:** {profile.Wins}  ·  **Losses:** {profile.Losses}  ·  **Win Rate:** {profile.WinRate:P1}\n" +
+                $"**Kills:** {profile.TotalKills}  ·  **Deaths:** {profile.TotalDeaths}  ·  **K/D:** {profile.KDRatio:F2}  ·  **Suicides:** {profile.TotalSuicides}  ·  **Headshots:** {profile.TotalHeadshots}\n" +
+                $"**Total Score:** {profile.TotalScore:N0}  ·  **Avg Score/Match:** {profile.AverageScorePerMatch:F1}\n" +
+                $"**Team Protect Frags:** {profile.TotalTeamProtectFrags}  ·  **Critical Frags:** {profile.TotalCriticalFrags}",
+                false);
+
+            embed.AddField("🏆 Career Bests",
+                $"**Best Kill Streak:** {profile.BestKillStreak}  ·  **Best Multi-Kill:** {profile.BestMultiKill}\n" +
+                $"**Most Kills (match):** {profile.MostKillsInMatch}  ·  **Most Deaths (match):** {profile.MostDeathsInMatch}  ·  **Highest Score (match):** {profile.HighestScoreInMatch:N0}",
+                false);
+
+            if (profile.TotalWeaponKills.Count > 0 || profile.TotalWeaponStatistics.Count > 0)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"**Overall Accuracy:** {profile.OverallWeaponAccuracy:F1}%");
+                sb.AppendLine("**Top Weapons by Kills:**");
+                foreach (var weapon in profile.TotalWeaponKills.OrderByDescending(kvp => kvp.Value).Take(5))
+                {
+                    string accText = profile.TotalWeaponStatistics.TryGetValue(weapon.Key, out var wStat)
+                        ? $"  ·  Acc: {wStat.GetAccuracy():F1}%  ·  Dmg: {wStat.DamageDealt:N0}"
+                        : string.Empty;
+                    sb.AppendLine($"• **{weapon.Key}:** {weapon.Value:N0} kills{accText}");
+                }
+                embed.AddField("🔫 Weapon Statistics", sb.ToString().TrimEnd(), false);
+            }
+
+            return embed.Build();
+        }
+
+        public Embed UT2004ProfileCTFEmbed(UT2004PlayerProfile profile)
+        {
+            string ctfEloChange = profile.CaptureTheFlagElo.Change >= 0
+                ? $"+{profile.CaptureTheFlagElo.Change:F1}"
+                : $"{profile.CaptureTheFlagElo.Change:F1}";
+            string ctfPeakDate = profile.CaptureTheFlagElo.PeakDate.HasValue
+                ? $" ({profile.CaptureTheFlagElo.PeakDate.Value:yyyy-MM-dd})"
+                : string.Empty;
+
+            var embed = new EmbedBuilder()
+                .WithTitle($"🎮 {profile.CurrentName} — iCTF Stats")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Stats · iCTF")
+                .WithCurrentTimestamp();
+
+            embed.AddField("🚩 Record & Ratings",
+                $"**Matches:** {profile.TotalCTFMatches}  ·  **Wins:** {profile.TotalCTFWins}  ·  **Losses:** {profile.TotalCTFLosses}  ·  **Win Rate:** {profile.CTFWinRate:P1}\n" +
+                $"**Kills:** {profile.TotalCTFKills}  ·  **Deaths:** {profile.TotalCTFDeaths}  ·  **K/D:** {profile.CTFKDRatio:F2}  ·  **Headshots:** {profile.TotalCTFHeadshots}\n" +
+                $"**Score:** {profile.TotalCTFScore:N0}  ·  **Avg Score/Match:** {profile.AverageScorePerCTFMatch:F1}  ·  **Avg Kills/Match:** {profile.AverageKillsPerCTFMatch:F1}\n" +
+                $"🏅 **ELO:** {profile.CaptureTheFlagElo.Rating:F1} (Δ {ctfEloChange})  ·  **Peak:** {profile.CaptureTheFlagElo.Peak:F1}{ctfPeakDate}\n" +
+                $"📈 **OpenSkill μ:** {profile.CaptureTheFlagRating.Mu:F2}  ·  **σ:** {profile.CaptureTheFlagRating.Sigma:F2}  ·  **Rating (μ−3σ):** {profile.CaptureTheFlagRating.Rating:F2}",
+                false);
+
+            embed.AddField("🚩 Objective Stats",
+                $"**Caps:** {profile.TotalFlagCaptures}  ·  **Grabs:** {profile.TotalFlagGrabs}  ·  **Pickups:** {profile.TotalFlagPickups}  ·  **Drops:** {profile.TotalFlagDrops}\n" +
+                $"**Returns:** {profile.TotalFlagReturns}  (Enemy: {profile.TotalFlagReturnsEnemy}  ·  Friendly: {profile.TotalFlagReturnsFriendly})  ·  **Denials:** {profile.TotalFlagDenials}\n" +
+                $"**Cap Assists:** {profile.TotalFlagCaptureAssists}  ·  **1st Touch:** {profile.TotalFlagCaptureFirstTouch}\n" +
+                $"**Best Caps (match):** {profile.MostFlagCapsInMatch}  ·  **Best Returns (match):** {profile.MostFlagReturnsInMatch}  ·  **Avg Caps/Match:** {profile.AverageCapturesPerMatch:F2}",
+                false);
+
+            return embed.Build();
+        }
+
+        public Embed UT2004ProfileTAMEmbed(UT2004PlayerProfile profile)
+        {
+            string tamEloChange = profile.TAMElo.Change >= 0
+                ? $"+{profile.TAMElo.Change:F1}"
+                : $"{profile.TAMElo.Change:F1}";
+            string tamPeakDate = profile.TAMElo.PeakDate.HasValue
+                ? $" ({profile.TAMElo.PeakDate.Value:yyyy-MM-dd})"
+                : string.Empty;
+
+            var embed = new EmbedBuilder()
+                .WithTitle($"🎮 {profile.CurrentName} — TAM Stats")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Stats · TAM")
+                .WithCurrentTimestamp();
+
+            embed.AddField("🎯 Record & Ratings",
+                $"**Matches:** {profile.TotalTAMMatches}  ·  **Wins:** {profile.TotalTAMWins}  ·  **Losses:** {profile.TotalTAMLosses}  ·  **Win Rate:** {profile.TAMWinRate:P1}\n" +
+                $"**Kills:** {profile.TotalTAMKills}  ·  **Deaths:** {profile.TotalTAMDeaths}  ·  **K/D:** {profile.TAMKDRatio:F2}  ·  **Headshots:** {profile.TotalTAMHeadshots}\n" +
+                $"**Score:** {profile.TotalTAMScore:N0}  ·  **Avg Score/Match:** {profile.AverageScorePerTAMMatch:F1}  ·  **Avg Kills/Match:** {profile.AverageKillsPerTAMMatch:F1}\n" +
+                $"🏅 **ELO:** {profile.TAMElo.Rating:F1} (Δ {tamEloChange})  ·  **Peak:** {profile.TAMElo.Peak:F1}{tamPeakDate}\n" +
+                $"📈 **OpenSkill μ:** {profile.TAMRating.Mu:F2}  ·  **σ:** {profile.TAMRating.Sigma:F2}  ·  **Rating (μ−3σ):** {profile.TAMRating.Rating:F2}",
+                false);
+
+            embed.AddField("🎯 Damage & Rounds",
+                $"**Damage Dealt:** {profile.TotalDamageDealt:N0}  ·  **Damage Taken:** {profile.TotalDamageTaken:N0}  ·  **Efficiency:** {profile.DamageEfficiency:F2}\n" +
+                $"**FF Damage:** {profile.TotalFriendlyFireDamage:N0}  ·  **Avg Dmg/Match:** {profile.AverageDamagePerMatch:F1}  ·  **Avg Dmg/Round:** {profile.AverageDamagePerRound:F1}\n" +
+                $"**Rounds Played:** {profile.TotalRoundsPlayed}  ·  **Rounds Won:** {profile.TotalRoundsWon}  ·  **Round Win Rate:** {profile.TAMRoundWinRate:P1}  ·  **Avg Rounds Won/Match:** {profile.AverageRoundsWonPerMatch:F1}\n" +
+                $"**Round-Ending Kills:** {profile.TotalRoundEndingKills}  ·  **Best Dmg (match):** {profile.MostDamageInMatch:N0}  ·  **Best REKs (match):** {profile.MostRoundEndingKillsInMatch}  ·  **Best Rounds Won (match):** {profile.MostRoundsWonInMatch}",
+                false);
+
+            return embed.Build();
+        }
+
+        public Embed UT2004ProfileBREmbed(UT2004PlayerProfile profile)
+        {
+            string brEloChange = profile.BombingRunElo.Change >= 0
+                ? $"+{profile.BombingRunElo.Change:F1}"
+                : $"{profile.BombingRunElo.Change:F1}";
+            string brPeakDate = profile.BombingRunElo.PeakDate.HasValue
+                ? $" ({profile.BombingRunElo.PeakDate.Value:yyyy-MM-dd})"
+                : string.Empty;
+
+            var embed = new EmbedBuilder()
+                .WithTitle($"🎮 {profile.CurrentName} — iBR Stats")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Stats · iBR")
+                .WithCurrentTimestamp();
+
+            embed.AddField("💣 Record & Ratings",
+                $"**Matches:** {profile.TotalBRMatches}  ·  **Wins:** {profile.TotalBRWins}  ·  **Losses:** {profile.TotalBRLosses}  ·  **Win Rate:** {profile.BRWinRate:P1}\n" +
+                $"**Kills:** {profile.TotalBRKills}  ·  **Deaths:** {profile.TotalBRDeaths}  ·  **K/D:** {profile.BRKDRatio:F2}  ·  **Headshots:** {profile.TotalBRHeadshots}\n" +
+                $"**Score:** {profile.TotalBRScore:N0}\n" +
+                $"🏅 **ELO:** {profile.BombingRunElo.Rating:F1} (Δ {brEloChange})  ·  **Peak:** {profile.BombingRunElo.Peak:F1}{brPeakDate}\n" +
+                $"📈 **OpenSkill μ:** {profile.BombingRunRating.Mu:F2}  ·  **σ:** {profile.BombingRunRating.Sigma:F2}  ·  **Rating (μ−3σ):** {profile.BombingRunRating.Rating:F2}",
+                false);
+
+            embed.AddField("🏃 Ball Stats",
+                $"**Run-in Caps (7pts):** {profile.TotalBallCaptures}  ·  **Thrown Goals (3pts):** {profile.TotalBallThrownFinals}  ·  **Assists:** {profile.TotalBallScoreAssists}\n" +
+                $"**Ball Pickups:** {profile.TotalBombPickups}  ·  **Ball Drops:** {profile.TotalBombDrops}  ·  **Ball Steals:** {profile.TotalBombTaken}  ·  **Ball Timeouts:** {profile.TotalBombReturnedTimeouts}\n" +
+                $"**Best Caps (match):** {profile.MostBallCapsInMatch}  ·  **Best Pickups (match):** {profile.MostBombPickupsInMatch}  ·  **Best Steals (match):** {profile.MostBombTakenInMatch}\n" +
+                $"**Avg Caps/Match:** {profile.AverageBallCapsPerBRMatch:F2}  ·  **Avg Pickups/Match:** {profile.AverageBombPickupsPerBRMatch:F2}",
+                false);
+
+            return embed.Build();
+        }
+        #endregion
+
+        #region Suggestion Embeds
+        public Embed SuggestTeamsEmbed(
+            List<(string Name, double DisplayRating, bool HasProfile)> teamA,
+            List<(string Name, double DisplayRating, bool HasProfile)> teamB,
+            double teamAWinProb, int teamSize, UT2004GameMode gameMode)
+        {
+            double teamATotal = teamA.Sum(p => p.DisplayRating);
+            double teamBTotal = teamB.Sum(p => p.DisplayRating);
+
+            string modeDisplay = gameMode switch
+            {
+                UT2004GameMode.iCTF => "🚩 iCTF",
+                UT2004GameMode.TAM => "🎯 TAM",
+                UT2004GameMode.iBR => "💣 iBR",
+                _ => "🎮 General"
+            };
+
+            string ratingDescription = gameMode == UT2004GameMode.Unknown
+                ? "Balanced by composite OpenSkill rating (μ−3σ, weighted by matches played per mode)."
+                : $"Balanced by {modeDisplay} OpenSkill rating (μ−3σ).";
+
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚖️ Suggested {teamSize}v{teamSize} Teams — {modeDisplay}")
+                .WithDescription(
+                    $"{ratingDescription}\n" +
+                    $"🔵 **Team A:** {teamAWinProb:P1} win probability  ·  🔴 **Team B:** {1 - teamAWinProb:P1} win probability")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Team Suggester")
+                .WithCurrentTimestamp();
+
+            embed.AddField("🔵 Team A", BuildSuggestTeamField(teamA, teamATotal, teamSize), false);
+            embed.AddField("🔴 Team B", BuildSuggestTeamField(teamB, teamBTotal, teamSize), false);
+
+            if (teamA.Any(p => !p.HasProfile) || teamB.Any(p => !p.HasProfile))
+                embed.AddField("⚠️ Note",
+                    "One or more players have no UT2004 profile or registered GUID and were treated as default rating (μ=25, σ=8.33) for balancing.",
+                    false);
+
+            return embed.Build();
+        }
+
+        private static string BuildSuggestTeamField(
+            List<(string Name, double DisplayRating, bool HasProfile)> team,
+            double total, int teamSize)
+        {
+            var sb = new StringBuilder();
+            foreach (var (name, displayRating, hasProfile) in team.OrderByDescending(p => p.DisplayRating))
+            {
+                string ratingText = hasProfile ? $"{displayRating:F2}" : "⚠️ Unrated";
+                sb.AppendLine($"• **{name}** • {ratingText}");
+            }
+            sb.AppendLine("─────────────────");
+            sb.AppendLine($"**Total:** {total:F2}  ·  **Avg:** {total / teamSize:F2}");
+            return sb.ToString().TrimEnd();
+        }
+        #endregion
+
+        #region UT2004 Player Comparison Embeds
+
+        // ── Section resolver ──────────────────────────────────────────────────
+        public Embed ComparePlayersSectionEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, string section, double winProbP1, bool p1Seamless = false, bool p2Seamless = false) =>
+            section switch
+            {
+                "ictf" => ComparePlayersCTFEmbed(p1, p2, winProbP1, p1Seamless, p2Seamless),
+                "tam" => ComparePlayersTAMEmbed(p1, p2, winProbP1, p1Seamless, p2Seamless),
+                "ibr" => ComparePlayersBREmbed(p1, p2, winProbP1, p1Seamless, p2Seamless),
+                _ => ComparePlayersOverviewEmbed(p1, p2, winProbP1, p1Seamless, p2Seamless)
+            };
+
+        private static string BuildSeamlessNote(UT2004PlayerProfile p1, UT2004PlayerProfile p2, bool p1Seamless, bool p2Seamless)
+        {
+            if (!p1Seamless && !p2Seamless) return string.Empty;
+
+            var parts = new List<string>();
+            if (p1Seamless) parts.Add($"**{p1.CurrentName}**");
+            if (p2Seamless) parts.Add($"**{p2.CurrentName}**");
+
+            return $"\n🔗 *SeamlessRatings active for {string.Join(" & ", parts)} — stats merged across multiple GUIDs*";
+        }
+
+        public Embed ComparePlayersOverviewEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1, bool p1Seamless = false, bool p2Seamless = false)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName}")
+                .WithDescription(
+                    $"Head-to-head comparison · *Use the dropdown to explore mode-specific stats*\n\n" +
+                    $"🎯 **1v1 Win Prediction (General)**\n" +
+                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}\n" +
+                    $"*Based on composite OpenSkill rating weighted by matches per mode*" +
+                    BuildSeamlessNote(p1, p2, p1Seamless, p2Seamless))
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Player Comparison · Overview")
+                .WithCurrentTimestamp();
+
+            embed.AddField("📊 Overall Stats",
+                $"**Matches:** {p1.TotalMatches} vs {p2.TotalMatches}\n" +
+                $"**Record:** {p1.Wins}W/{p1.Losses}L vs {p2.Wins}W/{p2.Losses}L\n" +
+                $"**Win Rate:** {p1.WinRate:P1} vs {p2.WinRate:P1}\n" +
+                $"**K/D:** {p1.KDRatio:F2} vs {p2.KDRatio:F2}\n" +
+                $"**Total Kills:** {p1.TotalKills:N0} vs {p2.TotalKills:N0}\n" +
+                $"**Headshots:** {p1.TotalHeadshots:N0} vs {p2.TotalHeadshots:N0}\n" +
+                $"**Best Kill Streak:** {p1.BestKillStreak} vs {p2.BestKillStreak}",
+                false);
+
+            embed.AddField("🏅 Rating Snapshot",
+                $"**🚩 iCTF —** ELO: {p1.CaptureTheFlagElo.Rating:F1} vs {p2.CaptureTheFlagElo.Rating:F1}  ·  OpenSkill (μ−3σ): {p1.CaptureTheFlagRating.Rating:F2} vs {p2.CaptureTheFlagRating.Rating:F2}\n" +
+                $"**🎯 TAM —** ELO: {p1.TAMElo.Rating:F1} vs {p2.TAMElo.Rating:F1}  ·  OpenSkill (μ−3σ): {p1.TAMRating.Rating:F2} vs {p2.TAMRating.Rating:F2}\n" +
+                $"**💣 iBR —** ELO: {p1.BombingRunElo.Rating:F1} vs {p2.BombingRunElo.Rating:F1}  ·  OpenSkill (μ−3σ): {p1.BombingRunRating.Rating:F2} vs {p2.BombingRunRating.Rating:F2}",
+                false);
+
+            return embed.Build();
+        }
+
+        public Embed ComparePlayersCTFEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1, bool p1Seamless = false, bool p2Seamless = false)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName} — 🚩 iCTF")
+                .WithDescription(
+                    $"🎯 **1v1 Win Prediction (iCTF)**\n" +
+                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}" +
+                    BuildSeamlessNote(p1, p2, p1Seamless, p2Seamless))
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Player Comparison · iCTF")
+                .WithCurrentTimestamp();
+
+            embed.AddField("🚩 iCTF Record & Ratings",
+                $"**Matches:** {p1.TotalCTFMatches} vs {p2.TotalCTFMatches}\n" +
+                $"**Record:** {p1.TotalCTFWins}W/{p1.TotalCTFLosses}L vs {p2.TotalCTFWins}W/{p2.TotalCTFLosses}L\n" +
+                $"**Win Rate:** {p1.CTFWinRate:P1} vs {p2.CTFWinRate:P1}\n" +
+                $"**K/D:** {p1.CTFKDRatio:F2} vs {p2.CTFKDRatio:F2}\n" +
+                $"**ELO:** {p1.CaptureTheFlagElo.Rating:F1} vs {p2.CaptureTheFlagElo.Rating:F1}\n" +
+                $"**OpenSkill (μ−3σ):** {p1.CaptureTheFlagRating.Rating:F2} vs {p2.CaptureTheFlagRating.Rating:F2}",
+                false);
+
+            embed.AddField("🚩 iCTF Objective Stats",
+                $"**Caps:** {p1.TotalFlagCaptures} vs {p2.TotalFlagCaptures}  ·  **Avg Caps/Match:** {p1.AverageCapturesPerMatch:F2} vs {p2.AverageCapturesPerMatch:F2}\n" +
+                $"**Returns:** {p1.TotalFlagReturns} vs {p2.TotalFlagReturns}\n" +
+                $"**Grabs:** {p1.TotalFlagGrabs} vs {p2.TotalFlagGrabs}\n" +
+                $"**Cap Assists:** {p1.TotalFlagCaptureAssists} vs {p2.TotalFlagCaptureAssists}\n" +
+                $"**Denials:** {p1.TotalFlagDenials} vs {p2.TotalFlagDenials}",
+                false);
+
+            return embed.Build();
+        }
+
+        public Embed ComparePlayersTAMEmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1, bool p1Seamless = false, bool p2Seamless = false)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName} — 🎯 TAM")
+                .WithDescription(
+                    $"🎯 **1v1 Win Prediction (TAM)**\n" +
+                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}" +
+                    BuildSeamlessNote(p1, p2, p1Seamless, p2Seamless))
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Player Comparison · TAM")
+                .WithCurrentTimestamp();
+
+            embed.AddField("🎯 TAM Record & Ratings",
+                $"**Matches:** {p1.TotalTAMMatches} vs {p2.TotalTAMMatches}\n" +
+                $"**Record:** {p1.TotalTAMWins}W/{p1.TotalTAMLosses}L vs {p2.TotalTAMWins}W/{p2.TotalTAMLosses}L\n" +
+                $"**Win Rate:** {p1.TAMWinRate:P1} vs {p2.TAMWinRate:P1}\n" +
+                $"**K/D:** {p1.TAMKDRatio:F2} vs {p2.TAMKDRatio:F2}\n" +
+                $"**ELO:** {p1.TAMElo.Rating:F1} vs {p2.TAMElo.Rating:F1}\n" +
+                $"**OpenSkill (μ−3σ):** {p1.TAMRating.Rating:F2} vs {p2.TAMRating.Rating:F2}",
+                false);
+
+            embed.AddField("🎯 TAM Combat Stats",
+                $"**Avg Dmg/Match:** {p1.AverageDamagePerMatch:F0} vs {p2.AverageDamagePerMatch:F0}\n" +
+                $"**Damage Efficiency:** {p1.DamageEfficiency:F2} vs {p2.DamageEfficiency:F2}\n" +
+                $"**Round Win Rate:** {p1.TAMRoundWinRate:P1} vs {p2.TAMRoundWinRate:P1}\n" +
+                $"**Avg Rounds Won/Match:** {p1.AverageRoundsWonPerMatch:F1} vs {p2.AverageRoundsWonPerMatch:F1}\n" +
+                $"**Round-Ending Kills:** {p1.TotalRoundEndingKills} vs {p2.TotalRoundEndingKills}",
+                false);
+
+            return embed.Build();
+        }
+
+        public Embed ComparePlayersBREmbed(UT2004PlayerProfile p1, UT2004PlayerProfile p2, double winProbP1, bool p1Seamless = false, bool p2Seamless = false)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"⚔️ {p1.CurrentName} vs {p2.CurrentName} — 💣 iBR")
+                .WithDescription(
+                    $"🎯 **1v1 Win Prediction (iBR)**\n" +
+                    $"**{p1.CurrentName}:** {winProbP1:P1}  ·  **{p2.CurrentName}:** {1 - winProbP1:P1}" +
+                    BuildSeamlessNote(p1, p2, p1Seamless, p2Seamless))
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Player Comparison · iBR")
+                .WithCurrentTimestamp();
+
+            embed.AddField("💣 iBR Record & Ratings",
+                $"**Matches:** {p1.TotalBRMatches} vs {p2.TotalBRMatches}\n" +
+                $"**Record:** {p1.TotalBRWins}W/{p1.TotalBRLosses}L vs {p2.TotalBRWins}W/{p2.TotalBRLosses}L\n" +
+                $"**Win Rate:** {p1.BRWinRate:P1} vs {p2.BRWinRate:P1}\n" +
+                $"**K/D:** {p1.BRKDRatio:F2} vs {p2.BRKDRatio:F2}\n" +
+                $"**ELO:** {p1.BombingRunElo.Rating:F1} vs {p2.BombingRunElo.Rating:F1}\n" +
+                $"**OpenSkill (μ−3σ):** {p1.BombingRunRating.Rating:F2} vs {p2.BombingRunRating.Rating:F2}",
+                false);
+
+            embed.AddField("💣 iBR Objective Stats",
+                $"**Ball Caps:** {p1.TotalBallCaptures} vs {p2.TotalBallCaptures}  ·  **Avg Caps/Match:** {p1.AverageBallCapsPerBRMatch:F2} vs {p2.AverageBallCapsPerBRMatch:F2}\n" +
+                $"**Score Assists:** {p1.TotalBallScoreAssists} vs {p2.TotalBallScoreAssists}\n" +
+                $"**Bomb Pickups:** {p1.TotalBombPickups} vs {p2.TotalBombPickups}  ·  **Avg Pickups/Match:** {p1.AverageBombPickupsPerBRMatch:F2} vs {p2.AverageBombPickupsPerBRMatch:F2}",
+                false);
+
+            return embed.Build();
+        }
+
+        #endregion
+
+        #region UT2004 Leaderboard Embeds
+        public Embed UT2004LeaderboardEmbed(List<UT2004PlayerProfile> profiles, string section) =>
+            section switch
+            {
+                "ictf" => UT2004CTFLeaderboardEmbed(profiles),
+                "tam" => UT2004TAMLeaderboardEmbed(profiles),
+                "ibr" => UT2004BRLeaderboardEmbed(profiles),
+                _ => UT2004GeneralLeaderboardEmbed(profiles)
+            };
+
+        public Embed UT2004GeneralLeaderboardEmbed(List<UT2004PlayerProfile> profiles)
+        {
+            var sorted = profiles
+                .OrderByDescending(p => p.TotalMatches)
+                .Take(15)
+                .ToList();
+
+            var sb = new StringBuilder();
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                var p = sorted[i];
+                string medal = i switch { 0 => "🥇", 1 => "🥈", 2 => "🥉", _ => $"**{i + 1}.**" };
+                sb.AppendLine($"{medal} **{p.CurrentName}** — {p.TotalMatches} matches · {p.Wins}W/{p.Losses}L · K/D: {p.KDRatio:F2} · WR: {p.WinRate:P0}");
+            }
+
+            return new EmbedBuilder()
+                .WithTitle("📊 UT2004 Leaderboard — General")
+                .WithDescription(sb.Length > 0 ? sb.ToString() : "_No player profiles found._")
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Leaderboard · General")
+                .WithCurrentTimestamp()
+                .Build();
+        }
+
+        public Embed UT2004CTFLeaderboardEmbed(List<UT2004PlayerProfile> profiles)
+        {
+            var sorted = profiles
+                .Where(p => p.TotalCTFMatches > 0)
+                .OrderByDescending(p => p.CaptureTheFlagElo.Rating)
+                .Take(15)
+                .ToList();
+
+            var sb = new StringBuilder();
+            if (sorted.Count == 0)
+            {
+                sb.AppendLine("_No iCTF matches played yet._");
+            }
+            else
+            {
+                for (int i = 0; i < sorted.Count; i++)
+                {
+                    var p = sorted[i];
+                    string medal = i switch { 0 => "🥇", 1 => "🥈", 2 => "🥉", _ => $"**{i + 1}.**" };
+                    sb.AppendLine($"{medal} **{p.CurrentName}** — ELO: {p.CaptureTheFlagElo.Rating:F1} · {p.TotalCTFMatches} matches · WR: {p.CTFWinRate:P0} · Caps: {p.TotalFlagCaptures}");
+                }
+            }
+
+            return new EmbedBuilder()
+                .WithTitle("🚩 UT2004 Leaderboard — iCTF")
+                .WithDescription(sb.ToString())
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Leaderboard · iCTF")
+                .WithCurrentTimestamp()
+                .Build();
+        }
+
+        public Embed UT2004TAMLeaderboardEmbed(List<UT2004PlayerProfile> profiles)
+        {
+            var sorted = profiles
+                .Where(p => p.TotalTAMMatches > 0)
+                .OrderByDescending(p => p.TAMElo.Rating)
+                .Take(15)
+                .ToList();
+
+            var sb = new StringBuilder();
+            if (sorted.Count == 0)
+            {
+                sb.AppendLine("_No TAM matches played yet._");
+            }
+            else
+            {
+                for (int i = 0; i < sorted.Count; i++)
+                {
+                    var p = sorted[i];
+                    string medal = i switch { 0 => "🥇", 1 => "🥈", 2 => "🥉", _ => $"**{i + 1}.**" };
+                    sb.AppendLine($"{medal} **{p.CurrentName}** — ELO: {p.TAMElo.Rating:F1} · {p.TotalTAMMatches} matches · WR: {p.TAMWinRate:P0} · Avg Dmg: {p.AverageDamagePerMatch:F0}");
+                }
+            }
+
+            return new EmbedBuilder()
+                .WithTitle("🎯 UT2004 Leaderboard — TAM")
+                .WithDescription(sb.ToString())
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Leaderboard · TAM")
+                .WithCurrentTimestamp()
+                .Build();
+        }
+
+        public Embed UT2004BRLeaderboardEmbed(List<UT2004PlayerProfile> profiles)
+        {
+            var sorted = profiles
+                .Where(p => p.TotalBRMatches > 0)
+                .OrderByDescending(p => p.BombingRunElo.Rating)
+                .Take(15)
+                .ToList();
+
+            var sb = new StringBuilder();
+            if (sorted.Count == 0)
+            {
+                sb.AppendLine("_No iBR matches played yet._");
+            }
+            else
+            {
+                for (int i = 0; i < sorted.Count; i++)
+                {
+                    var p = sorted[i];
+                    string medal = i switch { 0 => "🥇", 1 => "🥈", 2 => "🥉", _ => $"**{i + 1}.**" };
+                    sb.AppendLine($"{medal} **{p.CurrentName}** — ELO: {p.BombingRunElo.Rating:F1} · {p.TotalBRMatches} matches · WR: {p.BRWinRate:P0} · Ball Caps: {p.TotalBallCaptures}");
+                }
+            }
+
+            return new EmbedBuilder()
+                .WithTitle("💣 UT2004 Leaderboard — iBR")
+                .WithDescription(sb.ToString())
+                .WithColor(new Color(0xFF6A00))
+                .WithFooter("Flaws Fight Night — UT2004 Leaderboard · iBR")
+                .WithCurrentTimestamp()
+                .Build();
+        }
+
+        public Embed SetLeaderboardChannelSuccess(IMessageChannel channel, LeaderboardChannelTypes defaultType)
+        {
+            string typeDisplay = defaultType switch
+            {
+                LeaderboardChannelTypes.iCTF => "🚩 iCTF",
+                LeaderboardChannelTypes.TAM => "🎯 TAM",
+                LeaderboardChannelTypes.iBR => "💣 iBR",
+                _ => "📊 General"
+            };
+
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Leaderboard Channel Set Successfully")
+                .WithDescription(
+                    $"<#{channel.Id}> has been registered as a UT2004 leaderboard channel.\n\n" +
+                    $"The LiveView will appear within the next update cycle. " +
+                    $"The message includes a dropdown so anyone can switch between all four categories — " +
+                    $"the **{typeDisplay}** view will always be restored on each refresh.")
+                .AddField("Channel", $"<#{channel.Id}>", true)
+                .AddField("Default View", typeDisplay, true)
+                .WithColor(Color.Green)
+                .WithFooter("The UT2004 Leaderboard LiveView will now be posted in this channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+
+        public Embed RemoveLeaderboardChannelSuccess(IMessageChannel channel)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("✅ Leaderboard Channel Removed Successfully")
+                .WithDescription($"<#{channel.Id}> has been removed as a UT2004 leaderboard channel. No more leaderboard updates will be posted there.")
+                .AddField("Channel", $"<#{channel.Id}>")
+                .WithColor(Color.Green)
+                .WithFooter("The UT2004 Leaderboard LiveView will no longer be posted in this channel.")
+                .WithTimestamp(DateTimeOffset.Now);
+            return embed.Build();
+        }
+        #endregion
+
+        public Embed FromLogEntry(DiscordAdminLogEntry entry)
+        {
+            // Strip namespace — show only the class name
+            var shortCategory = entry.Category.Contains('.')
+                ? entry.Category[(entry.Category.LastIndexOf('.') + 1)..]
+                : entry.Category;
+
+            var (emoji, label, color) = entry.Level switch
+            {
+                Microsoft.Extensions.Logging.LogLevel.Critical => ("🚨", $"{shortCategory} Critical", new Color(0x8B0000)),
+                Microsoft.Extensions.Logging.LogLevel.Error => ("🔴", $"{shortCategory} Error", Color.Red),
+                Microsoft.Extensions.Logging.LogLevel.Warning => ("⚠️", $"{shortCategory} Warning", Color.Orange),
+                Microsoft.Extensions.Logging.LogLevel.Information => ("🔵", $"{shortCategory} Info", Color.Blue),
+                Microsoft.Extensions.Logging.LogLevel.Debug => ("🔧", $"{shortCategory} Debug", Color.LightGrey),
+                _ => ("📋", $"{shortCategory} Trace", Color.LightGrey)
+            };
+
+            var message = entry.Message.Length > 4000
+                ? entry.Message[..4000] + "…"
+                : entry.Message;
+
+            var builder = new EmbedBuilder()
+                .WithTitle($"{emoji}  {label}")
+                .WithDescription($"```\n{message}\n```")
+                .WithColor(color)
+                .WithTimestamp(entry.TimestampUtc)
+                .WithFooter("Flaws Fight Night • Admin Feed");
+
+            builder.AddField("📂 Source", $"`{shortCategory}`", inline: true);
+
+            if (entry.EventId.Id != 0 || !string.IsNullOrEmpty(entry.EventId.Name))
+            {
+                var eventLabel = string.IsNullOrEmpty(entry.EventId.Name)
+                    ? $"`{entry.EventId.Id}`"
+                    : $"`{entry.EventId.Name}` ({entry.EventId.Id})";
+                builder.AddField("🔖 Event", eventLabel, inline: true);
+            }
+
+            if (!string.IsNullOrEmpty(entry.ExceptionMessage))
+            {
+                var exMsg = entry.ExceptionMessage.Length > 1000
+                    ? entry.ExceptionMessage[..1000] + "…"
+                    : entry.ExceptionMessage;
+                builder.AddField("💥 Exception", $"```\n{exMsg}\n```", inline: false);
+            }
+
+            if (!string.IsNullOrEmpty(entry.ExceptionStackTrace))
+            {
+                var trace = entry.ExceptionStackTrace.Length > 900
+                    ? entry.ExceptionStackTrace[..900] + "\n…"
+                    : entry.ExceptionStackTrace;
+                builder.AddField("📄 Stack Trace", $"```\n{trace}\n```", inline: false);
+            }
+
+            return builder.Build();
+        }
+    }
+}
