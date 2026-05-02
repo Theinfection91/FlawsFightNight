@@ -33,7 +33,7 @@ namespace FlawsFightNight.Bot
         private readonly ILogger<Program> _logger;
 
         private bool _gitBackupSetupComplete = false;
-        private bool _ftpSetupComplete = false;
+        //private bool _ftpSetupComplete = false;
 
         public static async Task Main(string[] args)
         {
@@ -279,8 +279,8 @@ namespace FlawsFightNight.Bot
             }
             _gitBackupSetupComplete = true;
 
-            await adminConfigService.FTPSetupProcess();
-            _ftpSetupComplete = true;
+            //await adminConfigService.FTPSetupProcess();
+            //_ftpSetupComplete = true;
 
             // Discord services
             _commands = _services.GetRequiredService<CommandService>();
