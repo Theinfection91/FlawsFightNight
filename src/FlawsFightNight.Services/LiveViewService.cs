@@ -189,15 +189,15 @@ namespace FlawsFightNight.Services
         /// attached to every leaderboard LiveView message.
         /// Mirrors ComponentFactory.CreateUT2004LeaderboardSelectMenu() without a Bot project dependency.
         /// </summary>
-        private static MessageComponent BuildLeaderboardSelectMenu(string section = "general")
+        private static MessageComponent BuildLeaderboardSelectMenu(string section = "general", bool withMenu = false)
         {
             var selectMenu = new SelectMenuBuilder()
                 .WithCustomId("ut2004leaderboard_select")
                 .WithPlaceholder("📊 Select a leaderboard category...")
                 .AddOption("📊 General", "general", "Overall career stats")
-                .AddOption("🚩 iCTF",   "ictf",    "Capture the Flag leaderboard")
-                .AddOption("🎯 TAM",    "tam",     "Team Arena Master leaderboard")
-                .AddOption("💣 iBR",    "ibr",     "Bombing Run leaderboard");
+                .AddOption("🚩 iCTF", "ictf", "Capture the Flag leaderboard")
+                .AddOption("🎯 TAM", "tam", "Team Arena Master leaderboard")
+                .AddOption("💣 iBR", "ibr", "Bombing Run leaderboard");
 
             string gameModeLabel = section switch
             {
@@ -207,18 +207,26 @@ namespace FlawsFightNight.Services
                 _ => "General"
             };
 
-            return new ComponentBuilder()
-                .WithSelectMenu(selectMenu)
-                .WithButton($"📋 Request Full {gameModeLabel} Leaderboard", customId: $"ut2004leaderboard_all:{section}", style: ButtonStyle.Secondary)
-                .Build();
+            var builder = new ComponentBuilder();
+            //.WithSelectMenu(selectMenu);
+
+            if (withMenu is true)
+            {
+                builder.WithSelectMenu(selectMenu);
+                
+                return builder.Build();
+            }
+
+            builder = builder.WithButton($"📋 Request Full {gameModeLabel} Leaderboard", customId: $"ut2004leaderboard_all:{section}", style: ButtonStyle.Secondary);
+            return builder.Build();
         }
 
         private static string GetLeaderboardSection(LeaderboardChannelTypes type) => type switch
         {
             LeaderboardChannelTypes.iCTF => "ictf",
-            LeaderboardChannelTypes.TAM  => "tam",
-            LeaderboardChannelTypes.iBR  => "ibr",
-            _                            => "general"
+            LeaderboardChannelTypes.TAM => "tam",
+            LeaderboardChannelTypes.iBR => "ibr",
+            _ => "general"
         };
 
         private async Task UpdateUT2004Leaderboard(LeaderboardChannelData leaderboardChannel, CancellationToken token)
@@ -263,7 +271,7 @@ namespace FlawsFightNight.Services
                 }
             }
 
-            var newMsg = await channel.SendMessageAsync(embed: embed, components: BuildLeaderboardSelectMenu(section));
+            var newMsg = await channel.SendMessageAsync(embed: embed, components: BuildLeaderboardSelectMenu(section, false));
             leaderboardChannel.MessageId = newMsg.Id;
 
             await _dataContext.SaveAndReloadLeaderboardChannelsFile();
