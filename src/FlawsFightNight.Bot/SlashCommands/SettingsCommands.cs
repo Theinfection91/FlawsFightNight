@@ -140,16 +140,16 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("set", "Register a channel as a UT2004 leaderboard LiveView channel.")]
             public async Task SetLeaderboardChannelAsync(
                 [Summary("channel", "The channel to post the leaderboard in")] IMessageChannel channel,
-                [Summary("default_view", "Which category this channel defaults to on each refresh (the dropdown always lets users switch)")]
+                [Summary("game_mode", "The game mode leaderboard to display")]
                 [Choice("📊 General", 3)]
                 [Choice("🚩 iCTF", 1)]
                 [Choice("🎯 TAM", 2)]
-                [Choice("💣 iBR", 0)] int defaultType = 3)
+                [Choice("💣 iBR", 0)] int gameMode)
             {
                 try
                 {
                     await DeferAsync();
-                    var type = (LeaderboardChannelTypes)defaultType;
+                    var type = (LeaderboardChannelTypes)gameMode;
                     var result = await _setLeaderboardChannelHandler.Handle(channel, type);
                     await FollowupAsync(embed: result);
                 }
