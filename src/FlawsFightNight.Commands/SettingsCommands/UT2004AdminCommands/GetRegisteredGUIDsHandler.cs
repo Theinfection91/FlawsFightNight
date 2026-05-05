@@ -19,9 +19,13 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
             _ut2004StatsService = ut2004StatsService;
         }
 
-        public async Task<string> GetRegisteredGUIDsProcess(SocketInteractionContext context)
+        public async Task<string> Handle(SocketInteractionContext context)
         {
-            return null;
+            var registeredGuidReport = _memberService.GetAllRegisteredUT2004GUIDsFromMemberProfiles();
+
+            await _ut2004StatsService.SendTextFileDM(context.User.Id, "registered_ut2004_guids.txt", registeredGuidReport);
+
+            return $"Sent a list of registered GUIDs to your DMs.";
         }
     }
 }

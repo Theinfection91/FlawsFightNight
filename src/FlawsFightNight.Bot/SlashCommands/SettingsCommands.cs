@@ -531,7 +531,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    var result = await _getRegisteredGUIDsHandler.GetRegisteredGUIDsProcess(Context);
+                    var result = await _getRegisteredGUIDsHandler.Handle(Context);
                     await FollowupAsync(result, ephemeral: true);
                 }
                 catch (Exception ex)
