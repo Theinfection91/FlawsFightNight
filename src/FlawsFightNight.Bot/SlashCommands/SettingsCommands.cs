@@ -411,6 +411,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             private readonly UnTagLogToMatchHandler _unTagLogToMatchHandler;
             private readonly GetAllGUIDsHandler _getAllGUIDsHandler;
             private readonly GetPlayerProfileByGuidHandler _getPlayerProfileByGuidHandler;
+            private readonly GetRegisteredGUIDsHandler _getRegisteredGUIDsHandler;
             private readonly ILogger<UT2004Commands> _logger;
 
             public UT2004Commands(
@@ -427,6 +428,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 UnTagLogToMatchHandler unTagLogToMatchHandler,
                 GetAllGUIDsHandler getAllGUIDsHandler,
                 GetPlayerProfileByGuidHandler getPlayerProfileByGuidHandler,
+                GetRegisteredGUIDsHandler getRegisteredGUIDsHandler,
                 ILogger<UT2004Commands> logger)
             {
                 _autocompleteCache = autocompleteCache;
@@ -442,6 +444,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 _unTagLogToMatchHandler = unTagLogToMatchHandler;
                 _getAllGUIDsHandler = getAllGUIDsHandler;
                 _getPlayerProfileByGuidHandler = getPlayerProfileByGuidHandler;
+                _getRegisteredGUIDsHandler = getRegisteredGUIDsHandler;
                 _logger = logger;
             }
 
@@ -518,6 +521,22 @@ namespace FlawsFightNight.Bot.SlashCommands
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Command error in {Command}.", nameof(GetAllGUIDsAsync));
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("get_registered_guids", "Get a DM with a text file listing every UT2004 GUID registered and to who")]
+            public async Task GetRegisteredGUIDsAsync()
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var result = await _getRegisteredGUIDsHandler.GetRegisteredGUIDsProcess(Context);
+                    await FollowupAsync(result, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(GetRegisteredGUIDsAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
