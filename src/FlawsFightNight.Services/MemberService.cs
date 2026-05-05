@@ -289,6 +289,28 @@ namespace FlawsFightNight.Services
         {
             return _dataContext.GetUT2004PlayerProfile(playerGuid);
         }
+
+        public string GetAllRegisteredUT2004GUIDsFromMemberProfiles()
+        {
+            var profilesWithGuids = _dataContext.MemberProfileFiles
+                .Select(m => m.MemberProfile)
+                .Where(p => p.RegisteredUT2004GUIDs.Any());
+
+            if (!profilesWithGuids.Any()) return "No UT2004 GUIDs have been registered by any members.";
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"Registered UT2004 GUIDs from Member Profiles — {profilesWithGuids.Count()} total | Generated {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+            foreach (var profile in profilesWithGuids)
+            {
+                sb.AppendLine("========================================");
+                sb.AppendLine($"Member: {profile.DisplayName} ({profile.DiscordId})");
+                foreach (var guid in profile.RegisteredUT2004GUIDs)
+                {
+                    sb.AppendLine($"  - {guid}");
+                }
+            }
+            return sb.ToString();
+        }
         #endregion
     }
 }
