@@ -217,7 +217,7 @@ namespace FlawsFightNight.Bot.Components
             {
                 await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
                 {
-                    msg.Content = "✅ UT2004 player profile database rebuild initiated. Please allow some time for the process to complete. If you have The Feed service set up then it will be updated accordingly once rebuild is complete.";
+                    msg.Content = "✅ UT2004 player profile database rebuild initiated.\n\nPlease allow some time for the process to complete.\n\nIf you have The Feed service set up then it will be updated accordingly once rebuild is complete.";
                     msg.Embed = null;
                     msg.Components = new ComponentBuilder().Build();
                 });

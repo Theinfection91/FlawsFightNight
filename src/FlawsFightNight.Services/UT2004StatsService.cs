@@ -388,7 +388,7 @@ namespace FlawsFightNight.Services
             }
 
             _logger.LogInformation("Saving {ProfileCount} player profiles...", profiles.Count);
-            _logger.LogInformation(AdminFeedEvents.PlayerProfilesRebuilt, "{ProfileCount} player profiles have been rebuilt in the database. {AliasCount} of those profiles are aliases merged into their primary GUID's profile for SeamlessRatings.", profiles.Count, mergeLog.Count);
+            _logger.LogInformation(AdminFeedEvents.PlayerProfilesBuildComplete, "{ProfileCount} player profiles have been rebuilt in the database. {AliasCount} of those profiles are aliases merged into their primary GUID's profile for SeamlessRatings.", profiles.Count, mergeLog.Count);
 
             await GenerateAndPersistMatchSummaries();
 
@@ -408,7 +408,7 @@ namespace FlawsFightNight.Services
 
         public async Task RebuildPlayerProfiles()
         {
-            _logger.LogInformation(AdminFeedEvents.PlayerProfilesRebuilt, "UT2004 Player Profile Database rebuild has been initiated.");
+            _logger.LogInformation(AdminFeedEvents.PlayerProfilesBuildStarted, "UT2004 Player Profile Database rebuild has been initiated.");
 
             _eloService.SkippedYoungPlayers = 0;
             _ratingService.SkippedImbalancedMatches = 0;

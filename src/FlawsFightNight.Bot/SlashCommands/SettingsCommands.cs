@@ -772,7 +772,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 {
                     await DeferAsync(ephemeral: true);
                     var components = ComponentFactory.CreateConfirmationCancelButtons("rebuild_player_db", Context.User.Id);
-                    await FollowupAsync("⚠️ **This will rebuild the UT2004 Player Profile Database.\n\nAre you sure you want to continue?", components: components.Build(), ephemeral: true);
+                    await FollowupAsync("⚠️ **This will rebuild the UT2004 Player Profile Database.**\n\nAre you sure you want to continue?", components: components.Build(), ephemeral: true);
                     _autocompleteCache.Update();
                 }
                 catch (Exception ex)
