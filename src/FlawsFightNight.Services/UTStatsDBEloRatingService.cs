@@ -31,7 +31,7 @@ namespace FlawsFightNight.Services
 
         // Debugging helpers
         public bool VerboseLogging { get; set; } = false;
-        public string? VerbosePlayerGuid { get; set; } = "f65f3f7e0496815de17a4713604e5016";
+        public string? VerbosePlayerGuid { get; set; } = "";
 
         // Game Mode weighters for objective-specific score adjustments (CTF/BR/TAM)
         private readonly Dictionary<UT2004GameMode, IUTGameModeWeight> _weighters;
