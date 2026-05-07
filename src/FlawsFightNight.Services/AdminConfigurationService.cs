@@ -292,6 +292,13 @@ namespace FlawsFightNight.Services
             return newCredential;
         }
 
+        public async Task RenameFTPCredentialServerName(FTPCredential credential, string newServerName)
+        {
+            credential.ServerName = newServerName;
+            await _dataContext.SaveAndReloadFTPCredentialFile();
+            NotifyFTPCredentialsChanged();
+        }
+
         public List<FTPCredential>? GetFTPCredentials()
         {
             return _dataContext.FTPCredentialFile.FTPCredentials;
