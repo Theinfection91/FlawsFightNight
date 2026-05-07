@@ -333,12 +333,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class FTPStatsServiceCommands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
+            private readonly EditFTPServerNameHandler _editFTPServerNameHandler;
             private readonly RemoveFTPCredentialsHandler _removeFTPCredentialsLogic;
             private readonly ILogger<FTPStatsServiceCommands> _logger;
 
-            public FTPStatsServiceCommands(AutocompleteCache autocompleteCache, RemoveFTPCredentialsHandler removeFTPCredentialsLogic, ILogger<FTPStatsServiceCommands> logger)
+            public FTPStatsServiceCommands(AutocompleteCache autocompleteCache, EditFTPServerNameHandler editFTPServerNameHandler, RemoveFTPCredentialsHandler removeFTPCredentialsLogic, ILogger<FTPStatsServiceCommands> logger)
             {
                 _autocompleteCache = autocompleteCache;
+                _editFTPServerNameHandler = editFTPServerNameHandler;
                 _removeFTPCredentialsLogic = removeFTPCredentialsLogic;
                 _logger = logger;
             }
@@ -356,6 +358,24 @@ namespace FlawsFightNight.Bot.SlashCommands
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Command error in {Command}.", nameof(RunFTPSetupAsync));
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("edit_server_name", "Change a server's nick name to also update logs accordingly")]
+            public async Task EditFTPServerNameAsync([Summary("target_ip_address", "The FTP credential by IP address to edit"), Autocomplete(typeof(FTPCredentialIPAddressAutocomplete))] string targetIPAddress,
+                                                     [Summary("new_server_name", "The new server name for the FTP credential")] string newServerName)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var result = await _editFTPServerNameHandler.Handle(targetIPAddress, newServerName);
+                    await FollowupAsync(embed: result, ephemeral: true);
+                    _autocompleteCache.Update();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(EditFTPServerNameAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }

@@ -374,6 +374,32 @@ namespace FlawsFightNight.Bot.Autocomplete
             }
         }
 
+        public List<AutocompleteResult> GetFTPCredentialsIPAddressMatchingInput(string input)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    return _ftpCredentials
+                        .OrderBy(cred => cred.ServerName)
+                        .Select(cred => new AutocompleteResult($"{cred.ServerName} ({cred.IPAddress}:{cred.Port})", cred.IPAddress))
+                        .ToList();
+                }
+                // Filter FTP credentials based on the input (case-insensitive)
+                var matchingCredentials = _ftpCredentials
+                    .Where(cred => cred.ServerName.Contains(input, StringComparison.OrdinalIgnoreCase) || cred.Username.Contains(input, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(cred => cred.ServerName)
+                    .Select(cred => new AutocompleteResult($"{cred.ServerName} ({cred.IPAddress}:{cred.Port})", cred.IPAddress))
+                    .ToList();
+                return matchingCredentials;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating FTP credential suggestions: {ex.Message}");
+                return new List<AutocompleteResult>();
+            }
+        }
+
         public List<AutocompleteResult> GetAllTeams(string input)
         {
             try

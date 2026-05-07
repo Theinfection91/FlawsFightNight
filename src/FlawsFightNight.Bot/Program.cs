@@ -138,6 +138,7 @@ namespace FlawsFightNight.Bot
                     // Settings Commands
                     services.AddSingleton<AddDebugAdminHandler>();
                     services.AddSingleton<AllowLogsByIDHandler>();
+                    services.AddSingleton<EditFTPServerNameHandler>();
                     services.AddSingleton<EloTraceAdminHandler>();
                     services.AddSingleton<GetAllGUIDsHandler>();
                     services.AddSingleton<GetLogsByIDHandler>();
