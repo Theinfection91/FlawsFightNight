@@ -764,6 +764,23 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
+
+            [SlashCommand("rebuild_player_db", "Re-run the UT2004 Player Profile Database rebuild process")]
+            public async Task RunPlayerProfileDbRebuildAsync()
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var components = ComponentFactory.CreateConfirmationCancelButtons("rebuild_player_db", Context.User.Id);
+                    await FollowupAsync("⚠️ **This will rebuild the UT2004 Player Profile Database.**\n\nAre you sure you want to continue?", components: components.Build(), ephemeral: true);
+                    _autocompleteCache.Update();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RunPlayerProfileDbRebuildAsync));
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
         }
     }
 }
