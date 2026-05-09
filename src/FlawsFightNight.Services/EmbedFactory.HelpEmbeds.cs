@@ -140,8 +140,8 @@ namespace FlawsFightNight.Services
                 .WithDescription(
                     "All settings commands live under `/settings` and require **admin** permissions.\n\n" +
                     "**Debug Admins**\n" +
-                    "• `/settings add_debug_admin` — Grant a user admin permissions for the bot.\n" +
-                    "• `/settings remove_debug_admin` — Revoke a user's admin permissions.\n\n" +
+                    "• `/settings add_debug_admin` — Aids in debugging for developer when needed.\n" +
+                    "• `/settings remove_debug_admin` — Remove debug admin privileges.\n\n\n" +
                     "**Admin Feed Channel**\n" +
                     "• `/settings admin_feed_channel set` — Register a channel to receive admin logs and events.\n" +
                     "• `/settings admin_feed_channel remove` — Stop posting admin logs.\n\n" +
@@ -154,16 +154,19 @@ namespace FlawsFightNight.Services
                     "• `/settings teams_channel_id set/remove` — Channel for teams LiveView.\n\n" +
                     "**FTP Stats Service**\n" +
                     "• `/settings ftp_stats_service run_setup` — Re-run FTP credential setup in the console.\n" +
+                    "• `/settings ftp_stats_service edit_server_name` — Change a server's nick name to also update the logs accordingly.\n" +
                     "• `/settings ftp_stats_service remove_credentials` — Remove stored FTP credentials.\n" +
                     "• `/settings ftp_stats_service cancel_setup` — Cancel an in-progress FTP setup.\n\n" +
                     "**UT2004 Admin**\n" +
                     "• `/settings ut2004 register_guid` — Register a GUID to another member's profile.\n" +
                     "• `/settings ut2004 remove_guid` — Remove a GUID from a member's profile.\n" +
                     "• `/settings ut2004 get_log` — Retrieve up to 10 stat logs by their ID (sent via DM).\n" +
+                    "• `/settings ut2004 get_registered_guids` — Retrieve all registered GUIDs in database.\n" +
                     "• `/settings ut2004 ignore_logs` — Ignore up to 10 logs by ID so they won't be processed for stats.\n" +
                     "• `/settings ut2004 allow_logs` — Re-allow previously ignored logs so they count towards stats again.\n" +
                     "• `/settings ut2004 last_logs` — View the last 1–25 compiled stat log IDs. Optional server name filter.\n" +
                     "• `/settings ut2004 logs_by_date` — Get all stat log IDs for a specific day. Optional server name filter.\n" +
+                    "• `/settings ut2004 rebuild_player_db` — Rebuild the player database from existing logs.\n" +
                     "• `/settings ut2004 tag_log` — Tag a stat log to a tournament post-match.\n" +
                     "• `/settings ut2004 untag_log` — Remove a stat log's tournament match tag.\n" +
                     "• `/settings ut2004 admin_elo_trace` — Perform an ELO trace on a given GUID for a specific game mode.\n" +

@@ -140,16 +140,16 @@ namespace FlawsFightNight.Bot.SlashCommands
             [SlashCommand("set", "Register a channel as a UT2004 leaderboard LiveView channel.")]
             public async Task SetLeaderboardChannelAsync(
                 [Summary("channel", "The channel to post the leaderboard in")] IMessageChannel channel,
-                [Summary("default_view", "Which category this channel defaults to on each refresh (the dropdown always lets users switch)")]
+                [Summary("game_mode", "The game mode leaderboard to display")]
                 [Choice("📊 General", 3)]
                 [Choice("🚩 iCTF", 1)]
                 [Choice("🎯 TAM", 2)]
-                [Choice("💣 iBR", 0)] int defaultType = 3)
+                [Choice("💣 iBR", 0)] int gameMode)
             {
                 try
                 {
                     await DeferAsync();
-                    var type = (LeaderboardChannelTypes)defaultType;
+                    var type = (LeaderboardChannelTypes)gameMode;
                     var result = await _setLeaderboardChannelHandler.Handle(channel, type);
                     await FollowupAsync(embed: result);
                 }
@@ -333,12 +333,14 @@ namespace FlawsFightNight.Bot.SlashCommands
         public class FTPStatsServiceCommands : InteractionModuleBase<SocketInteractionContext>
         {
             private readonly AutocompleteCache _autocompleteCache;
+            private readonly EditFTPServerNameHandler _editFTPServerNameHandler;
             private readonly RemoveFTPCredentialsHandler _removeFTPCredentialsLogic;
             private readonly ILogger<FTPStatsServiceCommands> _logger;
 
-            public FTPStatsServiceCommands(AutocompleteCache autocompleteCache, RemoveFTPCredentialsHandler removeFTPCredentialsLogic, ILogger<FTPStatsServiceCommands> logger)
+            public FTPStatsServiceCommands(AutocompleteCache autocompleteCache, EditFTPServerNameHandler editFTPServerNameHandler, RemoveFTPCredentialsHandler removeFTPCredentialsLogic, ILogger<FTPStatsServiceCommands> logger)
             {
                 _autocompleteCache = autocompleteCache;
+                _editFTPServerNameHandler = editFTPServerNameHandler;
                 _removeFTPCredentialsLogic = removeFTPCredentialsLogic;
                 _logger = logger;
             }
@@ -356,6 +358,24 @@ namespace FlawsFightNight.Bot.SlashCommands
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Command error in {Command}.", nameof(RunFTPSetupAsync));
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("edit_server_name", "Change a server's nick name to also update logs accordingly")]
+            public async Task EditFTPServerNameAsync([Summary("target_ip_address", "The FTP credential by IP address to edit"), Autocomplete(typeof(FTPCredentialIPAddressAutocomplete))] string targetIPAddress,
+                                                     [Summary("new_server_name", "The new server name for the FTP credential")] string newServerName)
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var result = await _editFTPServerNameHandler.Handle(targetIPAddress, newServerName);
+                    await FollowupAsync(embed: result, ephemeral: true);
+                    _autocompleteCache.Update();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(EditFTPServerNameAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -411,6 +431,7 @@ namespace FlawsFightNight.Bot.SlashCommands
             private readonly UnTagLogToMatchHandler _unTagLogToMatchHandler;
             private readonly GetAllGUIDsHandler _getAllGUIDsHandler;
             private readonly GetPlayerProfileByGuidHandler _getPlayerProfileByGuidHandler;
+            private readonly GetRegisteredGUIDsHandler _getRegisteredGUIDsHandler;
             private readonly ILogger<UT2004Commands> _logger;
 
             public UT2004Commands(
@@ -427,6 +448,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 UnTagLogToMatchHandler unTagLogToMatchHandler,
                 GetAllGUIDsHandler getAllGUIDsHandler,
                 GetPlayerProfileByGuidHandler getPlayerProfileByGuidHandler,
+                GetRegisteredGUIDsHandler getRegisteredGUIDsHandler,
                 ILogger<UT2004Commands> logger)
             {
                 _autocompleteCache = autocompleteCache;
@@ -442,6 +464,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                 _unTagLogToMatchHandler = unTagLogToMatchHandler;
                 _getAllGUIDsHandler = getAllGUIDsHandler;
                 _getPlayerProfileByGuidHandler = getPlayerProfileByGuidHandler;
+                _getRegisteredGUIDsHandler = getRegisteredGUIDsHandler;
                 _logger = logger;
             }
 
@@ -518,6 +541,22 @@ namespace FlawsFightNight.Bot.SlashCommands
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Command error in {Command}.", nameof(GetAllGUIDsAsync));
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("get_registered_guids", "Get a DM with a text file listing every UT2004 GUID registered and to who")]
+            public async Task GetRegisteredGUIDsAsync()
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var result = await _getRegisteredGUIDsHandler.Handle(Context);
+                    await FollowupAsync(result, ephemeral: true);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(GetRegisteredGUIDsAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
@@ -722,6 +761,23 @@ namespace FlawsFightNight.Bot.SlashCommands
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Command error in {Command}.", nameof(UnTagLogToMatchAsync));
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
+
+            [SlashCommand("rebuild_player_db", "Re-run the UT2004 Player Profile Database rebuild process")]
+            public async Task RunPlayerProfileDbRebuildAsync()
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var components = ComponentFactory.CreateConfirmationCancelButtons("rebuild_player_db", Context.User.Id);
+                    await FollowupAsync("⚠️ **This will rebuild the UT2004 Player Profile Database.**\n\nAre you sure you want to continue?", components: components.Build(), ephemeral: true);
+                    _autocompleteCache.Update();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RunPlayerProfileDbRebuildAsync));
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }

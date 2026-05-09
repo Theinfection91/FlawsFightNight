@@ -1,4 +1,4 @@
-# Flaw's Fight Night (v0.2.4)
+# Flaw's Fight Night (v0.2.5)
 
 **Flaw's Fight Night** is a powerful Discord bot designed to manage competitive tournaments while integrating **real-time UT2004 statistics tracking and advanced player analytics**. It supports multiple tournament types — **Normal Round Robin**, **Open Round Robin**, **Normal Ladder**, and **DSR (Dynamic Skill Rating) Ladder** — with complete lifecycle control, team management, and comprehensive player profiling through FTP integration with UT2004 game servers.
 

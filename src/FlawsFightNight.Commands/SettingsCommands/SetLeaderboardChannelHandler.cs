@@ -18,7 +18,7 @@ namespace FlawsFightNight.Commands.SettingsCommands
             _embedFactory = embedFactory;
         }
 
-        public async Task<Embed> Handle(IMessageChannel channel, LeaderboardChannelTypes defaultType)
+        public async Task<Embed> Handle(IMessageChannel channel, LeaderboardChannelTypes channelType)
         {
             var existing = _dataContext.GetLeaderboardChannel(channel.Id);
             if (existing != null)
@@ -28,11 +28,11 @@ namespace FlawsFightNight.Commands.SettingsCommands
             var channelData = new LeaderboardChannelData
             {
                 ChannelId = channel.Id,
-                Type = defaultType
+                Type = channelType
             };
 
             await _dataContext.AddLeaderboardChannel(channelData);
-            return _embedFactory.SetLeaderboardChannelSuccess(channel, defaultType);
+            return _embedFactory.SetLeaderboardChannelSuccess(channel, channelType);
         }
     }
 }

@@ -11,9 +11,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
     public class CTFScoreWeighter : IUTGameModeWeight
     {
         public double FlagCaptureWeight { get; set; } = 5.0;
-        public double FlagReturnWeight { get; set; } = 1.0;
+        public double FlagReturnFriendlyWeight { get; set; } = 1.0;
+        public double FlagReturnEnemyWeight { get; set; } = 2.0;
         public double FlagGrabWeight { get; set; } = 0.5;
-        public double FlagDenialWeight { get; set; } = 1.0;
+        public double FlagDenialWeight { get; set; } = 1.5;
         public double AssistWeight { get; set; } = 1.0;
         public double FirstTouchWeight { get; set; } = 1.0;
 
@@ -23,7 +24,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         {
             double add = 0.0;
             add += player.FlagCaptures * FlagCaptureWeight;
-            add += player.FlagReturns * FlagReturnWeight;
+            add += player.FlagReturnsFriendly * FlagReturnFriendlyWeight;
+            add += player.FlagReturnsEnemy * FlagReturnEnemyWeight;
             add += player.FlagGrabs * FlagGrabWeight;
             add += player.FlagDenials * FlagDenialWeight;
             add += player.FlagCaptureAssists * AssistWeight;

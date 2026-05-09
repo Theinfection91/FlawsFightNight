@@ -1,18 +1,19 @@
-﻿using FluentFTP;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using FlawsFightNight.Core.Helpers.UT2004;
+﻿using Discord;
+using Discord.Interactions;
+using Discord.WebSocket;
 using FlawsFightNight.Core.Enums.UT2004;
+using FlawsFightNight.Core.Helpers.UT2004;
 using FlawsFightNight.Core.Models.UT2004;
 using FlawsFightNight.Services.Logging;
-using Discord.WebSocket;
-using Discord;
-using Discord.Interactions;
+using FluentFTP;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace FlawsFightNight.Services
 {
@@ -387,7 +388,7 @@ namespace FlawsFightNight.Services
             }
 
             _logger.LogInformation("Saving {ProfileCount} player profiles...", profiles.Count);
-            _logger.LogInformation(AdminFeedEvents.PlayerProfilesRebuilt, "{ProfileCount} player profiles have been rebuilt in the database. {AliasCount} of those profiles are aliases merged into their primary GUID's profile for SeamlessRatings.", profiles.Count, mergeLog.Count);
+            _logger.LogInformation(AdminFeedEvents.PlayerProfilesBuildComplete, "{ProfileCount} player profiles have been rebuilt in the database. {AliasCount} of those profiles are aliases merged into their primary GUID's profile for SeamlessRatings.", profiles.Count, mergeLog.Count);
 
             await GenerateAndPersistMatchSummaries();
 
@@ -407,7 +408,7 @@ namespace FlawsFightNight.Services
 
         public async Task RebuildPlayerProfiles()
         {
-            _logger.LogInformation("Rebuilding player profiles from scratch...");
+            _logger.LogInformation(AdminFeedEvents.PlayerProfilesBuildStarted, "UT2004 Player Profile Database rebuild has been initiated.");
 
             _eloService.SkippedYoungPlayers = 0;
             _ratingService.SkippedImbalancedMatches = 0;

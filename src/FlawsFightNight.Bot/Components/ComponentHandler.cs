@@ -20,6 +20,7 @@ namespace FlawsFightNight.Bot.Components
         private readonly MemberService _memberService;
         private readonly ComparePlayersHandler _comparePlayersHandler;
         private readonly UserLevelLeaderboardHandler _leaderboardHandler;
+        private readonly UT2004StatsService _ut2004StatsService;
         private readonly ILogger<ComponentHandler> _logger;
 
         public ComponentHandler(
@@ -28,11 +29,13 @@ namespace FlawsFightNight.Bot.Components
             MemberService memberService,
             ComparePlayersHandler comparePlayersHandler,
             UserLevelLeaderboardHandler leaderboardHandler,
+            UT2004StatsService ut2004StatsService,
             ILogger<ComponentHandler> logger)
         {
             _embedFactory = embedFactory;
             _adminConfigService = adminConfigService;
             _memberService = memberService;
+            _ut2004StatsService = ut2004StatsService;
             _comparePlayersHandler = comparePlayersHandler;
             _leaderboardHandler = leaderboardHandler;
 
@@ -196,6 +199,57 @@ namespace FlawsFightNight.Bot.Components
             catch (Exception ex)
             {
                 _logger.LogError(AdminFeedEvents.FtpSetupFailed, ex, "FTP setup cancellation error for user {UserId}.", Context.User.Id);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+            }
+        }
+        #endregion
+
+        #region Rebuild UT2004 Player Profile Confirmation
+        [ComponentInteraction("rebuild_player_db_confirm:*")]
+        public async Task HandleRebuildPlayerProfileConfirmAsync(ulong invokingUserId)
+        {
+            if (!IsAuthorizedUser(invokingUserId))
+            {
+                await RespondAsync(embed: _embedFactory.ErrorEmbed("This action is not for you."), ephemeral: true);
+                return;
+            }
+            try
+            {
+                await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
+                {
+                    msg.Content = "✅ UT2004 player profile database rebuild initiated.\n\nPlease allow some time for the process to complete.\n\nIf you have The Feed service set up then it will be updated accordingly once rebuild is complete.";
+                    msg.Embed = null;
+                    msg.Components = new ComponentBuilder().Build();
+                });
+                await _ut2004StatsService.RebuildPlayerProfiles();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error initiating UT2004 player profile database rebuild by user {UserId}.", Context.User.Id);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+            }
+        }
+
+        [ComponentInteraction("rebuild_player_db_cancel:*")]
+        public async Task HandleRebuildPlayerProfileCancelAsync(ulong invokingUserId)
+        {
+            if (!IsAuthorizedUser(invokingUserId))
+            {
+                await RespondAsync(embed: _embedFactory.ErrorEmbed("This action is not for you."), ephemeral: true);
+                return;
+            }
+            try
+            {
+                await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
+                {
+                    msg.Content = "❌ UT2004 player profile database rebuild cancelled.";
+                    msg.Embed = null;
+                    msg.Components = new ComponentBuilder().Build();
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cancelling UT2004 player profile database rebuild by user {UserId}.", Context.User.Id);
                 await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
             }
         }
