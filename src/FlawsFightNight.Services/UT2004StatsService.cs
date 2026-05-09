@@ -157,6 +157,7 @@ namespace FlawsFightNight.Services
                 await _dataContext.AddStatLogIndexEntry(entry);
                 added++;
             }
+            await _dataContext.SaveStatLogIndexFile();
             _logger.LogInformation("Stat log index rebuild complete. {Added} entries added.", added);
         }
 
