@@ -13,12 +13,14 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
         private readonly AdminConfigurationService _adminConfigService;
         private readonly DataContext _dataContext;
         private readonly EmbedFactory _embedFactory;
+        private readonly UT2004StatsService _ut2004StatsService;
 
-        public EditFTPServerNameHandler(AdminConfigurationService adminConfigurationService, DataContext dataContext, EmbedFactory embedFactory) : base("Edit FTP Server Name")
+        public EditFTPServerNameHandler(AdminConfigurationService adminConfigurationService, DataContext dataContext, EmbedFactory embedFactory, UT2004StatsService ut2004StatsService) : base("Edit FTP Server Name")
         {
             _adminConfigService = adminConfigurationService;
             _dataContext = dataContext;
             _embedFactory = embedFactory;
+            _ut2004StatsService = ut2004StatsService;
         }
 
         public async Task<Embed> Handle(string targetIPAddress, string newServerName)
@@ -55,16 +57,11 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
                 {
                     log.ServerName = newServerName;
                     await _dataContext.SaveStatLogMatchResultFile(log);
-
-                    // Update index file entry
-                    var entry = _dataContext.GetStatLogIndexEntry(log.Id);
-                    if (entry != null)
-                    {
-                        entry.ServerName = newServerName;
-                        await _dataContext.SaveStatLogIndexFile();
-                    }
                 }
             }
+
+            // Rebuild Stat Log index file
+            await _ut2004StatsService.RebuildStatLogIndex();
 
             return _embedFactory.SuccessEmbed(Name, $"FTP server name for IP address {targetIPAddress} has been updated to {newServerName}.");
         }

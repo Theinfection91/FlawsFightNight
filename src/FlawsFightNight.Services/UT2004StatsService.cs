@@ -139,6 +139,27 @@ namespace FlawsFightNight.Services
             }
         }
 
+        public async Task RebuildStatLogIndex()
+        {
+            _logger.LogInformation("Rebuilding stat log index from existing stat log files...");
+            if (_dataContext.StatLogIndexFile == null) await _dataContext.LoadStatLogIndexFile();
+            var statLogFiles = await _dataContext.LoadAllStatLogMatchResultFiles();
+            _dataContext.StatLogIndexFile!.Entries.Clear();
+            int added = 0;
+            foreach (var file in statLogFiles)
+            {
+                var entry = new StatLogIndexEntry
+                {
+                    Id = file.StatLog!.Id,
+                    MatchDate = file.StatLog.MatchDate,
+                    ServerName = file.StatLog.ServerName
+                };
+                await _dataContext.AddStatLogIndexEntry(entry);
+                added++;
+            }
+            _logger.LogInformation("Stat log index rebuild complete. {Added} entries added.", added);
+        }
+
         public async Task GetStatLogCounts()
         {
             _iCTFStatLogIdCounter = await _dataContext.GetStatLogCount(UT2004GameMode.iCTF);

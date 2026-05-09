@@ -505,8 +505,7 @@ namespace FlawsFightNight.Services
 
         public async Task AddStatLogIndexEntry(StatLogIndexEntry entry)
         {
-            if (StatLogIndexFile == null)
-                await LoadStatLogIndexFile();
+            if (StatLogIndexFile == null) await LoadStatLogIndexFile();
 
             StatLogIndexFile!.Entries.Add(entry);
             await SaveStatLogIndexFile();
