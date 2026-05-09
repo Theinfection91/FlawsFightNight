@@ -46,7 +46,7 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
             var credential = ftpCredentials.First(c => c.IPAddress == targetIPAddress);
             await _adminConfigService.RenameFTPCredentialServerName(credential, newServerName);
 
-            // Filter results
+            // Correct Stat Logs and infex file
             var statLogs = await _dataContext.GetAllStatLogs();
             for (int i = 0; i < statLogs.Count; i++)
             {
@@ -55,6 +55,14 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
                 {
                     log.ServerName = newServerName;
                     await _dataContext.SaveStatLogMatchResultFile(log);
+
+                    // Update index file entry
+                    var entry = _dataContext.GetStatLogIndexEntry(log.Id);
+                    if (entry != null)
+                    {
+                        entry.ServerName = newServerName;
+                        await _dataContext.SaveStatLogIndexFile();
+                    }
                 }
             }
 
