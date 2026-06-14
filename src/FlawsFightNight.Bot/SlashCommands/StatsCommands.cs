@@ -319,7 +319,7 @@ namespace FlawsFightNight.Bot.SlashCommands
                         .Where(p => p != null)
                         .ToList();
                     var mode = gameMode == 4 ? UT2004GameMode.Unknown : (UT2004GameMode)gameMode;
-                    var embed = await _suggestTeamsHandler.Handle(players, mode);
+                    var embed = await _suggestTeamsHandler.Handle(players, mode, teamSize);
                     await FollowupAsync(embed: embed, ephemeral: true);
                 }
                 catch (Exception ex)
