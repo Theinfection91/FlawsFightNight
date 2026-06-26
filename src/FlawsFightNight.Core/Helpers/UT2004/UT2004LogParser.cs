@@ -12,8 +12,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
     public class UT2004LogParser : ILogParser
     {
         // Debug logging configuration - Toggle independently
-        private const bool _simpleDebugLogging = false;
-        private const bool _expandedDebugLogging = false;
+        private const bool _simpleDebugLogging = true;
+        private const bool _expandedDebugLogging = true;
 
         private Dictionary<int, UTPlayerMatchStats> _activePlayersBySeqNum = new();
         private Dictionary<string, UTPlayerMatchStats> _activePlayersByGuid = new(); // Track by GUID for reconnects
@@ -46,6 +46,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
         // Ignore reason returns
         public string? LastIgnoreReason { get; private set; }
+
+        // WSUTComp compatibility tracking
+        private bool _wsutcompDetected = false;
+        private Dictionary<int, int> _currentFlagCarrierByTeam = new();
 
         private double GameTime(double timestamp) => Math.Round(timestamp - _gameStartTime, 2);
 
@@ -234,6 +238,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _currentMapName = string.Empty;
             _currentMapCreator = string.Empty;
             LastIgnoreReason = null;
+            _wsutcompDetected = false;
+            _currentFlagCarrierByTeam.Clear();
         }
 
         private void ParseNewGame(string[] parts)
@@ -267,6 +273,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                         Console.WriteLine($"Unknown Game Mode: {gameMode}");
                     }
                 }
+            }
+
+            // Detect WSUTComp mutator (specifically the problematic variant)
+            if (parts.Length > 8)
+            {
+                string mutatorsStr = string.Join("\t", parts.Skip(8));
+                _wsutcompDetected = mutatorsStr.Contains("WSUTComp_V", StringComparison.OrdinalIgnoreCase);
+
+                if (_wsutcompDetected && _expandedDebugLogging)
+                    Console.WriteLine("⚠ WSUTComp mutator detected - Will use fallback flag capture scoring");
             }
 
             // Parse timestamp (format: YYYY-M-D H:mm:ss)
@@ -530,6 +546,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                         if (_activePlayersBySeqNum.TryGetValue(ftSeq, out var player))
                         {
                             player.FlagGrabs++;
+                            int flagTeam = int.TryParse(parts[4], out int ft) ? ft : -1;
+                            if (flagTeam >= 0)
+                                _currentFlagCarrierByTeam[flagTeam] = ftSeq;
+
                             _timeline.Add(new MatchEvent
                             {
                                 GameTimeSeconds = GameTime(timestamp),
@@ -566,6 +586,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                         if (_activePlayersBySeqNum.TryGetValue(fdSeq, out var player))
                         {
                             player.FlagDrops++;
+                            int flagTeam = int.TryParse(parts[4], out int ft) ? ft : -1;
+                            if (flagTeam >= 0 && _currentFlagCarrierByTeam.TryGetValue(flagTeam, out int carrier) && carrier == fdSeq)
+                                _currentFlagCarrierByTeam.Remove(flagTeam);
+
                             _timeline.Add(new MatchEvent
                             {
                                 GameTimeSeconds = GameTime(timestamp),
@@ -583,6 +607,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     {
                         if (_activePlayersBySeqNum.TryGetValue(fcSeq, out var player))
                         {
+                            // WSUTComp fallback: synthesize score if mutator detected
+                            if (_wsutcompDetected)
+                            {
+                                SynthesizeFlagCapScore(fcSeq, timestamp);
+                            }
+
+                            int flagTeam = int.TryParse(parts[4], out int ft) ? ft : -1;
+                            if (flagTeam >= 0)
+                                _currentFlagCarrierByTeam.Remove(flagTeam);
+
                             _timeline.Add(new MatchEvent
                             {
                                 GameTimeSeconds = GameTime(timestamp),
@@ -780,6 +814,16 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 _teamScores[teamId] = 0;
 
             _teamScores[teamId] += (int)Math.Round(points);
+
+            // WSUTComp fallback: If flag_cap event detected and S lines missing,
+            // synthesize score from the flag carrier tracked in G line
+            if (_wsutcompDetected && reason.Equals("flag_cap", StringComparison.OrdinalIgnoreCase))
+            {
+                // Look ahead for the G flag_captured line (should follow immediately)
+                // We'll handle the actual scoring in the corresponding G event
+                if (_simpleDebugLogging)
+                    Console.WriteLine($"[WSUTComp] Team {teamId} flag_cap detected - awaiting G flag_captured");
+            }
 
             if (reason.Equals("ball_carried", StringComparison.OrdinalIgnoreCase) && parts.Length >= 4)
             {
@@ -1378,6 +1422,28 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             statLog.MapCreator = _currentMapCreator;
 
             return statLog;
+        }
+
+        private void SynthesizeFlagCapScore(int capperSeqNum, double timestamp)
+        {
+            if (!_activePlayersBySeqNum.TryGetValue(capperSeqNum, out var capper))
+                return;
+
+            // Synthesize the missing S lines for flag_cap_final
+            capper.FlagCaptures++;
+            capper.Score += 5;  // Standard flag cap score
+
+            _timeline.Add(new MatchEvent
+            {
+                GameTimeSeconds = GameTime(timestamp),
+                EventType = "FlagCapture",
+                ActorName = capper.LastKnownName,
+                ActorGuid = capper.Guid,
+                Detail = "[WSUTComp fallback]"
+            });
+
+            if (_expandedDebugLogging)
+                Console.WriteLine($"[WSUTComp Fallback] Credited {capper.LastKnownName} with flag capture");
         }
     }
 }
