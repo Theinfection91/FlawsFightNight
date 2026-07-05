@@ -12,8 +12,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
     public class UT2004LogParser : ILogParser
     {
         // Debug logging configuration - Toggle independently
-        private const bool _simpleDebugLogging = true;
-        private const bool _expandedDebugLogging = true;
+        private const bool _simpleDebugLogging = false;
+        private const bool _expandedDebugLogging = false;
 
         private Dictionary<int, UTPlayerMatchStats> _activePlayersBySeqNum = new();
         private Dictionary<string, UTPlayerMatchStats> _activePlayersByGuid = new(); // Track by GUID for reconnects
@@ -281,8 +281,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 string mutatorsStr = string.Join("\t", parts.Skip(8));
                 _wsutcompDetected = mutatorsStr.Contains("WSUTComp_V", StringComparison.OrdinalIgnoreCase);
 
-                if (_wsutcompDetected && _expandedDebugLogging)
-                    Console.WriteLine("⚠ WSUTComp mutator detected - Will use fallback flag capture scoring");
+                if (_wsutcompDetected)
+                {
+                    Console.WriteLine("\n⚠ WSUTComp mutator detected while parsing match - Will use fallback flag capture scoring for this match");
+                }
             }
 
             // Parse timestamp (format: YYYY-M-D H:mm:ss)
