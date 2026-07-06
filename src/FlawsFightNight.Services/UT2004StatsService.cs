@@ -161,11 +161,30 @@ namespace FlawsFightNight.Services
             _logger.LogInformation("Stat log index rebuild complete. {Added} entries added.", added);
         }
 
+        public async Task RebuildLogDatabase()
+        {
+            // Clear the stat log ID counters so new logs start from 0 again
+            ResetStatLogCounters();
+
+            // Delete the stat logs, index and processed/ignored log names
+            await _dataContext.DeleteStatLogDatabase();
+
+            // Handle player profiles
+            await RebuildPlayerProfiles();
+        }
+
         public async Task GetStatLogCounts()
         {
             _iCTFStatLogIdCounter = await _dataContext.GetStatLogCount(UT2004GameMode.iCTF);
             _TAMStatLogIdCounter = await _dataContext.GetStatLogCount(UT2004GameMode.TAM);
             _iBRStatLogIdCounter = await _dataContext.GetStatLogCount(UT2004GameMode.iBR);
+        }
+
+        public void ResetStatLogCounters()
+        {
+            _iCTFStatLogIdCounter = 0;
+            _TAMStatLogIdCounter = 0;
+            _iBRStatLogIdCounter = 0;
         }
 
         public string GenerateStatLogId(UT2004GameMode gameMode)
