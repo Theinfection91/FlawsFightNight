@@ -204,7 +204,58 @@ namespace FlawsFightNight.Bot.Components
         }
         #endregion
 
-        #region Rebuild UT2004 Player Profile Confirmation
+        #region Rebuild UT2004 Log Database
+        [ComponentInteraction("rebuild_log_db_confirm:*")]
+        public async Task HandleRebuildLogDatabaseConfirmAsync(ulong invokingUserId)
+        {
+            if (!IsAuthorizedUser(invokingUserId))
+            {
+                await RespondAsync(embed: _embedFactory.ErrorEmbed("This action is not for you."), ephemeral: true);
+                return;
+            }
+            try
+            {
+                await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
+                {
+                    msg.Content = "✅ UT2004 log database rebuild initiated.\n\nPlease allow some time for the process to complete.\n\nIf you have The Feed service set up then it will be updated accordingly once rebuild is complete.";
+                    msg.Embed = null;
+                    msg.Components = new ComponentBuilder().Build();
+                });
+                await _ut2004StatsService.RebuildLogDatabase();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error initiating UT2004 log database rebuild by user {UserId}.", Context.User.Id);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+            }
+        }
+
+        [ComponentInteraction("rebuild_log_db_cancel:*")]
+        public async Task HandleRebuildLogDatabaseCancelAsync(ulong invokingUserId)
+        {
+            if (!IsAuthorizedUser(invokingUserId))
+            {
+                await RespondAsync(embed: _embedFactory.ErrorEmbed("This action is not for you."), ephemeral: true);
+                return;
+            }
+            try
+            {
+                await (Context.Interaction as SocketMessageComponent)!.UpdateAsync(msg =>
+                {
+                    msg.Content = "❌ UT2004 log database rebuild cancelled.";
+                    msg.Embed = null;
+                    msg.Components = new ComponentBuilder().Build();
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cancelling UT2004 log database rebuild by user {UserId}.", Context.User.Id);
+                await RespondAsync(embed: _embedFactory.ErrorEmbed($"An error occurred: {ex.Message}"), ephemeral: true);
+            }
+        }
+        #endregion
+
+        #region Rebuild UT2004 Player Profile
         [ComponentInteraction("rebuild_player_db_confirm:*")]
         public async Task HandleRebuildPlayerProfileConfirmAsync(ulong invokingUserId)
         {

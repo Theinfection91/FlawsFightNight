@@ -260,12 +260,6 @@ namespace FlawsFightNight.Services
             return await _statLogMatchResultsHandler.LoadAll("*.json", "StatLogs");
         }
 
-        public async Task<StatLogMatchResultsFile> LoadStatLogMatchResultFile(string fileName)
-        {
-            await _statLogMatchResultsHandler.SetFilePath(PathOption.iCTFStatLogs, fileName);
-            return await _statLogMatchResultsHandler.Load();
-        }
-
         public async Task SaveStatLogMatchResultFile(UT2004StatLog statLog)
         {
             PathOption pathOption = statLog.GameMode switch
@@ -638,6 +632,28 @@ namespace FlawsFightNight.Services
         public ulong GetAdminChannelFeedId()
         {
             return LiveViewChannelsFile?.AdminChannelFeedId ?? 0;
+        }
+        #endregion
+
+        #region Rebuild UT2004 Log Database
+        public async Task DeleteStatLogDatabase()
+        {
+            // Clear stat log index
+            StatLogIndexFile = new StatLogIndexFile();
+            await SaveStatLogIndexFile();
+
+            // Clear processed log names
+            ProcessedLogNamesFile = new ProcessedLogNamesFile();
+            await SaveProcessedLogNamesFile();
+
+            // Clear tournament stat tags
+            TournamentStatTagsFile = new TournamentStatTagsFile();
+            await SaveTournamentStatTagsFile();
+
+            // Delete all stat log files from the file system
+            await _statLogMatchResultsHandler.DeleteJsonFilesInFolder(PathOption.iCTFStatLogs);
+            await _statLogMatchResultsHandler.DeleteJsonFilesInFolder(PathOption.TAMStatLogs);
+            await _statLogMatchResultsHandler.DeleteJsonFilesInFolder(PathOption.iBRStatLogs);
         }
         #endregion
     }
