@@ -26,11 +26,39 @@ namespace FlawsFightNight.Core.Models.UT2004
         public int Suicides { get; set; }
         public int Headshots { get; set; }
 
-        // Kill Streaks & Multikills
+        // Kill Streaks & Multikills - individual counts
         public int BestKillStreak { get; set; }
         public int BestMultiKill { get; set; }
+
+        // Killing Spree counts (indices match kill count brackets)
+        public int KillingSprees { get; set; }      // 5x
+        public int Rampages { get; set; }           // 10x
+        public int Dominatings { get; set; }        // 15x
+        public int Unstoppables { get; set; }       // 20x
+        public int Godlikes { get; set; }           // 25x
+        public int WickedSicks { get; set; }        // 30x
+
+        // Multi-kill counts (indices match kill count brackets)
+        public int DoubleKills { get; set; }        // 2x
+        public int MultiKills { get; set; }         // 3x
+        public int MegaKills { get; set; }          // 4x
+        public int UltraKills { get; set; }         // 5x
+        public int MonsterKills { get; set; }       // 6x
+        public int LudicrousKills { get; set; }     // 7x
+        public int HolyShits { get; set; }          // 8x+
+
+        // Legacy arrays (for backwards compatibility)
+        [Obsolete("Use individual Spree/MultiKill count properties instead")]
         public int[] SpreeCounts { get; set; } = new int[6];
+        [Obsolete("Use individual Spree/MultiKill count properties instead")]
         public int[] MultiCounts { get; set; } = new int[7];
+
+        // Weapon-specific streaks (TAM mode - 15+ consecutive kills with specific weapon)
+        public int ComboWhoreStreaks { get; set; }      // Shock Combo
+        public int BioHazardStreaks { get; set; }       // Bio Rifle
+        public int HeadHunterStreaks { get; set; }      // Sniper Rifle / Lightning Gun
+        public int FlakMonkeyStreaks { get; set; }      // Flak Cannon
+        public int RocketManStreaks { get; set; }       // Rocket Launcher
 
         // TAM-Specific Stats
         public int TotalDamageDealt { get; set; }        // Sum of all 'S EnemyDamage' events
@@ -42,7 +70,7 @@ namespace FlawsFightNight.Core.Models.UT2004
 
         // Weapon Accuracy (from PA lines at match end)
         public Dictionary<string, WeaponStats> WeaponStatistics { get; set; } = new Dictionary<string, WeaponStats>();
-        
+
         // Legacy weapon tracking (keep for backwards compatibility)
         public Dictionary<string, int> WeaponKills { get; set; } = new Dictionary<string, int>();
 
@@ -79,7 +107,7 @@ namespace FlawsFightNight.Core.Models.UT2004
         {
             int totalShots = WeaponStatistics.Values.Sum(w => w.ShotsFired);
             int totalHits = WeaponStatistics.Values.Sum(w => w.Hits);
-            
+
             return totalShots > 0 ? (double)totalHits / totalShots * 100.0 : 0.0;
         }
 
@@ -97,6 +125,30 @@ namespace FlawsFightNight.Core.Models.UT2004
         public double GetKillDeathRatio()
         {
             return Deaths > 0 ? (double)Kills / Deaths : Kills;
+        }
+
+        /// <summary>
+        /// Gets total number of all killing spree achievements.
+        /// </summary>
+        public int GetTotalKillingSprees()
+        {
+            return KillingSprees + Rampages + Dominatings + Unstoppables + Godlikes + WickedSicks;
+        }
+
+        /// <summary>
+        /// Gets total number of all multi-kill achievements.
+        /// </summary>
+        public int GetTotalMultiKills()
+        {
+            return DoubleKills + MultiKills + MegaKills + UltraKills + MonsterKills + LudicrousKills + HolyShits;
+        }
+
+        /// <summary>
+        /// Gets total number of weapon-specific streak achievements (TAM).
+        /// </summary>
+        public int GetTotalWeaponStreaks()
+        {
+            return ComboWhoreStreaks + BioHazardStreaks + HeadHunterStreaks + FlakMonkeyStreaks + RocketManStreaks;
         }
     }
 

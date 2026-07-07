@@ -907,6 +907,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (_currentGameMode == UT2004GameMode.TAM)
                 _lastKillerSeqNum = killerSeqNum;
 
+            // Track weapon-specific streaks (TAM mode emphasis)
+            if (_currentGameMode == UT2004GameMode.TAM)
+                TrackWeaponStreak(killer, weapon);
+
             // Register into kill matrix (use current GUIDs if available)
             string killerGuid = killer.Guid ?? string.Empty;
             string victimGuid = victim.Guid ?? string.Empty;
@@ -936,6 +940,40 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             if (_expandedDebugLogging)
                 Console.WriteLine($"{killer.LastKnownName} killed {victim.LastKnownName} with {weapon} ({damageType})");
+        }
+
+        private void TrackWeaponStreak(UTPlayerMatchStats killer, string weapon)
+        {
+            if (killer == null || string.IsNullOrEmpty(weapon))
+                return;
+
+            var weaponLower = weapon.ToLowerInvariant();
+
+            // Shock Combo (Combo Whore - 15+ consecutive ShockCombo kills)
+            if (weaponLower.Contains("shock") || weaponLower.Contains("combo"))
+            {
+                killer.ComboWhoreStreaks++;
+            }
+            // Bio Rifle (Bio Hazard - 15+ consecutive Bio kills)
+            else if (weaponLower.Contains("bio"))
+            {
+                killer.BioHazardStreaks++;
+            }
+            // Sniper or Lightning Gun (Head Hunter - 15+ consecutive Sniper/Lightning kills)
+            else if (weaponLower.Contains("sniper") || weaponLower.Contains("lightning"))
+            {
+                killer.HeadHunterStreaks++;
+            }
+            // Flak Cannon (Flak Monkey - 15+ consecutive Flak kills)
+            else if (weaponLower.Contains("flak"))
+            {
+                killer.FlakMonkeyStreaks++;
+            }
+            // Rocket Launcher (Rocket Man - 15+ consecutive Rocket kills)
+            else if (weaponLower.Contains("rocket") || weaponLower.Contains("eightball"))
+            {
+                killer.RocketManStreaks++;
+            }
         }
 
         private void ParseScore(string[] parts, double timestamp)
@@ -1089,16 +1127,37 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 {
                     player.BestKillStreak = Math.Max(player.BestKillStreak, streakLevel);
 
+                    // Track individual spree achievements
+                    if (streakLevel >= 30)
+                        player.WickedSicks++;
+                    else if (streakLevel >= 25)
+                        player.Godlikes++;
+                    else if (streakLevel >= 20)
+                        player.Unstoppables++;
+                    else if (streakLevel >= 15)
+                        player.Dominatings++;
+                    else if (streakLevel >= 10)
+                        player.Rampages++;
+                    else if (streakLevel >= 5)
+                        player.KillingSprees++;
+
+                    // Legacy array support
                     if (streakLevel >= 5)
                     {
                         int spreeIndex = Math.Min((streakLevel - 5) / 5, 5);
                         player.SpreeCounts[spreeIndex]++;
                     }
 
-                    string[] spreeNames = { "Killing Spree", "Rampage", "Dominating", "Unstoppable", "Godlike", "Wicked Sick" };
-                    string spreeDetail = streakLevel >= 1 && streakLevel <= spreeNames.Length
-                        ? spreeNames[streakLevel - 1]
-                        : $"Level {streakLevel} Spree";
+                    string spreeDetail = streakLevel switch
+                    {
+                        >= 30 => "Wicked Sick",
+                        >= 25 => "Godlike",
+                        >= 20 => "Unstoppable",
+                        >= 15 => "Dominating",
+                        >= 10 => "Rampage",
+                        >= 5 => "Killing Spree",
+                        _ => $"Level {streakLevel} Spree"
+                    };
 
                     _timeline.Add(new MatchEvent
                     {
@@ -1108,10 +1167,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                         ActorGuid = player.Guid,
                         Detail = spreeDetail
                     });
-                }
 
-                if (_expandedDebugLogging)
-                    Console.WriteLine($"{player.LastKnownName} achieved {eventType} (spree index recorded).");
+                    if (_expandedDebugLogging)
+                        Console.WriteLine($"{player.LastKnownName} achieved {spreeDetail} ({streakLevel} kills).");
+                }
             }
             else if (eventType.StartsWith("multikill_"))
             {
@@ -1119,16 +1178,40 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 {
                     player.BestMultiKill = Math.Max(player.BestMultiKill, multiLevel);
 
+                    // Track individual multi-kill achievements
+                    if (multiLevel >= 8)
+                        player.HolyShits++;
+                    else if (multiLevel == 7)
+                        player.LudicrousKills++;
+                    else if (multiLevel == 6)
+                        player.MonsterKills++;
+                    else if (multiLevel == 5)
+                        player.UltraKills++;
+                    else if (multiLevel == 4)
+                        player.MegaKills++;
+                    else if (multiLevel == 3)
+                        player.MultiKills++;
+                    else if (multiLevel == 2)
+                        player.DoubleKills++;
+
+                    // Legacy array support
                     if (multiLevel >= 2)
                     {
                         int multiIndex = Math.Min(multiLevel - 2, 6);
                         player.MultiCounts[multiIndex]++;
                     }
 
-                    string[] multiNames = { "Double Kill", "Multi Kill", "Ultra Kill", "Monster Kill", "Ludicrous Kill", "Holy Shit", "Wicked Sick" };
-                    string multiDetail = multiLevel >= 1 && multiLevel <= multiNames.Length
-                        ? multiNames[multiLevel - 1]
-                        : $"x{multiLevel + 1}";
+                    string multiDetail = multiLevel switch
+                    {
+                        >= 8 => "Holy Shit",
+                        7 => "Ludicrous Kill",
+                        6 => "Monster Kill",
+                        5 => "Ultra Kill",
+                        4 => "Mega Kill",
+                        3 => "Multi Kill",
+                        2 => "Double Kill",
+                        _ => $"x{multiLevel} Kill"
+                    };
 
                     _timeline.Add(new MatchEvent
                     {
@@ -1140,7 +1223,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     });
 
                     if (_expandedDebugLogging)
-                        Console.WriteLine($"{player.LastKnownName} achieved {eventType} (multi index recorded).");
+                        Console.WriteLine($"{player.LastKnownName} achieved {multiDetail}.");
                 }
             }
             else if (eventType == "first_blood")

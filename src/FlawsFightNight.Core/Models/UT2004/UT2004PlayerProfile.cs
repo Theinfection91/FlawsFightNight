@@ -54,6 +54,34 @@ namespace FlawsFightNight.Core.Models.UT2004
         public int MostDeathsInMatch { get; set; } = 0;
         public int HighestScoreInMatch { get; set; } = 0;
 
+        // Career Spree/MultiKill Stats - All game modes
+        public int TotalKillingSprees { get; set; } = 0;
+        public int TotalRampages { get; set; } = 0;
+        public int TotalDominatings { get; set; } = 0;
+        public int TotalUnstoppables { get; set; } = 0;
+        public int TotalGodlikes { get; set; } = 0;
+        public int TotalWickedSicks { get; set; } = 0;
+
+        public int TotalDoubleKills { get; set; } = 0;
+        public int TotalMultiKills { get; set; } = 0;
+        public int TotalMegaKills { get; set; } = 0;
+        public int TotalUltraKills { get; set; } = 0;
+        public int TotalMonsterKills { get; set; } = 0;
+        public int TotalLudicrousKills { get; set; } = 0;
+        public int TotalHolyShits { get; set; } = 0;
+
+        // Weapon-Specific Streaks (TAM mode)
+        public int TotalComboWhoreStreaks { get; set; } = 0;
+        public int TotalBioHazardStreaks { get; set; } = 0;
+        public int TotalHeadHunterStreaks { get; set; } = 0;
+        public int TotalFlakMonkeyStreaks { get; set; } = 0;
+        public int TotalRocketManStreaks { get; set; } = 0;
+
+        // Helper methods for achievements
+        public int GetTotalKillingSprees() => TotalKillingSprees + TotalRampages + TotalDominatings + TotalUnstoppables + TotalGodlikes + TotalWickedSicks;
+        public int GetTotalMultiKills() => TotalDoubleKills + TotalMultiKills + TotalMegaKills + TotalUltraKills + TotalMonsterKills + TotalLudicrousKills + TotalHolyShits;
+        public int GetTotalWeaponStreaks() => TotalComboWhoreStreaks + TotalBioHazardStreaks + TotalHeadHunterStreaks + TotalFlakMonkeyStreaks + TotalRocketManStreaks;
+
         // Cumulative iBR Stats
         public int TotalBRMatches { get; set; } = 0;
         public int TotalBRWins { get; set; } = 0;
@@ -152,7 +180,6 @@ namespace FlawsFightNight.Core.Models.UT2004
 
         public UT2004PlayerProfile() 
         { 
-            // Keep default dates unset — they'll be set from match data during rebuild.
             FirstSeen = DateTime.MinValue;
             LastPlayed = DateTime.MinValue;
         }
@@ -207,6 +234,30 @@ namespace FlawsFightNight.Core.Models.UT2004
             MostKillsInMatch = Math.Max(MostKillsInMatch, matchStats.Kills);
             MostDeathsInMatch = Math.Max(MostDeathsInMatch, matchStats.Deaths);
             HighestScoreInMatch = Math.Max(HighestScoreInMatch, matchStats.Score);
+
+            // Aggregate spree achievements
+            TotalKillingSprees += matchStats.KillingSprees;
+            TotalRampages += matchStats.Rampages;
+            TotalDominatings += matchStats.Dominatings;
+            TotalUnstoppables += matchStats.Unstoppables;
+            TotalGodlikes += matchStats.Godlikes;
+            TotalWickedSicks += matchStats.WickedSicks;
+
+            // Aggregate multi-kill achievements
+            TotalDoubleKills += matchStats.DoubleKills;
+            TotalMultiKills += matchStats.MultiKills;
+            TotalMegaKills += matchStats.MegaKills;
+            TotalUltraKills += matchStats.UltraKills;
+            TotalMonsterKills += matchStats.MonsterKills;
+            TotalLudicrousKills += matchStats.LudicrousKills;
+            TotalHolyShits += matchStats.HolyShits;
+
+            // Aggregate weapon-specific streaks
+            TotalComboWhoreStreaks += matchStats.ComboWhoreStreaks;
+            TotalBioHazardStreaks += matchStats.BioHazardStreaks;
+            TotalHeadHunterStreaks += matchStats.HeadHunterStreaks;
+            TotalFlakMonkeyStreaks += matchStats.FlakMonkeyStreaks;
+            TotalRocketManStreaks += matchStats.RocketManStreaks;
 
             // Update weapon kill totals
             foreach (var weaponKill in matchStats.WeaponKills)
@@ -419,6 +470,67 @@ namespace FlawsFightNight.Core.Models.UT2004
                     BombingRunRating.UpdateSkillRating(newMu, newSigma);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Gets a summary of all spree achievements with their counts.
+        /// </summary>
+        public Dictionary<string, int> GetSpreeAchievementsSummary()
+        {
+            return new Dictionary<string, int>
+            {
+                { "Killing Spree (5x)", TotalKillingSprees },
+                { "Rampage (10x)", TotalRampages },
+                { "Dominating (15x)", TotalDominatings },
+                { "Unstoppable (20x)", TotalUnstoppables },
+                { "Godlike (25x)", TotalGodlikes },
+                { "Wicked Sick (30x)", TotalWickedSicks }
+            };
+        }
+
+        /// <summary>
+        /// Gets a summary of all multi-kill achievements with their counts.
+        /// </summary>
+        public Dictionary<string, int> GetMultiKillAchievementsSummary()
+        {
+            return new Dictionary<string, int>
+            {
+                { "Double Kill (2x)", TotalDoubleKills },
+                { "Multi Kill (3x)", TotalMultiKills },
+                { "Mega Kill (4x)", TotalMegaKills },
+                { "Ultra Kill (5x)", TotalUltraKills },
+                { "Monster Kill (6x)", TotalMonsterKills },
+                { "Ludicrous Kill (7x)", TotalLudicrousKills },
+                { "Holy Shit (8x+)", TotalHolyShits }
+            };
+        }
+
+        /// <summary>
+        /// Gets a summary of weapon-specific streak achievements (TAM mode).
+        /// </summary>
+        public Dictionary<string, int> GetWeaponSpreeAchievementsSummary()
+        {
+            return new Dictionary<string, int>
+            {
+                { "Combo Whore (Shock Combo 15x)", TotalComboWhoreStreaks },
+                { "Bio Hazard (Bio Rifle 15x)", TotalBioHazardStreaks },
+                { "Head Hunter (Sniper/Lightning 15x)", TotalHeadHunterStreaks },
+                { "Flak Monkey (Flak Cannon 15x)", TotalFlakMonkeyStreaks },
+                { "Rocket Man (Rocket Launcher 15x)", TotalRocketManStreaks }
+            };
+        }
+
+        /// <summary>
+        /// Gets all achievements grouped by category.
+        /// </summary>
+        public Dictionary<string, Dictionary<string, int>> GetAllAchievementsSummary()
+        {
+            return new Dictionary<string, Dictionary<string, int>>
+            {
+                { "Killing Sprees", GetSpreeAchievementsSummary() },
+                { "Multi Kills", GetMultiKillAchievementsSummary() },
+                { "Weapon Streaks", GetWeaponSpreeAchievementsSummary() }
+            };
         }
     }
 }
