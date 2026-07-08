@@ -54,6 +54,9 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         // Kill streak tracking - count consecutive kills per player to determine true spree levels
         private Dictionary<int, int> _playerConsecutiveKills = new();
 
+        // Weapon streak tracking - track consecutive kills with same weapon (TAM only)
+        private Dictionary<int, (string Weapon, int Count)> _playerConsecutiveWeaponKills = new();
+
         private double GameTime(double timestamp) => Math.Round(timestamp - _gameStartTime, 2);
 
         public async Task<T?> Parse<T>(Stream fileStream)
@@ -244,6 +247,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             _wsutcompDetected = false;
             _currentFlagCarrierByTeam.Clear();
             _playerConsecutiveKills.Clear();
+            _playerConsecutiveWeaponKills.Clear();
         }
 
         private void ParseNewGame(string[] parts)
@@ -881,6 +885,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                 victim.Suicides++;
                 // Reset victim's streak when they die
                 _playerConsecutiveKills[victimSeqNum] = 0;
+                _playerConsecutiveWeaponKills.Remove(victimSeqNum);
 
                 _timeline.Add(new MatchEvent
                 {
@@ -902,13 +907,13 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             victim.Deaths++;
 
             // Track consecutive kills for spree detection
-            if (!_playerConsecutiveKills.ContainsKey(killerSeqNum))
-                _playerConsecutiveKills[killerSeqNum] = 0;
+            if (!_playerConsecutiveKills.ContainsKey(killerSeqNum)) _playerConsecutiveKills[killerSeqNum] = 0;
             _playerConsecutiveKills[killerSeqNum]++;
             int currentStreak = _playerConsecutiveKills[killerSeqNum];
 
             // Reset victim's streak when they die
             _playerConsecutiveKills[victimSeqNum] = 0;
+            _playerConsecutiveWeaponKills.Remove(victimSeqNum);
 
             if (!killer.WeaponKills.ContainsKey(weapon))
                 killer.WeaponKills[weapon] = 0;
@@ -965,27 +970,58 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             var weaponLower = weapon.ToLowerInvariant();
 
-            // Shock Combo (Combo Whore - 15+ consecutive ShockCombo kills)
+            // Track cumulative kills with each weapon (not consecutive)
+            // Achievement only counts once per match when reaching 15+ frags
+            if (weaponLower.Contains("shock") || weaponLower.Contains("combo"))
+            {
+                killer.ComboWhoreCount++;
+                if (killer.ComboWhoreCount == 15 && killer.ComboWhoreStreaks == 0)
+                    killer.ComboWhoreStreaks = 1;
+            }
+            else if (weaponLower.Contains("bio"))
+            {
+                killer.BioHazardCount++;
+                if (killer.BioHazardCount == 15 && killer.BioHazardStreaks == 0)
+                    killer.BioHazardStreaks = 1;
+            }
+            else if (weaponLower.Contains("sniper") || weaponLower.Contains("lightning"))
+            {
+                killer.HeadHunterCount++;
+                if (killer.HeadHunterCount == 15 && killer.HeadHunterStreaks == 0)
+                    killer.HeadHunterStreaks = 1;
+            }
+            else if (weaponLower.Contains("flak"))
+            {
+                killer.FlakMonkeyCount++;
+                if (killer.FlakMonkeyCount == 15 && killer.FlakMonkeyStreaks == 0)
+                    killer.FlakMonkeyStreaks = 1;
+            }
+            else if (weaponLower.Contains("rocket") || weaponLower.Contains("eightball"))
+            {
+                killer.RocketManCount++;
+                if (killer.RocketManCount == 15 && killer.RocketManStreaks == 0)
+                    killer.RocketManStreaks = 1;
+            }
+        }
+
+        private void ClassifyAndIncrementWeaponStreak(UTPlayerMatchStats killer, string weaponLower)
+        {
             if (weaponLower.Contains("shock") || weaponLower.Contains("combo"))
             {
                 killer.ComboWhoreStreaks++;
             }
-            // Bio Rifle (Bio Hazard - 15+ consecutive Bio kills)
             else if (weaponLower.Contains("bio"))
             {
                 killer.BioHazardStreaks++;
             }
-            // Sniper or Lightning Gun (Head Hunter - 15+ consecutive Sniper/Lightning kills)
             else if (weaponLower.Contains("sniper") || weaponLower.Contains("lightning"))
             {
                 killer.HeadHunterStreaks++;
             }
-            // Flak Cannon (Flak Monkey - 15+ consecutive Flak kills)
             else if (weaponLower.Contains("flak"))
             {
                 killer.FlakMonkeyStreaks++;
             }
-            // Rocket Launcher (Rocket Man - 15+ consecutive Rocket kills)
             else if (weaponLower.Contains("rocket") || weaponLower.Contains("eightball"))
             {
                 killer.RocketManStreaks++;
@@ -1195,9 +1231,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             {
                 if (int.TryParse(eventType.Substring("multikill_".Length), out int multiLevel))
                 {
-                    // MultiLevel from log is 0-indexed (multikill_1 = 2 kills, multikill_2 = 3 kills, etc.)
-                    // The event comes before the K line, so add 1 for the upcoming kill
-                    int actualKills = multiLevel + 2;
+                    // multikill_1 = 2 kills (Double Kill)
+                    // multikill_2 = 3 kills (Multi Kill)
+                    // multikill_3 = 4 kills (Mega Kill), etc.
+                    int actualKills = multiLevel + 1;
                     player.BestMultiKill = Math.Max(player.BestMultiKill, actualKills);
 
                     // Track individual multi-kill achievements

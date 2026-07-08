@@ -53,6 +53,13 @@ namespace FlawsFightNight.Core.Models.UT2004
         [Obsolete("Use individual Spree/MultiKill count properties instead")]
         public int[] MultiCounts { get; set; } = new int[7];
 
+        // TAM Weapon Achievements - Counters (match-level)
+        public int ComboWhoreCount { get; set; } = 0;
+        public int BioHazardCount { get; set; } = 0;
+        public int HeadHunterCount { get; set; } = 0;
+        public int FlakMonkeyCount { get; set; } = 0;
+        public int RocketManCount { get; set; } = 0;
+
         // Weapon-specific streaks (TAM mode - 15+ consecutive kills with specific weapon)
         public int ComboWhoreStreaks { get; set; }      // Shock Combo
         public int BioHazardStreaks { get; set; }       // Bio Rifle

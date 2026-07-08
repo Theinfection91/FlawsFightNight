@@ -171,6 +171,9 @@ namespace FlawsFightNight.Services
 
             // Handle player profiles
             await RebuildPlayerProfiles();
+
+            // Reload the stat log index file after rebuild
+            await _dataContext.LoadStatLogIndexFile();
         }
 
         public async Task GetStatLogCounts()
