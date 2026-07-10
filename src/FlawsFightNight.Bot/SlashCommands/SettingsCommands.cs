@@ -781,6 +781,23 @@ namespace FlawsFightNight.Bot.SlashCommands
                     await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
                 }
             }
+
+            [SlashCommand("rebuild_log_database", "CAUTION: Rebuilds the entire log database and also all player profiles.")]
+            public async Task RunLogDatabaseRebuildAsync()
+            {
+                try
+                {
+                    await DeferAsync(ephemeral: true);
+                    var components = ComponentFactory.CreateConfirmationCancelButtons("rebuild_log_db", Context.User.Id);
+                    await FollowupAsync("⚠️ **This will rebuild the entire UT2004 Log Database and all Player Profiles. It may take some time to finish the FTP process.**\n\nAre you sure you want to continue?", components: components.Build(), ephemeral: true);
+                    _autocompleteCache.Update();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Command error in {Command}.", nameof(RunLogDatabaseRebuildAsync));
+                    await FollowupAsync("An error occurred while processing this command.", ephemeral: true);
+                }
+            }
         }
     }
 }

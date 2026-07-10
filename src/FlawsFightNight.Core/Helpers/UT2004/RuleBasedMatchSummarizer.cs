@@ -327,6 +327,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             sb.AppendLine($"# {match.GameModeName} Match Summary — {ctx.MapName}");
             sb.AppendLine();
+            sb.AppendLine($"**Date:** {match.MatchDate:yyyy-MM-dd HH:mm:ss} UTC");
+            sb.AppendLine();
             sb.AppendLine($"A {ctx.PaceWord}, {ctx.IntensityWord} {match.GameModeName} match on **({ctx.Match.MapId ?? "N/A"} | {ctx.MapName ?? "Unknown"} by {ctx.Match.MapCreator ?? "Unknown"})** lasting **{duration}** with **{ctx.PlayerCount} players**.");
 
             // Winner announcement

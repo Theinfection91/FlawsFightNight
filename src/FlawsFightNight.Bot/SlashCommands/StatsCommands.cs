@@ -287,6 +287,10 @@ namespace FlawsFightNight.Bot.SlashCommands
                 [Choice("TAM", 2)]
                 [Choice("iBR", 3)]
                 [Choice("General", 4)] int gameMode,
+                [Choice("2v2", 2)]
+                [Choice("3v3", 3)]
+                [Choice("4v4", 4)]
+                [Choice("5v5", 5)] int teamSize,
                 [Summary("player1", "The first player for matchmaking")] IUser firstPlayer,
                 [Summary("player2", "The second player for matchmaking")] IUser secondPlayer,
                 [Summary("player3", "The third player for matchmaking")] IUser thirdPlayer,
@@ -296,16 +300,26 @@ namespace FlawsFightNight.Bot.SlashCommands
                 [Summary("player7", "The seventh player for matchmaking")] IUser seventhPlayer = null,
                 [Summary("player8", "The eighth player for matchmaking")] IUser eighthPlayer = null,
                 [Summary("player9", "The ninth player for matchmaking")] IUser ninthPlayer = null,
-                [Summary("player10", "The tenth player for matchmaking")] IUser tenthPlayer = null)
+                [Summary("player10", "The tenth player for matchmaking")] IUser tenthPlayer = null,
+                [Summary("player11", "The eleventh player for matchmaking")] IUser eleventhPlayer = null,
+                [Summary("player12", "The twelfth player for matchmaking")] IUser twelfthPlayer = null,
+                [Summary("player13", "The thirteenth player for matchmaking")] IUser thirteenthPlayer = null,
+                [Summary("player14", "The fourteenth player for matchmaking")] IUser fourteenthPlayer = null,
+                [Summary("player15", "The fifteenth player for matchmaking")] IUser fifteenthPlayer = null,
+                [Summary("player16", "The sixteenth player for matchmaking")] IUser sixteenthPlayer = null,
+                [Summary("player17", "The seventeenth player for matchmaking")] IUser seventeenthPlayer = null,
+                [Summary("player18", "The eighteenth player for matchmaking")] IUser eighteenthPlayer = null,
+                [Summary("player19", "The nineteenth player for matchmaking")] IUser nineteenthPlayer = null,
+                [Summary("player20", "The twentieth player for matchmaking")] IUser twentiethPlayer = null)
             {
                 try
                 {
                     await DeferAsync(ephemeral: true);
-                    var players = new List<IUser> { firstPlayer, secondPlayer, thirdPlayer, fourthPlayer, fifthPlayer, sixthPlayer, seventhPlayer, eighthPlayer, ninthPlayer, tenthPlayer }
+                    var players = new List<IUser> { firstPlayer, secondPlayer, thirdPlayer, fourthPlayer, fifthPlayer, sixthPlayer, seventhPlayer, eighthPlayer, ninthPlayer, tenthPlayer, eleventhPlayer, twelfthPlayer, thirteenthPlayer, fourteenthPlayer, fifteenthPlayer, sixteenthPlayer, seventeenthPlayer, eighteenthPlayer, nineteenthPlayer, twentiethPlayer }
                         .Where(p => p != null)
                         .ToList();
                     var mode = gameMode == 4 ? UT2004GameMode.Unknown : (UT2004GameMode)gameMode;
-                    var embed = await _suggestTeamsHandler.Handle(players, mode);
+                    var embed = await _suggestTeamsHandler.Handle(players, mode, teamSize);
                     await FollowupAsync(embed: embed, ephemeral: true);
                 }
                 catch (Exception ex)

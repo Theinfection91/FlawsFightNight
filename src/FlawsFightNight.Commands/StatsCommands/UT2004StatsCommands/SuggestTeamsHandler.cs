@@ -23,75 +23,162 @@ namespace FlawsFightNight.Commands.StatsCommands.UT2004StatsCommands
             _openSkillService = openSkillRatingService;
         }
 
-        public async Task<Embed> Handle(List<IUser> players, UT2004GameMode gameMode)
+        public async Task<Embed> Handle(List<IUser> players, UT2004GameMode gameMode, int teamSizeChoice)
         {
-            if (players.Count < 4 || players.Count > 10)
-                return _embedFactory.ErrorEmbed(Name, "Please provide between 4 and 10 players (2v2 to 5v5).");
+            // Validate minimum players
+            if (players.Count < teamSizeChoice * 2)
+                return _embedFactory.ErrorEmbed(Name, $"Need at least {teamSizeChoice * 2} players for {teamSizeChoice}v{teamSizeChoice}. You provided {players.Count}.");
 
-            if (players.Count % 2 != 0)
-                return _embedFactory.ErrorEmbed(Name, "An even number of players is required to suggest balanced teams.");
-
-            if (players.Select(p => p.Id).Distinct().Count() != players.Count)
-                return _embedFactory.ErrorEmbed(Name, "Duplicate players detected. Please provide unique players.");
-
-            var playerData = players.Select(user =>
+            var playerData = players.Select((user, index) =>
             {
                 var member = _memberService.GetMemberProfile(user.Id);
                 if (member == null || member.RegisteredUT2004GUIDs.Count == 0)
-                    return (Name: GetDisplayName(user), Mu: 25.0, Sigma: 25.0 / 3.0, HasProfile: false);
+                    return (Index: index, Name: GetDisplayName(user), Mu: 25.0, Sigma: 25.0 / 3.0, HasProfile: false);
 
                 var profile = _memberService.GetUT2004PlayerProfile(member.RegisteredUT2004GUIDs.First());
                 if (profile == null)
-                    return (Name: GetDisplayName(user), Mu: 25.0, Sigma: 25.0 / 3.0, HasProfile: false);
+                    return (Index: index, Name: GetDisplayName(user), Mu: 25.0, Sigma: 25.0 / 3.0, HasProfile: false);
 
                 var (mu, sigma) = profile.GetMuSigmaComposite(gameMode);
-                return (Name: profile.CurrentName, Mu: mu, Sigma: sigma, HasProfile: true);
+                return (Index: index, Name: profile.CurrentName, Mu: mu, Sigma: sigma, HasProfile: true);
             }).ToList();
 
-            int teamSize = players.Count / 2;
-            var indices = Enumerable.Range(0, players.Count).ToList();
+            int numTeams = players.Count / teamSizeChoice;
+            int playersUsed = numTeams * teamSizeChoice;
+            var unusedPlayers = playerData.Where(p => p.Index >= playersUsed).ToList();
 
-            double bestDiff = double.MaxValue;
-            List<int>? bestTeamAIndices = null;
-            double bestTeamAWinProb = 0.5;
+            // Sort players by rating (descending)
+            var sortedPlayers = playerData.Where(p => p.Index < playersUsed)
+                .OrderByDescending(p => p.Mu)
+                .ToList();
 
-            foreach (var combo in GetCombinations(indices, teamSize))
+            // Multi-start greedy: try random orderings, keep best result
+            var bestTeams = RunGreedyAssignment(sortedPlayers, numTeams, teamSizeChoice);
+            double bestBalance = GetTeamWinProbabilityBalance(bestTeams);
+
+            for (int attempt = 0; attempt < 4; attempt++)
             {
-                var comboList = combo.ToList();
-                var remainingIndices = indices.Where(i => !comboList.Contains(i)).ToList();
+                var shuffledPlayers = sortedPlayers.OrderBy(_ => Random.Shared.Next()).ToList();
+                var candidateTeams = RunGreedyAssignment(shuffledPlayers, numTeams, teamSizeChoice);
+                double candidateBalance = GetTeamWinProbabilityBalance(candidateTeams);
 
-                var teamAPlayers = comboList.Select(i => (playerData[i].Mu, playerData[i].Sigma)).ToList();
-                var teamBPlayers = remainingIndices.Select(i => (playerData[i].Mu, playerData[i].Sigma)).ToList();
-
-                double winProbA = _openSkillService.GetTeamAWinProbability(teamAPlayers, teamBPlayers);
-                double diff = Math.Abs(winProbA - 0.5);
-
-                if (diff < bestDiff)
+                if (candidateBalance < bestBalance)
                 {
-                    bestDiff = diff;
-                    bestTeamAIndices = comboList;
-                    bestTeamAWinProb = winProbA;
+                    bestBalance = candidateBalance;
+                    bestTeams = candidateTeams;
                 }
             }
 
-            var teamA = bestTeamAIndices!.Select(i => (playerData[i].Name, DisplayRating: playerData[i].Mu - 3 * playerData[i].Sigma, playerData[i].HasProfile)).ToList();
-            var teamB = indices.Where(i => !bestTeamAIndices!.Contains(i)).Select(i => (playerData[i].Name, DisplayRating: playerData[i].Mu - 3 * playerData[i].Sigma, playerData[i].HasProfile)).ToList();
+            var teams = bestTeams;
 
-            return _embedFactory.SuggestTeamsEmbed(teamA, teamB, bestTeamAWinProb, teamSize, gameMode);
+            // Aggressive refinement: 50 iterations, try all swaps
+            RefineTeamsWithSwaps(teams, maxIterations: 50);
+
+            // Format teams for embed
+            var formattedTeams = teams.Select(team => team
+                .Select(p => (p.Name, DisplayRating: p.Mu - 3 * p.Sigma, p.HasProfile, p.Sigma))
+                .ToList())
+                .ToList();
+
+            return _embedFactory.SuggestTeamsEmbed(formattedTeams, gameMode, teamSizeChoice, unusedPlayers.Count);
+        }
+
+        private List<List<(int Index, string Name, double Mu, double Sigma, bool HasProfile)>> RunGreedyAssignment(
+            List<(int Index, string Name, double Mu, double Sigma, bool HasProfile)> players,
+            int numTeams,
+            int teamSizeChoice)
+        {
+            var teams = Enumerable.Range(0, numTeams)
+                .Select(_ => new List<(int Index, string Name, double Mu, double Sigma, bool HasProfile)>())
+                .ToList();
+
+            foreach (var player in players)
+            {
+                int weakestTeamIdx = teams
+                    .Select((t, idx) => (Index: idx, TotalStrength: t.Sum(p => p.Mu - 2 * p.Sigma)))
+                    .Where(x => teams[x.Index].Count < teamSizeChoice)
+                    .OrderBy(x => x.TotalStrength)
+                    .First()
+                    .Index;
+
+                teams[weakestTeamIdx].Add(player);
+            }
+
+            return teams;
+        }
+
+        private void RefineTeamsWithSwaps(
+            List<List<(int Index, string Name, double Mu, double Sigma, bool HasProfile)>> teams,
+            int maxIterations = 20)
+        {
+            bool improved = true;
+            int iterations = 0;
+
+            while (improved && iterations < maxIterations)
+            {
+                improved = false;
+                iterations++;
+
+                double currentBalance = GetTeamWinProbabilityBalance(teams);
+
+                for (int i = 0; i < teams.Count && !improved; i++)
+                {
+                    for (int j = i + 1; j < teams.Count && !improved; j++)
+                    {
+                        for (int pi = 0; pi < teams[i].Count && !improved; pi++)
+                        {
+                            for (int pj = 0; pj < teams[j].Count && !improved; pj++)
+                            {
+                                // Swap
+                                var temp = teams[i][pi];
+                                teams[i][pi] = teams[j][pj];
+                                teams[j][pj] = temp;
+
+                                double newBalance = GetTeamWinProbabilityBalance(teams);
+
+                                if (newBalance < currentBalance)
+                                {
+                                    improved = true;
+                                    currentBalance = newBalance;
+                                }
+                                else
+                                {
+                                    // Swap back
+                                    temp = teams[i][pi];
+                                    teams[i][pi] = teams[j][pj];
+                                    teams[j][pj] = temp;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private double GetTeamWinProbabilityBalance(List<List<(int Index, string Name, double Mu, double Sigma, bool HasProfile)>> teams)
+        {
+            double maxImbalance = 0;
+
+            for (int i = 0; i < teams.Count; i++)
+            {
+                for (int j = i + 1; j < teams.Count; j++)
+                {
+                    var teamAPlayers = teams[i].Select(p => (p.Mu, p.Sigma)).ToList();
+                    var teamBPlayers = teams[j].Select(p => (p.Mu, p.Sigma)).ToList();
+
+                    if (teamAPlayers.Count > 0 && teamBPlayers.Count > 0)
+                    {
+                        double winProb = _openSkillService.GetTeamAWinProbability(teamAPlayers, teamBPlayers);
+                        double imbalance = Math.Abs(winProb - 0.5);
+                        maxImbalance = Math.Max(maxImbalance, imbalance);
+                    }
+                }
+            }
+
+            return maxImbalance;
         }
 
         private static string GetDisplayName(IUser user) =>
             user is SocketGuildUser g && !string.IsNullOrEmpty(g.DisplayName) ? g.DisplayName : user.Username;
-
-        private static IEnumerable<IEnumerable<int>> GetCombinations(List<int> list, int size)
-        {
-            if (size == 0) { yield return Enumerable.Empty<int>(); yield break; }
-            for (int i = 0; i < list.Count; i++)
-            {
-                var rest = list.Skip(i + 1).ToList();
-                foreach (var tail in GetCombinations(rest, size - 1))
-                    yield return tail.Prepend(list[i]);
-            }
-        }
     }
 }

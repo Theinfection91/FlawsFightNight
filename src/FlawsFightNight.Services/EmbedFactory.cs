@@ -1460,6 +1460,42 @@ namespace FlawsFightNight.Services
                 embed.AddField("🔫 Weapon Statistics", sb.ToString().TrimEnd(), false);
             }
 
+            // Add Spree/MultiKill Achievements (Aggregate across all modes)
+            var spreeAchievements = new Dictionary<string, int>
+            {
+                { "Killing Spree (5x)", profile.TotalKillingSpreesCTF + profile.TotalKillingSpreesTAM + profile.TotalKillingSpreesiBR },
+                { "Rampage (10x)", profile.TotalRampagesCTF + profile.TotalRampagesTAM + profile.TotalRampagesiBR },
+                { "Dominating (15x)", profile.TotalDominatingsCTF + profile.TotalDominatingsTAM + profile.TotalDominatingsiBR },
+                { "Unstoppable (20x)", profile.TotalUnstoppablesCTF + profile.TotalUnstoppablesTAM + profile.TotalUnstoppablesiBR },
+                { "Godlike (25x)", profile.TotalGodlikesCTF + profile.TotalGodlikesTAM + profile.TotalGodlikesiBR },
+                { "Wicked Sick (30x)", profile.TotalWickedSicksCTF + profile.TotalWickedSicksTAM + profile.TotalWickedSicksiBR }
+            };
+
+            var multiAchievements = new Dictionary<string, int>
+            {
+                { "Double Kill (2x)", profile.TotalDoubleKillsCTF + profile.TotalDoubleKillsTAM + profile.TotalDoubleKillsiBR },
+                { "Multi Kill (3x)", profile.TotalMultiKillsCTF + profile.TotalMultiKillsTAM + profile.TotalMultiKillsiBR },
+                { "Mega Kill (4x)", profile.TotalMegaKillsCTF + profile.TotalMegaKillsTAM + profile.TotalMegaKillsiBR },
+                { "Ultra Kill (5x)", profile.TotalUltraKillsCTF + profile.TotalUltraKillsTAM + profile.TotalUltraKillsiBR },
+                { "Monster Kill (6x)", profile.TotalMonsterKillsCTF + profile.TotalMonsterKillsTAM + profile.TotalMonsterKillsiBR },
+                { "Ludicrous Kill (7x)", profile.TotalLudicrousKillsCTF + profile.TotalLudicrousKillsTAM + profile.TotalLudicrousKillsiBR },
+                { "Holy Shit (8x+)", profile.TotalHolyShitsCTF + profile.TotalHolyShitsTAM + profile.TotalHolyShitsiBR }
+            };
+
+            var sb_spree = new StringBuilder();
+            foreach (var achievement in spreeAchievements)
+            {
+                sb_spree.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("🔥 Killing Sprees", sb_spree.ToString().TrimEnd(), true);
+
+            var sb_multi = new StringBuilder();
+            foreach (var achievement in multiAchievements)
+            {
+                sb_multi.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("⚡ Multi-Kills", sb_multi.ToString().TrimEnd(), true);
+
             return embed.Build();
         }
 
@@ -1492,6 +1528,28 @@ namespace FlawsFightNight.Services
                 $"**Cap Assists:** {profile.TotalFlagCaptureAssists}  ·  **1st Touch:** {profile.TotalFlagCaptureFirstTouch}\n" +
                 $"**Best Caps (match):** {profile.MostFlagCapsInMatch}  ·  **Best Returns (match):** {profile.MostFlagReturnsInMatch}  ·  **Avg Caps/Match:** {profile.AverageCapturesPerMatch:F2}",
                 false);
+
+            embed.AddField("⚡ Career Streaks",
+                $"**Best Kill Streak:** {profile.BestKillStreakCTF}  ·  **Best Multi-Kill:** {profile.BestMultiKillCTF}",
+                false);
+
+            // Add iCTF-specific Spree/MultiKill Achievements
+            var spreeAchievements = profile.GetSpreeAchievementsSummaryByMode(UT2004GameMode.iCTF);
+            var multiAchievements = profile.GetMultiKillAchievementsSummaryByMode(UT2004GameMode.iCTF);
+
+            var sb_spree = new StringBuilder();
+            foreach (var achievement in spreeAchievements)
+            {
+                sb_spree.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("🔥 Killing Sprees", sb_spree.ToString().TrimEnd(), true);
+
+            var sb_multi = new StringBuilder();
+            foreach (var achievement in multiAchievements)
+            {
+                sb_multi.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("⚡ Multi-Kills", sb_multi.ToString().TrimEnd(), true);
 
             return embed.Build();
         }
@@ -1526,6 +1584,36 @@ namespace FlawsFightNight.Services
                 $"**Round-Ending Kills:** {profile.TotalRoundEndingKills}  ·  **Best Dmg (match):** {profile.MostDamageInMatch:N0}  ·  **Best REKs (match):** {profile.MostRoundEndingKillsInMatch}  ·  **Best Rounds Won (match):** {profile.MostRoundsWonInMatch}",
                 false);
 
+            embed.AddField("⚡ Career Streaks",
+                $"**Best Kill Streak:** {profile.BestKillStreakTAM}  ·  **Best Multi-Kill:** {profile.BestMultiKillTAM}",
+                false);
+
+            // Add TAM-specific Spree/MultiKill Achievements
+            var spreeAchievements = profile.GetSpreeAchievementsSummaryByMode(UT2004GameMode.TAM);
+            var multiAchievements = profile.GetMultiKillAchievementsSummaryByMode(UT2004GameMode.TAM);
+            var weaponAchievements = profile.GetWeaponSpreeAchievementsSummaryByMode(UT2004GameMode.TAM);
+
+            var sb_spree = new StringBuilder();
+            foreach (var achievement in spreeAchievements)
+            {
+                sb_spree.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("🔥 Killing Sprees", sb_spree.ToString().TrimEnd(), true);
+
+            var sb_multi = new StringBuilder();
+            foreach (var achievement in multiAchievements)
+            {
+                sb_multi.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("⚡ Multi-Kills", sb_multi.ToString().TrimEnd(), true);
+
+            var sb_weapon = new StringBuilder();
+            foreach (var achievement in weaponAchievements)
+            {
+                sb_weapon.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("⚔️ Weapon Milestones", sb_weapon.ToString().TrimEnd(), false);
+
             return embed.Build();
         }
 
@@ -1559,19 +1647,35 @@ namespace FlawsFightNight.Services
                 $"**Avg Caps/Match:** {profile.AverageBallCapsPerBRMatch:F2}  ·  **Avg Pickups/Match:** {profile.AverageBombPickupsPerBRMatch:F2}",
                 false);
 
+            embed.AddField("⚡ Career Streaks",
+                $"**Best Kill Streak:** {profile.BestKillStreakiBR}  ·  **Best Multi-Kill:** {profile.BestMultiKilliBR}",
+                false);
+
+            // Add iBR-specific Spree/MultiKill Achievements
+            var spreeAchievements = profile.GetSpreeAchievementsSummaryByMode(UT2004GameMode.iBR);
+            var multiAchievements = profile.GetMultiKillAchievementsSummaryByMode(UT2004GameMode.iBR);
+
+            var sb_spree = new StringBuilder();
+            foreach (var achievement in spreeAchievements)
+            {
+                sb_spree.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("🔥 Killing Sprees", sb_spree.ToString().TrimEnd(), true);
+
+            var sb_multi = new StringBuilder();
+            foreach (var achievement in multiAchievements)
+            {
+                sb_multi.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("⚡ Multi-Kills", sb_multi.ToString().TrimEnd(), true);
+
             return embed.Build();
         }
         #endregion
 
         #region Suggestion Embeds
-        public Embed SuggestTeamsEmbed(
-            List<(string Name, double DisplayRating, bool HasProfile)> teamA,
-            List<(string Name, double DisplayRating, bool HasProfile)> teamB,
-            double teamAWinProb, int teamSize, UT2004GameMode gameMode)
+        public Embed SuggestTeamsEmbed(List<List<(string Name, double DisplayRating, bool HasProfile, double Sigma)>> teams, UT2004GameMode gameMode, int teamSize, int unusedPlayerCount)
         {
-            double teamATotal = teamA.Sum(p => p.DisplayRating);
-            double teamBTotal = teamB.Sum(p => p.DisplayRating);
-
             string modeDisplay = gameMode switch
             {
                 UT2004GameMode.iCTF => "🚩 iCTF",
@@ -1585,18 +1689,46 @@ namespace FlawsFightNight.Services
                 : $"Balanced by {modeDisplay} OpenSkill rating (μ−3σ).";
 
             var embed = new EmbedBuilder()
-                .WithTitle($"⚖️ Suggested {teamSize}v{teamSize} Teams — {modeDisplay}")
-                .WithDescription(
-                    $"{ratingDescription}\n" +
-                    $"🔵 **Team A:** {teamAWinProb:P1} win probability  ·  🔴 **Team B:** {1 - teamAWinProb:P1} win probability")
+                .WithTitle($"⚖️ Suggested {teams.Count} × {teamSize}v{teamSize} Teams — {modeDisplay}")
+                .WithDescription(ratingDescription)
                 .WithColor(new Color(0xFF6A00))
                 .WithFooter("Flaws Fight Night — UT2004 Team Suggester")
                 .WithCurrentTimestamp();
 
-            embed.AddField("🔵 Team A", BuildSuggestTeamField(teamA, teamATotal, teamSize), false);
-            embed.AddField("🔴 Team B", BuildSuggestTeamField(teamB, teamBTotal, teamSize), false);
+            // Add each team as a field
+            for (int i = 0; i < teams.Count; i++)
+            {
+                var team = teams[i];
+                double teamTotal = team.Sum(p => p.DisplayRating);
+                double avgRating = team.Count > 0 ? teamTotal / team.Count : 0;
 
-            if (teamA.Any(p => !p.HasProfile) || teamB.Any(p => !p.HasProfile))
+                var teamContent = BuildSuggestTeamField(team, teamTotal, teamSize);
+                embed.AddField($"Team {i + 1} (Avg: {avgRating:F1})", teamContent, false);
+            }
+
+            // Flag players with high uncertainty
+            const double highSigmaThreshold = 5.0;
+            var uncertainPlayers = teams.SelectMany(t => t)
+                .Where(p => p.HasProfile && p.Sigma > highSigmaThreshold)
+                .Select(p => p.Name)
+                .Distinct()
+                .ToList();
+
+            if (uncertainPlayers.Any())
+                embed.AddField("⚠️ Rating Uncertainty",
+                    $"{string.Join(", ", uncertainPlayers)} {(uncertainPlayers.Count > 1 ? "have" : "has a")} high σ (sigma) due to playing too few matches — " +
+                    $"their true skill is uncertain. {(uncertainPlayers.Count > 1 ? "These" : "This")} player's ratings may change significantly after more games. " +
+        "\n**Teams may feel less balanced than predicted.**",
+                    false);
+
+            // Show unused players if any
+            if (unusedPlayerCount > 0)
+                embed.AddField($"👤 Unused Players ({unusedPlayerCount})",
+                    $"Not enough players to form a complete team. {unusedPlayerCount} player(s) excluded from balancing.", false);
+
+            // Warning if any players have no profile
+            var hasUnprofiledPlayers = teams.Any(team => team.Any(p => !p.HasProfile));
+            if (hasUnprofiledPlayers)
                 embed.AddField("⚠️ Note",
                     "One or more players have no UT2004 profile or registered GUID and were treated as default rating (μ=25, σ=8.33) for balancing.",
                     false);
@@ -1604,18 +1736,18 @@ namespace FlawsFightNight.Services
             return embed.Build();
         }
 
-        private static string BuildSuggestTeamField(
-            List<(string Name, double DisplayRating, bool HasProfile)> team,
-            double total, int teamSize)
+        private string BuildSuggestTeamField(List<(string Name, double DisplayRating, bool HasProfile, double Sigma)> players, double teamTotal, int teamSize)
         {
+            const double highSigmaThreshold = 5.0;
             var sb = new StringBuilder();
-            foreach (var (name, displayRating, hasProfile) in team.OrderByDescending(p => p.DisplayRating))
+            foreach (var (name, displayRating, hasProfile, sigma) in players.OrderByDescending(p => p.DisplayRating))
             {
                 string ratingText = hasProfile ? $"{displayRating:F2}" : "⚠️ Unrated";
-                sb.AppendLine($"• **{name}** • {ratingText}");
+                string uncertaintyWarning = hasProfile && sigma > highSigmaThreshold ? " ⚠️" : "";
+                sb.AppendLine($"• **{name}** • {ratingText}{uncertaintyWarning}");
             }
             sb.AppendLine("─────────────────");
-            sb.AppendLine($"**Total:** {total:F2}  ·  **Avg:** {total / teamSize:F2}");
+            sb.AppendLine($"**Total:** {teamTotal:F2}  ·  **Avg:** {teamTotal / teamSize:F2}");
             return sb.ToString().TrimEnd();
         }
         #endregion

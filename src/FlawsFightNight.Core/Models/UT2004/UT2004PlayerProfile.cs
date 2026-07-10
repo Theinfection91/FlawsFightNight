@@ -54,6 +54,69 @@ namespace FlawsFightNight.Core.Models.UT2004
         public int MostDeathsInMatch { get; set; } = 0;
         public int HighestScoreInMatch { get; set; } = 0;
 
+        // Mode-specific Career Bests
+        public int BestKillStreakCTF { get; set; } = 0;
+        public int BestMultiKillCTF { get; set; } = 0;
+        public int BestKillStreakTAM { get; set; } = 0;
+        public int BestMultiKillTAM { get; set; } = 0;
+        public int BestKillStreakiBR { get; set; } = 0;
+        public int BestMultiKilliBR { get; set; } = 0;
+
+        // ========== iCTF ACHIEVEMENTS ==========
+        public int TotalKillingSpreesCTF { get; set; } = 0;
+        public int TotalRampagesCTF { get; set; } = 0;
+        public int TotalDominatingsCTF { get; set; } = 0;
+        public int TotalUnstoppablesCTF { get; set; } = 0;
+        public int TotalGodlikesCTF { get; set; } = 0;
+        public int TotalWickedSicksCTF { get; set; } = 0;
+
+        public int TotalDoubleKillsCTF { get; set; } = 0;
+        public int TotalMultiKillsCTF { get; set; } = 0;
+        public int TotalMegaKillsCTF { get; set; } = 0;
+        public int TotalUltraKillsCTF { get; set; } = 0;
+        public int TotalMonsterKillsCTF { get; set; } = 0;
+        public int TotalLudicrousKillsCTF { get; set; } = 0;
+        public int TotalHolyShitsCTF { get; set; } = 0;
+
+        // ========== TAM ACHIEVEMENTS ==========
+        public int TotalKillingSpreesTAM { get; set; } = 0;
+        public int TotalRampagesTAM { get; set; } = 0;
+        public int TotalDominatingsTAM { get; set; } = 0;
+        public int TotalUnstoppablesTAM { get; set; } = 0;
+        public int TotalGodlikesTAM { get; set; } = 0;
+        public int TotalWickedSicksTAM { get; set; } = 0;
+
+        public int TotalDoubleKillsTAM { get; set; } = 0;
+        public int TotalMultiKillsTAM { get; set; } = 0;
+        public int TotalMegaKillsTAM { get; set; } = 0;
+        public int TotalUltraKillsTAM { get; set; } = 0;
+        public int TotalMonsterKillsTAM { get; set; } = 0;
+        public int TotalLudicrousKillsTAM { get; set; } = 0;
+        public int TotalHolyShitsTAM { get; set; } = 0;
+
+        // TAM Weapon Streaks
+        public int TotalComboWhoreStreaksTAM { get; set; } = 0;
+        public int TotalBioHazardStreaksTAM { get; set; } = 0;
+        public int TotalHeadHunterStreaksTAM { get; set; } = 0;
+        public int TotalFlakMonkeyStreaksTAM { get; set; } = 0;
+        public int TotalRocketManStreaksTAM { get; set; } = 0;
+
+        // ========== iBR ACHIEVEMENTS ==========
+        public int TotalKillingSpreesiBR { get; set; } = 0;
+        public int TotalRampagesiBR { get; set; } = 0;
+        public int TotalDominatingsiBR { get; set; } = 0;
+        public int TotalUnstoppablesiBR { get; set; } = 0;
+        public int TotalGodlikesiBR { get; set; } = 0;
+        public int TotalWickedSicksiBR { get; set; } = 0;
+
+        public int TotalDoubleKillsiBR { get; set; } = 0;
+        public int TotalMultiKillsiBR { get; set; } = 0;
+        public int TotalMegaKillsiBR { get; set; } = 0;
+        public int TotalUltraKillsiBR { get; set; } = 0;
+        public int TotalMonsterKillsiBR { get; set; } = 0;
+        public int TotalLudicrousKillsiBR { get; set; } = 0;
+        public int TotalHolyShitsiBR { get; set; } = 0;
+
         // Cumulative iBR Stats
         public int TotalBRMatches { get; set; } = 0;
         public int TotalBRWins { get; set; } = 0;
@@ -152,7 +215,6 @@ namespace FlawsFightNight.Core.Models.UT2004
 
         public UT2004PlayerProfile() 
         { 
-            // Keep default dates unset — they'll be set from match data during rebuild.
             FirstSeen = DateTime.MinValue;
             LastPlayed = DateTime.MinValue;
         }
@@ -207,6 +269,74 @@ namespace FlawsFightNight.Core.Models.UT2004
             MostKillsInMatch = Math.Max(MostKillsInMatch, matchStats.Kills);
             MostDeathsInMatch = Math.Max(MostDeathsInMatch, matchStats.Deaths);
             HighestScoreInMatch = Math.Max(HighestScoreInMatch, matchStats.Score);
+
+            // Aggregate spree achievements (mode-specific)
+            switch (gameMode)
+            {
+                case UT2004GameMode.iCTF:
+                    BestKillStreakCTF = Math.Max(BestKillStreakCTF, matchStats.BestKillStreak);
+                    BestMultiKillCTF = Math.Max(BestMultiKillCTF, matchStats.BestMultiKill);
+                    TotalKillingSpreesCTF += matchStats.KillingSprees;
+                    TotalRampagesCTF += matchStats.Rampages;
+                    TotalDominatingsCTF += matchStats.Dominatings;
+                    TotalUnstoppablesCTF += matchStats.Unstoppables;
+                    TotalGodlikesCTF += matchStats.Godlikes;
+                    TotalWickedSicksCTF += matchStats.WickedSicks;
+
+                    TotalDoubleKillsCTF += matchStats.DoubleKills;
+                    TotalMultiKillsCTF += matchStats.MultiKills;
+                    TotalMegaKillsCTF += matchStats.MegaKills;
+                    TotalUltraKillsCTF += matchStats.UltraKills;
+                    TotalMonsterKillsCTF += matchStats.MonsterKills;
+                    TotalLudicrousKillsCTF += matchStats.LudicrousKills;
+                    TotalHolyShitsCTF += matchStats.HolyShits;
+                    break;
+
+                case UT2004GameMode.TAM:
+                    BestKillStreakTAM = Math.Max(BestKillStreakTAM, matchStats.BestKillStreak);
+                    BestMultiKillTAM = Math.Max(BestMultiKillTAM, matchStats.BestMultiKill);
+                    TotalKillingSpreesTAM += matchStats.KillingSprees;
+                    TotalRampagesTAM += matchStats.Rampages;
+                    TotalDominatingsTAM += matchStats.Dominatings;
+                    TotalUnstoppablesTAM += matchStats.Unstoppables;
+                    TotalGodlikesTAM += matchStats.Godlikes;
+                    TotalWickedSicksTAM += matchStats.WickedSicks;
+
+                    TotalDoubleKillsTAM += matchStats.DoubleKills;
+                    TotalMultiKillsTAM += matchStats.MultiKills;
+                    TotalMegaKillsTAM += matchStats.MegaKills;
+                    TotalUltraKillsTAM += matchStats.UltraKills;
+                    TotalMonsterKillsTAM += matchStats.MonsterKills;
+                    TotalLudicrousKillsTAM += matchStats.LudicrousKills;
+                    TotalHolyShitsTAM += matchStats.HolyShits;
+
+                    // Weapon Streaks (TAM only)
+                    TotalComboWhoreStreaksTAM += matchStats.ComboWhoreStreaks;
+                    TotalBioHazardStreaksTAM += matchStats.BioHazardStreaks;
+                    TotalHeadHunterStreaksTAM += matchStats.HeadHunterStreaks;
+                    TotalFlakMonkeyStreaksTAM += matchStats.FlakMonkeyStreaks;
+                    TotalRocketManStreaksTAM += matchStats.RocketManStreaks;
+                    break;
+
+                case UT2004GameMode.iBR:
+                    BestKillStreakiBR = Math.Max(BestKillStreakiBR, matchStats.BestKillStreak);
+                    BestMultiKilliBR = Math.Max(BestMultiKilliBR, matchStats.BestMultiKill);
+                    TotalKillingSpreesiBR += matchStats.KillingSprees;
+                    TotalRampagesiBR += matchStats.Rampages;
+                    TotalDominatingsiBR += matchStats.Dominatings;
+                    TotalUnstoppablesiBR += matchStats.Unstoppables;
+                    TotalGodlikesiBR += matchStats.Godlikes;
+                    TotalWickedSicksiBR += matchStats.WickedSicks;
+
+                    TotalDoubleKillsiBR += matchStats.DoubleKills;
+                    TotalMultiKillsiBR += matchStats.MultiKills;
+                    TotalMegaKillsiBR += matchStats.MegaKills;
+                    TotalUltraKillsiBR += matchStats.UltraKills;
+                    TotalMonsterKillsiBR += matchStats.MonsterKills;
+                    TotalLudicrousKillsiBR += matchStats.LudicrousKills;
+                    TotalHolyShitsiBR += matchStats.HolyShits;
+                    break;
+            }
 
             // Update weapon kill totals
             foreach (var weaponKill in matchStats.WeaponKills)
@@ -382,27 +512,30 @@ namespace FlawsFightNight.Core.Models.UT2004
                 UT2004GameMode.iCTF => (CaptureTheFlagRating.Mu, CaptureTheFlagRating.Sigma),
                 UT2004GameMode.TAM => (TAMRating.Mu, TAMRating.Sigma),
                 UT2004GameMode.iBR => (BombingRunRating.Mu, BombingRunRating.Sigma),
-                _ => GetWeightedComposite()
+                _ => ComputeCompositeRating()
             };
         }
 
-        private (double Mu, double Sigma) GetWeightedComposite()
+        private (double Mu, double Sigma) ComputeCompositeRating()
         {
-            int total = TotalCTFMatches + TotalTAMMatches + TotalBRMatches;
-            if (total == 0)
+            int totalMatches = TotalCTFMatches + TotalTAMMatches + TotalBRMatches;
+            if (totalMatches == 0)
                 return (25.0, 25.0 / 3.0);
 
-            double mu =
-                (CaptureTheFlagRating.Mu * TotalCTFMatches +
-                 TAMRating.Mu * TotalTAMMatches +
-                 BombingRunRating.Mu * TotalBRMatches) / total;
+            // Weighted average by match count per mode
+            double weightCTF = (double)TotalCTFMatches / totalMatches;
+            double weightTAM = (double)TotalTAMMatches / totalMatches;
+            double weightiBR = (double)TotalBRMatches / totalMatches;
 
-            double sigma =
-                (CaptureTheFlagRating.Sigma * TotalCTFMatches +
-                 TAMRating.Sigma * TotalTAMMatches +
-                 BombingRunRating.Sigma * TotalBRMatches) / total;
+            double compositeMu = (CaptureTheFlagRating.Mu * weightCTF) +
+                                 (TAMRating.Mu * weightTAM) +
+                                 (BombingRunRating.Mu * weightiBR);
 
-            return (mu, sigma);
+            double compositeSigma = (CaptureTheFlagRating.Sigma * weightCTF) +
+                                    (TAMRating.Sigma * weightTAM) +
+                                    (BombingRunRating.Sigma * weightiBR);
+
+            return (compositeMu, compositeSigma);
         }
 
         public void UpdateSkillRating(UT2004GameMode gameMode, double newMu, double newSigma)
@@ -419,6 +552,136 @@ namespace FlawsFightNight.Core.Models.UT2004
                     BombingRunRating.UpdateSkillRating(newMu, newSigma);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Gets a summary of all spree achievements with their counts.
+        /// </summary>
+        public Dictionary<string, int> GetSpreeAchievementsSummary()
+        {
+            int total = TotalKillingSpreesCTF + TotalKillingSpreesTAM + TotalKillingSpreesiBR;
+            return new Dictionary<string, int>
+            {
+                { "Killing Spree (5x)", total },
+            };
+        }
+
+        /// <summary>
+        /// Gets a summary of all multi-kill achievements with their counts.
+        /// </summary>
+        public Dictionary<string, int> GetMultiKillAchievementsSummary()
+        {
+            int total = TotalDoubleKillsCTF + TotalDoubleKillsTAM + TotalDoubleKillsiBR;
+            return new Dictionary<string, int>
+            {
+                { "Double Kill (2x)", total },
+            };
+        }
+
+        /// <summary>
+        /// Gets a summary of weapon-specific streak achievements (TAM mode).
+        /// </summary>
+        public Dictionary<string, int> GetWeaponSpreeAchievementsSummary()
+        {
+            return new Dictionary<string, int>();
+        }
+
+        /// <summary>
+        /// Gets spree achievements for a specific game mode.
+        /// </summary>
+        public Dictionary<string, int> GetSpreeAchievementsSummaryByMode(UT2004GameMode gameMode)
+        {
+            return gameMode switch
+            {
+                UT2004GameMode.iCTF => new Dictionary<string, int>
+                {
+                    { "Killing Spree (5x)", TotalKillingSpreesCTF },
+                    { "Rampage (10x)", TotalRampagesCTF },
+                    { "Dominating (15x)", TotalDominatingsCTF },
+                    { "Unstoppable (20x)", TotalUnstoppablesCTF },
+                    { "Godlike (25x)", TotalGodlikesCTF },
+                    { "Wicked Sick (30x)", TotalWickedSicksCTF }
+                },
+                UT2004GameMode.TAM => new Dictionary<string, int>
+                {
+                    { "Killing Spree (5x)", TotalKillingSpreesTAM },
+                    { "Rampage (10x)", TotalRampagesTAM },
+                    { "Dominating (15x)", TotalDominatingsTAM },
+                    { "Unstoppable (20x)", TotalUnstoppablesTAM },
+                    { "Godlike (25x)", TotalGodlikesTAM },
+                    { "Wicked Sick (30x)", TotalWickedSicksTAM }
+                },
+                UT2004GameMode.iBR => new Dictionary<string, int>
+                {
+                    { "Killing Spree (5x)", TotalKillingSpreesiBR },
+                    { "Rampage (10x)", TotalRampagesiBR },
+                    { "Dominating (15x)", TotalDominatingsiBR },
+                    { "Unstoppable (20x)", TotalUnstoppablesiBR },
+                    { "Godlike (25x)", TotalGodlikesiBR },
+                    { "Wicked Sick (30x)", TotalWickedSicksiBR }
+                },
+                _ => new Dictionary<string, int>()
+            };
+        }
+
+        /// <summary>
+        /// Gets multi-kill achievements for a specific game mode.
+        /// </summary>
+        public Dictionary<string, int> GetMultiKillAchievementsSummaryByMode(UT2004GameMode gameMode)
+        {
+            return gameMode switch
+            {
+                UT2004GameMode.iCTF => new Dictionary<string, int>
+                {
+                    { "Double Kill (2x)", TotalDoubleKillsCTF },
+                    { "Multi Kill (3x)", TotalMultiKillsCTF },
+                    { "Mega Kill (4x)", TotalMegaKillsCTF },
+                    { "Ultra Kill (5x)", TotalUltraKillsCTF },
+                    { "Monster Kill (6x)", TotalMonsterKillsCTF },
+                    { "Ludicrous Kill (7x)", TotalLudicrousKillsCTF },
+                    { "Holy Shit (8x+)", TotalHolyShitsCTF }
+                },
+                UT2004GameMode.TAM => new Dictionary<string, int>
+                {
+                    { "Double Kill (2x)", TotalDoubleKillsTAM },
+                    { "Multi Kill (3x)", TotalMultiKillsTAM },
+                    { "Mega Kill (4x)", TotalMegaKillsTAM },
+                    { "Ultra Kill (5x)", TotalUltraKillsTAM },
+                    { "Monster Kill (6x)", TotalMonsterKillsTAM },
+                    { "Ludicrous Kill (7x)", TotalLudicrousKillsTAM },
+                    { "Holy Shit (8x+)", TotalHolyShitsTAM }
+                },
+                UT2004GameMode.iBR => new Dictionary<string, int>
+                {
+                    { "Double Kill (2x)", TotalDoubleKillsiBR },
+                    { "Multi Kill (3x)", TotalMultiKillsiBR },
+                    { "Mega Kill (4x)", TotalMegaKillsiBR },
+                    { "Ultra Kill (5x)", TotalUltraKillsiBR },
+                    { "Monster Kill (6x)", TotalMonsterKillsiBR },
+                    { "Ludicrous Kill (7x)", TotalLudicrousKillsiBR },
+                    { "Holy Shit (8x+)", TotalHolyShitsiBR }
+                },
+                _ => new Dictionary<string, int>()
+            };
+        }
+
+        /// <summary>
+        /// Gets weapon-specific streak achievements for a game mode (TAM only).
+        /// </summary>
+        public Dictionary<string, int> GetWeaponSpreeAchievementsSummaryByMode(UT2004GameMode gameMode)
+        {
+            return gameMode switch
+            {
+                UT2004GameMode.TAM => new Dictionary<string, int>
+                {
+                    { "Combo Whore (Shock Combo 15x)", TotalComboWhoreStreaksTAM },
+                    { "Bio Hazard (Bio Rifle 15x)", TotalBioHazardStreaksTAM },
+                    { "Head Hunter (Sniper/Lightning 15x)", TotalHeadHunterStreaksTAM },
+                    { "Flak Monkey (Flak Cannon 15x)", TotalFlakMonkeyStreaksTAM },
+                    { "Rocket Man (Rocket Launcher 15x)", TotalRocketManStreaksTAM }
+                },
+                _ => new Dictionary<string, int>()
+            };
         }
     }
 }

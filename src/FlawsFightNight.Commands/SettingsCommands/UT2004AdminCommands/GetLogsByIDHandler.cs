@@ -39,7 +39,7 @@ namespace FlawsFightNight.Commands.SettingsCommands.UT2004AdminCommands
             foreach (string logID in resolvedIDs)
             {
                 var result = await _ut2004StatsService.GetStatLogByID(logID);
-                if (result != null)
+                if (result != null && result.ContainsKey(logID))
                     allLogs[logID] = result[logID];
             }
 
