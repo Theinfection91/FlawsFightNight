@@ -167,6 +167,7 @@ namespace FlawsFightNight.Services
                     "• `/settings ut2004 last_logs` — View the last 1–25 compiled stat log IDs. Optional server name filter.\n" +
                     "• `/settings ut2004 logs_by_date` — Get all stat log IDs for a specific day. Optional server name filter.\n" +
                     "• `/settings ut2004 rebuild_player_db` — Rebuild the player database from existing logs.\n" +
+                    "• `/settings ut2004 rebuild_log_database` — CAUTION: Rebuild the entire log and player database.\n" +
                     "• `/settings ut2004 tag_log` — Tag a stat log to a tournament post-match.\n" +
                     "• `/settings ut2004 untag_log` — Remove a stat log's tournament match tag.\n" +
                     "• `/settings ut2004 admin_elo_trace` — Perform an ELO trace on a given GUID for a specific game mode.\n" +
@@ -194,7 +195,7 @@ namespace FlawsFightNight.Services
                     "**Player Comparison**\n" +
                     "• `/stats ut2004 compare` — Side-by-side comparison of two players with win probability. Dropdown to switch between Overview, iCTF, TAM, and iBR.\n\n" +
                     "**Team Suggestions**\n" +
-                    "• `/stats ut2004 suggest_teams` — Given 4–10 players and a game mode, suggests balanced teams based on OpenSkill ratings (μ−3σ).\n\n" +
+                    "• `/stats ut2004 suggest_teams` — Give up to 20 players, team sizes, and a game mode then suggests balanced teams based on OpenSkill ratings (μ−3σ).\n\n" +
                     "**Win Probability**\n" +
                     "• `/stats ut2004 win_probability` — Calculates win probability between two tournament teams based on UT2004 OpenSkill ratings.\n\n" +
                     "**ELO Trace**\n" +
