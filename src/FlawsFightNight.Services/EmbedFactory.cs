@@ -1460,6 +1460,42 @@ namespace FlawsFightNight.Services
                 embed.AddField("🔫 Weapon Statistics", sb.ToString().TrimEnd(), false);
             }
 
+            // Add Spree/MultiKill Achievements (Aggregate across all modes)
+            var spreeAchievements = new Dictionary<string, int>
+            {
+                { "Killing Spree (5x)", profile.TotalKillingSpreesCTF + profile.TotalKillingSpreesTAM + profile.TotalKillingSpreesiBR },
+                { "Rampage (10x)", profile.TotalRampagesCTF + profile.TotalRampagesTAM + profile.TotalRampagesiBR },
+                { "Dominating (15x)", profile.TotalDominatingsCTF + profile.TotalDominatingsTAM + profile.TotalDominatingsiBR },
+                { "Unstoppable (20x)", profile.TotalUnstoppablesCTF + profile.TotalUnstoppablesTAM + profile.TotalUnstoppablesiBR },
+                { "Godlike (25x)", profile.TotalGodlikesCTF + profile.TotalGodlikesTAM + profile.TotalGodlikesiBR },
+                { "Wicked Sick (30x)", profile.TotalWickedSicksCTF + profile.TotalWickedSicksTAM + profile.TotalWickedSicksiBR }
+            };
+
+            var multiAchievements = new Dictionary<string, int>
+            {
+                { "Double Kill (2x)", profile.TotalDoubleKillsCTF + profile.TotalDoubleKillsTAM + profile.TotalDoubleKillsiBR },
+                { "Multi Kill (3x)", profile.TotalMultiKillsCTF + profile.TotalMultiKillsTAM + profile.TotalMultiKillsiBR },
+                { "Mega Kill (4x)", profile.TotalMegaKillsCTF + profile.TotalMegaKillsTAM + profile.TotalMegaKillsiBR },
+                { "Ultra Kill (5x)", profile.TotalUltraKillsCTF + profile.TotalUltraKillsTAM + profile.TotalUltraKillsiBR },
+                { "Monster Kill (6x)", profile.TotalMonsterKillsCTF + profile.TotalMonsterKillsTAM + profile.TotalMonsterKillsiBR },
+                { "Ludicrous Kill (7x)", profile.TotalLudicrousKillsCTF + profile.TotalLudicrousKillsTAM + profile.TotalLudicrousKillsiBR },
+                { "Holy Shit (8x+)", profile.TotalHolyShitsCTF + profile.TotalHolyShitsTAM + profile.TotalHolyShitsiBR }
+            };
+
+            var sb_spree = new StringBuilder();
+            foreach (var achievement in spreeAchievements)
+            {
+                sb_spree.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("🔥 Killing Sprees", sb_spree.ToString().TrimEnd(), true);
+
+            var sb_multi = new StringBuilder();
+            foreach (var achievement in multiAchievements)
+            {
+                sb_multi.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("⚡ Multi-Kills", sb_multi.ToString().TrimEnd(), true);
+
             return embed.Build();
         }
 
@@ -1492,6 +1528,28 @@ namespace FlawsFightNight.Services
                 $"**Cap Assists:** {profile.TotalFlagCaptureAssists}  ·  **1st Touch:** {profile.TotalFlagCaptureFirstTouch}\n" +
                 $"**Best Caps (match):** {profile.MostFlagCapsInMatch}  ·  **Best Returns (match):** {profile.MostFlagReturnsInMatch}  ·  **Avg Caps/Match:** {profile.AverageCapturesPerMatch:F2}",
                 false);
+
+            embed.AddField("⚡ Career Streaks",
+                $"**Best Kill Streak:** {profile.BestKillStreakCTF}  ·  **Best Multi-Kill:** {profile.BestMultiKillCTF}",
+                false);
+
+            // Add iCTF-specific Spree/MultiKill Achievements
+            var spreeAchievements = profile.GetSpreeAchievementsSummaryByMode(UT2004GameMode.iCTF);
+            var multiAchievements = profile.GetMultiKillAchievementsSummaryByMode(UT2004GameMode.iCTF);
+
+            var sb_spree = new StringBuilder();
+            foreach (var achievement in spreeAchievements)
+            {
+                sb_spree.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("🔥 Killing Sprees", sb_spree.ToString().TrimEnd(), true);
+
+            var sb_multi = new StringBuilder();
+            foreach (var achievement in multiAchievements)
+            {
+                sb_multi.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("⚡ Multi-Kills", sb_multi.ToString().TrimEnd(), true);
 
             return embed.Build();
         }
@@ -1526,6 +1584,36 @@ namespace FlawsFightNight.Services
                 $"**Round-Ending Kills:** {profile.TotalRoundEndingKills}  ·  **Best Dmg (match):** {profile.MostDamageInMatch:N0}  ·  **Best REKs (match):** {profile.MostRoundEndingKillsInMatch}  ·  **Best Rounds Won (match):** {profile.MostRoundsWonInMatch}",
                 false);
 
+            embed.AddField("⚡ Career Streaks",
+                $"**Best Kill Streak:** {profile.BestKillStreakTAM}  ·  **Best Multi-Kill:** {profile.BestMultiKillTAM}",
+                false);
+
+            // Add TAM-specific Spree/MultiKill Achievements
+            var spreeAchievements = profile.GetSpreeAchievementsSummaryByMode(UT2004GameMode.TAM);
+            var multiAchievements = profile.GetMultiKillAchievementsSummaryByMode(UT2004GameMode.TAM);
+            var weaponAchievements = profile.GetWeaponSpreeAchievementsSummaryByMode(UT2004GameMode.TAM);
+
+            var sb_spree = new StringBuilder();
+            foreach (var achievement in spreeAchievements)
+            {
+                sb_spree.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("🔥 Killing Sprees", sb_spree.ToString().TrimEnd(), true);
+
+            var sb_multi = new StringBuilder();
+            foreach (var achievement in multiAchievements)
+            {
+                sb_multi.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("⚡ Multi-Kills", sb_multi.ToString().TrimEnd(), true);
+
+            var sb_weapon = new StringBuilder();
+            foreach (var achievement in weaponAchievements)
+            {
+                sb_weapon.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("⚔️ Weapon Milestones", sb_weapon.ToString().TrimEnd(), false);
+
             return embed.Build();
         }
 
@@ -1558,6 +1646,28 @@ namespace FlawsFightNight.Services
                 $"**Best Caps (match):** {profile.MostBallCapsInMatch}  ·  **Best Pickups (match):** {profile.MostBombPickupsInMatch}  ·  **Best Steals (match):** {profile.MostBombTakenInMatch}\n" +
                 $"**Avg Caps/Match:** {profile.AverageBallCapsPerBRMatch:F2}  ·  **Avg Pickups/Match:** {profile.AverageBombPickupsPerBRMatch:F2}",
                 false);
+
+            embed.AddField("⚡ Career Streaks",
+                $"**Best Kill Streak:** {profile.BestKillStreakiBR}  ·  **Best Multi-Kill:** {profile.BestMultiKilliBR}",
+                false);
+
+            // Add iBR-specific Spree/MultiKill Achievements
+            var spreeAchievements = profile.GetSpreeAchievementsSummaryByMode(UT2004GameMode.iBR);
+            var multiAchievements = profile.GetMultiKillAchievementsSummaryByMode(UT2004GameMode.iBR);
+
+            var sb_spree = new StringBuilder();
+            foreach (var achievement in spreeAchievements)
+            {
+                sb_spree.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("🔥 Killing Sprees", sb_spree.ToString().TrimEnd(), true);
+
+            var sb_multi = new StringBuilder();
+            foreach (var achievement in multiAchievements)
+            {
+                sb_multi.AppendLine($"• **{achievement.Key}:** {achievement.Value}");
+            }
+            embed.AddField("⚡ Multi-Kills", sb_multi.ToString().TrimEnd(), true);
 
             return embed.Build();
         }

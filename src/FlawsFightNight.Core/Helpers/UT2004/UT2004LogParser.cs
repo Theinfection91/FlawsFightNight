@@ -51,6 +51,12 @@ namespace FlawsFightNight.Core.Helpers.UT2004
         private bool _wsutcompDetected = false;
         private Dictionary<int, int> _currentFlagCarrierByTeam = new();
 
+        // Kill streak tracking - count consecutive kills per player to determine true spree levels
+        private Dictionary<int, int> _playerConsecutiveKills = new();
+
+        // Weapon streak tracking - track consecutive kills with same weapon (TAM only)
+        private Dictionary<int, (string Weapon, int Count)> _playerConsecutiveWeaponKills = new();
+
         private double GameTime(double timestamp) => Math.Round(timestamp - _gameStartTime, 2);
 
         public async Task<T?> Parse<T>(Stream fileStream)
@@ -240,6 +246,8 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             LastIgnoreReason = null;
             _wsutcompDetected = false;
             _currentFlagCarrierByTeam.Clear();
+            _playerConsecutiveKills.Clear();
+            _playerConsecutiveWeaponKills.Clear();
         }
 
         private void ParseNewGame(string[] parts)
@@ -875,6 +883,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             if (killerSeqNum == -1 || killerSeqNum == victimSeqNum)
             {
                 victim.Suicides++;
+                // Reset victim's streak when they die
+                _playerConsecutiveKills[victimSeqNum] = 0;
+                _playerConsecutiveWeaponKills.Remove(victimSeqNum);
+
                 _timeline.Add(new MatchEvent
                 {
                     GameTimeSeconds = GameTime(timestamp),
@@ -894,6 +906,15 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             killer.Kills++;
             victim.Deaths++;
 
+            // Track consecutive kills for spree detection
+            if (!_playerConsecutiveKills.ContainsKey(killerSeqNum)) _playerConsecutiveKills[killerSeqNum] = 0;
+            _playerConsecutiveKills[killerSeqNum]++;
+            int currentStreak = _playerConsecutiveKills[killerSeqNum];
+
+            // Reset victim's streak when they die
+            _playerConsecutiveKills[victimSeqNum] = 0;
+            _playerConsecutiveWeaponKills.Remove(victimSeqNum);
+
             if (!killer.WeaponKills.ContainsKey(weapon))
                 killer.WeaponKills[weapon] = 0;
             killer.WeaponKills[weapon]++;
@@ -906,6 +927,10 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             if (_currentGameMode == UT2004GameMode.TAM)
                 _lastKillerSeqNum = killerSeqNum;
+
+            // Track weapon-specific streaks (TAM mode emphasis)
+            if (_currentGameMode == UT2004GameMode.TAM)
+                TrackWeaponStreak(killer, weapon);
 
             // Register into kill matrix (use current GUIDs if available)
             string killerGuid = killer.Guid ?? string.Empty;
@@ -935,7 +960,48 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             });
 
             if (_expandedDebugLogging)
-                Console.WriteLine($"{killer.LastKnownName} killed {victim.LastKnownName} with {weapon} ({damageType})");
+                Console.WriteLine($"{killer.LastKnownName} killed {victim.LastKnownName} with {weapon} ({damageType}) - Streak: {currentStreak}");
+        }
+
+        private void TrackWeaponStreak(UTPlayerMatchStats killer, string weapon)
+        {
+            if (killer == null || string.IsNullOrEmpty(weapon))
+                return;
+
+            var weaponLower = weapon.ToLowerInvariant();
+
+            // Track cumulative kills with each weapon (not consecutive)
+            // Achievement only counts once per match when reaching 15+ frags
+            if (weaponLower.Contains("shock") || weaponLower.Contains("combo"))
+            {
+                killer.ComboWhoreCount++;
+                if (killer.ComboWhoreCount == 15 && killer.ComboWhoreStreaks == 0)
+                    killer.ComboWhoreStreaks = 1;
+            }
+            else if (weaponLower.Contains("bio"))
+            {
+                killer.BioHazardCount++;
+                if (killer.BioHazardCount == 15 && killer.BioHazardStreaks == 0)
+                    killer.BioHazardStreaks = 1;
+            }
+            else if (weaponLower.Contains("sniper") || weaponLower.Contains("lightning"))
+            {
+                killer.HeadHunterCount++;
+                if (killer.HeadHunterCount == 15 && killer.HeadHunterStreaks == 0)
+                    killer.HeadHunterStreaks = 1;
+            }
+            else if (weaponLower.Contains("flak"))
+            {
+                killer.FlakMonkeyCount++;
+                if (killer.FlakMonkeyCount == 15 && killer.FlakMonkeyStreaks == 0)
+                    killer.FlakMonkeyStreaks = 1;
+            }
+            else if (weaponLower.Contains("rocket") || weaponLower.Contains("eightball"))
+            {
+                killer.RocketManCount++;
+                if (killer.RocketManCount == 15 && killer.RocketManStreaks == 0)
+                    killer.RocketManStreaks = 1;
+            }
         }
 
         private void ParseScore(string[] parts, double timestamp)
@@ -1085,20 +1151,44 @@ namespace FlawsFightNight.Core.Helpers.UT2004
 
             if (eventType.StartsWith("spree_"))
             {
-                if (int.TryParse(eventType.Substring("spree_".Length), out int streakLevel))
+                // The spree event comes BEFORE the K (kill) line in the log,
+                // so we need to project the streak by +1 to account for the upcoming kill
+                if (_playerConsecutiveKills.TryGetValue(seqNum, out int currentStreak))
                 {
-                    player.BestKillStreak = Math.Max(player.BestKillStreak, streakLevel);
+                    int projectedStreak = currentStreak + 1;
+                    player.BestKillStreak = Math.Max(player.BestKillStreak, projectedStreak);
 
-                    if (streakLevel >= 5)
+                    // Track individual spree achievements based on projected kill count
+                    if (projectedStreak >= 30)
+                        player.WickedSicks++;
+                    else if (projectedStreak >= 25)
+                        player.Godlikes++;
+                    else if (projectedStreak >= 20)
+                        player.Unstoppables++;
+                    else if (projectedStreak >= 15)
+                        player.Dominatings++;
+                    else if (projectedStreak >= 10)
+                        player.Rampages++;
+                    else if (projectedStreak >= 5)
+                        player.KillingSprees++;
+
+                    // Legacy array support
+                    if (projectedStreak >= 5)
                     {
-                        int spreeIndex = Math.Min((streakLevel - 5) / 5, 5);
+                        int spreeIndex = Math.Min((projectedStreak - 5) / 5, 5);
                         player.SpreeCounts[spreeIndex]++;
                     }
 
-                    string[] spreeNames = { "Killing Spree", "Rampage", "Dominating", "Unstoppable", "Godlike", "Wicked Sick" };
-                    string spreeDetail = streakLevel >= 1 && streakLevel <= spreeNames.Length
-                        ? spreeNames[streakLevel - 1]
-                        : $"Level {streakLevel} Spree";
+                    string spreeDetail = projectedStreak switch
+                    {
+                        >= 30 => "Wicked Sick",
+                        >= 25 => "Godlike",
+                        >= 20 => "Unstoppable",
+                        >= 15 => "Dominating",
+                        >= 10 => "Rampage",
+                        >= 5 => "Killing Spree",
+                        _ => $"Level {projectedStreak} Spree"
+                    };
 
                     _timeline.Add(new MatchEvent
                     {
@@ -1108,27 +1198,55 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                         ActorGuid = player.Guid,
                         Detail = spreeDetail
                     });
-                }
 
-                if (_expandedDebugLogging)
-                    Console.WriteLine($"{player.LastKnownName} achieved {eventType} (spree index recorded).");
+                    if (_expandedDebugLogging)
+                        Console.WriteLine($"{player.LastKnownName} achieved {spreeDetail} ({projectedStreak} consecutive kills).");
+                }
             }
             else if (eventType.StartsWith("multikill_"))
             {
                 if (int.TryParse(eventType.Substring("multikill_".Length), out int multiLevel))
                 {
-                    player.BestMultiKill = Math.Max(player.BestMultiKill, multiLevel);
+                    // multikill_1 = 2 kills (Double Kill)
+                    // multikill_2 = 3 kills (Multi Kill)
+                    // multikill_3 = 4 kills (Mega Kill), etc.
+                    int actualKills = multiLevel + 1;
+                    player.BestMultiKill = Math.Max(player.BestMultiKill, actualKills);
 
-                    if (multiLevel >= 2)
+                    // Track individual multi-kill achievements
+                    if (actualKills >= 8)
+                        player.HolyShits++;
+                    else if (actualKills == 7)
+                        player.LudicrousKills++;
+                    else if (actualKills == 6)
+                        player.MonsterKills++;
+                    else if (actualKills == 5)
+                        player.UltraKills++;
+                    else if (actualKills == 4)
+                        player.MegaKills++;
+                    else if (actualKills == 3)
+                        player.MultiKills++;
+                    else if (actualKills == 2)
+                        player.DoubleKills++;
+
+                    // Legacy array support
+                    if (actualKills >= 2)
                     {
-                        int multiIndex = Math.Min(multiLevel - 2, 6);
+                        int multiIndex = Math.Min(actualKills - 2, 6);
                         player.MultiCounts[multiIndex]++;
                     }
 
-                    string[] multiNames = { "Double Kill", "Multi Kill", "Ultra Kill", "Monster Kill", "Ludicrous Kill", "Holy Shit", "Wicked Sick" };
-                    string multiDetail = multiLevel >= 1 && multiLevel <= multiNames.Length
-                        ? multiNames[multiLevel - 1]
-                        : $"x{multiLevel + 1}";
+                    string multiDetail = actualKills switch
+                    {
+                        >= 8 => "Holy Shit",
+                        7 => "Ludicrous Kill",
+                        6 => "Monster Kill",
+                        5 => "Ultra Kill",
+                        4 => "Mega Kill",
+                        3 => "Multi Kill",
+                        2 => "Double Kill",
+                        _ => $"x{actualKills} Kill"
+                    };
 
                     _timeline.Add(new MatchEvent
                     {
@@ -1140,7 +1258,7 @@ namespace FlawsFightNight.Core.Helpers.UT2004
                     });
 
                     if (_expandedDebugLogging)
-                        Console.WriteLine($"{player.LastKnownName} achieved {eventType} (multi index recorded).");
+                        Console.WriteLine($"{player.LastKnownName} achieved {multiDetail}.");
                 }
             }
             else if (eventType == "first_blood")
