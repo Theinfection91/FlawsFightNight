@@ -1004,30 +1004,6 @@ namespace FlawsFightNight.Core.Helpers.UT2004
             }
         }
 
-        private void ClassifyAndIncrementWeaponStreak(UTPlayerMatchStats killer, string weaponLower)
-        {
-            if (weaponLower.Contains("shock") || weaponLower.Contains("combo"))
-            {
-                killer.ComboWhoreStreaks++;
-            }
-            else if (weaponLower.Contains("bio"))
-            {
-                killer.BioHazardStreaks++;
-            }
-            else if (weaponLower.Contains("sniper") || weaponLower.Contains("lightning"))
-            {
-                killer.HeadHunterStreaks++;
-            }
-            else if (weaponLower.Contains("flak"))
-            {
-                killer.FlakMonkeyStreaks++;
-            }
-            else if (weaponLower.Contains("rocket") || weaponLower.Contains("eightball"))
-            {
-                killer.RocketManStreaks++;
-            }
-        }
-
         private void ParseScore(string[] parts, double timestamp)
         {
             if (parts.Length < 5) return;
